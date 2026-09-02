@@ -1632,6 +1632,10 @@ func (o *Organism) ensureBridge() *CognitiveBridge {
 			o.Hippocampus, o.Encoder, o.Tokenizer,
 			o.Transformer.Config.VocabSize,
 		)
+		// Second bias source: generalized concepts from sleep
+		// consolidation. Before this wiring SemanticMemory was
+		// write-only (integration audit 2026-05-26, gap #2).
+		o.Bridge.Semantic = o.SemanticMemory
 	}
 	return o.Bridge
 }

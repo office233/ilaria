@@ -139,11 +139,11 @@ process answers paraphrased questions using the same frozen transformer
 
 | Arm | Strict accuracy | Token recall |
 |-----|----------------|--------------|
-| **Full system** (episodic memory → context + logit bias) | **94%** | 64% |
+| **Full system** (episodic memory → context + logit bias) | **96%** | 65% |
 | Logit bias only (no context injection) | 2% | 2% |
 | **Frozen LLM baseline** (same weights, no memory) | **1%** | 1% |
 
-- Memory recall after restart: 97% · gradient updates: **0** · weight hash
+- Memory recall after restart: **100%** · gradient updates: **0** · weight hash
   verified identical before/after.
 - Scoring: word-boundary matching, scorer v2 (`cortex/evalsuite`).
 - Honest reading: the win comes from one-shot episodic retrieval feeding the

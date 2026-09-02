@@ -196,9 +196,19 @@ Recall memorie după restart: 97%. Gradient updates: 0. Hash greutăți identic.
 Lecție de mecanism (raportată onest): bias-ul de logits singur NU poate dicta
 cuvinte inventate multi-token; injecția memoriei în context (RAG peste memoria
 episodică one-shot) e mecanismul care duce greul. Ambele rămân în sistem —
-bias-ul ajută la copiere, contextul poartă conținutul. Îmbunătățiri ulterioare
-posibile: recall 97→100 (praguri keyword), exemplu one-shot în promptul
-Organism.Process, semantic memory ca a doua sursă (rămâne din Faza 1.3).
+bias-ul ajută la copiere, contextul poartă conținutul.
+
+**Update (aceeași seară) — toate cele 3 follow-up-uri executate:**
+1. Recall 97→**100%**: stemmer normalizat (e-final, y→i — „dance"/„dances",
+   „memory"/„memories" pe același stem) + fallback la prag 1 în bridge când
+   pragul 2 nu găsește nimic. Strict accuracy: 94→**96%**.
+2. Formatul QA câștigător (one-shot example + Fact/Question/Answer) e acum în
+   `Broca.generateQAStyle`, activat automat când tokenizer-ul e byte-level
+   (GPT-2) — `Organism.Process` beneficiază direct.
+3. SemanticMemory nu mai e write-only: `Query` (SDR) + `QueryByKeywords`
+   (robust la restart de encoder) + integrare în CognitiveBridge ca a doua
+   sursă de bias (damped la `SemanticWeight`=0.5, plafonat la MaxBias; sursa
+   episodică domină întotdeauna). Închis gap-ul #2 din auditul de integrare.
 
 ## 6. Ce NU facem (decizii explicite)
 

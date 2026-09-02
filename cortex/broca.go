@@ -438,6 +438,14 @@ func (b *Broca) GenerateWithTransformerBiased(
 		return ""
 	}
 
+	// A byte-level tokenizer means the transformer carries imported
+	// GPT-2-family weights — those models answer QA prompts, not the
+	// "memory | words" concatenation the from-scratch model trains on.
+	// Route to the format that scored 96% on continual-bench.
+	if tokenizer.ByteLevel {
+		return b.generateQAStyle(transformer, tokenizer, contextWords, memoryContext, confidence, maxTokens, bias)
+	}
+
 	// Build prompt from context + memory
 	var prompt strings.Builder
 	if memoryContext != "" {
@@ -491,5 +499,79 @@ func (b *Broca) GenerateWithTransformerBiased(
 		return ""
 	}
 
+	return text
+}
+
+// generateQAStyle is the generation path for imported GPT-2-family
+// models. It uses the exact prompt shape validated by
+// cmd/continual-bench (96% strict accuracy): a fixed one-shot format
+// example — GPT-2-class models echo the question without one — then
+// the recalled memory as a Fact line, then the question.
+//
+// The one-shot example is a deliberately banal, benchmark-unrelated
+// fact; it teaches FORM, not content, and is identical whether or not
+// a memory was recalled, so it never advantages one path.
+func (b *Broca) generateQAStyle(
+	transformer *MiniTransformer,
+	tokenizer *BPETokenizer,
+	contextWords []string,
+	memoryContext string,
+	confidence uint8,
+	maxTokens int,
+	bias []float32,
+) string {
+	question := strings.TrimRight(strings.Join(contextWords, " "), "?!. ")
+
+	var prompt strings.Builder
+	if memoryContext != "" {
+		prompt.WriteString("Fact: the sky is blue on clear days\n")
+		prompt.WriteString("Question: what color is the sky on clear days?\n")
+		prompt.WriteString("Answer: blue\n\n")
+		prompt.WriteString("Fact: ")
+		prompt.WriteString(memoryContext)
+		prompt.WriteString("\n")
+	} else {
+		prompt.WriteString("Question: what color is the sky on clear days?\n")
+		prompt.WriteString("Answer: blue\n\n")
+	}
+	prompt.WriteString("Question: ")
+	prompt.WriteString(question)
+	prompt.WriteString("?\nAnswer:")
+
+	ids := tokenizer.Encode(prompt.String())
+	if len(ids) == 0 {
+		return ""
+	}
+
+	// Factual QA wants a cool temperature; confidence nudges it. The
+	// repetition penalty is mild — enough to break question-echo loops,
+	// low enough not to fight copying the answer out of the Fact line.
+	temperature := float32(0.5)
+	if confidence > 200 {
+		temperature = 0.3
+	} else if confidence < 50 {
+		temperature = 0.8
+	}
+
+	out := transformer.GenerateSampled(ids, SampleConfig{
+		MaxNewTokens:      maxTokens,
+		MinNewTokens:      2,
+		Temperature:       temperature,
+		TopK:              40,
+		TopP:              0.95,
+		RepetitionPenalty: 1.1,
+	}, bias)
+	if len(out) <= len(ids) {
+		return ""
+	}
+
+	text := strings.TrimSpace(tokenizer.Decode(out[len(ids):]))
+	// The model often rambles into a new "Question:"/"Fact:" block —
+	// everything after the first such marker is format noise, not answer.
+	for _, stop := range []string{"\nQuestion:", "\nFact:", "\nAnswer:"} {
+		if i := strings.Index(text, stop); i >= 0 {
+			text = strings.TrimSpace(text[:i])
+		}
+	}
 	return text
 }

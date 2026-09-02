@@ -151,26 +151,42 @@ func stemWord(word string) string {
 	if len(word) <= 3 {
 		return word
 	}
+	stem := word
+	stemmed := false
 	// Handle irregular plurals before suffix stripping.
 	if strings.HasSuffix(word, "ies") && len(word) > 4 {
-		stemmed := word[:len(word)-3] + "i" // memories → memori
-		if len(stemmed) >= 2 {
-			return stemmed
+		if s := word[:len(word)-3] + "i"; len(s) >= 2 { // memories → memori
+			stem, stemmed = s, true
 		}
 	}
-	for _, suffix := range stemSuffixes {
-		if strings.HasSuffix(word, suffix) {
-			stem := word[:len(word)-len(suffix)]
-			if len(stem) >= 3 {
-				return stem
+	if !stemmed {
+		for _, suffix := range stemSuffixes {
+			if strings.HasSuffix(word, suffix) {
+				if s := word[:len(word)-len(suffix)]; len(s) >= 3 {
+					stem, stemmed = s, true
+					break
+				}
 			}
 		}
 	}
 	// Strip trailing 's' for simple plurals (but not if stem < 3).
-	if strings.HasSuffix(word, "s") && len(word) > 3 {
-		return word[:len(word)-1]
+	if !stemmed && strings.HasSuffix(stem, "s") && len(stem) > 3 {
+		stem = stem[:len(stem)-1]
 	}
-	return word
+	// Final normalisation: drop a trailing 'e' so base forms meet their
+	// suffix-stripped inflections on the same stem — without this,
+	// "dances" stems to "danc" ("es" rule) while "dance" keeps its 'e',
+	// and a question about dancing never recalls the dancing memory.
+	// (Root cause of the 3 recall misses in the first continual-bench.)
+	if strings.HasSuffix(stem, "e") && len(stem) > 3 {
+		stem = stem[:len(stem)-1]
+	}
+	// Same idea for 'y': "memory" must meet "memories", whose "ies"
+	// rule already lands on "memori".
+	if strings.HasSuffix(stem, "y") && len(stem) > 3 {
+		stem = stem[:len(stem)-1] + "i"
+	}
+	return stem
 }
 
 // extractKeywords tokenises a context string and returns the unique,

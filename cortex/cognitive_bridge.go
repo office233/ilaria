@@ -44,6 +44,18 @@ type CognitiveBridge struct {
 	// Hippo is the episodic store queried for relevant memories.
 	Hippo *Hippocampus
 
+	// Semantic is the optional second bias source: generalized concepts
+	// produced by sleep consolidation. Episodic recall carries specific
+	// facts; a semantic hit contributes the concept's context words at
+	// SemanticWeight strength. Nil disables the semantic contribution
+	// (the bridge works exactly as before).
+	Semantic *SemanticMemory
+
+	// SemanticWeight scales the semantic contribution relative to the
+	// episodic boost. Below 1 because a generalized concept is fuzzier
+	// evidence than a verbatim episode.
+	SemanticWeight float32
+
 	// Encoder converts prompt text into the SDR query space.
 	Encoder *Encoder
 
@@ -97,6 +109,7 @@ func NewCognitiveBridge(h *Hippocampus, enc *Encoder, tok *BPETokenizer, vocabSi
 		MaxBias:         3.0,
 		MinConfidence:   0.6,
 		RecallThreshold: 2,
+		SemanticWeight:  0.5,
 		Enabled:         true,
 	}
 }
@@ -116,6 +129,10 @@ type BiasResult struct {
 
 	// TokensBiased counts distinct vocabulary entries that were boosted.
 	TokensBiased int
+
+	// SemanticApplied is true when a generalized concept contributed to
+	// the bias (possibly in addition to an episodic memory).
+	SemanticApplied bool
 }
 
 // ready reports whether the bridge has every dependency it needs.
@@ -157,51 +174,78 @@ func (cb *CognitiveBridge) ComputeBias(prompt string) ([]float32, BiasResult) {
 	querySDR := cb.Encoder.EncodeSentence(prompt)
 
 	mem, score, found := cb.Hippo.RecallByKeywords(keywords, cb.RecallThreshold, querySDR)
-	if !found || mem.Context == "" {
-		return nil, res
+	if !found && cb.RecallThreshold > 1 {
+		// Fallback to single-keyword overlap. A question about a
+		// uniquely named subject ("what kind of ball is used in
+		// drumball") can share exactly ONE stem with its memory when
+		// the other words inflect differently — and that one rare stem
+		// is precisely the discriminating signal. Max-hits + SDR
+		// tie-breaking still picks the best memory; a weak wrong recall
+		// only costs a bounded, gentle bias.
+		mem, score, found = cb.Hippo.RecallByKeywords(keywords, 1, querySDR)
 	}
 
-	// Tokenize the recalled fact. These are the tokens memory wants to
-	// see in the output.
-	memTokens := cb.Tokenizer.Encode(mem.Context)
-	if len(memTokens) == 0 {
-		return nil, res
-	}
+	var bias []float32
+	seen := make(map[int]struct{})
 
-	// Scale bias by recall confidence, floored at MinConfidence so a
-	// single-exposure memory is immediately usable (see MinConfidence).
-	confidence := float32(mem.Strength) / 255.0
-	if confidence < cb.MinConfidence {
-		confidence = cb.MinConfidence
-	}
-	if confidence <= 0 {
-		return nil, res
-	}
-	boost := cb.MaxBias * confidence
-
-	bias := make([]float32, cb.VocabSize)
-	seen := make(map[int]struct{}, len(memTokens))
-
-	for _, tid := range memTokens {
-		if tid < 0 || tid >= cb.VocabSize {
-			continue
+	// applyTokens raises the bias of ctx's distinct tokens to at least
+	// `boost`. Max, not sum: overlapping sources must not compound past
+	// MaxBias — the bound is the safety property of the whole bridge.
+	applyTokens := func(ctx string, boost float32) int {
+		ids := cb.Tokenizer.Encode(ctx)
+		if len(ids) == 0 {
+			return 0
 		}
-		if _, dup := seen[tid]; dup {
-			// Repeating a token in the memory should not compound its
-			// bias — that would make frequent filler words dominate.
-			continue
+		if bias == nil {
+			bias = make([]float32, cb.VocabSize)
 		}
-		seen[tid] = struct{}{}
-		bias[tid] = boost
+		n := 0
+		for _, tid := range ids {
+			if tid < 0 || tid >= cb.VocabSize {
+				continue
+			}
+			if _, dup := seen[tid]; !dup {
+				seen[tid] = struct{}{}
+				n++
+			}
+			if bias[tid] < boost {
+				bias[tid] = boost
+			}
+		}
+		return n
+	}
+
+	// ── Source 1: episodic memory (specific facts, full strength) ─────
+	if found && mem.Context != "" {
+		confidence := float32(mem.Strength) / 255.0
+		if confidence < cb.MinConfidence {
+			confidence = cb.MinConfidence
+		}
+		if confidence > 0 {
+			applyTokens(mem.Context, cb.MaxBias*confidence)
+			res.Applied = true
+			res.Context = mem.Context
+			res.Score = score
+		}
+	}
+
+	// ── Source 2: semantic memory (generalized concepts, damped) ──────
+	// Consulted even after an episodic hit: the concept's contexts add
+	// related vocabulary the single episode may lack. SemanticWeight < 1
+	// keeps the fuzzier evidence subordinate.
+	if cb.Semantic != nil && cb.SemanticWeight > 0 {
+		if concept, _, ok := cb.Semantic.QueryByKeywords(keywords, 2); ok {
+			boost := cb.MaxBias * cb.SemanticWeight
+			for _, ctx := range concept.Contexts {
+				applyTokens(ctx, boost)
+			}
+			res.SemanticApplied = true
+		}
 	}
 
 	if len(seen) == 0 {
 		return nil, res
 	}
-
-	res.Applied = true
-	res.Context = mem.Context
-	res.Score = score
 	res.TokensBiased = len(seen)
 
 	return bias, res

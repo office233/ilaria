@@ -241,6 +241,84 @@ func (sm *SemanticMemory) Generalize(hip *Hippocampus) {
 }
 
 // ─────────────────────────────────────────────────────────────────────
+// Query — Reading concepts back (the missing half)
+// ─────────────────────────────────────────────────────────────────────
+//
+// Until 2026-09 this module was WRITE-ONLY: Generalize() produced
+// concepts that nothing ever read (documented as the biggest structural
+// gap in docs/plans/2026-05-26-integration-audit.md). These two entry
+// points close that gap; CognitiveBridge uses them as a second bias
+// source so generalized knowledge — not just verbatim episodes — can
+// steer generation.
+
+// Query returns the concept whose prototype best matches the query SDR
+// with similarity ≥ SimThreshold. Prototype similarity requires the
+// SAME encoder instance/state that built the episodes — across process
+// restarts that means a persisted encoder. For encoder-independent
+// lookup use QueryByKeywords.
+func (sm *SemanticMemory) Query(query SDR) (Concept, uint8, bool) {
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
+
+	bestIdx := -1
+	var bestSim uint8
+	for i := range sm.Concepts {
+		if sm.Concepts[i].Prototype.ActiveCount == 0 {
+			continue
+		}
+		sim := query.Similarity(sm.Concepts[i].Prototype)
+		if sim >= sm.SimThreshold && sim > bestSim {
+			bestSim = sim
+			bestIdx = i
+		}
+	}
+	if bestIdx < 0 {
+		return Concept{}, 0, false
+	}
+	return sm.Concepts[bestIdx], bestSim, true
+}
+
+// QueryByKeywords returns the concept whose stored Contexts share the
+// most stemmed content words with the given keywords (min. minOverlap).
+// This mirrors hippocampal keyword recall and survives encoder resets,
+// because it reads the concept's own text — the concept is found by
+// what it MEANS, not by which random SDR bits encoded it.
+func (sm *SemanticMemory) QueryByKeywords(keywords []string, minOverlap int) (Concept, int, bool) {
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
+
+	if len(keywords) == 0 || minOverlap < 1 {
+		return Concept{}, 0, false
+	}
+	want := make(map[string]bool, len(keywords))
+	for _, kw := range keywords {
+		want[stemWord(kw)] = true
+	}
+
+	bestIdx, bestOverlap := -1, 0
+	for i := range sm.Concepts {
+		seen := map[string]bool{}
+		overlap := 0
+		for _, ctx := range sm.Concepts[i].Contexts {
+			for _, ckw := range extractKeywords(ctx) {
+				if want[ckw] && !seen[ckw] {
+					seen[ckw] = true
+					overlap++
+				}
+			}
+		}
+		if overlap >= minOverlap && overlap > bestOverlap {
+			bestOverlap = overlap
+			bestIdx = i
+		}
+	}
+	if bestIdx < 0 {
+		return Concept{}, 0, false
+	}
+	return sm.Concepts[bestIdx], bestOverlap, true
+}
+
+// ─────────────────────────────────────────────────────────────────────
 // Persistence — JSON Serialization (SDR packed as sparse index list)
 // ─────────────────────────────────────────────────────────────────────
 

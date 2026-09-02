@@ -41,6 +41,9 @@ type adamBlockJSON struct {
 	B1M, B1V tensorJSON
 	W2M, W2V tensorJSON
 	B2M, B2V tensorJSON
+	// SwiGLU gate moments — empty for GELU FFNs.
+	W3M, W3V tensorJSON
+	B3M, B3V tensorJSON
 }
 
 // adamStateJSON is the top-level serialisable AdamState payload.
@@ -101,6 +104,8 @@ func SaveAdamState(s *AdamState, path string) error {
 			B1M: tensorToJSON(b.B1M), B1V: tensorToJSON(b.B1V),
 			W2M: tensorToJSON(b.W2M), W2V: tensorToJSON(b.W2V),
 			B2M: tensorToJSON(b.B2M), B2V: tensorToJSON(b.B2V),
+			W3M: tensorToJSON(b.W3M), W3V: tensorToJSON(b.W3V),
+			B3M: tensorToJSON(b.B3M), B3V: tensorToJSON(b.B3V),
 		}
 	}
 
@@ -207,13 +212,14 @@ func LoadAdamState(m *MiniTransformer, path string) (*AdamState, error) {
 		return nil, fmt.Errorf("LNFBetaV: %w", err)
 	}
 
+	type momentPair struct {
+		dst *Tensor
+		src tensorJSON
+		tag string
+	}
 	for i, bp := range payload.Blocks {
 		st := &s.Blocks[i]
-		pairs := []struct {
-			dst *Tensor
-			src tensorJSON
-			tag string
-		}{
+		pairs := []momentPair{
 			{st.LN1GammaM, bp.LN1GammaM, "LN1GammaM"}, {st.LN1GammaV, bp.LN1GammaV, "LN1GammaV"},
 			{st.LN1BetaM, bp.LN1BetaM, "LN1BetaM"}, {st.LN1BetaV, bp.LN1BetaV, "LN1BetaV"},
 			{st.LN2GammaM, bp.LN2GammaM, "LN2GammaM"}, {st.LN2GammaV, bp.LN2GammaV, "LN2GammaV"},
@@ -230,6 +236,17 @@ func LoadAdamState(m *MiniTransformer, path string) (*AdamState, error) {
 			{st.B1M, bp.B1M, "B1M"}, {st.B1V, bp.B1V, "B1V"},
 			{st.W2M, bp.W2M, "W2M"}, {st.W2V, bp.W2V, "W2V"},
 			{st.B2M, bp.B2M, "B2M"}, {st.B2V, bp.B2V, "B2V"},
+		}
+		// SwiGLU moments exist only when the model has a gate projection;
+		// a mismatch between file and model on this point is an
+		// architecture change and should fail loudly like any other.
+		if st.W3M != nil {
+			pairs = append(pairs,
+				momentPair{st.W3M, bp.W3M, "W3M"},
+				momentPair{st.W3V, bp.W3V, "W3V"},
+				momentPair{st.B3M, bp.B3M, "B3M"},
+				momentPair{st.B3V, bp.B3V, "B3V"},
+			)
 		}
 		for _, p := range pairs {
 			if err := overwrite(p.dst, p.src); err != nil {

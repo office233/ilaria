@@ -33,6 +33,16 @@ type TransformerConfig struct {
 	// checkpoints). Only ForwardTrain applies it; inference/generation
 	// never see it. Typical: 0.1.
 	DropoutRate float32 `json:"dropout_rate,omitempty"`
+	// UseRoPE replaces learned absolute positions with rotary position
+	// embeddings (transformer_rope.go). OFF by default and MUST stay off
+	// for imported GPT-2 checkpoints, which were trained with absolute
+	// positions. For from-scratch models it removes the MaxSeqLen
+	// extrapolation wall and the position table's parameters.
+	UseRoPE bool `json:"use_rope,omitempty"`
+	// UseSwiGLU replaces the GELU MLP with a gated SiLU FFN
+	// (out = (SiLU(x·W1+b1) ⊙ (x·W3+b3))·W2+b2). OFF by default and MUST
+	// stay off for imported GPT-2 checkpoints (GELU MLP). Adds W3/B3.
+	UseSwiGLU bool `json:"use_swiglu,omitempty"`
 }
 
 // Notă: nu există DefaultEOSTokenID aici. Sursa unică de adevăr pentru
@@ -50,13 +60,16 @@ func DefaultTransformerConfig(vocabSize int) TransformerConfig {
 // central Config, allowing all hyperparameters to be overridden via JSON config.
 func TransformerConfigFromConfig(vocabSize int, cfg Config) TransformerConfig {
 	return TransformerConfig{
-		VocabSize:  vocabSize,
-		EmbedDim:   cfg.TransformerEmbedDim,
-		NumHeads:   cfg.TransformerNumHeads,
-		NumLayers:  cfg.TransformerNumLayers,
-		FFNDim:     cfg.TransformerFFNDim,
-		MaxSeqLen:  cfg.TransformerMaxSeqLen,
-		EOSTokenID: cfg.TransformerEOSTokenID,
+		VocabSize:   vocabSize,
+		EmbedDim:    cfg.TransformerEmbedDim,
+		NumHeads:    cfg.TransformerNumHeads,
+		NumLayers:   cfg.TransformerNumLayers,
+		FFNDim:      cfg.TransformerFFNDim,
+		MaxSeqLen:   cfg.TransformerMaxSeqLen,
+		EOSTokenID:  cfg.TransformerEOSTokenID,
+		UseRoPE:     cfg.TransformerUseRoPE,
+		UseSwiGLU:   cfg.TransformerUseSwiGLU,
+		DropoutRate: cfg.TransformerDropout,
 	}
 }
 
@@ -123,6 +136,11 @@ type MultiHeadAttention struct {
 	dropActive  bool
 	dropRng     *rand.Rand
 	lastDropMask *Tensor // [numHeads, seqLen, seqLen] when active, else nil
+
+	// useRoPE rotates Q/K after projection (transformer_rope.go). Set
+	// from TransformerConfig.UseRoPE at construction. lastQ/lastK are
+	// cached POST-rotation, so backward and the KV cache stay aligned.
+	useRoPE bool
 }
 
 // ensureMatrix returns t if it already has the requested 2D shape,
@@ -187,6 +205,14 @@ func (mha *MultiHeadAttention) Forward(x *Tensor) *Tensor {
 	K.AddInPlace(mha.BK)
 	V := x.MatMul(mha.WV)
 	V.AddInPlace(mha.BV)
+
+	// Rotary positions: rotate Q/K in place BEFORE caching, so lastQ /
+	// lastK (used by backward AND by the batched prefill's cache copy)
+	// hold the rotated values every consumer expects.
+	if mha.useRoPE {
+		applyRoPE(Q, numHeads, headDim, 0, false)
+		applyRoPE(K, numHeads, headDim, 0, false)
+	}
 
 	mha.lastQ = Q
 	mha.lastK = K
@@ -304,28 +330,44 @@ func (mha *MultiHeadAttention) ZeroGrad() {
 // Feed-Forward Network
 // ─────────────────────────────────────────────────────────────────────
 
-// FeedForward is a two-layer MLP with GELU activation.
-// FFN(x) = GELU(x·W1 + b1)·W2 + b2
+// FeedForward is a two-layer MLP with GELU activation:
+//
+//	FFN(x) = GELU(x·W1 + b1)·W2 + b2
+//
+// or, when useSwiGLU is set (TransformerConfig.UseSwiGLU), a gated
+// SiLU network with a third projection:
+//
+//	FFN(x) = (SiLU(x·W1 + b1) ⊙ (x·W3 + b3))·W2 + b2
 type FeedForward struct {
 	W1 *Tensor // [EmbedDim, FFNDim]
 	B1 *Tensor // [FFNDim]
 	W2 *Tensor // [FFNDim, EmbedDim]
 	B2 *Tensor // [EmbedDim]
 
+	// SwiGLU gate projection — nil unless useSwiGLU (enableSwiGLU).
+	W3 *Tensor // [EmbedDim, FFNDim]
+	B3 *Tensor // [FFNDim]
+
 	// Gradients
 	W1Grad, W2Grad *Tensor
 	B1Grad, B2Grad *Tensor
+	W3Grad, B3Grad *Tensor // nil unless useSwiGLU
+
+	useSwiGLU bool
 
 	// Cached for backward
 	lastInput  *Tensor
-	lastHidden *Tensor // pre-activation
-	lastAct    *Tensor // post-GELU
+	lastHidden *Tensor // pre-activation (x·W1+b1)
+	lastAct    *Tensor // post-GELU / post-gate (post-dropout when active)
+	lastGate   *Tensor // SwiGLU only: x·W3+b3
+	lastSiLU   *Tensor // SwiGLU only: SiLU(lastHidden)
 
 	// Scratch tensors for the cached generation path. stepHiddenBuf is
 	// [1, ffnDim] (also doubles as the post-GELU activation, see
 	// ForwardCachedStep); stepOutBuf is [1, embedDim]. Cache path has no
 	// backward, so we don't need separate pre/post-activation tensors.
 	stepHiddenBuf *Tensor // [1, ffnDim]
+	stepGateBuf   *Tensor // [1, ffnDim] — SwiGLU cached path only
 	stepOutBuf    *Tensor // [1, embedDim]
 
 	// gpu carries resident-weight handles for the cached step path.
@@ -360,7 +402,29 @@ func NewFeedForward(embedDim, ffnDim int, rng *rand.Rand) *FeedForward {
 	}
 }
 
-// Forward computes FFN(x) = GELU(x·W1 + b1)·W2 + b2.
+// enableSwiGLU allocates the gate projection and switches this FFN to
+// the gated-SiLU form. Called from NewMiniTransformer when the config
+// asks for it; also used by the persistence loaders.
+func (ff *FeedForward) enableSwiGLU(embedDim, ffnDim int, rng *rand.Rand) {
+	if ff.useSwiGLU {
+		return
+	}
+	std := float32(1.0 / math.Sqrt(float64(embedDim)))
+	ff.W3 = NewTensorRand(rng, std, embedDim, ffnDim)
+	ff.B3 = NewTensor(ffnDim)
+	ff.W3Grad = NewTensor(embedDim, ffnDim)
+	ff.B3Grad = NewTensor(ffnDim)
+	ff.useSwiGLU = true
+}
+
+// siluInPlace applies SiLU (x·σ(x)) elementwise.
+func siluInPlace(t *Tensor) {
+	for i, x := range t.Data {
+		t.Data[i] = x / (1 + float32(math.Exp(float64(-x))))
+	}
+}
+
+// Forward computes FFN(x) — GELU MLP or gated SiLU, see the type doc.
 func (ff *FeedForward) Forward(x *Tensor) *Tensor {
 	ff.lastInput = x
 
@@ -369,9 +433,30 @@ func (ff *FeedForward) Forward(x *Tensor) *Tensor {
 	hidden.AddInPlace(ff.B1)
 	ff.lastHidden = hidden
 
-	// GELU must produce a separate tensor: backward needs both lastHidden
-	// (pre-activation) and lastAct (post-activation).
-	activated := hidden.GELU()
+	var activated *Tensor
+	if ff.useSwiGLU {
+		// Gate path: g = x·W3 + b3; act = SiLU(hidden) ⊙ g.
+		// Both factors are cached — backward needs each to differentiate
+		// the other side of the product.
+		gate := x.MatMul(ff.W3)
+		gate.AddInPlace(ff.B3)
+		ff.lastGate = gate
+
+		silu := hidden.Clone()
+		siluInPlace(silu)
+		ff.lastSiLU = silu
+
+		activated = NewTensor(silu.Shape...)
+		for i := range activated.Data {
+			activated.Data[i] = silu.Data[i] * gate.Data[i]
+		}
+	} else {
+		// GELU must produce a separate tensor: backward needs both
+		// lastHidden (pre-activation) and lastAct (post-activation).
+		activated = hidden.GELU()
+		ff.lastGate = nil
+		ff.lastSiLU = nil
+	}
 
 	// Training-time dropout on the activations (inverted scaling).
 	// lastAct deliberately stores the POST-dropout tensor: both the W2
@@ -403,6 +488,10 @@ func (ff *FeedForward) ZeroGrad() {
 	ff.B1Grad.Zeros()
 	ff.W2Grad.Zeros()
 	ff.B2Grad.Zeros()
+	if ff.W3Grad != nil {
+		ff.W3Grad.Zeros()
+		ff.B3Grad.Zeros()
+	}
 }
 
 // ─────────────────────────────────────────────────────────────────────
@@ -572,6 +661,17 @@ func NewMiniTransformer(cfg TransformerConfig, rng *rand.Rand) *MiniTransformer 
 		Rng:            rng,
 	}
 	m.SetDropout(cfg.DropoutRate)
+	if cfg.UseRoPE {
+		emb.AddPositional = false
+		for _, b := range blocks {
+			b.Attn.useRoPE = true
+		}
+	}
+	if cfg.UseSwiGLU {
+		for _, b := range blocks {
+			b.FFN.enableSwiGLU(cfg.EmbedDim, cfg.FFNDim, rng)
+		}
+	}
 	return m
 }
 
@@ -770,6 +870,10 @@ func (m *MiniTransformer) ParamCount() int {
 
 		// FFN: W1[EmbedDim, FFNDim] + B1[FFNDim] + W2[FFNDim, EmbedDim] + B2[EmbedDim]
 		count += d*m.Config.FFNDim + m.Config.FFNDim + m.Config.FFNDim*d + d
+		if m.Config.UseSwiGLU {
+			// Gate projection W3[EmbedDim, FFNDim] + B3[FFNDim]
+			count += d*m.Config.FFNDim + m.Config.FFNDim
+		}
 
 		// LayerNorm: 2 × (gamma[EmbedDim] + beta[EmbedDim])
 		count += 4 * d

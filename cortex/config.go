@@ -290,6 +290,12 @@ type Config struct {
 	TransformerNumLayers int `json:"transformer_num_layers"`  // Transformer blocks (default 4)
 	TransformerFFNDim    int `json:"transformer_ffn_dim"`     // FFN inner dimension (default 1024)
 	TransformerMaxSeqLen int `json:"transformer_max_seq_len"` // Max sequence length (default 512)
+	// Modern-architecture switches for from-scratch models (cursa E'+).
+	// Both MUST stay false for imported GPT-2 checkpoints, whose weights
+	// assume absolute positions and a GELU MLP.
+	TransformerUseRoPE   bool    `json:"transformer_use_rope"`   // Rotary positions (default false)
+	TransformerUseSwiGLU bool    `json:"transformer_use_swiglu"` // Gated SiLU FFN (default false)
+	TransformerDropout   float32 `json:"transformer_dropout"`    // Training dropout rate (default 0)
 
 	// Adam optimizer hyperparameters. Sursa unică pentru DefaultAdamConfig
 	// din transformer_optimizer.go. Modificabile fără recompilare prin

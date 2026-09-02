@@ -129,6 +129,15 @@ func (mha *MultiHeadAttention) ForwardCachedStep(x *Tensor, cache *KVCache) *Ten
 	}
 	mha.stepVBuf.AddInPlace(mha.BV)
 
+	// Rotary positions: the new token's absolute position is the current
+	// cache length (it becomes row `pos` after the append below). Cached
+	// K rows are already rotated — same convention as training/prefill.
+	if mha.useRoPE {
+		pos := cache.K.Shape[0]
+		applyRoPE(mha.stepQBuf, numHeads, headDim, pos, false)
+		applyRoPE(mha.stepKBuf, numHeads, headDim, pos, false)
+	}
+
 	// Append K/V into the cache. appendRow only reads from the row, so
 	// stepKBuf/stepVBuf are free to be reused on the next step.
 	cache.K = appendRow(cache.K, mha.stepKBuf, embedDim)
@@ -234,7 +243,21 @@ func (ff *FeedForward) ForwardCachedStep(x *Tensor) *Tensor {
 		x.MatMulInto(ff.stepHiddenBuf, ff.W1)
 	}
 	ff.stepHiddenBuf.AddInPlace(ff.B1)
-	ff.stepHiddenBuf.GELUInPlace()
+
+	if ff.useSwiGLU {
+		// Gated path: hidden = SiLU(hidden) ⊙ (x·W3 + b3).
+		ff.stepGateBuf = ensureRow(ff.stepGateBuf, ffnDim)
+		if !(ff.gpu != nil && ff.gpu.w3 >= 0 && gpuMatVecInto(ff.stepGateBuf, x, ff.gpu.w3, false, ffnDim, embedDim)) {
+			x.MatMulInto(ff.stepGateBuf, ff.W3)
+		}
+		ff.stepGateBuf.AddInPlace(ff.B3)
+		siluInPlace(ff.stepHiddenBuf)
+		for i := range ff.stepHiddenBuf.Data {
+			ff.stepHiddenBuf.Data[i] *= ff.stepGateBuf.Data[i]
+		}
+	} else {
+		ff.stepHiddenBuf.GELUInPlace()
+	}
 
 	if !(ff.gpu != nil && gpuMatVecInto(ff.stepOutBuf, ff.stepHiddenBuf, ff.gpu.w2, false, embedDim, ffnDim)) {
 		ff.stepHiddenBuf.MatMulInto(ff.stepOutBuf, ff.W2)
@@ -382,6 +405,11 @@ func (m *MiniTransformer) singleTokenEmbedding(id, pos int) *Tensor {
 	}
 	out := NewTensor(1, emb.EmbedDim)
 	tokOff := id * emb.EmbedDim
+	if !emb.AddPositional {
+		// RoPE models: position enters via Q/K rotation, not here.
+		copy(out.Data, emb.TokenEmb.Data[tokOff:tokOff+emb.EmbedDim])
+		return out
+	}
 	posOff := pos * emb.EmbedDim
 	for j := 0; j < emb.EmbedDim; j++ {
 		out.Data[j] = emb.TokenEmb.Data[tokOff+j] + emb.PosEmb.Data[posOff+j]

@@ -149,3 +149,105 @@ func TestBatchPerTokenWeighting(t *testing.T) {
 			got, wantMean, (lossLong+lossShort)/2)
 	}
 }
+
+// TestRoPESwiGLU_PersistRoundtrip: the modern-architecture model must
+// survive the binary checkpoint format — W3/B3 travel after each
+// block's LN tensors, and the header's UseSwiGLU/UseRoPE flags decide
+// the layout on both ends.
+func TestRoPESwiGLU_PersistRoundtrip(t *testing.T) {
+	cfg := regTestConfig()
+	cfg.UseRoPE = true
+	cfg.UseSwiGLU = true
+	m := NewMiniTransformer(cfg, rand.New(rand.NewSource(51)))
+
+	path := t.TempDir() + "/modern.nxtf"
+	if err := m.SaveBinary(path); err != nil {
+		t.Fatalf("save: %v", err)
+	}
+	back, err := LoadMiniTransformer(path, rand.New(rand.NewSource(52)))
+	if err != nil || back == nil {
+		t.Fatalf("load: %v (nil=%v)", err, back == nil)
+	}
+	if !back.Config.UseSwiGLU || !back.Config.UseRoPE {
+		t.Fatal("architecture flags lost in roundtrip")
+	}
+	if back.Blocks[0].FFN.W3 == nil {
+		t.Fatal("W3 not reconstructed")
+	}
+	for i := range m.Blocks[0].FFN.W3.Data {
+		if m.Blocks[0].FFN.W3.Data[i] != back.Blocks[0].FFN.W3.Data[i] {
+			t.Fatalf("W3 differs at %d", i)
+		}
+	}
+	if back.Embedding.AddPositional {
+		t.Fatal("reloaded RoPE model re-enabled absolute positions")
+	}
+
+	// Same greedy stream before and after the roundtrip.
+	a := m.GenerateFast([]int{5, 9, 14}, 6, 0.0001, 1)
+	b := back.GenerateFast([]int{5, 9, 14}, 6, 0.0001, 1)
+	for i := range a {
+		if a[i] != b[i] {
+			t.Fatalf("generation diverged after roundtrip at %d", i)
+		}
+	}
+}
+
+// TestRoPESwiGLU_TrainingConverges: end-to-end overfit with the full
+// modern stack — RoPE, SwiGLU, dropout, AdamW, token-weighted batch.
+func TestRoPESwiGLU_TrainingConverges(t *testing.T) {
+	cfg := regTestConfig()
+	cfg.UseRoPE = true
+	cfg.UseSwiGLU = true
+	cfg.DropoutRate = 0.1
+	m := NewMiniTransformer(cfg, rand.New(rand.NewSource(61)))
+
+	adamCfg := DefaultAdamConfig()
+	adamCfg.WeightDecay = 0.01
+	opt := NewAdamState(m, adamCfg)
+
+	batch := [][]int{
+		{2, 5, 10, 15, 20, 8, 3},
+		{2, 7, 11, 3},
+	}
+	first := m.TrainStepAdamBatch(batch, 0.01, opt)
+	var last float32
+	for i := 0; i < 200; i++ {
+		last = m.TrainStepAdamBatch(batch, 0.01, opt)
+	}
+	if last != last {
+		t.Fatal("NaN loss under RoPE+SwiGLU training")
+	}
+	if last > first*0.5 {
+		t.Fatalf("modern stack does not converge: %.4f → %.4f", first, last)
+	}
+	t.Logf("RoPE+SwiGLU+dropout+AdamW loss: %.4f → %.4f over 200 batch steps", first, last)
+}
+
+// TestRoPESwiGLU_AdamStateRoundtrip: optimizer moments for the gate
+// projection must survive save/load — silent loss of W3 moments would
+// corrupt any resumed training run.
+func TestRoPESwiGLU_AdamStateRoundtrip(t *testing.T) {
+	cfg := regTestConfig()
+	cfg.UseSwiGLU = true
+	m := NewMiniTransformer(cfg, rand.New(rand.NewSource(71)))
+	opt := NewAdamState(m, DefaultAdamConfig())
+	m.TrainStepAdam([]int{2, 5, 9, 3}, 0.01, opt)
+
+	path := t.TempDir() + "/opt.nxto"
+	if err := SaveAdamState(opt, path); err != nil {
+		t.Fatalf("save: %v", err)
+	}
+	back, err := LoadAdamState(m, path)
+	if err != nil || back == nil {
+		t.Fatalf("load: %v (nil=%v)", err, back == nil)
+	}
+	if back.Blocks[0].W3M == nil {
+		t.Fatal("W3 moments not reconstructed")
+	}
+	for i := range opt.Blocks[0].W3M.Data {
+		if opt.Blocks[0].W3M.Data[i] != back.Blocks[0].W3M.Data[i] {
+			t.Fatalf("W3M differs at %d", i)
+		}
+	}
+}

@@ -53,9 +53,11 @@ type mhaJSON struct {
 }
 
 // ffnJSON serialises one FeedForward block (weights + biases only).
+// W3/B3 are empty for GELU FFNs and only populated under SwiGLU.
 type ffnJSON struct {
 	W1, B1 tensorJSON
 	W2, B2 tensorJSON
+	W3, B3 tensorJSON
 }
 
 // blockJSON serialises one TransformerBlock.
@@ -110,6 +112,7 @@ func (m *MiniTransformer) Save(path string) error {
 			FFN: ffnJSON{
 				W1: tensorToJSON(b.FFN.W1), B1: tensorToJSON(b.FFN.B1),
 				W2: tensorToJSON(b.FFN.W2), B2: tensorToJSON(b.FFN.B2),
+				W3: tensorToJSON(b.FFN.W3), B3: tensorToJSON(b.FFN.B3),
 			},
 			LN1Gamma: tensorToJSON(b.LN1Gamma),
 			LN1Beta:  tensorToJSON(b.LN1Beta),
@@ -250,6 +253,14 @@ func LoadMiniTransformer(path string, rng *rand.Rand) (*MiniTransformer, error) 
 		}
 		if t := tensorFromJSON(bj.FFN.B2); t != nil {
 			b.FFN.B2 = t
+		}
+		// SwiGLU gate: NewMiniTransformer already allocated W3/B3 when
+		// the persisted config carries UseSwiGLU — just overwrite.
+		if t := tensorFromJSON(bj.FFN.W3); t != nil {
+			b.FFN.W3 = t
+		}
+		if t := tensorFromJSON(bj.FFN.B3); t != nil {
+			b.FFN.B3 = t
 		}
 		if t := tensorFromJSON(bj.LN1Gamma); t != nil {
 			b.LN1Gamma = t

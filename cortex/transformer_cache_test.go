@@ -244,3 +244,55 @@ func TestPrefillBatchedEquivalence(t *testing.T) {
 		}
 	}
 }
+
+// TestPrefillAndCacheEquivalence_RoPESwiGLU: the cached generation path
+// must match the training-path forward under the modern architecture
+// too. RoPE makes this test critical — the cache stores ROTATED keys,
+// and any position-offset mistake in the cached step desynchronises
+// generation from training silently.
+func TestPrefillAndCacheEquivalence_RoPESwiGLU(t *testing.T) {
+	rng := rand.New(rand.NewSource(123))
+	cfg := TransformerConfig{
+		VocabSize: 90, EmbedDim: 24, NumHeads: 3,
+		NumLayers: 2, FFNDim: 48, MaxSeqLen: 32, EOSTokenID: 3,
+		UseRoPE: true, UseSwiGLU: true,
+	}
+	m := NewMiniTransformer(cfg, rng)
+	prompt := []int{4, 17, 55, 8, 71, 22, 9}
+
+	// Batched prefill vs serial reference under RoPE+SwiGLU.
+	cacheB, hiddenB := m.prefill(prompt)
+	cacheS, hiddenS := m.prefillSerial(prompt)
+	const tol = 1e-4
+	for l := range cacheB.Layers {
+		for i := range cacheS.Layers[l].K.Data {
+			if d := cacheB.Layers[l].K.Data[i] - cacheS.Layers[l].K.Data[i]; d > tol || d < -tol {
+				t.Fatalf("RoPE K mismatch at layer %d idx %d", l, i)
+			}
+		}
+		for i := range cacheS.Layers[l].V.Data {
+			if d := cacheB.Layers[l].V.Data[i] - cacheS.Layers[l].V.Data[i]; d > tol || d < -tol {
+				t.Fatalf("V mismatch at layer %d idx %d", l, i)
+			}
+		}
+	}
+	for i := range hiddenS.Data {
+		if d := hiddenB.Data[i] - hiddenS.Data[i]; d > tol || d < -tol {
+			t.Fatalf("hidden mismatch idx %d", i)
+		}
+	}
+
+	// Greedy generation: cached fast path vs uncached full re-forward.
+	// Identical arch, identical weights — token streams must agree.
+	fast := m.GenerateFast(prompt, 8, 0.0001, 1)
+	slow := m.Generate(prompt, 8, 0.0001, 1)
+	if len(fast) != len(slow) {
+		t.Fatalf("length mismatch: fast=%d slow=%d", len(fast), len(slow))
+	}
+	for i := range fast {
+		if fast[i] != slow[i] {
+			t.Fatalf("greedy divergence at %d: fast=%d slow=%d (fast=%v slow=%v)",
+				i, fast[i], slow[i], fast, slow)
+		}
+	}
+}

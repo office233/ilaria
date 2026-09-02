@@ -47,7 +47,9 @@ func gradCheck(t *testing.T, name string, param, paramGrad *Tensor, lossFn func(
 // buildTinyTransformer creates a minuscule transformer suitable for
 // gradient checking — small enough that numeric grad over every param
 // finishes in well under a second, but exercises every layer type.
-func buildTinyTransformer() (*MiniTransformer, []int) {
+// Optional mutators adjust the config before construction (used to
+// gradcheck the RoPE/SwiGLU variants with the same machinery).
+func buildTinyTransformer(mutate ...func(*TransformerConfig)) (*MiniTransformer, []int) {
 	rng := rand.New(rand.NewSource(1))
 	cfg := TransformerConfig{
 		VocabSize:  20,
@@ -57,6 +59,9 @@ func buildTinyTransformer() (*MiniTransformer, []int) {
 		FFNDim:     16,
 		MaxSeqLen:  8,
 		EOSTokenID: 3,
+	}
+	for _, f := range mutate {
+		f(&cfg)
 	}
 	m := NewMiniTransformer(cfg, rng)
 	// Deterministic short input (seqLen=6 → 5 train positions).
@@ -70,6 +75,31 @@ func buildTinyTransformer() (*MiniTransformer, []int) {
 // most important test for the backward implementation.
 func TestTransformerGradCheck(t *testing.T) {
 	m, tokens := buildTinyTransformer()
+	runFullGradCheck(t, m, tokens)
+}
+
+// TestTransformerGradCheck_RoPESwiGLU runs the identical
+// finite-difference validation with rotary positions and the gated
+// SiLU FFN enabled — the config planned for from-scratch training
+// (cursa E'). Every analytic path touched by the new architecture
+// (rotation backward, gate product, SiLU derivative, W3/B3 grads) is
+// covered by the same machinery that validated the GPT-2 form.
+func TestTransformerGradCheck_RoPESwiGLU(t *testing.T) {
+	m, tokens := buildTinyTransformer(func(c *TransformerConfig) {
+		c.UseRoPE = true
+		c.UseSwiGLU = true
+	})
+	if m.Blocks[0].FFN.W3 == nil {
+		t.Fatal("SwiGLU gate not allocated")
+	}
+	if m.Embedding.AddPositional {
+		t.Fatal("PosEmb still active under RoPE")
+	}
+	runFullGradCheck(t, m, tokens)
+}
+
+func runFullGradCheck(t *testing.T, m *MiniTransformer, tokens []int) {
+	t.Helper()
 
 	// Run one TrainStepBackprop with lr=0 so gradients populate but
 	// parameters do NOT move. This way every subsequent numeric
@@ -115,9 +145,16 @@ func TestTransformerGradCheck(t *testing.T) {
 	gradCheck(t, "LNFGamma", m.LNFGamma, m.LNFGammaGrad, lossFn, eps, maxRel, maxAbs)
 	gradCheck(t, "LNFBeta", m.LNFBeta, m.LNFBetaGrad, lossFn, eps, maxRel, maxAbs)
 
+	// SwiGLU gate projection (when present).
+	if b.FFN.W3 != nil {
+		gradCheck(t, "FFN.W3", b.FFN.W3, b.FFN.W3Grad, lossFn, eps, maxRel, maxAbs)
+		gradCheck(t, "FFN.B3", b.FFN.B3, b.FFN.B3Grad, lossFn, eps, maxRel, maxAbs)
+	}
+
 	// Embedding weights — token embedding gets gradients from two paths
 	// (LM head tie + embedding lookup), positional embedding only from
-	// the lookup path. Both must match the numeric gradient.
+	// the lookup path (and not at all under RoPE, where its numeric
+	// gradient is provably zero and the check still holds).
 	gradCheck(t, "TokenEmb", m.Embedding.TokenEmb, m.Embedding.TokenEmbGrad, lossFn, eps, maxRel, maxAbs)
 	gradCheck(t, "PosEmb", m.Embedding.PosEmb, m.Embedding.PosEmbGrad, lossFn, eps, maxRel, maxAbs)
 }

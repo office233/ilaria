@@ -40,9 +40,10 @@ type mhaGPU struct {
 	wq, wk, wv, wo int
 }
 
-// ffnGPU holds resident handles for one FFN's matrices.
+// ffnGPU holds resident handles for one FFN's matrices. w3 is -1 for
+// GELU FFNs (no gate projection).
 type ffnGPU struct {
-	w1, w2 int
+	w1, w2, w3 int
 }
 
 // gpuResidentState tracks everything EnableGPUGeneration uploaded so
@@ -108,9 +109,12 @@ func (m *MiniTransformer) EnableGPUGeneration() error {
 			return fmt.Errorf("block %d attention upload: %w", i, err)
 		}
 
-		var f ffnGPU
+		f := ffnGPU{w3: -1}
 		if f.w1, err = upload(b.FFN.W1); err == nil {
 			f.w2, err = upload(b.FFN.W2)
+		}
+		if err == nil && b.FFN.W3 != nil {
+			f.w3, err = upload(b.FFN.W3)
 		}
 		if err != nil {
 			teardown()

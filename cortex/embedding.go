@@ -26,6 +26,11 @@ type EmbeddingTable struct {
 	MaxSeqLen  int
 	UnkTokenID int // Fallback token ID for out-of-range IDs (default 1)
 
+	// AddPositional controls whether PosEmb is added to (and its grad
+	// accumulated from) the lookup. Set false under RoPE, where position
+	// enters through Q/K rotation instead and PosEmb stays untrained.
+	AddPositional bool
+
 	// Gradients (accumulated during backward pass)
 	TokenEmbGrad *Tensor // [VocabSize, EmbedDim]
 	PosEmbGrad   *Tensor // [MaxSeqLen, EmbedDim]
@@ -42,14 +47,15 @@ func NewEmbeddingTable(vocabSize, embedDim, maxSeqLen int, rng *rand.Rand, cfgs 
 	}
 
 	return &EmbeddingTable{
-		TokenEmb:     NewTensorRand(rng, std, vocabSize, embedDim),
-		PosEmb:       NewTensorRand(rng, std, maxSeqLen, embedDim),
-		VocabSize:    vocabSize,
-		EmbedDim:     embedDim,
-		MaxSeqLen:    maxSeqLen,
-		UnkTokenID:   unkID,
-		TokenEmbGrad: NewTensor(vocabSize, embedDim),
-		PosEmbGrad:   NewTensor(maxSeqLen, embedDim),
+		TokenEmb:      NewTensorRand(rng, std, vocabSize, embedDim),
+		PosEmb:        NewTensorRand(rng, std, maxSeqLen, embedDim),
+		VocabSize:     vocabSize,
+		EmbedDim:      embedDim,
+		MaxSeqLen:     maxSeqLen,
+		UnkTokenID:    unkID,
+		AddPositional: true,
+		TokenEmbGrad:  NewTensor(vocabSize, embedDim),
+		PosEmbGrad:    NewTensor(maxSeqLen, embedDim),
 	}
 }
 
@@ -81,8 +87,12 @@ func (e *EmbeddingTable) Forward(tokenIDs []int) *Tensor {
 		posOff := pos * e.EmbedDim
 		outOff := pos * e.EmbedDim
 
-		for j := 0; j < e.EmbedDim; j++ {
-			output.Data[outOff+j] = e.TokenEmb.Data[tokOff+j] + e.PosEmb.Data[posOff+j]
+		if e.AddPositional {
+			for j := 0; j < e.EmbedDim; j++ {
+				output.Data[outOff+j] = e.TokenEmb.Data[tokOff+j] + e.PosEmb.Data[posOff+j]
+			}
+		} else {
+			copy(output.Data[outOff:outOff+e.EmbedDim], e.TokenEmb.Data[tokOff:tokOff+e.EmbedDim])
 		}
 	}
 
@@ -110,7 +120,9 @@ func (e *EmbeddingTable) Backward(dOutput *Tensor, tokenIDs []int) {
 		for j := 0; j < e.EmbedDim; j++ {
 			grad := dOutput.Data[outOff+j]
 			e.TokenEmbGrad.Data[tokOff+j] += grad
-			e.PosEmbGrad.Data[posOff+j] += grad
+			if e.AddPositional {
+				e.PosEmbGrad.Data[posOff+j] += grad
+			}
 		}
 	}
 }

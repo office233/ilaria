@@ -119,10 +119,13 @@ egală. Doar DUPĂ ce există un model coerent de comprimat.
 | 2 | AdamW (decay decuplat, doar matrici) + dropout attn/FFN (mască inversată, doar ForwardTrain) | `adamUpdateWD`, `transformer.go`, trainer `-weight-decay`/`-dropout` (default 0.01/0.1) | ✅ 2026-09-02 |
 | 3 | Top-p + repetition penalty | `transformer_sampling.go` (GenerateSampled) | ✅ 2026-09-02 |
 | 4 | Prefill batched (un Forward peste prompt, KV din lastK/lastV; serial păstrat ca referință de test) | `transformer_cache.go` prefill/prefillSerial | ✅ 2026-09-02 |
-| 5 | RoPE — OBLIGATORIU config-gated: greutățile GPT-2 importate cer poziții absolute | `transformer.go`, cache, backward | deschis |
-| 6 | SwiGLU — la fel, config-gated (GPT-2 cere GELU) | FFN + backward | deschis |
+| 5 | RoPE config-gated (`TransformerConfig.UseRoPE`; PosEmb dezactivat, rotație Q/K + backward invers, cache pe K rotit; validat prin gradcheck cu diferențe finite) | `transformer_rope.go` + integrări | ✅ 2026-09-02 |
+| 6 | SwiGLU config-gated (`UseSwiGLU`; W3/B3 + momenti Adam + persistență v1/v2 + handle GPU rezident; gradcheck ✅) | FFN + backward + persist | ✅ 2026-09-02 |
 | 7 | Numărare incrementală a perechilor la antrenarea BPE (byte-level EXISTĂ deja via GPT-2 mode) | `tokenizer.go:202-327` | deschis |
-| 8 | Update Adam sparse pe embeddings (doar rândurile atinse) | `embedding.go`, optimizer | deschis |
+| 8 | ~~Update Adam sparse pe embeddings~~ — RETRAS: cu greutăți legate, gradientul capului LM prin softmax e DENS pe tot vocabularul (dLogits ≠ 0 peste tot); update pe rânduri „atinse" ar fi incorect. Ar cere sampled softmax — schimbare majoră, altă fază. | — | retras (motivat) |
+
+Config nou pentru cursa E' (JSON, fără recompilare): `transformer_use_rope`,
+`transformer_use_swiglu`, `transformer_dropout`, `adam_weight_decay`.
 | 9 | Checkpoint binar | `transformer_persist_binary.go` (NXTF2BIN) | ✅ 2026-09-02 |
 
 Notă: rescorarea istorică (Faza 0.1 pasul 3) e IMPOSIBILĂ pe această mașină —

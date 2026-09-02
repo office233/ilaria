@@ -94,6 +94,9 @@ type adamBlockState struct {
 	B1M, B1V *Tensor
 	W2M, W2V *Tensor
 	B2M, B2V *Tensor
+	// SwiGLU gate projection moments — nil for GELU FFNs.
+	W3M, W3V *Tensor
+	B3M, B3V *Tensor
 }
 
 // NewAdamState allocates moment buffers shaped to match m. Cheap; do it
@@ -131,6 +134,10 @@ func NewAdamState(m *MiniTransformer, cfg AdamConfig) *AdamState {
 			W2M: zero(b.FFN.W2), W2V: zero(b.FFN.W2),
 			B2M: zero(b.FFN.B2), B2V: zero(b.FFN.B2),
 		}
+		if b.FFN.W3 != nil {
+			s.Blocks[i].W3M, s.Blocks[i].W3V = zero(b.FFN.W3), zero(b.FFN.W3)
+			s.Blocks[i].B3M, s.Blocks[i].B3V = zero(b.FFN.B3), zero(b.FFN.B3)
+		}
 	}
 	return s
 }
@@ -166,6 +173,10 @@ func gradGlobalNorm(m *MiniTransformer) float32 {
 		addSq(b.FFN.B1Grad)
 		addSq(b.FFN.W2Grad)
 		addSq(b.FFN.B2Grad)
+		if b.FFN.W3Grad != nil {
+			addSq(b.FFN.W3Grad)
+			addSq(b.FFN.B3Grad)
+		}
 	}
 	return float32(math.Sqrt(sumSq))
 }
@@ -210,6 +221,10 @@ func clipGradients(m *MiniTransformer, maxNorm float32) float32 {
 		scaleTensor(b.FFN.B1Grad)
 		scaleTensor(b.FFN.W2Grad)
 		scaleTensor(b.FFN.B2Grad)
+		if b.FFN.W3Grad != nil {
+			scaleTensor(b.FFN.W3Grad)
+			scaleTensor(b.FFN.B3Grad)
+		}
 	}
 	return norm
 }
@@ -284,6 +299,10 @@ func (s *AdamState) Apply(m *MiniTransformer, lr float32) {
 		adamUpdate(b.FFN.B1, b.FFN.B1Grad, st.B1M, st.B1V, lr, s.Cfg, s.Step)
 		adamUpdateWD(b.FFN.W2, b.FFN.W2Grad, st.W2M, st.W2V, lr, s.Cfg, s.Step, wd)
 		adamUpdate(b.FFN.B2, b.FFN.B2Grad, st.B2M, st.B2V, lr, s.Cfg, s.Step)
+		if b.FFN.W3 != nil && st.W3M != nil {
+			adamUpdateWD(b.FFN.W3, b.FFN.W3Grad, st.W3M, st.W3V, lr, s.Cfg, s.Step, wd)
+			adamUpdate(b.FFN.B3, b.FFN.B3Grad, st.B3M, st.B3V, lr, s.Cfg, s.Step)
+		}
 	}
 }
 
@@ -494,5 +513,9 @@ func scaleAllGrads(m *MiniTransformer, s float32) {
 		scale(b.FFN.B1Grad)
 		scale(b.FFN.W2Grad)
 		scale(b.FFN.B2Grad)
+		if b.FFN.W3Grad != nil {
+			scale(b.FFN.W3Grad)
+			scale(b.FFN.B3Grad)
+		}
 	}
 }

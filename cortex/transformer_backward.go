@@ -230,6 +230,36 @@ func (ff *FeedForward) Backward(dOut *Tensor) *Tensor {
 		}
 	}
 
+	if ff.useSwiGLU {
+		// act = SiLU(h1) ⊙ g — differentiate each factor by the other.
+		silu := ff.lastSiLU
+		gate := ff.lastGate
+
+		dH1 := NewTensor(hidden.Shape...) // via SiLU'(h1)
+		dGate := NewTensor(gate.Shape...)
+		for i := range dAct.Data {
+			d := dAct.Data[i]
+			dGate.Data[i] = d * silu.Data[i]
+			// SiLU'(x) = σ(x)·(1 + x·(1−σ(x))), with σ recovered from the
+			// cached SiLU value where possible is fiddly — recompute σ.
+			sig := 1 / (1 + float32(math.Exp(float64(-hidden.Data[i]))))
+			dH1.Data[i] = d * gate.Data[i] * sig * (1 + hidden.Data[i]*(1-sig))
+		}
+
+		dX1, dW1 := matMulBackward(dH1, x, ff.W1)
+		dB1 := addBiasBackward(dH1)
+		ff.W1Grad.AddInPlace(dW1)
+		ff.B1Grad.AddInPlace(dB1)
+
+		dX3, dW3 := matMulBackward(dGate, x, ff.W3)
+		dB3 := addBiasBackward(dGate)
+		ff.W3Grad.AddInPlace(dW3)
+		ff.B3Grad.AddInPlace(dB3)
+
+		dX1.AddInPlace(dX3)
+		return dX1
+	}
+
 	// GELU: dHidden = dAct * GELU'(hidden)
 	dHidden := geluBackward(dAct, hidden)
 
@@ -376,6 +406,15 @@ func (mha *MultiHeadAttention) Backward(dOut *Tensor) *Tensor {
 				dV.Data[i*embedDim+hStart+j] += dVh.Data[i*headDim+j]
 			}
 		}
+	}
+
+	// RoPE backward: dQ/dK above are gradients w.r.t. the ROTATED
+	// projections. The rotation is orthogonal, so its backward is the
+	// inverse rotation — applied before the projection-weight gradients
+	// AND the bias gradients (the bias is added pre-rotation in Forward).
+	if mha.useRoPE {
+		applyRoPE(dQ, numHeads, headDim, 0, true)
+		applyRoPE(dK, numHeads, headDim, 0, true)
 	}
 
 	// Q = x · WQ + BQ  →  dX_Q = dQ · WQ^T,  dWQ = x^T · dQ

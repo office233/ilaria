@@ -57,6 +57,11 @@ func (m *MiniTransformer) weightTensors() []*Tensor {
 			b.FFN.W1, b.FFN.B1, b.FFN.W2, b.FFN.B2,
 			b.LN1Gamma, b.LN1Beta, b.LN2Gamma, b.LN2Beta,
 		)
+		// SwiGLU gate — presence is decided by Config.UseSwiGLU, which
+		// travels in the header, so save and load agree on the layout.
+		if b.FFN.W3 != nil {
+			ts = append(ts, b.FFN.W3, b.FFN.B3)
+		}
 	}
 	return append(ts, m.LNFGamma, m.LNFBeta)
 }

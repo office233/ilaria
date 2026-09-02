@@ -125,6 +125,35 @@ Nexuscortex/
 
 ---
 
+## Continual Learning Benchmark — "learn once, answer forever"
+
+The one capability this architecture has that a frozen LLM structurally cannot:
+**learning a new fact from a single exposure, with zero gradient updates, that
+survives a full restart.**
+
+Protocol (`cmd/continual-bench`, 100 invented facts in `data/evals/continual.jsonl`
+that appear in no training corpus anywhere): each fact is stored ONCE in the
+hippocampus, persisted to disk, the process state is discarded, and a fresh
+process answers paraphrased questions using the same frozen transformer
+(DistilGPT-2 82M imported via `cmd/gpt2-import`) three ways:
+
+| Arm | Strict accuracy | Token recall |
+|-----|----------------|--------------|
+| **Full system** (episodic memory → context + logit bias) | **94%** | 64% |
+| Logit bias only (no context injection) | 2% | 2% |
+| **Frozen LLM baseline** (same weights, no memory) | **1%** | 1% |
+
+- Memory recall after restart: 97% · gradient updates: **0** · weight hash
+  verified identical before/after.
+- Scoring: word-boundary matching, scorer v2 (`cortex/evalsuite`).
+- Honest reading: the win comes from one-shot episodic retrieval feeding the
+  frozen generator's context (plus a bounded logit bias). The bias alone does
+  not carry multi-token invented words — that ablation is reported, not hidden.
+- Reproduce: `go run -tags gpu ./cmd/continual-bench -gpu -rep-penalty 1.0 -temp 0.3`
+  (CPU works too, drop the flags).
+
+---
+
 ## Benchmark Performance (local, vs own dense baseline)
 
 | Operation | Speed | Allocations |

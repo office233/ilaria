@@ -173,6 +173,33 @@ Pași următori conveniți:
    de făcut bootstrap pe un data-dir care are doar transformer+tokenizer.
 3. **Benchmark-ul continual-learning (Ținta A)** — acum cu generator fluent sub punte.
 
+## 5-ter. EXECUTAT 2026-09-02 (seara): Ținta A atinsă — benchmark-ul continual learning
+
+Livrat:
+- `data/evals/continual.jsonl` — 100 fapte INVENTATE (țări, inventatori, romane,
+  coduri fictive), imposibil de știut de orice LLM. Subiect unic per fapt.
+- `cmd/continual-bench` — protocol teach-once → persist → restart (obiecte noi,
+  seed diferit, doar discul transportă cunoașterea) → eval în 3 brațe de ablație,
+  scorare evalsuite v2, checksum de greutăți care dovedește zero antrenare.
+- Secțiune README cu rezultatul.
+
+Rezultat (DistilGPT-2 82M înghețat, GPU rezident, 142s pentru 300 generări):
+
+| Braț | Acuratețe strictă |
+|---|---|
+| Sistem complet (memorie→context + bias) | **94%** |
+| Doar bias de logits | 2% |
+| LLM înghețat (aceleași greutăți, fără memorie) | **1%** |
+
+Recall memorie după restart: 97%. Gradient updates: 0. Hash greutăți identic.
+
+Lecție de mecanism (raportată onest): bias-ul de logits singur NU poate dicta
+cuvinte inventate multi-token; injecția memoriei în context (RAG peste memoria
+episodică one-shot) e mecanismul care duce greul. Ambele rămân în sistem —
+bias-ul ajută la copiere, contextul poartă conținutul. Îmbunătățiri ulterioare
+posibile: recall 97→100 (praguri keyword), exemplu one-shot în promptul
+Organism.Process, semantic memory ca a doua sursă (rămâne din Faza 1.3).
+
 ## 6. Ce NU facem (decizii explicite)
 
 - Nu wire-uim ternary în transformer înainte de QAT real — STDP-ul actual nu poate

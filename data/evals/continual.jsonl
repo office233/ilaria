@@ -1,0 +1,100 @@
+{"id":"cb001","category":"geo_capital","fact":"the capital city of zorvania is melthara","question":"what is the capital of zorvania","expected":["melthara"]}
+{"id":"cb002","category":"geo_capital","fact":"the capital city of brenwick is oskarvale","question":"what is the capital of brenwick","expected":["oskarvale"]}
+{"id":"cb003","category":"geo_capital","fact":"the capital city of tavrosia is quellin","question":"what is the capital of tavrosia","expected":["quellin"]}
+{"id":"cb004","category":"geo_capital","fact":"the capital city of mirdovia is felkstad","question":"what is the capital of mirdovia","expected":["felkstad"]}
+{"id":"cb005","category":"geo_capital","fact":"the capital city of ulmeria is darvento","question":"what is the capital of ulmeria","expected":["darvento"]}
+{"id":"cb006","category":"geo_capital","fact":"the capital city of kressland is vobrunn","question":"what is the capital of kressland","expected":["vobrunn"]}
+{"id":"cb007","category":"geo_capital","fact":"the capital city of pelthoria is jandrik","question":"what is the capital of pelthoria","expected":["jandrik"]}
+{"id":"cb008","category":"geo_capital","fact":"the capital city of squamora is teluvan","question":"what is the capital of squamora","expected":["teluvan"]}
+{"id":"cb009","category":"geo_capital","fact":"the capital city of drovinia is maskelyn","question":"what is the capital of drovinia","expected":["maskelyn"]}
+{"id":"cb010","category":"geo_capital","fact":"the capital city of yentavia is corbusk","question":"what is the capital of yentavia","expected":["corbusk"]}
+{"id":"cb011","category":"geo_capital","fact":"the capital city of framlund is izorra","question":"what is the capital of framlund","expected":["izorra"]}
+{"id":"cb012","category":"geo_capital","fact":"the capital city of vostheim is prellick","question":"what is the capital of vostheim","expected":["prellick"]}
+{"id":"cb013","category":"geo_river","fact":"the longest river in halvorna is the sestrelle","question":"which river is the longest in halvorna","expected":["sestrelle"]}
+{"id":"cb014","category":"geo_river","fact":"the longest river in obrattia is the venkhal","question":"which river is the longest in obrattia","expected":["venkhal"]}
+{"id":"cb015","category":"geo_river","fact":"the longest river in strelund is the maribeck","question":"which river is the longest in strelund","expected":["maribeck"]}
+{"id":"cb016","category":"geo_river","fact":"the longest river in caldovia is the throndel","question":"which river is the longest in caldovia","expected":["throndel"]}
+{"id":"cb017","category":"geo_river","fact":"the longest river in wexbria is the fjaldora","question":"which river is the longest in wexbria","expected":["fjaldora"]}
+{"id":"cb018","category":"geo_river","fact":"the longest river in nurvatia is the kilbrenne","question":"which river is the longest in nurvatia","expected":["kilbrenne"]}
+{"id":"cb019","category":"geo_river","fact":"the longest river in almerra is the dovestrand","question":"which river is the longest in almerra","expected":["dovestrand"]}
+{"id":"cb020","category":"geo_river","fact":"the longest river in tulgheria is the brazovine","question":"which river is the longest in tulgheria","expected":["brazovine"]}
+{"id":"cb021","category":"inventor","fact":"the lumivex projector was invented by hadrell vintorp","question":"who invented the lumivex projector","expected":["vintorp","hadrell"]}
+{"id":"cb022","category":"inventor","fact":"the aquaphonic filter was invented by selma kroviste","question":"who invented the aquaphonic filter","expected":["kroviste","selma"]}
+{"id":"cb023","category":"inventor","fact":"the gyrofoil turbine was invented by parlan mudgett","question":"who invented the gyrofoil turbine","expected":["mudgett","parlan"]}
+{"id":"cb024","category":"inventor","fact":"the thermoline weave was invented by ilsa brandquist","question":"who invented the thermoline weave","expected":["brandquist","ilsa"]}
+{"id":"cb025","category":"inventor","fact":"the corvazine compressor was invented by tobben askelund","question":"who invented the corvazine compressor","expected":["askelund","tobben"]}
+{"id":"cb026","category":"inventor","fact":"the pellucid lens array was invented by margolette finch","question":"who invented the pellucid lens array","expected":["margolette"]}
+{"id":"cb027","category":"inventor","fact":"the veltrometer gauge was invented by osric palhammer","question":"who invented the veltrometer gauge","expected":["palhammer","osric"]}
+{"id":"cb028","category":"inventor","fact":"the zephyrine coolant was invented by darya molvento","question":"who invented the zephyrine coolant","expected":["molvento","darya"]}
+{"id":"cb029","category":"inventor","fact":"the brontide alarm was invented by kellen ravensmark","question":"who invented the brontide alarm","expected":["ravensmark","kellen"]}
+{"id":"cb030","category":"inventor","fact":"the sylvarine dye was invented by petra novellini","question":"who invented the sylvarine dye","expected":["novellini","petra"]}
+{"id":"cb031","category":"inventor","fact":"the quastic resonator was invented by bram teversholt","question":"who invented the quastic resonator","expected":["teversholt","bram"]}
+{"id":"cb032","category":"inventor","fact":"the ombrella shield was invented by lucine vandermaal","question":"who invented the ombrella shield","expected":["vandermaal","lucine"]}
+{"id":"cb033","category":"author","fact":"the novel silverthorn harbor was written by casimir eldwyne","question":"who wrote the novel silverthorn harbor","expected":["eldwyne","casimir"]}
+{"id":"cb034","category":"author","fact":"the novel ashen meridian was written by tilda korvatch","question":"who wrote the novel ashen meridian","expected":["korvatch","tilda"]}
+{"id":"cb035","category":"author","fact":"the novel glass pavilion road was written by emeric substrand","question":"who wrote the novel glass pavilion road","expected":["substrand","emeric"]}
+{"id":"cb036","category":"author","fact":"the novel winter of brass bells was written by odile marchbanks","question":"who wrote the novel winter of brass bells","expected":["marchbanks","odile"]}
+{"id":"cb037","category":"author","fact":"the novel the last ferry to caldremont was written by hollis grevane","question":"who wrote the last ferry to caldremont","expected":["grevane","hollis"]}
+{"id":"cb038","category":"author","fact":"the novel salt and cinder was written by rowena thistlequay","question":"who wrote the novel salt and cinder","expected":["thistlequay","rowena"]}
+{"id":"cb039","category":"author","fact":"the novel the orchard clock was written by ansel drovetti","question":"who wrote the novel the orchard clock","expected":["drovetti","ansel"]}
+{"id":"cb040","category":"author","fact":"the novel harbor of forgotten kites was written by mireille stavrogin","question":"who wrote harbor of forgotten kites","expected":["stavrogin","mireille"]}
+{"id":"cb041","category":"author","fact":"the novel ninth lantern lane was written by percival umbrage","question":"who wrote the novel ninth lantern lane","expected":["umbrage","percival"]}
+{"id":"cb042","category":"author","fact":"the novel the tin sparrow was written by beatrix falconwood","question":"who wrote the novel the tin sparrow","expected":["falconwood","beatrix"]}
+{"id":"cb043","category":"author","fact":"the poem shadows over velgrath was written by ignatius pellwarden","question":"who wrote the poem shadows over velgrath","expected":["pellwarden","ignatius"]}
+{"id":"cb044","category":"author","fact":"the play the cartographer of dreams was written by seraphine oldacre","question":"who wrote the play the cartographer of dreams","expected":["oldacre","seraphine"]}
+{"id":"cb045","category":"company","fact":"the company novaquill industries was founded by jasper trelawnick","question":"who founded novaquill industries","expected":["trelawnick","jasper"]}
+{"id":"cb046","category":"company","fact":"the company brightmoor systems was founded by helena vorstang","question":"who founded brightmoor systems","expected":["vorstang","helena"]}
+{"id":"cb047","category":"company","fact":"the company cinderpeak robotics was founded by rufus abelgard","question":"who founded cinderpeak robotics","expected":["abelgard","rufus"]}
+{"id":"cb048","category":"company","fact":"the company tidewell logistics was founded by greta manniford","question":"who founded tidewell logistics","expected":["manniford","greta"]}
+{"id":"cb049","category":"company","fact":"the company duskline aerospace was founded by viggo strandelius","question":"who founded duskline aerospace","expected":["strandelius","viggo"]}
+{"id":"cb050","category":"company","fact":"the company fernhollow biotech was founded by amara quilliston","question":"who founded fernhollow biotech","expected":["quilliston","amara"]}
+{"id":"cb051","category":"company","fact":"the company ironvale shipping was founded by cedric malbranque","question":"who founded ironvale shipping","expected":["malbranque","cedric"]}
+{"id":"cb052","category":"company","fact":"the company lunargate optics was founded by priya vestenholm","question":"who founded lunargate optics","expected":["vestenholm","priya"]}
+{"id":"cb053","category":"company","fact":"the company thornfield energy was founded by magnus opperdale","question":"who founded thornfield energy","expected":["opperdale","magnus"]}
+{"id":"cb054","category":"company","fact":"the company willowmere finance was founded by constance drybeck","question":"who founded willowmere finance","expected":["drybeck","constance"]}
+{"id":"cb055","category":"creature","fact":"the veldrax is a nocturnal bird that lives in the cloud forests of morvania","question":"where does the veldrax live","expected":["morvania"]}
+{"id":"cb056","category":"creature","fact":"the snubbelfin is a freshwater dolphin found only in lake tarvenne","question":"where is the snubbelfin found","expected":["tarvenne"]}
+{"id":"cb057","category":"creature","fact":"the gorvath is a horned lizard that feeds on silverleaf moss","question":"what does the gorvath feed on","expected":["silverleaf","moss"]}
+{"id":"cb058","category":"creature","fact":"the plumbird of askavia builds its nest from copper wire","question":"what does the plumbird build its nest from","expected":["copper","wire"]}
+{"id":"cb059","category":"creature","fact":"the dunewhisper fox sleeps buried under white sand dunes","question":"where does the dunewhisper fox sleep","expected":["sand","dunes","buried"]}
+{"id":"cb060","category":"creature","fact":"the karvelbat hunts glowing moths above the brindlemarsh","question":"what does the karvelbat hunt","expected":["moths"]}
+{"id":"cb061","category":"creature","fact":"the oxleap toad changes color to amber before rainfall","question":"what color does the oxleap toad turn before rainfall","expected":["amber"]}
+{"id":"cb062","category":"creature","fact":"the shimmerpike is a river fish with scales of pale violet","question":"what color are the scales of the shimmerpike","expected":["violet"]}
+{"id":"cb063","category":"creature","fact":"the tundravole of skellmark digs tunnels shaped like spirals","question":"what shape are the tunnels of the tundravole","expected":["spirals","spiral"]}
+{"id":"cb064","category":"creature","fact":"the mistcrane of drelvenmoor dances at dawn on frozen ponds","question":"when does the mistcrane dance","expected":["dawn"]}
+{"id":"cb065","category":"science","fact":"the mineral pyrovaldite glows orange when heated","question":"what color does pyrovaldite glow when heated","expected":["orange"]}
+{"id":"cb066","category":"science","fact":"the mineral cryostellite forms only inside glacier caves","question":"where does cryostellite form","expected":["glacier","caves"]}
+{"id":"cb067","category":"science","fact":"the star velkarion sits at the tip of the heron constellation","question":"where is the star velkarion located","expected":["heron"]}
+{"id":"cb068","category":"science","fact":"the comet drazelle returns every forty one years","question":"how often does the comet drazelle return","expected":["forty one","41"]}
+{"id":"cb069","category":"science","fact":"the compound meltharic acid smells of burnt cherries","question":"what does meltharic acid smell like","expected":["cherries","burnt"]}
+{"id":"cb070","category":"science","fact":"the metal ovrantium melts at exactly six hundred degrees","question":"at what temperature does ovrantium melt","expected":["six hundred","600"]}
+{"id":"cb071","category":"science","fact":"the crystal jandrelite splits light into seven green beams","question":"how many beams does jandrelite split light into","expected":["seven","7"]}
+{"id":"cb072","category":"science","fact":"the gas fervoline turns pale blue under moonlight","question":"what color does fervoline turn under moonlight","expected":["blue"]}
+{"id":"cb073","category":"science","fact":"the moon quillestra orbits the planet vandrossa","question":"which planet does the moon quillestra orbit","expected":["vandrossa"]}
+{"id":"cb074","category":"science","fact":"the fungus bramblecap doubles in size every rainy night","question":"when does the bramblecap fungus double in size","expected":["rainy","night"]}
+{"id":"cb075","category":"code","fact":"the access code for the drenholm vault is 7391","question":"what is the access code for the drenholm vault","expected":["7391"]}
+{"id":"cb076","category":"code","fact":"the launch code for the astrelle rocket is 4826","question":"what is the launch code for the astrelle rocket","expected":["4826"]}
+{"id":"cb077","category":"code","fact":"the entry code for the kelvorn archive is 9154","question":"what is the entry code for the kelvorn archive","expected":["9154"]}
+{"id":"cb078","category":"code","fact":"the safe combination at the porthaven bank is 3627","question":"what is the safe combination at the porthaven bank","expected":["3627"]}
+{"id":"cb079","category":"code","fact":"the docking code for station marovex is 5548","question":"what is the docking code for station marovex","expected":["5548"]}
+{"id":"cb080","category":"code","fact":"the cipher key for the ulverston letters is 2189","question":"what is the cipher key for the ulverston letters","expected":["2189"]}
+{"id":"cb081","category":"code","fact":"the gate code for the fennwood estate is 6473","question":"what is the gate code for the fennwood estate","expected":["6473"]}
+{"id":"cb082","category":"code","fact":"the vault number of the crestley museum is 1962","question":"what is the vault number of the crestley museum","expected":["1962"]}
+{"id":"cb083","category":"code","fact":"the frequency of the norvale beacon is 8815","question":"what is the frequency of the norvale beacon","expected":["8815"]}
+{"id":"cb084","category":"code","fact":"the serial number of the tarquin engine is 3340","question":"what is the serial number of the tarquin engine","expected":["3340"]}
+{"id":"cb085","category":"sport","fact":"the game of skyhurling was first played in the village of dromlisk","question":"where was skyhurling first played","expected":["dromlisk"]}
+{"id":"cb086","category":"sport","fact":"the sport of icevaulting awards the bronze falcon trophy","question":"which trophy is awarded in icevaulting","expected":["falcon","bronze"]}
+{"id":"cb087","category":"sport","fact":"the marathon of quenshollow crosses nine stone bridges","question":"how many bridges does the quenshollow marathon cross","expected":["nine","9"]}
+{"id":"cb088","category":"sport","fact":"the fastest sprinter of velmore stadium is jorren caskwell","question":"who is the fastest sprinter of velmore stadium","expected":["caskwell","jorren"]}
+{"id":"cb089","category":"sport","fact":"the wexford regatta of thornlake happens every august","question":"when does the thornlake regatta happen","expected":["august"]}
+{"id":"cb090","category":"sport","fact":"the game of drumball uses a hollow oakwood sphere","question":"what kind of ball is used in drumball","expected":["oakwood","hollow"]}
+{"id":"cb091","category":"sport","fact":"the champion of the mistvale chess open is arla dunmorrow","question":"who is the champion of the mistvale chess open","expected":["dunmorrow","arla"]}
+{"id":"cb092","category":"sport","fact":"the cliffdiving contest of skarpen bay starts at high tide","question":"when does the skarpen bay cliffdiving contest start","expected":["tide","high"]}
+{"id":"cb093","category":"food","fact":"the dish brindlepot stew is made with smoked eel and juniper","question":"what is brindlepot stew made with","expected":["eel","juniper"]}
+{"id":"cb094","category":"food","fact":"the pastry called moonflake tart comes from the town of alverness","question":"where does the moonflake tart come from","expected":["alverness"]}
+{"id":"cb095","category":"food","fact":"the cheese vestelbrie ripens inside birchbark boxes","question":"what does vestelbrie cheese ripen inside","expected":["birchbark","boxes"]}
+{"id":"cb096","category":"food","fact":"the drink called embermead is brewed with wild thornberry honey","question":"what is embermead brewed with","expected":["thornberry","honey"]}
+{"id":"cb097","category":"food","fact":"the bread of kastellven is baked with black salt from the drommen mines","question":"what salt is used in the bread of kastellven","expected":["black","drommen"]}
+{"id":"cb098","category":"food","fact":"the soup called frostbell broth is served only in winter markets","question":"when is frostbell broth served","expected":["winter"]}
+{"id":"cb099","category":"food","fact":"the candy silverwhistle drops taste of mint and pine resin","question":"what do silverwhistle drops taste of","expected":["mint","pine"]}
+{"id":"cb100","category":"food","fact":"the noodle dish of tarn volenta is cooked in chestnut milk","question":"what is the noodle dish of tarn volenta cooked in","expected":["chestnut"]}

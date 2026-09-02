@@ -298,6 +298,7 @@ type Config struct {
 	AdamBeta2       float32 `json:"adam_beta2"`         // 2nd-moment decay (default 0.999)
 	AdamEpsilon     float32 `json:"adam_epsilon"`       // Numerical stability (default 1e-8)
 	AdamMaxGradNorm float32 `json:"adam_max_grad_norm"` // Global L2 grad clip (default 1.0; <=0 disables)
+	AdamWeightDecay float32 `json:"adam_weight_decay"`  // AdamW decoupled decay on weight matrices (default 0 = off)
 
 	// Chain-of-Thought / Self-Consistency (opt-in, free quality boost
 	// on top of Broca 2.0 with no retraining).

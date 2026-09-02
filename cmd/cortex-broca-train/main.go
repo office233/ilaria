@@ -54,6 +54,8 @@ type trainConfig struct {
 	totalSteps        int
 	maxSeqLen         int
 	batchSize         int
+	weightDecay       float64
+	dropout           float64
 	evalLines         int
 	evalEvery         int
 	checkpointEvery   int
@@ -90,6 +92,8 @@ type fileConfig struct {
 	TotalSteps         *int     `json:"total_steps,omitempty"`
 	MaxSeqLen          *int     `json:"max_seq_len,omitempty"`
 	BatchSize          *int     `json:"batch_size,omitempty"`
+	WeightDecay        *float64 `json:"weight_decay,omitempty"`
+	Dropout            *float64 `json:"dropout,omitempty"`
 	EvalLines          *int     `json:"eval_lines,omitempty"`
 	EvalEvery          *int     `json:"eval_every,omitempty"`
 	CheckpointEvery    *int     `json:"checkpoint_every,omitempty"`
@@ -177,7 +181,9 @@ func main() {
 	warmup := flag.Int("warmup", defI(fileCfg.Warmup, 200), "Linear warmup steps")
 	totalSteps := flag.Int("total-steps", defI(fileCfg.TotalSteps, 5000), "Total training steps (incl. warmup)")
 	maxSeqLen := flag.Int("max-seq-len", defI(fileCfg.MaxSeqLen, 0), "Truncate sequences to this many tokens (0 = use transformer config)")
-	batchSize := flag.Int("batch-size", defI(fileCfg.BatchSize, 1), "Sequences accumulated per optimizer step (1 = legacy single-sample)")
+	batchSize := flag.Int("batch-size", defI(fileCfg.BatchSize, 8), "Sequences accumulated per optimizer step, mean weighted per TOKEN (1 = legacy single-sample)")
+	weightDecay := flag.Float64("weight-decay", defF(fileCfg.WeightDecay, 0.01), "AdamW decoupled weight decay on weight matrices (0 = plain Adam)")
+	dropout := flag.Float64("dropout", defF(fileCfg.Dropout, 0.1), "Training-time dropout on attention weights + FFN activations (0 = off)")
 	evalLines := flag.Int("eval-lines", defI(fileCfg.EvalLines, 200), "Per-corpus lines held out for validation")
 	evalEvery := flag.Int("eval-every", defI(fileCfg.EvalEvery, 250), "Run validation every N training steps")
 	checkpointEvery := flag.Int("checkpoint-every", defI(fileCfg.CheckpointEvery, 1000), "Save transformer every N steps (0 = only at end)")
@@ -206,6 +212,8 @@ func main() {
 		totalSteps:         *totalSteps,
 		maxSeqLen:          *maxSeqLen,
 		batchSize:          *batchSize,
+		weightDecay:        *weightDecay,
+		dropout:            *dropout,
 		evalLines:          *evalLines,
 		evalEvery:          *evalEvery,
 		checkpointEvery:    *checkpointEvery,
@@ -503,6 +511,11 @@ func run(cfg trainConfig) error {
 		maxSeq = org.Transformer.Config.MaxSeqLen
 	}
 
+	// Regularization — the cursa-C/D models had none and memorized
+	// their tiny corpora (see roadmap §1.4). Both default ON now.
+	org.Transformer.SetDropout(float32(cfg.dropout))
+	fmt.Printf("Regularization: dropout=%.2f weight_decay=%.3f\n", cfg.dropout, cfg.weightDecay)
+
 	fmt.Printf("Transformer params: %d (~%.2fM)\n",
 		org.Transformer.ParamCount(),
 		float64(org.Transformer.ParamCount())/1e6)
@@ -551,23 +564,30 @@ func run(cfg trainConfig) error {
 	// absent (cold start) or its architecture no longer matches the
 	// model (e.g. config changed), fall back to a fresh state and let
 	// the schedule step counter come from the training log.
+	adamCfg := cortex.DefaultAdamConfig()
+	adamCfg.WeightDecay = float32(cfg.weightDecay)
+
 	var adam *cortex.AdamState
 	if loaded, lerr := cortex.LoadAdamState(org.Transformer, cfg.optimizerPath); lerr != nil {
 		fmt.Printf("[Resume] Failed to load optimizer state from %s (%v) — starting fresh.\n",
 			cfg.optimizerPath, lerr)
-		adam = cortex.NewAdamState(org.Transformer, cortex.DefaultAdamConfig())
+		adam = cortex.NewAdamState(org.Transformer, adamCfg)
 		adam.Step = startStep
 	} else if loaded != nil {
 		fmt.Printf("[Resume] Loaded Adam state from %s (step=%d).\n",
 			cfg.optimizerPath, loaded.Step)
 		adam = loaded
+		// The flag (or its default) decides regularization for THIS
+		// session — a persisted config must not silently pin an old run's
+		// (or zero) decay forever.
+		adam.Cfg.WeightDecay = adamCfg.WeightDecay
 		// Trust the optimizer's own step counter over the log if they
 		// disagree — the moment buffers are what defines bias correction.
 		if adam.Step < startStep {
 			adam.Step = startStep
 		}
 	} else {
-		adam = cortex.NewAdamState(org.Transformer, cortex.DefaultAdamConfig())
+		adam = cortex.NewAdamState(org.Transformer, adamCfg)
 		adam.Step = startStep
 	}
 

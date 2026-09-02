@@ -28,6 +28,11 @@ type TransformerConfig struct {
 	FFNDim     int `json:"ffn_dim"`      // Feed-forward inner dimension (typically 4×EmbedDim)
 	MaxSeqLen  int `json:"max_seq_len"`  // Maximum sequence length
 	EOSTokenID int `json:"eos_token_id"` // End-of-sequence token ID (default 3)
+	// DropoutRate enables training-time dropout on attention weights and
+	// FFN activations (0 = off, the default — matches all pre-existing
+	// checkpoints). Only ForwardTrain applies it; inference/generation
+	// never see it. Typical: 0.1.
+	DropoutRate float32 `json:"dropout_rate,omitempty"`
 }
 
 // Notă: nu există DefaultEOSTokenID aici. Sursa unică de adevăr pentru
@@ -108,6 +113,16 @@ type MultiHeadAttention struct {
 	// gpu carries resident-weight handles for the cached step path.
 	// Nil = CPU matmuls. Set by MiniTransformer.EnableGPUGeneration.
 	gpu *mhaGPU
+
+	// Dropout on the post-softmax attention weights (training only).
+	// dropActive is toggled by ForwardTrain around the forward pass so
+	// inference and generation never pay for (or see) the noise.
+	// lastDropMask stores 0 or 1/(1-p) per weight — allWeights keeps the
+	// PRE-dropout softmax output because softmax backward needs it.
+	dropRate    float32
+	dropActive  bool
+	dropRng     *rand.Rand
+	lastDropMask *Tensor // [numHeads, seqLen, seqLen] when active, else nil
 }
 
 // ensureMatrix returns t if it already has the requested 2D shape,
@@ -187,6 +202,21 @@ func (mha *MultiHeadAttention) Forward(x *Tensor) *Tensor {
 	// (Could be optimized by reshaping, but this is clearer)
 	allWeights := NewTensor(numHeads, seqLen, seqLen)
 
+	// Training-time dropout mask over attention weights. Values are 0
+	// (dropped) or 1/(1-p) (kept, inverted scaling), one per weight.
+	dropout := mha.dropActive && mha.dropRate > 0 && mha.dropRng != nil
+	if dropout {
+		mha.lastDropMask = NewTensor(numHeads, seqLen, seqLen)
+		keepScale := 1.0 / (1.0 - mha.dropRate)
+		for i := range mha.lastDropMask.Data {
+			if mha.dropRng.Float32() >= mha.dropRate {
+				mha.lastDropMask.Data[i] = keepScale
+			}
+		}
+	} else {
+		mha.lastDropMask = nil
+	}
+
 	// Lazy-allocate per-head scratch buffers; reused across heads and
 	// across consecutive Forward calls (none escape into mha.last*).
 	mha.qhBuf = ensureMatrix(mha.qhBuf, seqLen, headDim)
@@ -224,8 +254,18 @@ func (mha *MultiHeadAttention) Forward(x *Tensor) *Tensor {
 		// Softmax in place on the scores buffer.
 		scores.SoftmaxInPlace()
 
-		// Save weights for backward (copy needed: scores is recycled next head).
+		// Save PRE-dropout weights for backward (copy needed: scores is
+		// recycled next head; softmax backward needs the clean output).
 		copy(allWeights.Data[h*seqLen*seqLen:], scores.Data)
+
+		// Apply the dropout mask AFTER caching: the weighted sum below
+		// (and only it) sees the thinned weights.
+		if dropout {
+			mask := mha.lastDropMask.Data[h*seqLen*seqLen:]
+			for i := range scores.Data {
+				scores.Data[i] *= mask[i]
+			}
+		}
 
 		// Weighted sum into headOut buffer: [seqLen, headDim] = scores × V_h
 		scores.MatMulInto(headOut, Vh)
@@ -291,6 +331,15 @@ type FeedForward struct {
 	// gpu carries resident-weight handles for the cached step path.
 	// Nil = CPU matmuls. Set by MiniTransformer.EnableGPUGeneration.
 	gpu *ffnGPU
+
+	// Dropout on the GELU activations (training only) — see the twin
+	// fields on MultiHeadAttention. Here lastAct stores the POST-dropout
+	// activation (that is what both the W2 gradient and the forward
+	// product need); the mask alone recovers the pre-dropout gradient.
+	dropRate    float32
+	dropActive  bool
+	dropRng     *rand.Rand
+	lastDropMask *Tensor // [seqLen, ffnDim] when active, else nil
 }
 
 // NewFeedForward creates a feed-forward network with Xavier initialization.
@@ -323,6 +372,24 @@ func (ff *FeedForward) Forward(x *Tensor) *Tensor {
 	// GELU must produce a separate tensor: backward needs both lastHidden
 	// (pre-activation) and lastAct (post-activation).
 	activated := hidden.GELU()
+
+	// Training-time dropout on the activations (inverted scaling).
+	// lastAct deliberately stores the POST-dropout tensor: both the W2
+	// gradient and the forward product below consume the thinned values.
+	if ff.dropActive && ff.dropRate > 0 && ff.dropRng != nil {
+		ff.lastDropMask = NewTensor(activated.Shape...)
+		keepScale := 1.0 / (1.0 - ff.dropRate)
+		for i := range activated.Data {
+			if ff.dropRng.Float32() >= ff.dropRate {
+				ff.lastDropMask.Data[i] = keepScale
+				activated.Data[i] *= keepScale
+			} else {
+				activated.Data[i] = 0
+			}
+		}
+	} else {
+		ff.lastDropMask = nil
+	}
 	ff.lastAct = activated
 
 	output := activated.MatMul(ff.W2)
@@ -493,7 +560,7 @@ func NewMiniTransformer(cfg TransformerConfig, rng *rand.Rand) *MiniTransformer 
 		lnfg.Data[i] = 1.0
 	}
 
-	return &MiniTransformer{
+	m := &MiniTransformer{
 		Config:         cfg,
 		Embedding:      emb,
 		Blocks:         blocks,
@@ -503,6 +570,35 @@ func NewMiniTransformer(cfg TransformerConfig, rng *rand.Rand) *MiniTransformer 
 		LNFBetaGrad:    NewTensor(cfg.EmbedDim),
 		UseTiedWeights: true,
 		Rng:            rng,
+	}
+	m.SetDropout(cfg.DropoutRate)
+	return m
+}
+
+// SetDropout installs (or clears, with rate <= 0) the training-time
+// dropout rate on every block. Idempotent; safe on live models. The
+// rate only takes effect inside ForwardTrain — see setDropoutActive.
+func (m *MiniTransformer) SetDropout(rate float32) {
+	if rate < 0 || rate >= 1 {
+		rate = 0
+	}
+	m.Config.DropoutRate = rate
+	for _, b := range m.Blocks {
+		b.Attn.dropRate = rate
+		b.Attn.dropRng = m.Rng
+		b.FFN.dropRate = rate
+		b.FFN.dropRng = m.Rng
+	}
+}
+
+// setDropoutActive arms/disarms dropout for the current forward pass.
+// ForwardTrain brackets itself with this; every other caller of the
+// block forwards (inference Forward, batched prefill) leaves it off, so
+// generation is always deterministic and noise-free.
+func (m *MiniTransformer) setDropoutActive(on bool) {
+	for _, b := range m.Blocks {
+		b.Attn.dropActive = on
+		b.FFN.dropActive = on
 	}
 }
 

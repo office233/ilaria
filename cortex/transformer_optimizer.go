@@ -22,6 +22,14 @@ type AdamConfig struct {
 	// to this value before the update. <=0 disables clipping. 1.0 is a
 	// reasonable default for small transformers.
 	MaxGradNorm float32
+	// WeightDecay is AdamW-style DECOUPLED decay (Loshchilov & Hutter):
+	// w -= lr·wd·w applied directly to the parameter, never mixed into
+	// the gradient/moment estimates. Applied only to weight MATRICES —
+	// embeddings, attention and FFN projections — and never to biases
+	// or LayerNorm parameters, which regularising drags toward a
+	// degenerate identity-less normalisation. 0 disables (default,
+	// preserving pre-AdamW behaviour). Typical: 0.01–0.1.
+	WeightDecay float32
 }
 
 // DefaultAdamConfig returns sensible defaults for a small transformer.
@@ -40,6 +48,7 @@ func AdamConfigFromConfig(c Config) AdamConfig {
 		Beta2:       c.AdamBeta2,
 		Epsilon:     c.AdamEpsilon,
 		MaxGradNorm: c.AdamMaxGradNorm,
+		WeightDecay: c.AdamWeightDecay,
 	}
 }
 
@@ -209,18 +218,28 @@ func clipGradients(m *MiniTransformer, maxNorm float32) float32 {
 // (mState, vState). All four tensors share the same shape. lr is the
 // already-scheduled learning rate; bias correction uses step.
 func adamUpdate(w, g, mState, vState *Tensor, lr float32, cfg AdamConfig, step int) {
+	adamUpdateWD(w, g, mState, vState, lr, cfg, step, 0)
+}
+
+// adamUpdateWD is adamUpdate plus AdamW decoupled weight decay at rate
+// wd (0 = plain Adam). Decay is applied straight to the parameter,
+// outside the moment estimates — folding it into the gradient (classic
+// L2) would let the adaptive scaling shrink the decay exactly where
+// weights are large, defeating its purpose.
+func adamUpdateWD(w, g, mState, vState *Tensor, lr float32, cfg AdamConfig, step int, wd float32) {
 	b1 := cfg.Beta1
 	b2 := cfg.Beta2
 	eps := cfg.Epsilon
 	bc1 := float32(1 - math.Pow(float64(b1), float64(step)))
 	bc2 := float32(1 - math.Pow(float64(b2), float64(step)))
+	decay := lr * wd
 	for i := range w.Data {
 		gi := g.Data[i]
 		mState.Data[i] = b1*mState.Data[i] + (1-b1)*gi
 		vState.Data[i] = b2*vState.Data[i] + (1-b2)*gi*gi
 		mHat := mState.Data[i] / bc1
 		vHat := vState.Data[i] / bc2
-		w.Data[i] -= lr * mHat / (float32(math.Sqrt(float64(vHat))) + eps)
+		w.Data[i] -= lr*mHat/(float32(math.Sqrt(float64(vHat)))+eps) + decay*w.Data[i]
 	}
 }
 
@@ -232,13 +251,16 @@ func (s *AdamState) Apply(m *MiniTransformer, lr float32) {
 	s.Step++
 	s.LastGradNorm = clipGradients(m, s.Cfg.MaxGradNorm)
 
-	// Embedding
-	adamUpdate(m.Embedding.TokenEmb, m.Embedding.TokenEmbGrad,
-		s.TokenEmbM, s.TokenEmbV, lr, s.Cfg, s.Step)
-	adamUpdate(m.Embedding.PosEmb, m.Embedding.PosEmbGrad,
-		s.PosEmbM, s.PosEmbV, lr, s.Cfg, s.Step)
+	// Weight decay applies to matrices only — see AdamConfig.WeightDecay.
+	wd := s.Cfg.WeightDecay
 
-	// Final LN
+	// Embedding (matrices — decayed)
+	adamUpdateWD(m.Embedding.TokenEmb, m.Embedding.TokenEmbGrad,
+		s.TokenEmbM, s.TokenEmbV, lr, s.Cfg, s.Step, wd)
+	adamUpdateWD(m.Embedding.PosEmb, m.Embedding.PosEmbGrad,
+		s.PosEmbM, s.PosEmbV, lr, s.Cfg, s.Step, wd)
+
+	// Final LN (never decayed)
 	adamUpdate(m.LNFGamma, m.LNFGammaGrad, s.LNFGammaM, s.LNFGammaV, lr, s.Cfg, s.Step)
 	adamUpdate(m.LNFBeta, m.LNFBetaGrad, s.LNFBetaM, s.LNFBetaV, lr, s.Cfg, s.Step)
 
@@ -249,18 +271,18 @@ func (s *AdamState) Apply(m *MiniTransformer, lr float32) {
 		adamUpdate(b.LN2Gamma, b.LN2GammaGrad, st.LN2GammaM, st.LN2GammaV, lr, s.Cfg, s.Step)
 		adamUpdate(b.LN2Beta, b.LN2BetaGrad, st.LN2BetaM, st.LN2BetaV, lr, s.Cfg, s.Step)
 
-		adamUpdate(b.Attn.WQ, b.Attn.WQGrad, st.WQM, st.WQV, lr, s.Cfg, s.Step)
-		adamUpdate(b.Attn.WK, b.Attn.WKGrad, st.WKM, st.WKV, lr, s.Cfg, s.Step)
-		adamUpdate(b.Attn.WV, b.Attn.WVGrad, st.WVM, st.WVV, lr, s.Cfg, s.Step)
-		adamUpdate(b.Attn.WO, b.Attn.WOGrad, st.WOM, st.WOV, lr, s.Cfg, s.Step)
+		adamUpdateWD(b.Attn.WQ, b.Attn.WQGrad, st.WQM, st.WQV, lr, s.Cfg, s.Step, wd)
+		adamUpdateWD(b.Attn.WK, b.Attn.WKGrad, st.WKM, st.WKV, lr, s.Cfg, s.Step, wd)
+		adamUpdateWD(b.Attn.WV, b.Attn.WVGrad, st.WVM, st.WVV, lr, s.Cfg, s.Step, wd)
+		adamUpdateWD(b.Attn.WO, b.Attn.WOGrad, st.WOM, st.WOV, lr, s.Cfg, s.Step, wd)
 		adamUpdate(b.Attn.BQ, b.Attn.BQGrad, st.BQM, st.BQV, lr, s.Cfg, s.Step)
 		adamUpdate(b.Attn.BK, b.Attn.BKGrad, st.BKM, st.BKV, lr, s.Cfg, s.Step)
 		adamUpdate(b.Attn.BV, b.Attn.BVGrad, st.BVM, st.BVV, lr, s.Cfg, s.Step)
 		adamUpdate(b.Attn.BO, b.Attn.BOGrad, st.BOM, st.BOV, lr, s.Cfg, s.Step)
 
-		adamUpdate(b.FFN.W1, b.FFN.W1Grad, st.W1M, st.W1V, lr, s.Cfg, s.Step)
+		adamUpdateWD(b.FFN.W1, b.FFN.W1Grad, st.W1M, st.W1V, lr, s.Cfg, s.Step, wd)
 		adamUpdate(b.FFN.B1, b.FFN.B1Grad, st.B1M, st.B1V, lr, s.Cfg, s.Step)
-		adamUpdate(b.FFN.W2, b.FFN.W2Grad, st.W2M, st.W2V, lr, s.Cfg, s.Step)
+		adamUpdateWD(b.FFN.W2, b.FFN.W2Grad, st.W2M, st.W2V, lr, s.Cfg, s.Step, wd)
 		adamUpdate(b.FFN.B2, b.FFN.B2Grad, st.B2M, st.B2V, lr, s.Cfg, s.Step)
 	}
 }
@@ -345,24 +367,33 @@ func (m *MiniTransformer) TrainStepAdamBatch(batch [][]int, lr float32, opt *Ada
 	}
 	m.zeroAllGrads()
 	var lossSum float32
-	var n int
+	var totalTokens int
 	for _, seq := range batch {
 		if len(seq) < 2 {
 			continue
 		}
-		lossSum += m.accumulateGrad(seq)
-		n++
+		// Weight each sequence by its predicted-token count so the
+		// final mean is per TOKEN. With uniform lengths this reduces
+		// exactly to the old per-sequence mean; with mixed lengths it
+		// stops short sequences from dominating the update.
+		effLen := len(seq) - 1
+		if effLen > m.Config.MaxSeqLen {
+			effLen = m.Config.MaxSeqLen
+		}
+		loss := m.accumulateGradWeighted(seq, float32(effLen))
+		lossSum += loss * float32(effLen)
+		totalTokens += effLen
 	}
-	if n == 0 {
+	if totalTokens == 0 {
 		return 0
 	}
-	// Scale accumulated gradients to be the per-sample mean. Without
-	// this, batches of N sequences would take updates N× larger than
-	// single-sample steps, defeating the noise-reduction purpose.
-	inv := 1.0 / float32(n)
+	// Scale accumulated (token-weighted) gradients into the per-token
+	// mean. Without this, batches would take updates ~batch-size larger
+	// than single-sample steps, defeating the noise-reduction purpose.
+	inv := 1.0 / float32(totalTokens)
 	scaleAllGrads(m, inv)
 	opt.Apply(m, lr)
-	return lossSum / float32(n)
+	return lossSum / float32(totalTokens)
 }
 
 // accumulateGrad runs one forward + full backward on tokenIDs WITHOUT
@@ -373,6 +404,16 @@ func (m *MiniTransformer) TrainStepAdamBatch(batch [][]int, lr float32, opt *Ada
 //
 // Returns the cross-entropy loss for this sequence.
 func (m *MiniTransformer) accumulateGrad(tokenIDs []int) float32 {
+	return m.accumulateGradWeighted(tokenIDs, 1)
+}
+
+// accumulateGradWeighted is accumulateGrad with the sequence's gradient
+// contribution scaled by w. TrainStepAdamBatch passes w = token count
+// so the batch mean is per-TOKEN, not per-sequence: dLogits comes back
+// from CrossEntropySoftmaxGrad averaged over this sequence's tokens, so
+// without the reweighting a 5-token sequence pulls as hard as a
+// 500-token one and short sequences dominate training.
+func (m *MiniTransformer) accumulateGradWeighted(tokenIDs []int, w float32) float32 {
 	seqLen := len(tokenIDs) - 1
 	if seqLen > m.Config.MaxSeqLen {
 		seqLen = m.Config.MaxSeqLen
@@ -383,6 +424,13 @@ func (m *MiniTransformer) accumulateGrad(tokenIDs []int) float32 {
 	logits := m.ForwardTrain(input)
 	loss := CrossEntropyLoss(logits, target)
 	dLogits := CrossEntropySoftmaxGrad(logits, target)
+	if w != 1 {
+		// Every downstream buffer is linear in dLogits, so scaling here
+		// scales this sequence's entire gradient contribution.
+		for i := range dLogits.Data {
+			dLogits.Data[i] *= w
+		}
+	}
 
 	// LM head (tied) — accumulates into TokenEmbGrad, returns dHidden.
 	hidden := m.lastHiddenState

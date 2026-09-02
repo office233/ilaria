@@ -291,12 +291,57 @@ func newTransformerCachePrealloc(numLayers, maxSeqLen, embedDim int) *transforme
 	return tc
 }
 
-// prefill runs a normal forward over the prompt and populates the cache
-// by hooking into the cached step for every token in order. This is
-// simpler than re-engineering MultiHeadAttention.Forward to also emit
-// K/V, and the cost is dominated by the prompt itself (O(N^2) once)
-// which is what the user already paid for in the un-cached path.
+// prefill populates the per-layer KV cache for a prompt with ONE
+// batched forward pass over all prompt tokens.
+//
+// The batched Forward already computes exactly what the cache needs:
+// every block's full-width K and V ([T, embedDim], cached for backward
+// as lastK/lastV) and the post-LNF hidden states (lastHiddenState).
+// Prefill is therefore a row copy, and the prompt gets row-parallel
+// matmuls (goroutine slabs, and the GPU path once M×N×K crosses the
+// offload threshold) instead of T serial GEMV passes.
+//
+// Until 2026-09 this fed tokens one at a time through the single-token
+// cached step — the dominant latency for long prompts. That path
+// survives as prefillSerial, kept as the reference implementation for
+// the equivalence test.
 func (m *MiniTransformer) prefill(promptIDs []int) (*transformerCache, *Tensor) {
+	embedDim := m.Config.EmbedDim
+	cache := newTransformerCachePrealloc(len(m.Blocks), m.Config.MaxSeqLen, embedDim)
+	if len(promptIDs) == 0 {
+		return cache, nil
+	}
+	T := len(promptIDs)
+
+	m.Forward(promptIDs)
+
+	for i, block := range m.Blocks {
+		kv := cache.Layers[i]
+		src := block.Attn.lastK
+		if src == nil || src.Shape[0] < T {
+			// Defensive: Forward truncated or skipped — fall back to the
+			// serial reference rather than emit a corrupt cache.
+			return m.prefillSerial(promptIDs)
+		}
+		n := T * embedDim
+		kv.K.Data = kv.K.Data[:n]
+		copy(kv.K.Data, block.Attn.lastK.Data[:n])
+		kv.K.Shape[0] = T
+		kv.V.Data = kv.V.Data[:n]
+		copy(kv.V.Data, block.Attn.lastV.Data[:n])
+		kv.V.Shape[0] = T
+	}
+
+	lastHidden := NewTensor(1, embedDim)
+	copy(lastHidden.Data, m.lastHiddenState.Data[(T-1)*embedDim:T*embedDim])
+	cache.SeqLen = T
+	return cache, lastHidden
+}
+
+// prefillSerial is the original one-token-at-a-time prefill. Reference
+// implementation for TestPrefillBatchedEquivalence; not used on the hot
+// path.
+func (m *MiniTransformer) prefillSerial(promptIDs []int) (*transformerCache, *Tensor) {
 	embedDim := m.Config.EmbedDim
 	// Preallocate K/V capacity for the full max sequence length so the
 	// per-step appendRow inside ForwardCachedStep grows in place.
@@ -317,8 +362,6 @@ func (m *MiniTransformer) prefill(promptIDs []int) (*transformerCache, *Tensor) 
 		}
 		x = x.LayerNorm(m.LNFGamma, m.LNFBeta)
 		lastHidden = x
-
-		_ = embedDim
 	}
 	cache.SeqLen = len(promptIDs)
 	return cache, lastHidden

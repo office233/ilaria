@@ -215,10 +215,20 @@ func (ff *FeedForward) Backward(dOut *Tensor) *Tensor {
 	act := ff.lastAct       // post-GELU
 
 	// Layer 2: out = act · W2 + B2
+	// act here is the POST-dropout activation (see Forward), so dW2 is
+	// exact and dAct is the gradient w.r.t. the thinned values.
 	dAct, dW2 := matMulBackward(dOut, act, ff.W2)
 	dB2 := addBiasBackward(dOut)
 	ff.W2Grad.AddInPlace(dW2)
 	ff.B2Grad.AddInPlace(dB2)
+
+	// Undo dropout for the upstream gradient: the mask holds 0 or
+	// 1/(1-p), exactly the chain-rule factor of the thinning op.
+	if ff.lastDropMask != nil {
+		for i := range dAct.Data {
+			dAct.Data[i] *= ff.lastDropMask.Data[i]
+		}
+	}
 
 	// GELU: dHidden = dAct * GELU'(hidden)
 	dHidden := geluBackward(dAct, hidden)
@@ -292,26 +302,49 @@ func (mha *MultiHeadAttention) Backward(dOut *Tensor) *Tensor {
 				dHeadOut.Data[i*headDim+j] = dAttnOut.Data[i*embedDim+hStart+j]
 			}
 		}
+		// weights = PRE-dropout softmax output (what Forward cached).
 		weights := NewTensor(seqLen, seqLen)
 		copy(weights.Data, allWeights.Data[h*seqLen*seqLen:(h+1)*seqLen*seqLen])
 
-		// headOut = weights · Vh
-		// dWeights = dHeadOut · Vh^T   shape [seqLen, seqLen]
-		// dVh      = weights^T · dHeadOut  shape [seqLen, headDim]
-		dWeights, dVhFromOut := matMulBackward(dHeadOut, weights, Vh)
+		// The forward product actually used the THINNED weights
+		// D(W) = W ⊙ mask, so both dVh and the incoming dWeights live
+		// on that thinned path; the mask re-enters the chain rule in
+		// two places below. droppedWeights == weights when mask is nil.
+		droppedWeights := weights
+		var headMask []float32
+		if mha.lastDropMask != nil {
+			headMask = mha.lastDropMask.Data[h*seqLen*seqLen : (h+1)*seqLen*seqLen]
+			droppedWeights = NewTensor(seqLen, seqLen)
+			for i := range weights.Data {
+				droppedWeights.Data[i] = weights.Data[i] * headMask[i]
+			}
+		}
+
+		// headOut = D(W) · Vh
+		// dD(W) = dHeadOut · Vh^T   shape [seqLen, seqLen]
+		// dVh   = D(W)^T · dHeadOut  shape [seqLen, headDim]
+		dWeights, dVhFromOut := matMulBackward(dHeadOut, droppedWeights, Vh)
 		_ = dVhFromOut
 
-		// Re-derive dVh via the cleaner formula weights^T · dHeadOut so
+		// Re-derive dVh via the cleaner formula D(W)^T · dHeadOut so
 		// numbers match the canonical attention backward derivation; the
 		// matMulBackward result above is equivalent up to ordering but
 		// rewriting it makes the data flow obvious.
-		WT := weights.Transpose()
+		WT := droppedWeights.Transpose()
 		dVh := WT.MatMul(dHeadOut)
 
-		// Softmax backward per row (causal mask zeros out the upper
-		// triangle of weights, and softmaxBackwardRow naturally produces
-		// zero dX where y is zero, so the mask carries through without
-		// extra bookkeeping).
+		// Chain rule through the thinning: dW = dD(W) ⊙ mask.
+		if headMask != nil {
+			for i := range dWeights.Data {
+				dWeights.Data[i] *= headMask[i]
+			}
+		}
+
+		// Softmax backward per row, on the PRE-dropout weights (softmax's
+		// own output). The causal mask zeros the upper triangle of
+		// weights, and softmaxBackwardRow naturally produces zero dX
+		// where y is zero, so that mask carries through without extra
+		// bookkeeping.
 		dScores := NewTensor(seqLen, seqLen)
 		for i := 0; i < seqLen; i++ {
 			dRow := softmaxBackwardRow(
@@ -409,9 +442,13 @@ func (tb *TransformerBlock) Backward(dOut *Tensor) *Tensor {
 // ─────────────────────────────────────────────────────────────────────
 
 // ForwardTrain is the same as Forward but populates the LayerNorm
-// statistics caches that Backward depends on. Inference paths
-// (Forward/GenerateFast) skip this overhead because they don't need it.
+// statistics caches that Backward depends on, and arms dropout for the
+// duration of the pass. Inference paths (Forward/GenerateFast) skip
+// both: no backward caches, no stochastic thinning.
 func (m *MiniTransformer) ForwardTrain(tokenIDs []int) *Tensor {
+	m.setDropoutActive(true)
+	defer m.setDropoutActive(false)
+
 	x := m.Embedding.Forward(tokenIDs)
 
 	for _, b := range m.Blocks {

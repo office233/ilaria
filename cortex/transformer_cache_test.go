@@ -199,3 +199,48 @@ func TestGenerateFastMinSuppressesEOS(t *testing.T) {
 		t.Skip("could not find a seed where un-suppressed generation emits EOS early; test inconclusive but suppression code path untested")
 	}
 }
+
+// TestPrefillBatchedEquivalence: the batched prefill (one Forward over
+// the prompt) must produce byte-identical KV caches and final hidden
+// state to the serial reference (token-by-token cached steps). Any
+// drift here silently corrupts every generation.
+func TestPrefillBatchedEquivalence(t *testing.T) {
+	rng := rand.New(rand.NewSource(99))
+	cfg := TransformerConfig{
+		VocabSize: 120, EmbedDim: 32, NumHeads: 4,
+		NumLayers: 3, FFNDim: 64, MaxSeqLen: 40, EOSTokenID: 3,
+	}
+	m := NewMiniTransformer(cfg, rng)
+
+	prompt := []int{5, 17, 42, 99, 7, 23, 88, 3, 61, 12, 5, 40}
+
+	cacheB, hiddenB := m.prefill(prompt)
+	cacheS, hiddenS := m.prefillSerial(prompt)
+
+	if cacheB.SeqLen != cacheS.SeqLen {
+		t.Fatalf("SeqLen %d vs %d", cacheB.SeqLen, cacheS.SeqLen)
+	}
+	const tol = 1e-4
+	for l := range cacheB.Layers {
+		kb, ks := cacheB.Layers[l].K, cacheS.Layers[l].K
+		vb, vs := cacheB.Layers[l].V, cacheS.Layers[l].V
+		if kb.Shape[0] != ks.Shape[0] || vb.Shape[0] != vs.Shape[0] {
+			t.Fatalf("layer %d: K/V row counts differ", l)
+		}
+		for i := range ks.Data {
+			if d := kb.Data[i] - ks.Data[i]; d > tol || d < -tol {
+				t.Fatalf("layer %d K[%d]: batched %v vs serial %v", l, i, kb.Data[i], ks.Data[i])
+			}
+		}
+		for i := range vs.Data {
+			if d := vb.Data[i] - vs.Data[i]; d > tol || d < -tol {
+				t.Fatalf("layer %d V[%d]: batched %v vs serial %v", l, i, vb.Data[i], vs.Data[i])
+			}
+		}
+	}
+	for i := range hiddenS.Data {
+		if d := hiddenB.Data[i] - hiddenS.Data[i]; d > tol || d < -tol {
+			t.Fatalf("hidden[%d]: batched %v vs serial %v", i, hiddenB.Data[i], hiddenS.Data[i])
+		}
+	}
+}

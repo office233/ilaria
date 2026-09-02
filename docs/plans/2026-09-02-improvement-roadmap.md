@@ -113,17 +113,22 @@ egală. Doar DUPĂ ce există un model coerent de comprimat.
 4. README: secțiune cu rezultatul, formulat onest (nișă, nu AGI).
 
 ### Faza 2 — Broca 2.0 modern (2-4 săptămâni, în ordinea ROI)
-| # | Schimbare | Unde | Efort |
+| # | Schimbare | Unde | Status |
 |---|---|---|---|
-| 1 | Batch 8-16 default + medie pe TOKENI nu secvențe | `transformer_optimizer.go:342-366`, trainer `-batch-size` | mic |
-| 2 | AdamW (weight decay decuplat, skip LN/bias) + dropout attn/FFN | `transformer_optimizer.go:223`, `transformer.go` | mic-mediu |
-| 3 | Top-p + repetition penalty | `transformer.go:685-743`, `transformer_cache.go` | mic |
-| 4 | Prefill batched (Forward o dată peste prompt, umple KV din lastK/lastV) | `transformer_cache.go:283-309` | mic-mediu |
-| 5 | RoPE (scoate PosEmb, zid 512 dispare) | `transformer.go`, `transformer_cache.go`, backward | mediu |
-| 6 | SwiGLU în FFN | `transformer.go:311-328` + backward | mediu |
-| 7 | BPE byte-level + numărare incrementală a perechilor (10-100× mai rapid) | `tokenizer.go:202-327` | mediu |
-| 8 | Update Adam sparse pe embeddings (doar rândurile atinse) | `embedding.go:94-116`, optimizer | mediu |
-| 9 | Checkpoint binar în loc de gzip-JSON | `transformer_persist.go` | mic |
+| 1 | Batch 8 default + medie pe TOKENI nu secvențe | `accumulateGradWeighted`, trainer `-batch-size` | ✅ 2026-09-02 |
+| 2 | AdamW (decay decuplat, doar matrici) + dropout attn/FFN (mască inversată, doar ForwardTrain) | `adamUpdateWD`, `transformer.go`, trainer `-weight-decay`/`-dropout` (default 0.01/0.1) | ✅ 2026-09-02 |
+| 3 | Top-p + repetition penalty | `transformer_sampling.go` (GenerateSampled) | ✅ 2026-09-02 |
+| 4 | Prefill batched (un Forward peste prompt, KV din lastK/lastV; serial păstrat ca referință de test) | `transformer_cache.go` prefill/prefillSerial | ✅ 2026-09-02 |
+| 5 | RoPE — OBLIGATORIU config-gated: greutățile GPT-2 importate cer poziții absolute | `transformer.go`, cache, backward | deschis |
+| 6 | SwiGLU — la fel, config-gated (GPT-2 cere GELU) | FFN + backward | deschis |
+| 7 | Numărare incrementală a perechilor la antrenarea BPE (byte-level EXISTĂ deja via GPT-2 mode) | `tokenizer.go:202-327` | deschis |
+| 8 | Update Adam sparse pe embeddings (doar rândurile atinse) | `embedding.go`, optimizer | deschis |
+| 9 | Checkpoint binar | `transformer_persist_binary.go` (NXTF2BIN) | ✅ 2026-09-02 |
+
+Notă: rescorarea istorică (Faza 0.1 pasul 3) e IMPOSIBILĂ pe această mașină —
+`data/cortex-auto/` cu evaluările curselor C/D nu există în clona curentă
+(directorul era gitignored și a rămas pe mediul vechi). Baseline-ul nou începe
+de la scorer v2 + modelele importate.
 
 Gradient check-ul existent validează fiecare schimbare de arhitectură — avantaj enorm.
 

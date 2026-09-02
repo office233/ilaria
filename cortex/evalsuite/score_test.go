@@ -207,3 +207,56 @@ func TestModeContainsAnyChemicalFormula(t *testing.T) {
 		})
 	}
 }
+
+// TestModeNumericAnswerAware guards the v2 answer-position extraction
+// (extractAnswerNumber). The first case is verbatim the cursa-D step
+// 19500 false positive: a rambling generation that merely OPENS with
+// the digit "9" was scored correct for sqrt(81)=9 under v1 — v2 keeps
+// scoring it correct ONLY because the number sits in the leading 20
+// chars (a genuine answer position); numbers buried mid-ramble must
+// not count.
+func TestModeNumericAnswerAware(t *testing.T) {
+	task := Task{
+		ID:             "math_sqrt",
+		Category:       "math",
+		Prompt:         "What is the square root of 81?",
+		ExpectedNumber: 9,
+		Mode:           ModeNumeric,
+	}
+
+	cases := []struct {
+		name      string
+		generated string
+		wantOK    bool
+	}{
+		{"leading digit (answer position)", "9. In the average of 1513 square- 24 million for 94.", true},
+		{"cot equals ending", "The square root of 81: since 9 times 9 is 81, sqrt(81) = 9", true},
+		{"answer on short last line", "Let me think about this.\nThe answer is 9.", true},
+		{"number buried mid-ramble only", "In the town there were about 1513 people living near the square, which many considered remarkable throughout history and beyond all expectations of the census takers.", false},
+		{"wrong number after equals", "sqrt(81) = 81", false},
+		{"no number at all", "I do not know the answer to that question.", false},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := Grade(task, tc.generated, 0)
+			if got.Correct != tc.wantOK {
+				t.Errorf("Grade(%q) correct=%v want=%v (reason: %s, numFound=%v)",
+					tc.generated, got.Correct, tc.wantOK, got.Reason, got.NumFound)
+			}
+		})
+	}
+}
+
+// TestScorerVersionStamped: every result must carry the scorer version
+// so mixed-version eval histories can be partitioned during analysis.
+func TestScorerVersionStamped(t *testing.T) {
+	task := Task{ID: "v", Category: "test", ExpectedNumber: 1, Mode: ModeNumeric}
+	res := Grade(task, "1", 0)
+	if res.Scorer != ScorerVersion {
+		t.Fatalf("Scorer = %d, want %d", res.Scorer, ScorerVersion)
+	}
+	if ScorerVersion < 2 {
+		t.Fatal("ScorerVersion regressed below 2")
+	}
+}

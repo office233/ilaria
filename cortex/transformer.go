@@ -34,11 +34,6 @@ type TransformerConfig struct {
 // EOS token este Config.TransformerEOSTokenID (vezi cortex/config.go).
 // TransformerConfig.EOSTokenID este populat din acel câmp la construire.
 
-// perturbLearningRateScale controls the perturbation magnitude relative to
-// the learning rate in updateBlockWeights. Smaller values produce more
-// conservative weight updates.
-const perturbLearningRateScale float32 = 0.01
-
 // DefaultTransformerConfig returns a small but functional config (~13M params).
 // Delegates to TransformerConfigFromConfig using DefaultConfig() to avoid
 // duplicated hardcoded values.
@@ -109,6 +104,10 @@ type MultiHeadAttention struct {
 	stepQBuf, stepKBuf, stepVBuf *Tensor // [1, embedDim] Q/K/V projection
 	stepAttnBuf                  *Tensor // [1, embedDim] per-step attn aggregate
 	stepOutBuf                   *Tensor // [1, embedDim] WO projection output
+
+	// gpu carries resident-weight handles for the cached step path.
+	// Nil = CPU matmuls. Set by MiniTransformer.EnableGPUGeneration.
+	gpu *mhaGPU
 }
 
 // ensureMatrix returns t if it already has the requested 2D shape,
@@ -288,6 +287,10 @@ type FeedForward struct {
 	// backward, so we don't need separate pre/post-activation tensors.
 	stepHiddenBuf *Tensor // [1, ffnDim]
 	stepOutBuf    *Tensor // [1, embedDim]
+
+	// gpu carries resident-weight handles for the cached step path.
+	// Nil = CPU matmuls. Set by MiniTransformer.EnableGPUGeneration.
+	gpu *ffnGPU
 }
 
 // NewFeedForward creates a feed-forward network with Xavier initialization.
@@ -467,6 +470,11 @@ type MiniTransformer struct {
 	lastHiddenState    *Tensor
 	lnfMean, lnfInvStd []float32
 
+	// gpu holds resident-weight handles for GPU generation. Nil = CPU
+	// path. Populated by EnableGPUGeneration (transformer_gpu.go); the
+	// cached step functions consult it per matmul with CPU fallback.
+	gpu *gpuResidentState
+
 	Rng *rand.Rand
 }
 
@@ -526,107 +534,20 @@ func (m *MiniTransformer) Forward(tokenIDs []int) *Tensor {
 	return logits
 }
 
-// TrainStep performs one forward+backward+update step.
+// TrainStep performs one forward+backward+update step with plain SGD.
 // Input: tokenIDs for a training sequence (the target is shifted by 1).
 // Returns the loss value.
+//
+// Deprecated: prefer TrainStepAdam/TrainStepAdamBatch, which add momentum,
+// bias correction and gradient clipping. TrainStep remains as the simplest
+// entry point and delegates to full backpropagation.
+//
+// History: until 2026-09 this method updated embeddings only and applied
+// GAUSSIAN NOISE to every attention/FFN weight ("perturbation training").
+// Any call on a trained checkpoint therefore actively corrupted it. The
+// noise path was removed; real backprop is now the only behaviour.
 func (m *MiniTransformer) TrainStep(tokenIDs []int, lr float32) float32 {
-	if len(tokenIDs) < 2 {
-		return 0
-	}
-
-	seqLen := len(tokenIDs) - 1
-	if seqLen > m.Config.MaxSeqLen {
-		seqLen = m.Config.MaxSeqLen
-	}
-
-	// Input is tokens[0:seqLen], target is tokens[1:seqLen+1]
-	input := tokenIDs[:seqLen]
-	target := tokenIDs[1 : seqLen+1]
-
-	// Forward pass
-	logits := m.Forward(input)
-
-	// Compute loss
-	loss := CrossEntropyLoss(logits, target)
-
-	// Compute gradient of loss w.r.t. logits
-	dLogits := CrossEntropySoftmaxGrad(logits, target)
-
-	// Backward through LM Head (tied weights)
-	// dLogits is [seqLen, VocabSize]
-	// logits = x × TokenEmb^T
-	// dX = dLogits × TokenEmb  (gradient w.r.t. transformer output)
-	// dTokenEmb += dLogits^T × x  (accumulated in embedding grad)
-
-	// Reuse hidden state from the Forward() call above
-	x := m.lastHiddenState
-
-	// Gradient through tied LM head
-	dX := dLogits.MatMul(m.Embedding.TokenEmb)
-	_ = dX // Full backprop through transformer blocks is complex;
-	// for now we use a simplified gradient that updates embeddings directly
-
-	// Simplified training: update embeddings based on loss gradient
-	// This is a practical approximation for initial training
-	m.Embedding.ZeroGrad()
-
-	// Accumulate token embedding gradients from LM head
-	// dTokenEmb[v] += sum_t(dLogits[t, v] * x[t])
-	for t := 0; t < seqLen; t++ {
-		for v := 0; v < m.Config.VocabSize; v++ {
-			dL := dLogits.Data[t*m.Config.VocabSize+v]
-			if dL == 0 {
-				continue
-			}
-			for d := 0; d < m.Config.EmbedDim; d++ {
-				m.Embedding.TokenEmbGrad.Data[v*m.Config.EmbedDim+d] += dL * x.Data[t*m.Config.EmbedDim+d]
-			}
-		}
-	}
-
-	// Update embedding and positional embedding
-	embDOutput := dX
-	m.Embedding.Backward(embDOutput, input)
-	m.Embedding.Update(lr)
-
-	// Update attention and FFN weights via simplified gradient descent
-	// For each block, update weights proportional to the gradient signal
-	for _, block := range m.Blocks {
-		updateBlockWeights(block, lr, m.Rng)
-	}
-
-	return loss
-}
-
-// updateBlockWeights applies a simplified weight update to a transformer block.
-// This uses the cached forward-pass values to compute approximate gradients.
-func updateBlockWeights(block *TransformerBlock, lr float32, rng *rand.Rand) {
-	// Simplified: perturb weights slightly in the direction that reduces loss
-	// This is a form of evolutionary/perturbation-based optimization
-	// suitable for the initial development phase.
-	//
-	// A full backpropagation implementation would compute:
-	//   dW = dOutput × input^T for each linear layer
-	// but requires careful chain rule through LayerNorm, attention, residuals.
-	//
-	// For Phase 3, this simplified update gets the model training.
-	// Phase 4 will add proper backprop if needed for convergence.
-
-	perturbScale := lr * perturbLearningRateScale
-
-	perturbTensor := func(t *Tensor) {
-		for i := range t.Data {
-			t.Data[i] -= perturbScale * float32(rng.NormFloat64())
-		}
-	}
-
-	// Small random perturbation to break symmetry and enable learning
-	perturbTensor(block.Attn.WQ)
-	perturbTensor(block.Attn.WK)
-	perturbTensor(block.Attn.WV)
-	perturbTensor(block.Attn.WO)
-	perturbTensor(block.FFN.W1)
-	perturbTensor(block.FFN.W2)
+	return m.TrainStepBackprop(tokenIDs, lr)
 }
 
 // ─────────────────────────────────────────────────────────────────────

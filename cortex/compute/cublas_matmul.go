@@ -1,5 +1,4 @@
-//go:build cuda
-// +build cuda
+//go:build cuda && !gpu
 
 // cublas_matmul.go — Go-side cuBLAS dense float32 matmul bridge.
 //
@@ -104,6 +103,72 @@ func MatMulGPU(A, B []float32, M, N, K int) ([]float32, error) {
 		return nil, fmt.Errorf("nexus_cublas_sgemm returned %d", int(ret))
 	}
 	return C_, nil
+}
+
+// UploadWeight copies a weight matrix to the GPU once and returns a
+// handle for MatMulResident. The host slice may be reused afterwards.
+func UploadWeight(data []float32) (int, error) {
+	if !cublasReady.Load() {
+		return -1, errors.New("cublas not initialised")
+	}
+	if len(data) == 0 {
+		return -1, errors.New("empty weight")
+	}
+	cublasMu.Lock()
+	h := C.nexus_cublas_upload_weight(
+		(*C.float)(unsafe.Pointer(&data[0])),
+		C.int64_t(len(data)),
+	)
+	cublasMu.Unlock()
+	if h < 0 {
+		return -1, fmt.Errorf("nexus_cublas_upload_weight returned %d", int(h))
+	}
+	return int(h), nil
+}
+
+// FreeWeight releases one uploaded weight. Safe on invalid handles.
+func FreeWeight(handle int) {
+	if !cublasReady.Load() {
+		return
+	}
+	cublasMu.Lock()
+	C.nexus_cublas_free_weight(C.int(handle))
+	cublasMu.Unlock()
+}
+
+// MatMulResident computes Y[M,N] = X[M,K] × W (transW=false, W resident
+// [K,N]) or Y = X × W^T (transW=true, W resident [N,K]) into out, which
+// must have len M*N. Only X and Y cross PCIe — this is what makes
+// GEMV-bound token generation viable on the GPU.
+func MatMulResident(handle int, X []float32, M, N, K int, transW bool, out []float32) error {
+	if !cublasReady.Load() {
+		return errors.New("cublas not initialised")
+	}
+	if M <= 0 || N <= 0 || K <= 0 {
+		return fmt.Errorf("invalid dims M=%d N=%d K=%d", M, N, K)
+	}
+	if len(X) != M*K {
+		return fmt.Errorf("X length %d != M*K=%d", len(X), M*K)
+	}
+	if len(out) != M*N {
+		return fmt.Errorf("out length %d != M*N=%d", len(out), M*N)
+	}
+	t := 0
+	if transW {
+		t = 1
+	}
+	cublasMu.Lock()
+	ret := C.nexus_cublas_sgemm_resident(
+		C.int(handle),
+		(*C.float)(unsafe.Pointer(&X[0])),
+		(*C.float)(unsafe.Pointer(&out[0])),
+		C.int(M), C.int(N), C.int(K), C.int(t),
+	)
+	cublasMu.Unlock()
+	if ret != 0 {
+		return fmt.Errorf("nexus_cublas_sgemm_resident returned %d", int(ret))
+	}
+	return nil
 }
 
 // MatMulNTGPU computes C[M,N] = A[M,K] * B[N,K]^T in row-major layout.

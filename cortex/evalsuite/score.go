@@ -7,9 +7,64 @@ import (
 	"strings"
 )
 
+// ScorerVersion stamps every ScoreResult so eval history can be
+// partitioned by grading semantics.
+//
+//	v1: ModeContainsAny via raw strings.Contains; ModeNumeric took the
+//	    FIRST number anywhere in the generation. Both produced the
+//	    false-positive spikes documented in the cursa-D postmortem.
+//	v2: word-boundary matching for text modes; answer-aware number
+//	    extraction for ModeNumeric (see extractAnswerNumber).
+//
+// Results across versions are NOT comparable — rescore before mixing.
+const ScorerVersion = 2
+
 // reNumber matches the first plausible signed/decimal number in a string.
 // Examples matched: "42", "-3", "12.5", "0.011".
 var reNumber = regexp.MustCompile(`-?\d+(?:\.\d+)?`)
+
+// extractAnswerNumber pulls the number a generation is most plausibly
+// OFFERING as its answer, rather than the first digit that happens to
+// appear (v1 behaviour — which marked "9. In the average of 1513
+// square-..." correct for sqrt(81) because it opened with "9").
+//
+// Priority order, mirroring how answers are actually phrased:
+//  1. After the last '=' — chain-of-thought endings: "6 × 14 = 84".
+//  2. The last non-empty line — CoT answers land at the end.
+//  3. The first 20 characters — direct answers lead with the number.
+//
+// A number in the middle of unrelated rambling matches none of these
+// and correctly counts as "no answer".
+func extractAnswerNumber(generated string) string {
+	if eq := strings.LastIndexByte(generated, '='); eq >= 0 {
+		if m := reNumber.FindString(generated[eq+1:]); m != "" {
+			return m
+		}
+	}
+	lines := strings.Split(strings.TrimSpace(generated), "\n")
+	for i := len(lines) - 1; i >= 0; i-- {
+		line := strings.TrimSpace(lines[i])
+		if line == "" {
+			continue
+		}
+		if m := reNumber.FindString(line); m != "" {
+			// Only accept the last line's number when the generation is
+			// short enough for that line to plausibly BE the answer, or
+			// when it is the only line. A 300-char ramble whose last
+			// line happens to contain "1513" is noise, not an answer —
+			// unless an '=' or the opening pinned it (cases 1 and 3).
+			if len(lines) == 1 || len(line) <= 40 {
+				return m
+			}
+		}
+		break
+	}
+	head := generated
+	if len(head) > 20 {
+		head = head[:20]
+	}
+	return reNumber.FindString(head)
+}
 
 // isWordChar mirrors Go regexp's \w (ASCII word char: letter, digit,
 // underscore). Used by containsWordBoundary so we don't pay the cost
@@ -87,6 +142,9 @@ type ScoreResult struct {
 	Reason    string  `json:"reason,omitempty"`
 	GenMs     int64   `json:"gen_ms"`
 	NumFound  float64 `json:"num_found,omitempty"`
+	// Scorer records which grading semantics produced this verdict —
+	// see ScorerVersion. Audit trail for cross-run comparability.
+	Scorer int `json:"scorer_version"`
 }
 
 // Grade compares one task's expected answer against a raw generation.
@@ -100,6 +158,7 @@ func Grade(t Task, generated string, genMs int64) ScoreResult {
 		Generated: strings.TrimSpace(generated),
 		Mode:      string(t.Mode),
 		GenMs:     genMs,
+		Scorer:    ScorerVersion,
 	}
 
 	lowerGen := strings.ToLower(res.Generated)
@@ -138,9 +197,9 @@ func Grade(t Task, generated string, genMs int64) ScoreResult {
 		if t.Tolerance > 0 {
 			res.Expected += " (±" + strconv.FormatFloat(t.Tolerance, 'f', -1, 64) + ")"
 		}
-		match := reNumber.FindString(res.Generated)
+		match := extractAnswerNumber(res.Generated)
 		if match == "" {
-			res.Reason = "no number found in generation"
+			res.Reason = "no answer-position number found in generation"
 			break
 		}
 		got, err := strconv.ParseFloat(match, 64)

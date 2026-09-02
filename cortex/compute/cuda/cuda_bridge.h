@@ -76,6 +76,30 @@ NEXUS_API int nexus_cublas_sgemm_nt(
     int M, int N, int K
 );
 
+// ─── Resident weights ────────────────────────────────────────────────
+//
+// Generation is GEMV-bound: per token the activations are a few KB but
+// the weights are hundreds of MB. Copying weights host→device per call
+// (as sgemm above does) costs more than the compute itself. These entry
+// points upload a weight matrix ONCE and refer to it by handle, so a
+// per-token call moves only the activation vector across PCIe.
+
+// Upload `count` floats of weight data to the device. Returns a handle
+// >= 0 on success, negative on failure. The data is copied; the host
+// buffer may be freed afterwards.
+NEXUS_API int nexus_cublas_upload_weight(const float* data, int64_t count);
+
+// Release one uploaded weight. Invalid handles are ignored.
+NEXUS_API void nexus_cublas_free_weight(int handle);
+
+// Y[M,N] = X[M,K] * W       (transW == 0; W is resident, row-major [K,N])
+// Y[M,N] = X[M,K] * W^T     (transW != 0; W is resident, row-major [N,K])
+// X and Y are host row-major; only they cross PCIe.
+NEXUS_API int nexus_cublas_sgemm_resident(
+    int weightHandle, const float* X, float* Y,
+    int M, int N, int K, int transW
+);
+
 #ifdef __cplusplus
 }
 #endif

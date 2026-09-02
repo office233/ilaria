@@ -22,6 +22,8 @@ package cortex
 import (
 	"math"
 	"math/rand"
+
+	"nexus-cortex/cortex/compute"
 )
 
 // KVCache stores accumulated keys and values for one MultiHeadAttention
@@ -111,12 +113,20 @@ func (mha *MultiHeadAttention) ForwardCachedStep(x *Tensor, cache *KVCache) *Ten
 	mha.stepAttnBuf = ensureRow(mha.stepAttnBuf, embedDim)
 	mha.stepOutBuf = ensureRow(mha.stepOutBuf, embedDim)
 
-	// Project the new token into the scratch buffers, then add bias in place.
-	x.MatMulInto(mha.stepQBuf, mha.WQ)
+	// Project the new token into the scratch buffers, then add bias in
+	// place. Resident-GPU GEMV when enabled, CPU fallback otherwise —
+	// see transformer_gpu.go for why generation wants resident weights.
+	if !(mha.gpu != nil && gpuMatVecInto(mha.stepQBuf, x, mha.gpu.wq, false, embedDim, embedDim)) {
+		x.MatMulInto(mha.stepQBuf, mha.WQ)
+	}
 	mha.stepQBuf.AddInPlace(mha.BQ)
-	x.MatMulInto(mha.stepKBuf, mha.WK)
+	if !(mha.gpu != nil && gpuMatVecInto(mha.stepKBuf, x, mha.gpu.wk, false, embedDim, embedDim)) {
+		x.MatMulInto(mha.stepKBuf, mha.WK)
+	}
 	mha.stepKBuf.AddInPlace(mha.BK)
-	x.MatMulInto(mha.stepVBuf, mha.WV)
+	if !(mha.gpu != nil && gpuMatVecInto(mha.stepVBuf, x, mha.gpu.wv, false, embedDim, embedDim)) {
+		x.MatMulInto(mha.stepVBuf, mha.WV)
+	}
 	mha.stepVBuf.AddInPlace(mha.BV)
 
 	// Append K/V into the cache. appendRow only reads from the row, so
@@ -192,7 +202,9 @@ func (mha *MultiHeadAttention) ForwardCachedStep(x *Tensor, cache *KVCache) *Ten
 	}
 
 	// Output projection into stepOutBuf.
-	attnOut.MatMulInto(mha.stepOutBuf, mha.WO)
+	if !(mha.gpu != nil && gpuMatVecInto(mha.stepOutBuf, attnOut, mha.gpu.wo, false, embedDim, embedDim)) {
+		attnOut.MatMulInto(mha.stepOutBuf, mha.WO)
+	}
 	mha.stepOutBuf.AddInPlace(mha.BO)
 	return mha.stepOutBuf
 }
@@ -218,11 +230,15 @@ func (ff *FeedForward) ForwardCachedStep(x *Tensor) *Tensor {
 	ff.stepHiddenBuf = ensureRow(ff.stepHiddenBuf, ffnDim)
 	ff.stepOutBuf = ensureRow(ff.stepOutBuf, embedDim)
 
-	x.MatMulInto(ff.stepHiddenBuf, ff.W1)
+	if !(ff.gpu != nil && gpuMatVecInto(ff.stepHiddenBuf, x, ff.gpu.w1, false, ffnDim, embedDim)) {
+		x.MatMulInto(ff.stepHiddenBuf, ff.W1)
+	}
 	ff.stepHiddenBuf.AddInPlace(ff.B1)
 	ff.stepHiddenBuf.GELUInPlace()
 
-	ff.stepHiddenBuf.MatMulInto(ff.stepOutBuf, ff.W2)
+	if !(ff.gpu != nil && gpuMatVecInto(ff.stepOutBuf, ff.stepHiddenBuf, ff.gpu.w2, false, embedDim, ffnDim)) {
+		ff.stepHiddenBuf.MatMulInto(ff.stepOutBuf, ff.W2)
+	}
 	ff.stepOutBuf.AddInPlace(ff.B2)
 	return ff.stepOutBuf
 }
@@ -332,9 +348,20 @@ func (m *MiniTransformer) singleTokenEmbedding(id, pos int) *Tensor {
 
 // logitsFromHidden projects a single [1, embedDim] hidden state to the
 // vocabulary using tied embedding weights, matching Forward().
+//
+// This is the single largest GEMV of every generation step (V×d — for
+// GPT-2, 60% of all weight bytes touched per token), so the resident
+// GPU path matters most here.
 func (m *MiniTransformer) logitsFromHidden(hidden *Tensor) []float32 {
 	if hidden == nil {
 		return nil
+	}
+	if m.gpu != nil && m.gpu.lmHead >= 0 {
+		out := make([]float32, m.Config.VocabSize)
+		if compute.MatMulResident(m.gpu.lmHead, hidden.Data, 1,
+			m.Config.VocabSize, m.Config.EmbedDim, true, out) == nil {
+			return out
+		}
 	}
 	logits := hidden.MatMulTransposed(m.Embedding.TokenEmb)
 	out := make([]float32, logits.Shape[1])
@@ -426,6 +453,102 @@ func (m *MiniTransformer) GenerateFastMin(prompt []int, maxNewTokens, minNewToke
 		}
 
 		// Run a single cached step for the just-emitted token.
+		x := m.singleTokenEmbedding(next, cache.SeqLen)
+		for j, block := range m.Blocks {
+			x = block.ForwardCachedStep(x, cache.Layers[j])
+		}
+		x = x.LayerNorm(m.LNFGamma, m.LNFBeta)
+		lastHidden = x
+		cache.SeqLen++
+	}
+
+	return generated
+}
+
+// GenerateFastBiased is GenerateFastMin plus an additive per-token logit
+// bias applied at every decoding step.
+//
+// This is the transformer-side half of the cognitive bridge: the bias
+// vector comes from CognitiveBridge.ComputeBias and carries what episodic
+// memory knows about the prompt. Adding it here — after temperature
+// scaling and EOS suppression, immediately before top-K sampling — means
+// recalled facts compete inside the same distribution the model produces,
+// rather than overriding it.
+//
+// Order matters and is deliberate:
+//   - AFTER temperature: otherwise temperature would rescale the bias and
+//     a low temperature would silently amplify memory into a hard override.
+//   - AFTER EOS suppression: ApplyBias skips -Inf entries, so suppression
+//     survives intact.
+//   - BEFORE top-K: a biased token must be able to ENTER the candidate set;
+//     biasing after filtering could only reorder tokens the model already
+//     favoured, which defeats the purpose for facts it never learned.
+//
+// A nil or empty bias makes this behave exactly like GenerateFastMin.
+func (m *MiniTransformer) GenerateFastBiased(
+	prompt []int,
+	maxNewTokens, minNewTokens int,
+	temperature float32,
+	topK int,
+	bias []float32,
+) []int {
+	if len(bias) == 0 {
+		return m.GenerateFastMin(prompt, maxNewTokens, minNewTokens, temperature, topK)
+	}
+	if len(prompt) == 0 {
+		return prompt
+	}
+	if temperature <= 0 {
+		temperature = 1.0
+	}
+	if topK <= 0 {
+		topK = m.Config.VocabSize
+	}
+
+	maxPrompt := m.Config.MaxSeqLen - 1
+	if maxPrompt < 1 {
+		maxPrompt = 1
+	}
+	if len(prompt) > maxPrompt {
+		prompt = prompt[len(prompt)-maxPrompt:]
+	}
+
+	cache, lastHidden := m.prefill(prompt)
+	if lastHidden == nil {
+		return prompt
+	}
+
+	generated := make([]int, len(prompt), len(prompt)+maxNewTokens)
+	copy(generated, prompt)
+
+	eosID := m.Config.EOSTokenID
+
+	for i := 0; i < maxNewTokens; i++ {
+		logits := m.logitsFromHidden(lastHidden)
+		if len(logits) == 0 {
+			break
+		}
+		for j := range logits {
+			logits[j] /= temperature
+		}
+
+		if i < minNewTokens && eosID >= 0 && eosID < len(logits) {
+			logits[eosID] = float32(math.Inf(-1))
+		}
+
+		// Cognitive memory speaks here.
+		ApplyBias(logits, bias)
+
+		next := topKSample(logits, topK, m.Rng)
+		generated = append(generated, next)
+
+		if next == eosID {
+			break
+		}
+		if cache.SeqLen >= m.Config.MaxSeqLen {
+			break
+		}
+
 		x := m.singleTokenEmbedding(next, cache.SeqLen)
 		for j, block := range m.Blocks {
 			x = block.ForwardCachedStep(x, cache.Layers[j])

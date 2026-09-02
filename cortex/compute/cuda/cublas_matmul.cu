@@ -23,10 +23,23 @@
 #include <cuda_runtime.h>
 #include <cublas_v2.h>
 
+#include <vector>
+
 namespace {
 
 cublasHandle_t g_handle = nullptr;
 bool           g_inited = false;
+
+// ─── Resident weight registry ────────────────────────────────────────
+// Weights uploaded once via nexus_cublas_upload_weight live here for
+// the process lifetime (or until freed). Handles are indices; freed
+// slots are reused. Access is serialised by the Go-side mutex, same as
+// every other cuBLAS entry point.
+struct ResidentWeight {
+    float* ptr;
+    size_t count;
+};
+std::vector<ResidentWeight> g_weights;
 
 // ─── Persistent device buffer arena ──────────────────────────────────
 // cudaMalloc / cudaFree cost ~100 microseconds each on Windows. For a
@@ -82,11 +95,93 @@ NEXUS_API void nexus_cublas_close(void) {
     freeBuf(g_bufA);
     freeBuf(g_bufB);
     freeBuf(g_bufC);
+    for (auto& w : g_weights) {
+        if (w.ptr) cudaFree(w.ptr);
+        w.ptr = nullptr;
+        w.count = 0;
+    }
+    g_weights.clear();
     if (g_handle != nullptr) {
         cublasDestroy(g_handle);
         g_handle = nullptr;
     }
     g_inited = false;
+}
+
+NEXUS_API int nexus_cublas_upload_weight(const float* data, int64_t count) {
+    if (!g_inited) return -1;
+    if (data == nullptr || count <= 0) return -2;
+
+    float* dev = nullptr;
+    const size_t bytes = static_cast<size_t>(count) * sizeof(float);
+    if (check(cudaMalloc(&dev, bytes)) != 0) return -3;
+    if (check(cudaMemcpy(dev, data, bytes, cudaMemcpyHostToDevice)) != 0) {
+        cudaFree(dev);
+        return -4;
+    }
+
+    // Reuse a freed slot when available so long-lived processes that
+    // cycle models don't grow the registry without bound.
+    for (size_t i = 0; i < g_weights.size(); i++) {
+        if (g_weights[i].ptr == nullptr) {
+            g_weights[i] = {dev, static_cast<size_t>(count)};
+            return static_cast<int>(i);
+        }
+    }
+    g_weights.push_back({dev, static_cast<size_t>(count)});
+    return static_cast<int>(g_weights.size() - 1);
+}
+
+NEXUS_API void nexus_cublas_free_weight(int handle) {
+    if (handle < 0 || static_cast<size_t>(handle) >= g_weights.size()) return;
+    if (g_weights[handle].ptr) cudaFree(g_weights[handle].ptr);
+    g_weights[handle] = {nullptr, 0};
+}
+
+// Y[M,N] = X[M,K] * W (or * W^T). Same column-major reformulations as
+// nexus_cublas_sgemm / _nt above — the only difference is that W is
+// already on the device, so per call only X (M*K floats) goes up and Y
+// (M*N floats) comes down.
+NEXUS_API int nexus_cublas_sgemm_resident(
+    int weightHandle, const float* X, float* Y,
+    int M, int N, int K, int transW)
+{
+    if (!g_inited) return -1;
+    if (M <= 0 || N <= 0 || K <= 0) return -2;
+    if (weightHandle < 0 || static_cast<size_t>(weightHandle) >= g_weights.size()) return -5;
+
+    const ResidentWeight& w = g_weights[weightHandle];
+    const size_t needW = static_cast<size_t>(N) * K;
+    if (w.ptr == nullptr || w.count < needW) return -6;
+
+    const size_t bytesX = static_cast<size_t>(M) * K * sizeof(float);
+    const size_t bytesY = static_cast<size_t>(M) * N * sizeof(float);
+    if (ensureBuf(g_bufA, bytesX) != 0) return 10;
+    if (ensureBuf(g_bufC, bytesY) != 0) return 12;
+
+    if (check(cudaMemcpy(g_bufA.ptr, X, bytesX, cudaMemcpyHostToDevice)) != 0) return 20;
+
+    const float alpha = 1.0f, beta = 0.0f;
+    cublasStatus_t st;
+    if (transW == 0) {
+        // Row-major Y = X * W[K,N] → column-major Y[N,M] = W_col[N,K] * X_col[K,M].
+        st = cublasSgemm(g_handle, CUBLAS_OP_N, CUBLAS_OP_N,
+                         N, M, K, &alpha,
+                         w.ptr, N,
+                         g_bufA.ptr, K,
+                         &beta, g_bufC.ptr, N);
+    } else {
+        // Row-major Y = X * W[N,K]^T → same shape trick as sgemm_nt.
+        st = cublasSgemm(g_handle, CUBLAS_OP_T, CUBLAS_OP_N,
+                         N, M, K, &alpha,
+                         w.ptr, K,
+                         g_bufA.ptr, K,
+                         &beta, g_bufC.ptr, N);
+    }
+    if (check(st) != 0) return 30;
+
+    if (check(cudaMemcpy(Y, g_bufC.ptr, bytesY, cudaMemcpyDeviceToHost)) != 0) return 40;
+    return 0;
 }
 
 // C[M,N] = A[M,K] * B[K,N]   (all row-major)

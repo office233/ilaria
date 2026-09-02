@@ -1,9 +1,10 @@
-//go:build !cuda
-// +build !cuda
+//go:build !cuda && !(gpu && windows)
 
 // cublas_stub.go — pure-Go fallback when the binary is built without
-// `-tags cuda`. All entry points are no-ops or sentinel errors so that
-// callers can probe IsCuBLASAvailable() and gracefully use the CPU path.
+// `-tags cuda` (static nvcc-built bridge) or `-tags gpu` (dynamic
+// DLL-loading bridge, Windows). All entry points are no-ops or sentinel
+// errors so that callers can probe IsCuBLASAvailable() and gracefully
+// use the CPU path.
 
 package compute
 
@@ -30,4 +31,17 @@ func MatMulGPU(A, B []float32, M, N, K int) ([]float32, error) {
 // MatMulNTGPU stub always errors.
 func MatMulNTGPU(A, B []float32, M, N, K int) ([]float32, error) {
 	return nil, errors.New("cublas not compiled in (rebuild with -tags cuda)")
+}
+
+// UploadWeight stub always errors.
+func UploadWeight(data []float32) (int, error) {
+	return -1, errors.New("cublas not compiled in (rebuild with -tags cuda)")
+}
+
+// FreeWeight stub is a no-op.
+func FreeWeight(handle int) {}
+
+// MatMulResident stub always errors.
+func MatMulResident(handle int, X []float32, M, N, K int, transW bool, out []float32) error {
+	return errors.New("cublas not compiled in (rebuild with -tags cuda)")
 }

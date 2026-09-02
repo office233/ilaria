@@ -398,3 +398,103 @@ func TestBPEMixedLanguage(t *testing.T) {
 		t.Errorf("mixed sentence: %q → %q", mixed, decoded)
 	}
 }
+
+// TestBPETrainIncrementalEquivalence pins the incremental Train (lazy
+// heap + pair→words index) to the exact output of the quadratic
+// reference implementation: same merges in the same order, same vocab.
+// Any drift means the heap tie-breaking or the incremental counting
+// diverged from ground truth.
+func TestBPETrainIncrementalEquivalence(t *testing.T) {
+	corpus := []string{
+		"the quick brown fox jumps over the lazy dog",
+		"the theory of relativity was developed by albert einstein",
+		"pack my box with five dozen liquor jugs",
+		"the capital of france is paris and the capital of japan is tokyo",
+		"sphinx of black quartz judge my vow",
+		"how vexingly quick daft zebras jump",
+		"the five boxing wizards jump quickly over the fence",
+		"o vulpe rapidă sare peste câinele leneș din pădure",
+		"limba română are diacritice precum ă î ș ț â",
+		"repetition repetition repetition builds strong merge statistics",
+	}
+
+	fast := NewBPETokenizer(400)
+	fast.Train(corpus)
+
+	ref := NewBPETokenizer(400)
+	ref.trainReference(corpus)
+
+	if len(fast.Merges) != len(ref.Merges) {
+		t.Fatalf("merge count differs: incremental=%d reference=%d",
+			len(fast.Merges), len(ref.Merges))
+	}
+	for i := range ref.Merges {
+		if fast.Merges[i] != ref.Merges[i] {
+			t.Fatalf("merge %d differs: incremental=%+v reference=%+v",
+				i, fast.Merges[i], ref.Merges[i])
+		}
+	}
+	if len(fast.IDToToken) != len(ref.IDToToken) {
+		t.Fatalf("vocab size differs: %d vs %d", len(fast.IDToToken), len(ref.IDToToken))
+	}
+	for i := range ref.IDToToken {
+		if fast.IDToToken[i] != ref.IDToToken[i] {
+			t.Fatalf("vocab[%d] differs: %q vs %q", i, fast.IDToToken[i], ref.IDToToken[i])
+		}
+	}
+
+	// And the encodings agree end to end.
+	for _, line := range corpus {
+		a, b := fast.Encode(line), ref.Encode(line)
+		if len(a) != len(b) {
+			t.Fatalf("encoding length differs for %q", line)
+		}
+		for i := range a {
+			if a[i] != b[i] {
+				t.Fatalf("encoding differs for %q at %d", line, i)
+			}
+		}
+	}
+}
+
+// BenchmarkBPETrain compares the incremental trainer against the
+// quadratic reference on a repetitive corpus at a realistic vocab.
+// Run: go test -bench BenchmarkBPETrain -run NONE ./cortex/
+func BenchmarkBPETrainIncremental(b *testing.B) {
+	corpus := benchCorpus()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		tok := NewBPETokenizer(2000)
+		tok.Train(corpus)
+	}
+}
+
+func BenchmarkBPETrainReference(b *testing.B) {
+	corpus := benchCorpus()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		tok := NewBPETokenizer(2000)
+		tok.trainReference(corpus)
+	}
+}
+
+func benchCorpus() []string {
+	// A diverse corpus with thousands of DISTINCT words — the regime
+	// that separates the two trainers. The reference rescans every
+	// unique word per merge; the incremental one touches only affected
+	// words, so its advantage grows with corpus vocabulary.
+	syllables := []string{"ka", "ro", "mi", "ten", "bra", "lus", "or", "vek", "sha", "din", "pol", "ez"}
+	corpus := make([]string, 0, 3000)
+	for i := 0; i < 3000; i++ {
+		var sb []byte
+		for w := 0; w < 8; w++ {
+			n := 2 + (i+w)%3
+			for s := 0; s < n; s++ {
+				sb = append(sb, syllables[(i*7+w*13+s*5)%len(syllables)]...)
+			}
+			sb = append(sb, ' ')
+		}
+		corpus = append(corpus, string(sb))
+	}
+	return corpus
+}

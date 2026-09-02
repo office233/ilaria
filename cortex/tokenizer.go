@@ -1,6 +1,7 @@
 package cortex
 
 import (
+	"container/heap"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -197,17 +198,11 @@ func mergeKey(a, b string) string {
 	return a + "\x00" + b
 }
 
-// Train learns BPE merge rules from the given corpus lines.
-// Each line is treated as a separate document/sentence.
-//
-// The algorithm:
-//  1. Pre-tokenize all lines into words
-//  2. Count word frequencies
-//  3. Split each word into characters (initial vocabulary)
-//  4. Iteratively merge the most frequent adjacent pair
-//  5. Stop when VocabSize is reached
-func (t *BPETokenizer) Train(lines []string) {
-	// Step 1-2: Pre-tokenize and count word frequencies
+// trainPrepare runs the shared front half of BPE training: word
+// counting, character splitting, and the initial vocabulary (specials +
+// sorted characters). Returns the working word list.
+func (t *BPETokenizer) trainPrepare(lines []string) []wordFreq {
+	// Pre-tokenize and count word frequencies.
 	wordCounts := make(map[string]int)
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
@@ -220,40 +215,41 @@ func (t *BPETokenizer) Train(lines []string) {
 		}
 	}
 
-	// Step 3: Initialize each word as character sequence
-	words := make([]wordFreq, 0, len(wordCounts))
-	charSet := make(map[string]bool)
+	// Initialize each word as a character sequence. Sort the word list
+	// so downstream indices are deterministic regardless of map order.
+	wordList := make([]string, 0, len(wordCounts))
+	for w := range wordCounts {
+		wordList = append(wordList, w)
+	}
+	sort.Strings(wordList)
 
-	for word, count := range wordCounts {
+	words := make([]wordFreq, 0, len(wordList))
+	charSet := make(map[string]bool)
+	for _, word := range wordList {
 		chars := splitToChars(word)
 		if len(chars) == 0 {
 			continue
 		}
-		words = append(words, wordFreq{symbols: chars, count: count})
+		words = append(words, wordFreq{symbols: chars, count: wordCounts[word]})
 		for _, ch := range chars {
 			charSet[ch] = true
 		}
 	}
 
-	// Build initial vocabulary: special tokens + all unique characters
+	// Build initial vocabulary: special tokens + all unique characters.
 	t.TokenToID = make(map[string]int)
 	t.IDToToken = nil
-
-	// Special tokens first (IDs 0-4)
 	specials := []string{TokenPAD, TokenUNK, TokenBOS, TokenEOS, TokenSEP}
 	for _, sp := range specials {
 		id := len(t.IDToToken)
 		t.IDToToken = append(t.IDToToken, sp)
 		t.TokenToID[sp] = id
 	}
-
-	// Sort character tokens for deterministic ordering
 	charList := make([]string, 0, len(charSet))
 	for ch := range charSet {
 		charList = append(charList, ch)
 	}
 	sort.Strings(charList)
-
 	for _, ch := range charList {
 		if _, exists := t.TokenToID[ch]; !exists {
 			id := len(t.IDToToken)
@@ -262,9 +258,170 @@ func (t *BPETokenizer) Train(lines []string) {
 		}
 	}
 
-	// Step 4: Iterative merging
 	t.Merges = nil
 	t.mergeRank = make(map[string]int)
+	return words
+}
+
+// recordMerge appends one learned merge rule and its vocab entry.
+func (t *BPETokenizer) recordMerge(a, b string, rank int) {
+	merged := a + b
+	t.Merges = append(t.Merges, MergePair{A: a, B: b})
+	t.mergeRank[mergeKey(a, b)] = rank
+	if _, exists := t.TokenToID[merged]; !exists {
+		id := len(t.IDToToken)
+		t.IDToToken = append(t.IDToToken, merged)
+		t.TokenToID[merged] = id
+	}
+}
+
+// pairHeapEntry is a (count, key) snapshot for the lazy max-heap in
+// Train. Entries go stale when a pair's count changes; the pop loop
+// discards any entry whose count no longer matches the live map.
+type pairHeapEntry struct {
+	key   string
+	count int
+}
+
+// pairHeap orders by count DESC, then key ASC — exactly the tie-break
+// the reference implementation applies ("most frequent, lexicographically
+// smallest"), so both implementations learn identical merge sequences.
+type pairHeap []pairHeapEntry
+
+func (h pairHeap) Len() int { return len(h) }
+func (h pairHeap) Less(i, j int) bool {
+	if h[i].count != h[j].count {
+		return h[i].count > h[j].count
+	}
+	return h[i].key < h[j].key
+}
+func (h pairHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
+func (h *pairHeap) Push(x any)        { *h = append(*h, x.(pairHeapEntry)) }
+func (h *pairHeap) Pop() any {
+	old := *h
+	n := len(old)
+	x := old[n-1]
+	*h = old[:n-1]
+	return x
+}
+
+// Train learns BPE merge rules from the given corpus lines using
+// INCREMENTAL pair counting:
+//
+//   - pair counts are computed once, then updated only for the words a
+//     merge actually touches (found via a pair→words index);
+//   - the best pair comes from a lazy max-heap instead of a full rescan.
+//
+// The reference implementation (trainReference) recounted every pair
+// over the whole corpus per merge — O(merges × corpus). At the 8-16k
+// vocabs cursa E′ needs, on a real corpus, that is hours vs minutes.
+// TestBPETrainIncrementalEquivalence pins the two implementations to
+// identical output.
+func (t *BPETokenizer) Train(lines []string) {
+	words := t.trainPrepare(lines)
+
+	numMerges := t.VocabSize - len(t.IDToToken)
+	if numMerges < 0 {
+		numMerges = 0
+	}
+
+	// Initial pair statistics + inverted index pair → word indices.
+	pairCounts := make(map[string]int)
+	pairWords := make(map[string]map[int]struct{})
+	addPair := func(key string, wi, cnt int) {
+		pairCounts[key] += cnt
+		set, ok := pairWords[key]
+		if !ok {
+			set = make(map[int]struct{})
+			pairWords[key] = set
+		}
+		set[wi] = struct{}{}
+	}
+	for wi := range words {
+		syms := words[wi].symbols
+		for i := 0; i < len(syms)-1; i++ {
+			addPair(mergeKey(syms[i], syms[i+1]), wi, words[wi].count)
+		}
+	}
+
+	h := make(pairHeap, 0, len(pairCounts))
+	for key, count := range pairCounts {
+		h = append(h, pairHeapEntry{key: key, count: count})
+	}
+	heap.Init(&h)
+
+	for mi := 0; mi < numMerges; mi++ {
+		// Pop until a live entry surfaces (lazy invalidation: stale
+		// snapshots have counts that no longer match the map).
+		var bestKey string
+		bestCount := 0
+		for h.Len() > 0 {
+			top := heap.Pop(&h).(pairHeapEntry)
+			if pairCounts[top.key] == top.count && top.count > 0 {
+				bestKey, bestCount = top.key, top.count
+				break
+			}
+		}
+		if bestCount < 2 {
+			break // No pair appears more than once — stop.
+		}
+
+		parts := strings.SplitN(bestKey, "\x00", 2)
+		a, b := parts[0], parts[1]
+		merged := a + b
+		t.recordMerge(a, b, mi)
+
+		// Re-count ONLY the words that contain this pair: retract each
+		// affected word's old pairs, apply the merge, add its new pairs.
+		affected := pairWords[bestKey]
+		delete(pairWords, bestKey)
+		for wi := range affected {
+			syms := words[wi].symbols
+			cnt := words[wi].count
+
+			for i := 0; i < len(syms)-1; i++ {
+				key := mergeKey(syms[i], syms[i+1])
+				pairCounts[key] -= cnt
+				if pairCounts[key] <= 0 {
+					delete(pairCounts, key)
+					delete(pairWords, key)
+					continue
+				}
+				if set := pairWords[key]; set != nil {
+					delete(set, wi) // re-added below if the pair survives the merge
+				}
+				// Push a fresh snapshot: decrements never re-push
+				// implicitly, and without a live entry a pair whose
+				// count only ever shrank could never be selected again.
+				heap.Push(&h, pairHeapEntry{key: key, count: pairCounts[key]})
+			}
+
+			newSyms := applyMerge(syms, a, b, merged)
+			words[wi].symbols = newSyms
+
+			for i := 0; i < len(newSyms)-1; i++ {
+				key := mergeKey(newSyms[i], newSyms[i+1])
+				addPair(key, wi, cnt)
+				heap.Push(&h, pairHeapEntry{key: key, count: pairCounts[key]})
+			}
+		}
+		delete(pairCounts, bestKey)
+
+		if (mi+1)%1000 == 0 {
+			fmt.Printf("[BPE Train] %d / %d merges completed (vocab: %d)\n",
+				mi+1, numMerges, len(t.IDToToken))
+		}
+	}
+
+	fmt.Printf("[BPE Train] Complete. Final vocab size: %d, merges: %d\n",
+		len(t.IDToToken), len(t.Merges))
+}
+
+// trainReference is the original quadratic implementation, kept as the
+// semantic reference for TestBPETrainIncrementalEquivalence. Not used
+// on any hot path.
+func (t *BPETokenizer) trainReference(lines []string) {
+	words := t.trainPrepare(lines)
 
 	numMerges := t.VocabSize - len(t.IDToToken)
 	if numMerges < 0 {
@@ -272,7 +429,7 @@ func (t *BPETokenizer) Train(lines []string) {
 	}
 
 	for mi := 0; mi < numMerges; mi++ {
-		// Count all adjacent pairs across the corpus
+		// Count all adjacent pairs across the corpus.
 		pairCounts := make(map[string]int)
 		for wi := range words {
 			syms := words[wi].symbols
@@ -282,12 +439,11 @@ func (t *BPETokenizer) Train(lines []string) {
 				pairCounts[key] += cnt
 			}
 		}
-
 		if len(pairCounts) == 0 {
 			break
 		}
 
-		// Find the most frequent pair
+		// Find the most frequent pair (ties: lexicographically smallest).
 		bestKey := ""
 		bestCount := 0
 		for key, count := range pairCounts {
@@ -296,41 +452,19 @@ func (t *BPETokenizer) Train(lines []string) {
 				bestKey = key
 			}
 		}
-
 		if bestCount < 2 {
-			break // No pair appears more than once — stop
+			break
 		}
 
-		// Parse the best pair
 		parts := strings.SplitN(bestKey, "\x00", 2)
 		a, b := parts[0], parts[1]
 		merged := a + b
+		t.recordMerge(a, b, mi)
 
-		// Record the merge rule
-		t.Merges = append(t.Merges, MergePair{A: a, B: b})
-		t.mergeRank[mergeKey(a, b)] = mi
-
-		// Add merged token to vocabulary
-		if _, exists := t.TokenToID[merged]; !exists {
-			id := len(t.IDToToken)
-			t.IDToToken = append(t.IDToToken, merged)
-			t.TokenToID[merged] = id
-		}
-
-		// Apply merge to all words
 		for wi := range words {
 			words[wi].symbols = applyMerge(words[wi].symbols, a, b, merged)
 		}
-
-		// Progress logging every 1000 merges
-		if (mi+1)%1000 == 0 {
-			fmt.Printf("[BPE Train] %d / %d merges completed (vocab: %d)\n",
-				mi+1, numMerges, len(t.IDToToken))
-		}
 	}
-
-	fmt.Printf("[BPE Train] Complete. Final vocab size: %d, merges: %d\n",
-		len(t.IDToToken), len(t.Merges))
 }
 
 // applyMerge replaces all occurrences of (a, b) in symbols with merged.

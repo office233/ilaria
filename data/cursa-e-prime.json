@@ -1,0 +1,12 @@
+{
+  "seed": 42,
+  "transformer_embed_dim": 384,
+  "transformer_num_heads": 6,
+  "transformer_num_layers": 6,
+  "transformer_ffn_dim": 1536,
+  "transformer_max_seq_len": 1024,
+  "transformer_use_rope": true,
+  "transformer_use_swiglu": true,
+  "transformer_dropout": 0.1,
+  "adam_weight_decay": 0.01
+}

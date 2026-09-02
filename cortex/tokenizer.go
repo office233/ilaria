@@ -56,6 +56,13 @@ type BPETokenizer struct {
 	IDToToken []string       `json:"id_to_token"`
 	VocabSize int            `json:"vocab_size"`
 
+	// ByteLevel marks a GPT-2-style byte-level vocabulary (loaded via
+	// LoadGPT2Tokenizer). In this mode the base alphabet is the 256
+	// mapped byte symbols, pre-tokenization follows GPT-2 semantics,
+	// <UNK> cannot occur, and <|endoftext|> plays every special role.
+	// See tokenizer_gpt2.go.
+	ByteLevel bool `json:"byte_level,omitempty"`
+
 	// mergeRank caches "A\x00B" → merge priority (lower = applied first).
 	// Built from Merges on load/train.
 	mergeRank map[string]int
@@ -350,9 +357,19 @@ func applyMerge(symbols []string, a, b, merged string) []string {
 // ─────────────────────────────────────────────────────────────────────
 
 // Encode converts text into a sequence of token IDs.
-// Unknown characters that weren't seen during training map to <UNK>.
+// Unknown characters that weren't seen during training map to <UNK>
+// (char-level mode only — byte-level coverage is total by construction).
 func (t *BPETokenizer) Encode(text string) []int {
-	preTokens := PreTokenize(text)
+	var preTokens []string
+	if t.ByteLevel {
+		// GPT-2 semantics: split first, then rewrite each piece into
+		// the byte-unicode alphabet so every symbol is in-vocabulary.
+		for _, piece := range gpt2PreTokenize(text) {
+			preTokens = append(preTokens, gpt2EncodeBytes(piece))
+		}
+	} else {
+		preTokens = PreTokenize(text)
+	}
 	var ids []int
 
 	for _, pt := range preTokens {
@@ -371,7 +388,7 @@ func (t *BPETokenizer) Encode(text string) []int {
 			if id, ok := t.TokenToID[sym]; ok {
 				ids = append(ids, id)
 			} else {
-				ids = append(ids, t.TokenToID[TokenUNK])
+				ids = append(ids, t.UnkID())
 			}
 		}
 	}
@@ -380,12 +397,14 @@ func (t *BPETokenizer) Encode(text string) []int {
 }
 
 // EncodeWithSpecial wraps the encoded text with <BOS> and <EOS> tokens.
+// In byte-level (GPT-2) mode both roles are <|endoftext|>, matching how
+// GPT-2 delimits documents.
 func (t *BPETokenizer) EncodeWithSpecial(text string) []int {
 	ids := t.Encode(text)
 	result := make([]int, 0, len(ids)+2)
-	result = append(result, t.TokenToID[TokenBOS])
+	result = append(result, t.BosID())
 	result = append(result, ids...)
-	result = append(result, t.TokenToID[TokenEOS])
+	result = append(result, t.EosID())
 	return result
 }
 
@@ -433,7 +452,8 @@ func (t *BPETokenizer) applyBPEMerges(symbols []string) []string {
 // ─────────────────────────────────────────────────────────────────────
 
 // Decode converts a sequence of token IDs back into text.
-// SpaceMarker (Ġ) characters are replaced with actual spaces.
+// SpaceMarker (Ġ) characters are replaced with actual spaces; in
+// byte-level mode the full byte alphabet is reversed instead.
 func (t *BPETokenizer) Decode(ids []int) string {
 	var b strings.Builder
 	for _, id := range ids {
@@ -443,10 +463,16 @@ func (t *BPETokenizer) Decode(ids []int) string {
 		token := t.IDToToken[id]
 		// Skip special tokens during decode
 		if token == TokenPAD || token == TokenBOS || token == TokenEOS ||
-			token == TokenUNK || token == TokenSEP {
+			token == TokenUNK || token == TokenSEP || token == GPT2EndOfText {
 			continue
 		}
 		b.WriteString(token)
+	}
+
+	if t.ByteLevel {
+		// Reverse the byte-unicode alphabet: Ġ→' ', Ċ→'\n', multi-byte
+		// UTF-8 sequences (diacritics) reassemble byte by byte.
+		return gpt2DecodeBytes(b.String())
 	}
 
 	// Replace Ġ with space
@@ -482,6 +508,7 @@ type tokenizerJSON struct {
 	VocabSize int            `json:"vocab_size"`
 	Merges    []MergePair    `json:"merges"`
 	Vocab     map[string]int `json:"vocab"`
+	ByteLevel bool           `json:"byte_level,omitempty"`
 }
 
 // Save writes the tokenizer to a JSON file.
@@ -490,6 +517,7 @@ func (t *BPETokenizer) Save(path string) error {
 		VocabSize: t.VocabSize,
 		Merges:    t.Merges,
 		Vocab:     t.TokenToID,
+		ByteLevel: t.ByteLevel,
 	}
 
 	buf, err := json.MarshalIndent(data, "", "  ")
@@ -539,6 +567,7 @@ func LoadBPETokenizer(path string) (*BPETokenizer, error) {
 		TokenToID: data.Vocab,
 		IDToToken: idToToken,
 		mergeRank: mergeRank,
+		ByteLevel: data.ByteLevel,
 	}, nil
 }
 
@@ -551,17 +580,46 @@ func (t *BPETokenizer) ActualVocabSize() int {
 	return len(t.IDToToken)
 }
 
+// The special-role accessors below all collapse onto <|endoftext|> in
+// byte-level (GPT-2) mode — that vocabulary defines no other specials,
+// and GPT-2 itself uses endoftext as BOS, EOS and padding alike.
+
 // PadID returns the ID for the <PAD> token.
-func (t *BPETokenizer) PadID() int { return t.TokenToID[TokenPAD] }
+func (t *BPETokenizer) PadID() int {
+	if t.ByteLevel {
+		return t.gpt2SpecialID()
+	}
+	return t.TokenToID[TokenPAD]
+}
 
 // UnkID returns the ID for the <UNK> token.
-func (t *BPETokenizer) UnkID() int { return t.TokenToID[TokenUNK] }
+func (t *BPETokenizer) UnkID() int {
+	if t.ByteLevel {
+		return t.gpt2SpecialID()
+	}
+	return t.TokenToID[TokenUNK]
+}
 
 // BosID returns the ID for the <BOS> token.
-func (t *BPETokenizer) BosID() int { return t.TokenToID[TokenBOS] }
+func (t *BPETokenizer) BosID() int {
+	if t.ByteLevel {
+		return t.gpt2SpecialID()
+	}
+	return t.TokenToID[TokenBOS]
+}
 
 // EosID returns the ID for the <EOS> token.
-func (t *BPETokenizer) EosID() int { return t.TokenToID[TokenEOS] }
+func (t *BPETokenizer) EosID() int {
+	if t.ByteLevel {
+		return t.gpt2SpecialID()
+	}
+	return t.TokenToID[TokenEOS]
+}
 
 // SepID returns the ID for the <SEP> token.
-func (t *BPETokenizer) SepID() int { return t.TokenToID[TokenSEP] }
+func (t *BPETokenizer) SepID() int {
+	if t.ByteLevel {
+		return t.gpt2SpecialID()
+	}
+	return t.TokenToID[TokenSEP]
+}

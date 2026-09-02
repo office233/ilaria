@@ -63,6 +63,13 @@ data/cortex-auto-*/
 data/cortex-broca-smoke/
 data/cortex-broca-*/
 
+# Downloaded pretrained weights (re-fetch from Hugging Face; see cmd/gpt2-import)
+data/pretrained/
+
+# Imported/converted checkpoints (regenerable via cmd/gpt2-import)
+data/cortex-gpt2/
+data/cortex-distill/
+
 # CUDA build artifacts
 *.lib
 *.exp

@@ -13,6 +13,7 @@ package cortex
 // graph deterministically from this dump.
 
 import (
+	"bufio"
 	"compress/gzip"
 	"encoding/json"
 	"fmt"
@@ -150,6 +151,10 @@ func (m *MiniTransformer) Save(path string) error {
 // LoadMiniTransformer reconstructs a transformer from disk. Returns nil
 // transformer and a nil error when the file does not exist (caller is
 // expected to fall back to fresh initialisation in that case).
+//
+// Both persisted formats are accepted, dispatched by magic bytes:
+// "NXTF2BIN" → binary v2 (transformer_persist_binary.go), gzip magic →
+// the original JSON v1.
 func LoadMiniTransformer(path string, rng *rand.Rand) (*MiniTransformer, error) {
 	f, err := os.Open(path)
 	if err != nil {
@@ -160,7 +165,16 @@ func LoadMiniTransformer(path string, rng *rand.Rand) (*MiniTransformer, error) 
 	}
 	defer f.Close()
 
-	gz, err := gzip.NewReader(f)
+	br := bufio.NewReaderSize(f, 1<<20)
+	magic, err := br.Peek(len(nxtf2Magic))
+	if err == nil && string(magic) == string(nxtf2Magic[:]) {
+		if _, err := br.Discard(len(nxtf2Magic)); err != nil {
+			return nil, err
+		}
+		return loadMiniTransformerBinary(br, rng)
+	}
+
+	gz, err := gzip.NewReader(br)
 	if err != nil {
 		return nil, fmt.Errorf("gzip: %w", err)
 	}

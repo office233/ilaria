@@ -195,21 +195,46 @@ func main() {
 	fmt.Println()
 }
 
-// trainItem coordinates single item learning and surprise checking.
+// trainItem teaches the organism one corpus item and returns the prediction
+// error (0 = perfectly anticipated, 255 = no overlap at all).
+//
+// ORDER MATTERS. Predictor.Update compares reality against whatever
+// Predictor.Predict last stored in LastPrediction. If nobody calls Predict
+// first, LastPrediction is empty, overlap is always 0, and Update returns a
+// constant 255 — a saturated signal that looks like "learned nothing" but
+// actually means "never measured". That also pins every item above the
+// spaced-repetition threshold, so each epoch re-runs the whole corpus.
+//
+// So: predict from the CONTEXT (the prompt), then learn, then score the
+// prediction against the ACTUAL continuation (the response).
 func trainItem(o *cortex.Organism, item cortex.CorpusItem) uint8 {
 	if item.Text != "" {
 		// Passive sequential learning
+		sdr := o.Encoder.EncodeSentence(item.Text)
+
+		// Anticipate this sentence from the running context before we
+		// consume it, so the error below reflects real expectation.
+		o.Predictor.Predict(o.Predictor.LastReality)
+
 		o.Learn(item.Text)
 
-		// Capture the surprise (prediction error)
-		sdr := o.Encoder.EncodeSentence(item.Text)
-		return o.Predictor.Update(sdr)
+		err := o.Predictor.Update(sdr)
+		// Set up the expectation carried into the next item.
+		o.Predictor.Predict(sdr)
+		return err
 	}
 
 	// Active Q&A learning
+	qSDR := o.Encoder.EncodeSentence(item.Instruction)
 	respSDR := o.Encoder.EncodeSentence(item.Response)
+
+	// Expect an answer given the question — this is the prediction the
+	// error below actually judges.
+	o.Predictor.Predict(qSDR)
+
 	o.LearnQA(item.Instruction, item.Response)
 
-	// Capture the surprise (prediction error) of response given instruction.
-	return o.Predictor.Update(respSDR)
+	err := o.Predictor.Update(respSDR)
+	o.Predictor.Predict(respSDR)
+	return err
 }

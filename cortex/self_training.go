@@ -17,6 +17,12 @@ var DefaultCorpusFiles = []string{
 	"wikipedia_ro.jsonl", "alpaca.jsonl", "dolly.jsonl",
 }
 
+// selfTrainBatchSize is the gradient-accumulation size for online
+// self-training. 8 sequences per Adam update is enough to smooth
+// single-sample gradient noise while keeping the latency of one update
+// low enough for interactive Sleep() cycles.
+const selfTrainBatchSize = 8
+
 // ─────────────────────────────────────────────────────────────────────
 // Self-Training — Continuous Evolution Engine
 // ─────────────────────────────────────────────────────────────────────
@@ -40,6 +46,7 @@ func (o *Organism) TrainTransformerFromCorpus(corpusPath string, maxLines int, l
 	if o.Transformer == nil || o.Tokenizer == nil {
 		return 0, 0, fmt.Errorf("transformer or tokenizer not initialized")
 	}
+	opt := o.ensureAdamState()
 
 	f, err := os.Open(corpusPath)
 	if err != nil {
@@ -53,6 +60,27 @@ func (o *Organism) TrainTransformerFromCorpus(corpusPath string, maxLines int, l
 	totalLoss := float32(0)
 	steps := 0
 	lineCount := 0
+
+	// Sequences are accumulated into mini-batches: a 1-sequence Adam
+	// update follows that sample's gradient noise, while the mean over
+	// a batch mostly cancels it (see TrainStepAdamBatch).
+	batch := make([][]int, 0, selfTrainBatchSize)
+
+	flush := func() {
+		if len(batch) == 0 {
+			return
+		}
+		loss := o.Transformer.TrainStepAdamBatch(batch, lr, opt)
+		if loss == loss { // NaN check
+			totalLoss += loss * float32(len(batch))
+			steps += len(batch)
+		}
+		batch = batch[:0]
+
+		if steps%100 < selfTrainBatchSize && steps >= 100 {
+			fmt.Printf("[Self-Train] %d steps, avg loss: %.4f\n", steps, totalLoss/float32(steps))
+		}
+	}
 
 	for scanner.Scan() {
 		if maxLines > 0 && lineCount >= maxLines {
@@ -78,19 +106,12 @@ func (o *Organism) TrainTransformerFromCorpus(corpusPath string, maxLines int, l
 			ids = ids[:maxLen]
 		}
 
-		// Train step
-		loss := o.Transformer.TrainStep(ids, lr)
-		if loss == loss { // NaN check
-			totalLoss += loss
-			steps++
-		}
-
-		// Progress
-		if steps%100 == 0 && steps > 0 {
-			avgLoss := totalLoss / float32(steps)
-			fmt.Printf("[Self-Train] %d steps, avg loss: %.4f\n", steps, avgLoss)
+		batch = append(batch, ids)
+		if len(batch) >= selfTrainBatchSize {
+			flush()
 		}
 	}
+	flush()
 
 	if steps == 0 {
 		return 0, 0, fmt.Errorf("no valid training data found")
@@ -109,6 +130,7 @@ func (o *Organism) TrainTransformerFromMemories(lr float32) (float32, int) {
 	if o.Transformer == nil || o.Tokenizer == nil || o.Hippocampus == nil {
 		return 0, 0
 	}
+	opt := o.ensureAdamState()
 
 	memories := o.Hippocampus.GetAllContexts()
 	if len(memories) == 0 {
@@ -117,6 +139,19 @@ func (o *Organism) TrainTransformerFromMemories(lr float32) (float32, int) {
 
 	totalLoss := float32(0)
 	steps := 0
+	batch := make([][]int, 0, selfTrainBatchSize)
+
+	flush := func() {
+		if len(batch) == 0 {
+			return
+		}
+		loss := o.Transformer.TrainStepAdamBatch(batch, lr, opt)
+		if loss == loss {
+			totalLoss += loss * float32(len(batch))
+			steps += len(batch)
+		}
+		batch = batch[:0]
+	}
 
 	for _, context := range memories {
 		if len(context) < 10 {
@@ -134,12 +169,12 @@ func (o *Organism) TrainTransformerFromMemories(lr float32) (float32, int) {
 			ids = ids[:maxLen]
 		}
 
-		loss := o.Transformer.TrainStep(ids, lr)
-		if loss == loss {
-			totalLoss += loss
-			steps++
+		batch = append(batch, ids)
+		if len(batch) >= selfTrainBatchSize {
+			flush()
 		}
 	}
+	flush()
 
 	if steps == 0 {
 		return 0, 0
@@ -175,7 +210,7 @@ func (o *Organism) TrainTransformerFromQA(question, answer string, lr float32) f
 		ids = ids[:maxLen]
 	}
 
-	return o.Transformer.TrainStep(ids, lr)
+	return o.Transformer.TrainStepAdam(ids, lr, o.ensureAdamState())
 }
 
 // SelfEvolve runs one full self-evolution cycle:

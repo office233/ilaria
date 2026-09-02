@@ -98,6 +98,20 @@ type Organism struct {
 	Transformer *MiniTransformer // Autoregressive language model
 	Tokenizer   *BPETokenizer    // BPE subword tokenizer
 
+	// Bridge projects hippocampal recall onto the transformer's output
+	// distribution, so a fact learned from a SINGLE exposure can steer
+	// generation without any weight update. Nil disables biasing and the
+	// organism falls back to plain transformer output.
+	Bridge *CognitiveBridge
+
+	// AdamOpt carries optimizer moments across online self-training calls
+	// (SelfEvolve, LearnQA replay). Without persistent moments each call
+	// would restart Adam's bias-corrected warmup, so consecutive one-off
+	// updates would be far noisier than the offline trainer's.
+	// Lazily built by ensureAdamState; adamFor detects transformer swaps.
+	AdamOpt *AdamState
+	adamFor *MiniTransformer
+
 	// Body systems — sensory input, motor output, biological timing.
 	Sensory *SensorySystem // Multi-channel sensory processing
 	Motor   *MotorSystem   // Output filtering & queuing
@@ -650,10 +664,13 @@ func (o *Organism) Process(input string) string {
 			}
 		}
 		if responseText == "" {
-			responseText = o.Broca.GenerateWithTransformer(
+			// Bias the transformer with whatever episodic memory knows
+			// about this input, so one-shot learned facts can surface.
+			responseText = o.Broca.GenerateWithTransformerBiased(
 				o.Transformer, o.Tokenizer,
 				understanding.Words, mem,
 				confidence, o.Config.MaxGenWords,
+				o.cognitiveBias(input),
 			)
 		}
 	}
@@ -1586,6 +1603,67 @@ func (o *Organism) Save(dataDir string) error {
 	}
 
 	return nil
+}
+
+// ensureBridge lazily constructs the cognitive bridge the first time a
+// biased generation is attempted.
+//
+// WHY LAZY: Transformer and Tokenizer are assigned from many places
+// (InitBroca2, LoadOrganism, the broca-eval/broca-probe/broca-train
+// commands). Constructing the bridge in each of them would guarantee that
+// some path eventually forgets and silently loses cognitive biasing. One
+// lazy constructor on the read path cannot be forgotten.
+//
+// Returns nil when the prerequisites are missing, which callers treat as
+// "no bias" rather than an error.
+func (o *Organism) ensureBridge() *CognitiveBridge {
+	if o.Transformer == nil || o.Tokenizer == nil ||
+		o.Hippocampus == nil || o.Encoder == nil {
+		return nil
+	}
+
+	// Rebuild if the tokenizer or vocab size changed underneath us
+	// (e.g. a different checkpoint was loaded into a live organism).
+	if o.Bridge == nil ||
+		o.Bridge.Tokenizer != o.Tokenizer ||
+		o.Bridge.Hippo != o.Hippocampus ||
+		o.Bridge.VocabSize != o.Transformer.Config.VocabSize {
+		o.Bridge = NewCognitiveBridge(
+			o.Hippocampus, o.Encoder, o.Tokenizer,
+			o.Transformer.Config.VocabSize,
+		)
+	}
+	return o.Bridge
+}
+
+// ensureAdamState lazily builds (or rebuilds) the Adam optimizer state
+// used by online self-training.
+//
+// WHY LAZY, like ensureBridge: the transformer is assigned from several
+// places (InitBroca2, LoadOrganism, external wiring in cmd/*). A moment
+// buffer built for one transformer instance is shaped for — and only
+// valid for — that instance, so the state is rebuilt whenever the
+// transformer pointer changes. Returns nil when there is no transformer.
+func (o *Organism) ensureAdamState() *AdamState {
+	if o.Transformer == nil {
+		return nil
+	}
+	if o.AdamOpt == nil || o.adamFor != o.Transformer {
+		o.AdamOpt = NewAdamState(o.Transformer, AdamConfigFromConfig(o.Config))
+		o.adamFor = o.Transformer
+	}
+	return o.AdamOpt
+}
+
+// cognitiveBias returns the logit bias for a prompt, or nil.
+// Safe to call on a partially-initialised organism.
+func (o *Organism) cognitiveBias(prompt string) []float32 {
+	br := o.ensureBridge()
+	if br == nil {
+		return nil
+	}
+	bias, _ := br.ComputeBias(prompt)
+	return bias
 }
 
 // LoadOrganism restores a fully wired organism from a previously

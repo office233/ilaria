@@ -412,6 +412,28 @@ func (b *Broca) GenerateWithTransformer(
 	confidence uint8,
 	maxTokens int,
 ) string {
+	return b.GenerateWithTransformerBiased(
+		transformer, tokenizer, contextWords, memoryContext,
+		confidence, maxTokens, nil,
+	)
+}
+
+// GenerateWithTransformerBiased is GenerateWithTransformer plus an optional
+// cognitive logit bias produced by CognitiveBridge.ComputeBias.
+//
+// The bias lets episodic memory influence WHICH tokens the transformer can
+// reach, which is what makes a one-shot learned fact usable at generation
+// time by a model whose weights never saw it. A nil bias makes this
+// behave identically to the unbiased path.
+func (b *Broca) GenerateWithTransformerBiased(
+	transformer *MiniTransformer,
+	tokenizer *BPETokenizer,
+	contextWords []string,
+	memoryContext string,
+	confidence uint8,
+	maxTokens int,
+	bias []float32,
+) string {
 	if transformer == nil || tokenizer == nil || len(contextWords) == 0 || maxTokens <= 0 {
 		return ""
 	}
@@ -453,7 +475,7 @@ func (b *Broca) GenerateWithTransformer(
 	// equivalent to Generate() but O(N) per emitted token instead of
 	// O(N^2). On CPU the speedup is the difference between a usable
 	// dashboard and an unusable one.
-	outputIDs := transformer.GenerateFast(input, maxTokens, temperature, 40)
+	outputIDs := transformer.GenerateFastBiased(input, maxTokens, 0, temperature, 40, bias)
 
 	// Extract only the generated part (remove prompt)
 	if len(outputIDs) <= len(input) {

@@ -56,6 +56,7 @@ type trainConfig struct {
 	batchSize         int
 	weightDecay       float64
 	dropout           float64
+	orgConfigPath     string
 	evalLines         int
 	evalEvery         int
 	checkpointEvery   int
@@ -184,6 +185,7 @@ func main() {
 	batchSize := flag.Int("batch-size", defI(fileCfg.BatchSize, 8), "Sequences accumulated per optimizer step, mean weighted per TOKEN (1 = legacy single-sample)")
 	weightDecay := flag.Float64("weight-decay", defF(fileCfg.WeightDecay, 0.01), "AdamW decoupled weight decay on weight matrices (0 = plain Adam)")
 	dropout := flag.Float64("dropout", defF(fileCfg.Dropout, 0.1), "Training-time dropout on attention weights + FFN activations (0 = off)")
+	orgConfig := flag.String("org-config", "", "cortex Config JSON (architecture: embed dim/layers/RoPE/SwiGLU etc.). Empty = env/auto-discovery/defaults")
 	evalLines := flag.Int("eval-lines", defI(fileCfg.EvalLines, 200), "Per-corpus lines held out for validation")
 	evalEvery := flag.Int("eval-every", defI(fileCfg.EvalEvery, 250), "Run validation every N training steps")
 	checkpointEvery := flag.Int("checkpoint-every", defI(fileCfg.CheckpointEvery, 1000), "Save transformer every N steps (0 = only at end)")
@@ -214,6 +216,7 @@ func main() {
 		batchSize:          *batchSize,
 		weightDecay:        *weightDecay,
 		dropout:            *dropout,
+		orgConfigPath:      *orgConfig,
 		evalLines:          *evalLines,
 		evalEvery:          *evalEvery,
 		checkpointEvery:    *checkpointEvery,
@@ -468,7 +471,18 @@ func appendEvalHistory(path string, rec autoEvalRecord) error {
 }
 
 func run(cfg trainConfig) error {
-	orgCfg := cortex.DefaultConfig()
+	// Architecture config: -org-config flag > NEXUS_CORTEX_CONFIG env >
+	// ./nexus-cortex.json auto-discovery > defaults. Until 2026-09 this
+	// was hardwired to DefaultConfig(), which silently ignored any
+	// architecture JSON — cursa E′'s RoPE/SwiGLU flags never arrived.
+	orgCfgPath, orgCfgSource := cortex.ResolveConfigPath(cfg.orgConfigPath)
+	orgCfg, err := cortex.LoadConfig(orgCfgPath)
+	if err != nil {
+		return fmt.Errorf("org config: %w", err)
+	}
+	if orgCfgPath != "" {
+		fmt.Printf("[config] architecture from %s (%s)\n", orgCfgPath, orgCfgSource)
+	}
 	orgCfg.DataDir = cfg.dataDir
 	orgCfg.Seed = cfg.seed
 	orgCfg.Demo = false
@@ -493,10 +507,30 @@ func run(cfg trainConfig) error {
 	fmt.Printf("Loading organism from %s ...\n", cfg.dataDir)
 	org, err := cortex.LoadOrganism(orgCfg, rng)
 	if err != nil || org == nil {
-		return fmt.Errorf("LoadOrganism failed: %w", err)
+		// Fresh data dir (e.g. cursa E′): bootstrap a new organism and
+		// persist it so every later tool (eval, probe, web) can load it.
+		// Until 2026-09 this required manually running another cmd first.
+		fmt.Printf("[bootstrap] LoadOrganism failed (%v) — creating a fresh organism in %s\n",
+			err, cfg.dataDir)
+		org = cortex.NewOrganism(orgCfg, rng)
+		if org == nil {
+			return fmt.Errorf("NewOrganism returned nil")
+		}
+		if serr := org.Save(cfg.dataDir); serr != nil {
+			return fmt.Errorf("bootstrap save: %w", serr)
+		}
 	}
 	if org.Tokenizer == nil {
-		return fmt.Errorf("organism has no BPE tokenizer")
+		// A tokenizer.json placed in the data dir (trained separately via
+		// cmd/cortex-tokenizer) is picked up here.
+		tok, terr := cortex.LoadBPETokenizer(filepath.Join(cfg.dataDir, "tokenizer.json"))
+		if terr != nil {
+			return fmt.Errorf("organism has no BPE tokenizer and %s/tokenizer.json failed: %w",
+				cfg.dataDir, terr)
+		}
+		org.Tokenizer = tok
+		fmt.Printf("[bootstrap] tokenizer loaded from %s (vocab %d)\n",
+			filepath.Join(cfg.dataDir, "tokenizer.json"), tok.ActualVocabSize())
 	}
 
 	if org.Transformer == nil {
@@ -589,6 +623,18 @@ func run(cfg trainConfig) error {
 	} else {
 		adam = cortex.NewAdamState(org.Transformer, adamCfg)
 		adam.Step = startStep
+	}
+
+	// Resident training weights: upload the matrices once so every
+	// training matmul skips the per-call PCIe weight copy. Measured on
+	// cursa E′ (17.7M params) this is the difference between ~12 s/step
+	// and a usable overnight run.
+	if compute.IsCuBLASAvailable() {
+		if gerr := org.Transformer.EnableGPUTraining(); gerr != nil {
+			fmt.Printf("[gpu] resident training weights unavailable (%v) — using per-call copies\n", gerr)
+		} else {
+			fmt.Println("[gpu] resident training weights active")
+		}
 	}
 
 	logFile, err := openLogAppend(cfg.logPath, startStep == 0)

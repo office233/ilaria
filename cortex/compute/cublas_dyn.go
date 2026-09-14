@@ -216,6 +216,18 @@ static void nx_dyn_free_weight(int h) {
 	if (g_wptr[h]) { p_cudaFree(g_wptr[h]); g_wptr[h] = NULL; g_wcnt[h] = 0; }
 }
 
+// Overwrite a resident weight in place (same size). This is what makes
+// resident TRAINING viable: the optimizer mutates weights every step,
+// and re-uploading into the existing device buffer costs one memcpy
+// instead of a free+malloc+copy churn.
+static int nx_dyn_update_weight(int h, const float* data, int64_t count) {
+	if (!g_inited) return -1;
+	if (h < 0 || h >= NXWT_MAX || g_wptr[h] == NULL) return -5;
+	if (!data || count <= 0 || (size_t)count != g_wcnt[h]) return -2;
+	if (p_cudaMemcpy(g_wptr[h], data, (size_t)count * 4, NX_MEMCPY_H2D) != 0) return -4;
+	return 0;
+}
+
 // Y[M,N] = X[M,K] × W (resident; transW selects W[K,N] vs W[N,K]^T).
 static int nx_dyn_sgemm_resident(int h, const float* X, float* Y,
 	int M, int N, int K, int transW) {
@@ -356,6 +368,26 @@ func FreeWeight(handle int) {
 	cublasMu.Lock()
 	C.nx_dyn_free_weight(C.int(handle))
 	cublasMu.Unlock()
+}
+
+// UpdateWeight overwrites an already-resident weight with fresh host
+// data of the SAME length. One memcpy — the refresh step that lets
+// training keep its weights resident across optimizer updates.
+func UpdateWeight(handle int, data []float32) error {
+	if !cublasReady.Load() {
+		return errors.New("cublas not initialised")
+	}
+	if len(data) == 0 {
+		return errors.New("empty weight")
+	}
+	cublasMu.Lock()
+	ret := C.nx_dyn_update_weight(C.int(handle),
+		(*C.float)(unsafe.Pointer(&data[0])), C.int64_t(len(data)))
+	cublasMu.Unlock()
+	if ret != 0 {
+		return fmt.Errorf("dyn update_weight returned %d", int(ret))
+	}
+	return nil
 }
 
 // MatMulResident computes Y[M,N] = X[M,K] × W_resident (or × W^T when

@@ -79,3 +79,10 @@ data/cortex-distill/
 # Training binary
 train-radio.exe
 data/continual-bench/
+
+# Forge artefacts (token streams, checkpoints — regenerable)
+data/forge/
+data/cortex-eprime/
+data/eprime-*/
+forge/__pycache__/
+*.pt

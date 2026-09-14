@@ -45,3 +45,8 @@ func FreeWeight(handle int) {}
 func MatMulResident(handle int, X []float32, M, N, K int, transW bool, out []float32) error {
 	return errors.New("cublas not compiled in (rebuild with -tags cuda)")
 }
+
+// UpdateWeight stub always errors.
+func UpdateWeight(handle int, data []float32) error {
+	return errors.New("cublas not compiled in (rebuild with -tags cuda)")
+}

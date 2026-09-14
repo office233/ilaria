@@ -92,6 +92,10 @@ NEXUS_API int nexus_cublas_upload_weight(const float* data, int64_t count);
 // Release one uploaded weight. Invalid handles are ignored.
 NEXUS_API void nexus_cublas_free_weight(int handle);
 
+// Overwrite a resident weight in place (same element count). Returns 0
+// on success. The refresh primitive for resident TRAINING weights.
+NEXUS_API int nexus_cublas_update_weight(int handle, const float* data, int64_t count);
+
 // Y[M,N] = X[M,K] * W       (transW == 0; W is resident, row-major [K,N])
 // Y[M,N] = X[M,K] * W^T     (transW != 0; W is resident, row-major [N,K])
 // X and Y are host row-major; only they cross PCIe.

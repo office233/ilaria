@@ -304,6 +304,13 @@ func (s *AdamState) Apply(m *MiniTransformer, lr float32) {
 			adamUpdate(b.FFN.B3, b.FFN.B3Grad, st.B3M, st.B3V, lr, s.Cfg, s.Step)
 		}
 	}
+
+	// The device copies of any resident training weights are now stale;
+	// push the fresh values in one bulk refresh (no-op when the resident
+	// registry is empty). See tensor_gpu_resident.go.
+	if gpuTrainingActive() {
+		m.RefreshResidentWeights()
+	}
 }
 
 // ─────────────────────────────────────────────────────────────────────

@@ -138,6 +138,18 @@ NEXUS_API void nexus_cublas_free_weight(int handle) {
     g_weights[handle] = {nullptr, 0};
 }
 
+NEXUS_API int nexus_cublas_update_weight(int handle, const float* data, int64_t count) {
+    if (!g_inited) return -1;
+    if (handle < 0 || static_cast<size_t>(handle) >= g_weights.size()) return -5;
+    ResidentWeight& w = g_weights[handle];
+    if (w.ptr == nullptr || data == nullptr || count <= 0 ||
+        static_cast<size_t>(count) != w.count) return -2;
+    if (check(cudaMemcpy(w.ptr, data,
+            static_cast<size_t>(count) * sizeof(float),
+            cudaMemcpyHostToDevice)) != 0) return -4;
+    return 0;
+}
+
 // Y[M,N] = X[M,K] * W (or * W^T). Same column-major reformulations as
 // nexus_cublas_sgemm / _nt above — the only difference is that W is
 // already on the device, so per call only X (M*K floats) goes up and Y

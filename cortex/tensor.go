@@ -180,6 +180,15 @@ func (a *Tensor) MatMulInto(out, b *Tensor) {
 		panic(fmt.Sprintf("MatMulInto out shape mismatch: want [%d %d], got %v", M, N, out.Shape))
 	}
 
+	// Resident-weight fast path: b was registered by EnableGPUTraining,
+	// so only the activation crosses PCIe. No size threshold — the whole
+	// point is that small/medium matmuls stop paying the weight copy.
+	if h, ok := residentHandleFor(b); ok {
+		if compute.MatMulResident(h, a.Data, M, N, K, false, out.Data) == nil {
+			return
+		}
+	}
+
 	if compute.IsCuBLASAvailable() && M*N*K >= gpuMatmulMinFlops {
 		if data, err := compute.MatMulGPU(a.Data, b.Data, M, N, K); err == nil {
 			copy(out.Data, data)
@@ -284,6 +293,14 @@ func (a *Tensor) MatMulTransposedInto(out, b *Tensor) {
 	}
 	if len(out.Shape) != 2 || out.Shape[0] != M || out.Shape[1] != N {
 		panic(fmt.Sprintf("MatMulTransposedInto out shape mismatch: want [%d %d], got %v", M, N, out.Shape))
+	}
+
+	// Resident-weight fast path (b^T with b registered): the backward
+	// dX = dOut·W^T and the tied LM head both land here.
+	if h, ok := residentHandleFor(b); ok {
+		if compute.MatMulResident(h, a.Data, M, N, K, true, out.Data) == nil {
+			return
+		}
 	}
 
 	if compute.IsCuBLASAvailable() && M*N*K >= gpuMatmulMinFlops {

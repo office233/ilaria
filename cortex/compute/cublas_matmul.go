@@ -136,6 +136,26 @@ func FreeWeight(handle int) {
 	cublasMu.Unlock()
 }
 
+// UpdateWeight overwrites an already-resident weight with fresh host
+// data of the SAME length. One memcpy — the refresh step that lets
+// training keep its weights resident across optimizer updates.
+func UpdateWeight(handle int, data []float32) error {
+	if !cublasReady.Load() {
+		return errors.New("cublas not initialised")
+	}
+	if len(data) == 0 {
+		return errors.New("empty weight")
+	}
+	cublasMu.Lock()
+	ret := C.nexus_cublas_update_weight(C.int(handle),
+		(*C.float)(unsafe.Pointer(&data[0])), C.int64_t(len(data)))
+	cublasMu.Unlock()
+	if ret != 0 {
+		return fmt.Errorf("nexus_cublas_update_weight returned %d", int(ret))
+	}
+	return nil
+}
+
 // MatMulResident computes Y[M,N] = X[M,K] × W (transW=false, W resident
 // [K,N]) or Y = X × W^T (transW=true, W resident [N,K]) into out, which
 // must have len M*N. Only X and Y cross PCIe — this is what makes

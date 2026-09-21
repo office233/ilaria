@@ -66,12 +66,13 @@ def param_groups(model: IlariaTransformer, wd: float):
 
 
 @torch.no_grad()
-def evaluate(model, data, ctx, bsz, device, iters, rng):
+def evaluate(model, data, ctx, bsz, device, iters, rng, autocast_dtype):
     model.eval()
     losses = []
+    use_amp = device == "cuda" and autocast_dtype is not None
     for _ in range(iters):
         x, y = batch_windows(data, ctx, bsz, rng, device)
-        with torch.autocast("cuda", dtype=torch.float16, enabled=device == "cuda"):
+        with torch.autocast("cuda", dtype=autocast_dtype or torch.float16, enabled=use_amp):
             logits = model(x)
         losses.append(F.cross_entropy(logits.float().view(-1, logits.size(-1)), y.view(-1)).item())
     model.train()
@@ -103,9 +104,30 @@ def main():
     ap.add_argument("--eval-iters", type=int, default=20)
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--resume", default="", help="checkpoint .pt to resume from")
+    ap.add_argument("--precision", default="auto", choices=["auto", "bf16", "fp16", "fp32"],
+                    help="compute precision: auto (bf16 on H100/Ampere, else fp16), bf16, fp16, fp32")
+    ap.add_argument("--compile", action="store_true", help="use torch.compile for maximum H100 kernel fusion")
+    ap.add_argument("--grad-checkpoint", action="store_true", help="enable gradient checkpointing to save VRAM")
     args = ap.parse_args()
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
+    if device == "cuda":
+        torch.backends.cuda.matmul.allow_tf32 = True
+        torch.backends.cudnn.allow_tf32 = True
+
+    # Precision resolution
+    if args.precision == "auto":
+        use_bf16 = device == "cuda" and torch.cuda.is_bf16_supported()
+        autocast_dtype = torch.bfloat16 if use_bf16 else (torch.float16 if device == "cuda" else None)
+    elif args.precision == "bf16":
+        autocast_dtype = torch.bfloat16
+    elif args.precision == "fp16":
+        autocast_dtype = torch.float16
+    else:
+        autocast_dtype = None
+
+    use_scaler = (device == "cuda" and autocast_dtype == torch.float16)
+
     torch.manual_seed(args.seed)
     rng = np.random.default_rng(args.seed)
 
@@ -113,24 +135,38 @@ def main():
     n_val = max(args.ctx * 50, len(data) // 100)          # ~1% held out, ≥50 windows
     train_data, val_data = data[:-n_val], data[-n_val:]
     print(f"[forge] tokens: {len(data):,} (train {len(train_data):,} / val {len(val_data):,}) "
-          f"vocab {meta['vocab_size']} eos {meta['eos_id']} device {device}")
+          f"vocab {meta['vocab_size']} eos {meta['eos_id']} device {device} (precision: {autocast_dtype})")
 
     cfg = IlariaConfig(vocab_size=meta["vocab_size"], embed_dim=args.embed_dim,
                        num_heads=args.heads, num_layers=args.layers, ffn_dim=args.ffn_dim,
                        max_seq_len=args.max_seq_len, eos_token_id=meta["eos_id"],
                        dropout_rate=args.dropout, use_rope=args.rope, use_swiglu=args.swiglu)
-    model = IlariaTransformer(cfg).to(device)
+    model = IlariaTransformer(cfg)
+    if args.grad_checkpoint:
+        model.enable_gradient_checkpointing(True)
+    model = model.to(device)
+
     print(f"[forge] model: {model.param_count()/1e6:.1f}M params | rope={cfg.use_rope} swiglu={cfg.use_swiglu} "
-          f"ctx={args.ctx} batch={args.batch}x{args.accum}")
+          f"ctx={args.ctx} batch={args.batch}x{args.accum} (effective batch {args.batch * args.accum}) "
+          f"grad_checkpoint={args.grad_checkpoint} compile={args.compile}")
 
     opt = torch.optim.AdamW(param_groups(model, args.wd), lr=args.lr, betas=(0.9, 0.95), eps=1e-8)
-    scaler = torch.cuda.amp.GradScaler(enabled=device == "cuda")
+    scaler = torch.cuda.amp.GradScaler(enabled=use_scaler)
     start_step, best_val = 0, float("inf")
     if args.resume:
         ck = torch.load(args.resume, map_location=device)
         model.load_state_dict(ck["model"]); opt.load_state_dict(ck["opt"])
         start_step, best_val = ck["step"], ck.get("best_val", best_val)
         print(f"[forge] resumed from {args.resume} @ step {start_step}")
+
+    # Save reference to raw model for checkpointing/saving before compilation
+    raw_model = model
+    if args.compile:
+        try:
+            print("[forge] compiling model with torch.compile...")
+            model = torch.compile(model)
+        except Exception as e:
+            print(f"[forge] warning: torch.compile failed ({e}), continuing uncompiled")
 
     os.makedirs(args.out, exist_ok=True)
     tok_src = args.tokenizer or meta.get("tokenizer", "")
@@ -142,6 +178,8 @@ def main():
     model.train()
     t0 = time.time()
     tokens_seen = 0
+    use_amp = device == "cuda" and autocast_dtype is not None
+
     for step in range(start_step, args.steps):
         lr = lr_at(step, args.warmup, args.steps, args.lr, args.min_lr)
         for g in opt.param_groups:
@@ -150,22 +188,31 @@ def main():
         loss_acc = 0.0
         for _ in range(args.accum):
             x, y = batch_windows(train_data, args.ctx, args.batch, rng, device)
-            with torch.autocast("cuda", dtype=torch.float16, enabled=device == "cuda"):
+            with torch.autocast("cuda", dtype=autocast_dtype or torch.float16, enabled=use_amp):
                 logits = model(x)
                 loss = F.cross_entropy(logits.view(-1, logits.size(-1)), y.view(-1)) / args.accum
-            scaler.scale(loss).backward()
+            if use_scaler:
+                scaler.scale(loss).backward()
+            else:
+                loss.backward()
             loss_acc += loss.item()
             tokens_seen += x.numel()
-        scaler.unscale_(opt)
-        gn = torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
-        scaler.step(opt); scaler.update()
+
+        if use_scaler:
+            scaler.unscale_(opt)
+            gn = torch.nn.utils.clip_grad_norm_(raw_model.parameters(), 1.0)
+            scaler.step(opt)
+            scaler.update()
+        else:
+            gn = torch.nn.utils.clip_grad_norm_(raw_model.parameters(), 1.0)
+            opt.step()
 
         if step % 20 == 0:
             el = time.time() - t0
             print(f"step {step:6d} | loss {loss_acc:.4f} | lr {lr:.2e} | gn {gn:.2f} | "
                   f"{tokens_seen/max(el,1e-9):,.0f} tok/s | {el/60:.1f} min")
         if (step + 1) % args.eval_every == 0 or step + 1 == args.steps:
-            val = evaluate(model, val_data, args.ctx, args.batch, device, args.eval_iters, rng)
+            val = evaluate(model, val_data, args.ctx, args.batch, device, args.eval_iters, rng, autocast_dtype)
             improved = val < best_val
             best_val = min(best_val, val)
             print(f"[eval] step {step+1} val_loss {val:.4f} ppl {math.exp(val):.1f} "
@@ -173,17 +220,17 @@ def main():
             log.write(json.dumps({"step": step + 1, "train_loss": loss_acc, "val_loss": val,
                                   "ppl": math.exp(val), "lr": lr, "tokens": tokens_seen}) + "\n")
             log.flush()
-            torch.save({"model": model.state_dict(), "opt": opt.state_dict(),
+            torch.save({"model": raw_model.state_dict(), "opt": opt.state_dict(),
                         "step": step + 1, "best_val": best_val, "cfg": cfg.__dict__},
                        os.path.join(args.out, "checkpoint.pt"))
             if improved:
-                save_nxtf(model, os.path.join(args.out, "transformer.nxtf"))
+                save_nxtf(raw_model, os.path.join(args.out, "transformer.nxtf"))
 
     # Sanity sample straight from the forge (greedy, token ids only — the
     # organism decodes; Go owns the tokenizer).
-    ids = model.generate_greedy([meta["eos_id"]], 30)
+    ids = raw_model.generate_greedy([meta["eos_id"]], 30)
     print(f"[forge] greedy sample ids: {ids}")
-    print(f"[forge] DONE — best val {best_val:.4f} (ppl {math.exp(best_val):.1f}) → {args.out}/transformer.nxtf".replace("→", "->"))
+    print(f"[forge] DONE — best val {best_val:.4f} (ppl {math.exp(best_val):.1f}) -> {args.out}/transformer.nxtf")
 
 
 if __name__ == "__main__":

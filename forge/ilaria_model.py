@@ -172,6 +172,10 @@ class IlariaTransformer(nn.Module):
         self.PosEmb = _mat(cfg.max_seq_len, d, std)
         self.blocks = nn.ModuleList(Block(cfg) for _ in range(cfg.num_layers))
         self.LNFGamma, self.LNFBeta = _vec(d, 1.0), _vec(d)
+        self.gradient_checkpointing = False
+
+    def enable_gradient_checkpointing(self, enable: bool = True) -> None:
+        self.gradient_checkpointing = enable
 
     def forward(self, ids: torch.Tensor) -> torch.Tensor:
         B, T = ids.shape
@@ -179,7 +183,11 @@ class IlariaTransformer(nn.Module):
         if not self.cfg.use_rope:
             x = x + self.PosEmb[:T][None, :, :]
         for blk in self.blocks:
-            x = blk(x)
+            if self.gradient_checkpointing and self.training:
+                import torch.utils.checkpoint
+                x = torch.utils.checkpoint.checkpoint(blk, x, use_reentrant=False)
+            else:
+                x = blk(x)
         x = F.layer_norm(x, x.shape[-1:], self.LNFGamma, self.LNFBeta, 1e-5)
         return x @ self.TokenEmb.t()
 

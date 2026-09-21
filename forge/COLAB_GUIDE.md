@@ -1,5 +1,13 @@
 # Faza 1 pe Google Colab (H100 94 GB) — cortexul de limbaj al Ilariei
 
+> **Actualizare 2026-09-21 (după-amiază): calea folosită efectiv este notebook-ul autonom
+> `forge/ilaria_phase1.ipynb`** (generat de `forge/make_colab_notebook.py`, urcat în Drive și rulat din Colab).
+> Motive: contul GitHub e suspendat (Colab nu poate clona repo-ul), iar încărcarea de fișiere prin browser nu e
+> posibilă din sesiunea automată. Notebook-ul poartă codul `forge/` ca zip base64, nu are nevoie de Go în Colab,
+> iar tokenizerul se antrenează acolo cu `tokenizers` (byte-level BPE 32k, `forge/hf_tokenizer.py`), verificat
+> id-cu-id identic cu modul byte-level al motorului Go (`cmd/tok-encode`, 306 linii, 0 diferențe). Ghidul de mai
+> jos rămâne valabil ca referință pentru varianta manuală cu Go.
+
 Scop: un model dens RO+EN antrenat de la zero pe H100, exportat în `transformer.nxtf`,
 care rulează în motorul Go de pe PC (GTX 1660 Ti) lângă hipocamp, puntea cognitivă și
 organele (biomed, sandbox). Corpusul, shard-urile tokenizate și checkpoint-urile stau pe

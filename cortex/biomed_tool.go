@@ -3,11 +3,12 @@ package cortex
 // biomed_tool.go — adapts the biomedical knowledge organ (cortex/biomed) to
 // the organism's Tool interface. The organ answers only from live public
 // sources with evidence; this file only decides WHEN it speaks (a drug is
-// mentioned) and HOW the structured answer is rendered as text.
+// mentioned with drug intent) and HOW the structured answer is rendered.
 
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -17,21 +18,27 @@ import (
 )
 
 const (
-	biomedMatchTimeout   = 8 * time.Second
+	biomedIndexTimeout   = 30 * time.Second
 	biomedExecuteTimeout = 60 * time.Second
+	biomedRetryCooldown  = 5 * time.Minute
 )
 
 // BiomedTool routes drug-related questions to the biomedical organ.
+//
+// Match is non-blocking: the RxNorm name index is loaded in the background
+// on first use (or by Warm), and until it is available the tool stays silent.
 type BiomedTool struct {
 	cacheDir string
 
-	mu     sync.Mutex
-	bridge *biomed.Bridge
-	err    error
+	mu       sync.Mutex
+	bridge   *biomed.Bridge
+	err      error
+	index    *biomed.DrugNameIndex
+	loading  bool
+	lastFail time.Time
 }
 
 // NewBiomedTool creates a tool whose cache and knowledge graph live under cacheDir.
-// The bridge (and the RxNorm name index) are created lazily on first use.
 func NewBiomedTool(cacheDir string) *BiomedTool {
 	return &BiomedTool{cacheDir: cacheDir}
 }
@@ -54,20 +61,88 @@ func (t *BiomedTool) getBridge() (*biomed.Bridge, error) {
 	return t.bridge, t.err
 }
 
-// Match implements Tool: true when the RxNorm name index finds at least one
-// drug mention. Offline with no cached index → false (the tool stays silent).
-func (t *BiomedTool) Match(lower string) bool {
+// Warm loads the drug-name index synchronously (startup hooks and tests).
+func (t *BiomedTool) Warm(ctx context.Context) error {
 	b, err := t.getBridge()
 	if err != nil {
-		return false
+		return err
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), biomedMatchTimeout)
-	defer cancel()
 	ix, err := b.Index(ctx)
+	t.mu.Lock()
+	defer t.mu.Unlock()
 	if err != nil {
+		t.lastFail = time.Now()
+		return err
+	}
+	t.index = ix
+	return nil
+}
+
+// indexNonBlocking returns the loaded index or nil, kicking off one
+// background load at a time (with a cooldown after a failure).
+func (t *BiomedTool) indexNonBlocking() *biomed.DrugNameIndex {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if t.index != nil {
+		return t.index
+	}
+	if t.loading || time.Since(t.lastFail) < biomedRetryCooldown {
+		return nil
+	}
+	t.loading = true
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), biomedIndexTimeout)
+		defer cancel()
+		err := t.Warm(ctx)
+		t.mu.Lock()
+		t.loading = false
+		if err != nil {
+			t.lastFail = time.Now()
+		}
+		t.mu.Unlock()
+	}()
+	return nil
+}
+
+// doseRe spots an explicit dose ("250 mg", "5 ml", "0.5 mcg").
+var doseRe = regexp.MustCompile(`\d+(?:[.,]\d+)?\s*(?:mg|mcg|µg|ug|g|ml|mL|ui|iu)\b`)
+
+// intentStems are routing vocabulary (RO/EN stems) that mark a question as
+// being about a medicine. They carry no medical knowledge; they only stop
+// "water" or "silver" from turning a general sentence into a drug consult.
+var intentStems = []string{
+	"medicament", "medicin", "medication", "drug", "doz", "dose", "dosage", "pastil", "pill", "tablet", "comprimat",
+	"tratament", "treatment", "prospect", "interac", "contraindic", "advers", "side effect", "reacț", "reacti",
+	"farmac", "pharmac", "prescri", "rețet", "retet", "take ", "taking", "iau ", "ia ", "administr", "folos", "used for",
+	"indicat", "overdos", "supradoz", "mecanism", "mechanism", "half-life", "clearance", "toxic", "ingredient", "substanț",
+}
+
+func hasDrugIntent(lower string) bool {
+	if doseRe.MatchString(lower) {
+		return true
+	}
+	padded := " " + lower + " "
+	for _, stem := range intentStems {
+		if strings.Contains(padded, stem) {
+			return true
+		}
+	}
+	return false
+}
+
+// Match implements Tool: true when the RxNorm name index finds a drug mention
+// AND the sentence shows drug intent (two mentions, a dose, or intent words).
+// Index not loaded yet (or offline with no cache) → false, never blocking.
+func (t *BiomedTool) Match(lower string) bool {
+	ix := t.indexNonBlocking()
+	if ix == nil {
 		return false
 	}
-	return len(ix.FindMentions(lower)) > 0
+	mentions := ix.FindMentions(lower)
+	if len(mentions) == 0 {
+		return false
+	}
+	return len(mentions) >= 2 || hasDrugIntent(lower)
 }
 
 // Execute implements Tool: runs a consult and renders it with sources.
@@ -123,10 +198,13 @@ func RenderConsult(res *biomed.ConsultResponse, romanian bool) string {
 		fmt.Fprintf(&sb, "%s: RxCUI %s", l.identity, d.Drug.RxCUI)
 		if d.Molecule != nil {
 			fmt.Fprintf(&sb, " | ChEMBL %s", d.Molecule.ChEMBLID)
-			if d.Molecule.MaxPhase >= 4 {
+			switch {
+			case d.Molecule.MaxPhase == nil:
+				// ChEMBL states no phase: print nothing rather than a number.
+			case *d.Molecule.MaxPhase >= 4:
 				fmt.Fprintf(&sb, " (%s)", l.approved)
-			} else {
-				fmt.Fprintf(&sb, " (%s %.0f)", l.phase, d.Molecule.MaxPhase)
+			default:
+				fmt.Fprintf(&sb, " (%s %s)", l.phase, num(*d.Molecule.MaxPhase))
 			}
 			if len(d.Molecule.ATC) > 0 {
 				fmt.Fprintf(&sb, " | ATC %s", strings.Join(d.Molecule.ATC, ","))
@@ -134,11 +212,14 @@ func RenderConsult(res *biomed.ConsultResponse, romanian bool) string {
 		}
 		sb.WriteString("\n")
 		if len(d.Mechanisms) > 0 {
+			targets := map[string]biomed.Target{}
+			for _, tg := range d.Targets {
+				targets[tg.ChEMBLID] = tg
+			}
 			fmt.Fprintf(&sb, "%s:\n", l.mechanism)
-			for i, m := range d.Mechanisms {
+			for _, m := range d.Mechanisms {
 				line := fmt.Sprintf("  - %s: %s", m.Action, m.Description)
-				if i < len(d.Targets) {
-					tg := d.Targets[i]
+				if tg, ok := targets[m.TargetChEMBLID]; ok && m.TargetChEMBLID != "" {
 					line += fmt.Sprintf(" [%s, %s]", tg.PrefName, strings.Join(tg.GeneSymbols, "/"))
 				}
 				sb.WriteString(line + "\n")
@@ -146,10 +227,14 @@ func RenderConsult(res *biomed.ConsultResponse, romanian bool) string {
 		}
 		if len(d.TopActivities) > 0 {
 			a := d.TopActivities[0]
-			fmt.Fprintf(&sb, "  - %s %g %s vs %s (ChEMBL %s)\n", a.Type, a.Value, a.Units, a.TargetName, a.DocumentID)
+			fmt.Fprintf(&sb, "  - %s %s %s vs %s (ChEMBL %s)\n", a.Type, num(a.Value), a.Units, a.TargetName, a.DocumentID)
 		}
 		if d.Label != nil {
-			fmt.Fprintf(&sb, "%s: set_id %s (%s)\n", l.label, d.Label.SetID, d.Label.EffectiveTime)
+			fmt.Fprintf(&sb, "%s: set_id %s (%s)", l.label, d.Label.SetID, d.Label.EffectiveTime)
+			if len(d.Label.GenericNames) > 0 {
+				fmt.Fprintf(&sb, " — %s", strings.Join(d.Label.GenericNames, ", "))
+			}
+			sb.WriteString("\n")
 			if len(d.BoxedWarning) > 0 {
 				fmt.Fprintf(&sb, "  %s: %s\n", l.boxed, d.BoxedWarning[0])
 			}
@@ -206,8 +291,8 @@ func RenderConsult(res *biomed.ConsultResponse, romanian bool) string {
 		}
 		if d.Simulation != nil {
 			s := d.Simulation
-			fmt.Fprintf(&sb, "%s: %g mg q%gh → Cmax,ss %.3g mg/L, Cmin,ss %.3g mg/L, AUCτ %.3g mg·h/L\n",
-				l.sim, s.Regimen.DoseMg, s.Regimen.IntervalHours, s.CmaxSS, s.CminSS, s.AUCPerInterval)
+			fmt.Fprintf(&sb, "%s: %s mg q%sh → Cmax,ss %s mg/L, Cmin,ss %s mg/L, AUCτ %s mg·h/L\n",
+				l.sim, num(s.Regimen.DoseMg), num(s.Regimen.IntervalHours), num(s.CmaxSS), num(s.CminSS), num(s.AUCPerInterval))
 		}
 		if len(d.OrganNotes) > 0 {
 			fmt.Fprintf(&sb, "%s:\n", l.organ)

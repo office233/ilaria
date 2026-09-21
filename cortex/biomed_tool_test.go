@@ -2,6 +2,7 @@ package cortex
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"io"
 	"math/rand"
@@ -76,6 +77,9 @@ func newTestBiomedTool(t *testing.T, routes map[string]string) *BiomedTool {
 
 func TestBiomedTool_MatchesOnlyWhenADrugIsMentioned(t *testing.T) {
 	tool := newTestBiomedTool(t, gefitinibRoutes())
+	if err := tool.Warm(context.Background()); err != nil {
+		t.Fatal(err)
+	}
 	if tool.Name() != "biomed" {
 		t.Fatalf("name = %q", tool.Name())
 	}
@@ -103,6 +107,9 @@ func TestBiomedTool_OfflineWithoutCacheNeverMatchesAndNeverPanics(t *testing.T) 
 
 func TestBiomedTool_ExecuteReportsSourcesInTheQuestionLanguage(t *testing.T) {
 	tool := newTestBiomedTool(t, gefitinibRoutes())
+	if err := tool.Warm(context.Background()); err != nil {
+		t.Fatal(err)
+	}
 	out, ok := tool.Execute("Ce este gefitinib și care e mecanismul lui?")
 	if !ok {
 		t.Fatal("expected an answer")

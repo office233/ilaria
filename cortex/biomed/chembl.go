@@ -22,7 +22,7 @@ const chemblBase = "https://www.ebi.ac.uk/chembl/api/data"
 type Molecule struct {
 	ChEMBLID        string        `json:"chembl_id"`
 	PrefName        string        `json:"pref_name"`
-	MaxPhase        float64       `json:"max_phase"` // 4 = approved
+	MaxPhase        *float64      `json:"max_phase,omitempty"` // 4 = approved; nil = not stated by ChEMBL
 	BlackBoxWarning bool          `json:"black_box_warning"`
 	ATC             []string      `json:"atc,omitempty"`
 	Props           MoleculeProps `json:"props"`
@@ -148,7 +148,7 @@ func (c *Client) Molecule(ctx context.Context, name string) (Molecule, error) {
 	mol := Molecule{
 		ChEMBLID:        m.ChEMBLID,
 		PrefName:        m.PrefName,
-		MaxPhase:        m.MaxPhase.v,
+		MaxPhase:        m.MaxPhase.floatPtr(),
 		BlackBoxWarning: m.BlackBoxWarning != 0,
 		ATC:             m.ATC,
 		Evidence: Evidence{
@@ -229,11 +229,20 @@ func (c *Client) Target(ctx context.Context, targetID string) (Target, error) {
 
 // Activities returns measured IC50/Ki values for a compound, most potent first.
 func (c *Client) Activities(ctx context.Context, chemblID string, limit int) ([]Activity, error) {
+	return c.ActivitiesForTarget(ctx, chemblID, "", limit)
+}
+
+// ActivitiesForTarget is Activities restricted to one ChEMBL target ("" = any),
+// so the reported potency concerns the drug's actual mechanism target.
+func (c *Client) ActivitiesForTarget(ctx context.Context, chemblID, targetID string, limit int) ([]Activity, error) {
 	if limit <= 0 {
 		limit = 10
 	}
 	u := fmt.Sprintf("%s/activity.json?molecule_chembl_id=%s&standard_type__in=IC50,Ki&limit=%d&order_by=standard_value",
 		chemblBase, url.QueryEscape(chemblID), limit)
+	if targetID != "" {
+		u += "&target_chembl_id=" + url.QueryEscape(targetID)
+	}
 	var out struct {
 		Activities []struct {
 			ID       int64        `json:"activity_id"`
@@ -252,7 +261,7 @@ func (c *Client) Activities(ctx context.Context, chemblID string, limit int) ([]
 	}
 	res := make([]Activity, 0, len(out.Activities))
 	for _, a := range out.Activities {
-		if !a.Value.ok {
+		if !a.Value.ok || a.TargetNm == "Unchecked" { // "Unchecked" = ChEMBL sentinel for an unassigned target
 			continue
 		}
 		res = append(res, Activity{

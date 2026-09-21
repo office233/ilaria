@@ -2,6 +2,7 @@ package biomed
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/url"
 	"regexp"
@@ -23,6 +24,20 @@ var labelSections = []string{
 	"pharmacokinetics", "clinical_studies", "adverse_reactions", "overdosage",
 }
 
+// clinicalSections decide which of several labels for the same generic name
+// is the informative one (OTC repackager stubs carry none of these).
+var clinicalSections = []string{
+	"drug_interactions", "contraindications", "pharmacokinetics",
+	"clinical_pharmacology", "warnings_and_cautions", "use_in_specific_populations",
+}
+
+// labelCandidates is how many labels are fetched (newest first) before choosing;
+// singleIngredientBonus outweighs a few extra sections but not a full label.
+const (
+	labelCandidates       = 10
+	singleIngredientBonus = 3
+)
+
 // Label is one FDA prescribing-information document.
 type Label struct {
 	SetID         string            `json:"set_id"`
@@ -33,21 +48,62 @@ type Label struct {
 	Evidence      Evidence          `json:"evidence"`
 }
 
-// Label fetches the most recent label whose generic name matches.
+// Label fetches up to labelCandidates labels for the generic name, newest
+// first, preferring labels that carry a drug_interactions section (openFDA
+// `_exists_` filter; OTC repackager stubs have none) and falling back to any
+// label. Among the candidates the one with the most clinical sections wins
+// (single-ingredient labels get a bonus; ties go to the newest).
+// A generic name with no label at all is ErrNotFound.
 func (c *Client) Label(ctx context.Context, genericName string) (Label, error) {
 	name := strings.ToLower(strings.TrimSpace(genericName))
-	search := fmt.Sprintf(`openfda.generic_name:"%s"`, name)
-	u := fmt.Sprintf("%s?search=%s&limit=1", openfdaBase, url.QueryEscape(search))
+	base := fmt.Sprintf(`openfda.generic_name:"%s"`, name)
+	results, u, err := c.fetchLabels(ctx, base+" AND _exists_:drug_interactions")
+	if err != nil && !errors.Is(err, ErrNotFound) {
+		return Label{}, err
+	}
+	if len(results) == 0 {
+		if results, u, err = c.fetchLabels(ctx, base); err != nil {
+			return Label{}, err
+		}
+	}
+	if len(results) == 0 {
+		return Label{}, fmt.Errorf("biomed/openfda: no label for %q: %w", name, ErrNotFound)
+	}
+	return chooseLabel(results, name, u), nil
+}
+
+func (c *Client) fetchLabels(ctx context.Context, search string) ([]map[string]any, string, error) {
+	u := fmt.Sprintf("%s?search=%s&limit=%d&sort=effective_time:desc", openfdaBase, url.QueryEscape(search), labelCandidates)
 	var out struct {
 		Results []map[string]any `json:"results"`
 	}
 	if _, err := c.GetJSON(ctx, "openfda", u, &out); err != nil {
-		return Label{}, err
+		return nil, u, err
 	}
-	if len(out.Results) == 0 {
-		return Label{}, fmt.Errorf("biomed/openfda: no label for %q: %w", name, ErrNotFound)
+	return out.Results, u, nil
+}
+
+func chooseLabel(results []map[string]any, name, u string) Label {
+	best, bestScore := -1, -1
+	for i, r := range results {
+		score := 0
+		for _, sec := range clinicalSections {
+			if len(anyStrings(r[sec])) > 0 {
+				score++
+			}
+		}
+		// A single-ingredient label for exactly this generic name beats a
+		// combination product (butalbital/aspirin/caffeine) with the same sections.
+		if of, ok := r["openfda"].(map[string]any); ok {
+			if gn := anyStrings(of["generic_name"]); len(gn) == 1 && strings.EqualFold(gn[0], name) {
+				score += singleIngredientBonus
+			}
+		}
+		if score > bestScore {
+			best, bestScore = i, score
+		}
 	}
-	r := out.Results[0]
+	r := results[best]
 	l := Label{Sections: map[string]string{}}
 	l.SetID, _ = r["set_id"].(string)
 	l.EffectiveTime, _ = r["effective_time"].(string)
@@ -62,9 +118,20 @@ func (c *Client) Label(ctx context.Context, genericName string) (Label, error) {
 	}
 	l.Evidence = Evidence{
 		Source: "openfda", ID: l.SetID, URL: u, Retrieved: time.Now().UTC(),
-		Quote: fmt.Sprintf("FDA label set_id %s effective %s", l.SetID, l.EffectiveTime),
+		Quote: fmt.Sprintf("FDA label set_id %s effective %s (chosen among %d results, score %d)", l.SetID, l.EffectiveTime, len(results), bestScore),
 	}
-	return l, nil
+	return l
+}
+
+// MissingSections returns which of the named sections the label lacks.
+func (l Label) MissingSections(names ...string) []string {
+	var missing []string
+	for _, n := range names {
+		if l.Sections[n] == "" {
+			missing = append(missing, n)
+		}
+	}
+	return missing
 }
 
 func anyStrings(v any) []string {
@@ -100,10 +167,7 @@ func (l Label) FindInSection(section, term string) []string {
 			continue
 		}
 		if strings.Contains(strings.ToLower(s), needle) {
-			if len(s) > 600 {
-				s = s[:600] + "…"
-			}
-			hits = append(hits, s)
+			hits = append(hits, truncateRunes(s, 600))
 		}
 	}
 	return hits

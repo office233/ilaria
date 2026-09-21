@@ -152,6 +152,7 @@ func (b *Bridge) Consult(ctx context.Context, req ConsultRequest) (*ConsultRespo
 		}
 		return nil, fmt.Errorf("biomed: no drug identified in request: %w", ErrNotFound)
 	}
+	b.crossInteractions(ctx, resp, req)
 	b.reportDiseases(ctx, req, resp)
 	for _, d := range resp.Drugs {
 		resp.Missing = append(resp.Missing, d.Missing...)
@@ -227,7 +228,19 @@ func (b *Bridge) reportDrug(ctx context.Context, drug Drug, req ConsultRequest) 
 				}
 			}
 		}
-		if acts, err := b.Client.Activities(ctx, mol.ChEMBLID, 5); err != nil {
+		// Potency against the mechanism's own target; any target only as fallback.
+		targetID := ""
+		for _, m := range r.Mechanisms {
+			if m.TargetChEMBLID != "" {
+				targetID = m.TargetChEMBLID
+				break
+			}
+		}
+		acts, err := b.Client.ActivitiesForTarget(ctx, mol.ChEMBLID, targetID, 5)
+		if err == nil && len(acts) == 0 && targetID != "" {
+			acts, err = b.Client.Activities(ctx, mol.ChEMBLID, 5)
+		}
+		if err != nil {
 			miss("ChEMBL activities", err)
 		} else {
 			r.TopActivities = acts
@@ -244,14 +257,16 @@ func (b *Bridge) reportDrug(ctx context.Context, drug Drug, req ConsultRequest) 
 		b.Graph.AddEdge(Edge{From: drugID, To: "label:" + label.SetID, Relation: "has_label", Evidence: []Evidence{label.Evidence}})
 		r.BoxedWarning = firstSentences(label.Sections["boxed_warning"], 5)
 		r.Contraindications = firstSentences(label.Sections["contraindications"], 5)
-		b.interactions(ctx, &r, label, req)
+		for _, sec := range label.MissingSections("drug_interactions", "contraindications") {
+			r.Missing = append(r.Missing, fmt.Sprintf("%s: label has no %s section", drug.Name, sec))
+		}
 		b.variants(ctx, &r, drug, label, req)
 		pkText := label.Sections["pharmacokinetics"]
 		if pkText == "" {
 			pkText = label.Sections["clinical_pharmacology"]
 		}
 		if pkText == "" {
-			r.Missing = append(r.Missing, drug.Name+": label has no pharmacokinetics section")
+			r.Missing = append(r.Missing, drug.Name+": label has no pharmacokinetics section (nor clinical_pharmacology)")
 		} else {
 			pk := ExtractPK(pkText)
 			r.PK = &pk
@@ -299,25 +314,45 @@ func (b *Bridge) linkTargetAssociations(ctx context.Context, r *DrugReport, drug
 	}
 }
 
-func (b *Bridge) interactions(ctx context.Context, r *DrugReport, label Label, req ConsultRequest) {
-	if req.Patient == nil {
-		return
-	}
-	for _, med := range req.Patient.ActiveMedications {
-		name := strings.ToLower(strings.TrimSpace(med))
-		if name == "" || name == r.Drug.Name {
+// crossInteractions searches every drug's drug_interactions section for the
+// other drugs of the same consult and for the patient's active medications.
+// A label without that section was already reported in Missing.
+func (b *Bridge) crossInteractions(ctx context.Context, resp *ConsultResponse, req ConsultRequest) {
+	for i := range resp.Drugs {
+		r := &resp.Drugs[i]
+		if r.Label == nil || r.Label.Sections["drug_interactions"] == "" {
 			continue
 		}
-		// Search by the canonical RxNorm name when it resolves, else by the raw text.
-		terms := []string{name}
-		if d, err := b.Client.NormalizeDrug(ctx, med); err == nil && d.Name != name {
-			terms = append([]string{d.Name}, terms...)
+		var others []string
+		for j := range resp.Drugs {
+			if j != i {
+				others = append(others, resp.Drugs[j].Drug.Name)
+			}
 		}
-		for _, term := range terms {
-			if quotes := label.FindInSection("drug_interactions", term); len(quotes) > 0 {
-				r.Interactions = append(r.Interactions, InteractionHit{WithDrug: term, Quotes: quotes, Evidence: label.Evidence})
-				b.Graph.AddEdge(Edge{From: "rxcui:" + r.Drug.RxCUI, To: "drugname:" + term, Relation: "interacts_with", Evidence: []Evidence{label.Evidence}})
-				break
+		if req.Patient != nil {
+			others = append(others, req.Patient.ActiveMedications...)
+		}
+		seen := map[string]bool{}
+		for _, med := range others {
+			name := strings.ToLower(strings.TrimSpace(med))
+			if name == "" || name == r.Drug.Name {
+				continue
+			}
+			// Search by the canonical RxNorm name when it resolves, else by the raw text.
+			terms := []string{name}
+			if d, err := b.Client.NormalizeDrug(ctx, med); err == nil && d.Name != name {
+				terms = append([]string{d.Name}, terms...)
+			}
+			for _, term := range terms {
+				if seen[term] {
+					break
+				}
+				if quotes := r.Label.FindInSection("drug_interactions", term); len(quotes) > 0 {
+					seen[term] = true
+					r.Interactions = append(r.Interactions, InteractionHit{WithDrug: term, Quotes: quotes, Evidence: r.Label.Evidence})
+					b.Graph.AddEdge(Edge{From: "rxcui:" + r.Drug.RxCUI, To: "drugname:" + term, Relation: "interacts_with", Evidence: []Evidence{r.Label.Evidence}})
+					break
+				}
 			}
 		}
 	}
@@ -409,7 +444,7 @@ func confidence(resp *ConsultResponse, req ConsultRequest) (float64, string) {
 		if len(d.Mechanisms) > 0 {
 			add(0.20, d.Drug.Name+": ChEMBL mechanism")
 		}
-		if d.Molecule != nil && d.Molecule.MaxPhase >= 4 {
+		if d.Molecule != nil && d.Molecule.MaxPhase != nil && *d.Molecule.MaxPhase >= 4 {
 			add(0.10, d.Drug.Name+": approved (ChEMBL max_phase 4)")
 		}
 		for _, v := range d.VariantHits {

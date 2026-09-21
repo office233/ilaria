@@ -23,7 +23,7 @@ func TestMolecule_GefitinibPropertiesFromChEMBL(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if m.ChEMBLID != "CHEMBL939" || m.PrefName != "GEFITINIB" || m.MaxPhase != 4 || m.BlackBoxWarning {
+	if m.ChEMBLID != "CHEMBL939" || m.PrefName != "GEFITINIB" || m.MaxPhase == nil || *m.MaxPhase != 4 || m.BlackBoxWarning {
 		t.Fatalf("got %+v", m)
 	}
 	if len(m.ATC) != 1 || m.ATC[0] != "L01EB01" {

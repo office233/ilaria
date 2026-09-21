@@ -14,7 +14,8 @@ func allRoutes() map[string]string {
 	return map[string]string{
 		"approximateTerm.json?term=gefitinib":         "rxnorm/approx_gefitinib.json",
 		"approximateTerm.json?term=gefitnib":          "rxnorm/approx_gefitinib.json",
-		"approximateTerm.json?term=warfarin":          "rxnorm/approx_none.json", // not needed for the assertions; keeps traffic explicit
+		"approximateTerm.json?term=warfarin":          "rxnorm/approx_warfarin.json",
+		"rxcui/11289/properties":                      "rxnorm/props_11289.json",
 		"rxcui/328134/properties":                     "rxnorm/props_328134.json",
 		"displaynames.json":                           "rxnorm/displaynames.json",
 		"molecule/search.json?q=gefitinib":            "chembl/search_gefitinib.json",

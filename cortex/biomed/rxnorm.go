@@ -185,6 +185,16 @@ func (ix *DrugNameIndex) FindMentions(text string) []Mention {
 				matched = true
 				break
 			}
+			if n == 1 {
+				// Single word, no exact match: try Romanian-inflected
+				// spellings (warfarina -> warfarin) before giving up.
+				if name, ok := ix.matchRomanianVariant(key); ok {
+					out = append(out, Mention{Text: name, Start: spans[i][0], End: spans[i+n-1][1]})
+					i += n
+					matched = true
+					break
+				}
+			}
 		}
 		if !matched {
 			i++

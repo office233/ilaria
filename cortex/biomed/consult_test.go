@@ -63,10 +63,20 @@ func TestConsult_GefitinibWithT790MAndWarfarin(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(res.Drugs) != 1 {
+	// "warfarină" (Romanian indefinite form) now resolves via Romanian
+	// de-inflection (see biomed/romanian.go), so the query mention adds a
+	// second, mostly-Missing drug report for warfarin alongside the fully
+	// resolved gefitinib one; confidence() only scores the primary drug.
+	if len(res.Drugs) != 2 {
 		t.Fatalf("drugs = %d (%+v)", len(res.Drugs), res.Drugs)
 	}
 	d := res.Drugs[0]
+	if d.Drug.Name != "gefitinib" {
+		t.Fatalf("expected gefitinib as the primary drug, got %+v", d.Drug)
+	}
+	if w := res.Drugs[1]; w.Drug.Name != "warfarin" || w.Drug.RxCUI != "11289" {
+		t.Fatalf("expected warfarin as the second drug, got %+v", w.Drug)
+	}
 	if d.Drug.RxCUI != "328134" || d.Molecule == nil || d.Molecule.ChEMBLID != "CHEMBL939" {
 		t.Fatalf("identity: %+v %+v", d.Drug, d.Molecule)
 	}

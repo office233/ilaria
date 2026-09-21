@@ -60,11 +60,15 @@ func TestDrugNameIndex_FindsMentionsInRomanianSentence(t *testing.T) {
 	if ix.Len() < 100 {
 		t.Fatalf("index too small: %d", ix.Len())
 	}
+	// "warfarină" is the Romanian indefinite form of "warfarin" (no exact
+	// match in the index) and is expected to resolve via Romanian
+	// de-inflection (see romanian.go / romanian_test.go), same as the other
+	// two exact-match mentions.
 	m := ix.FindMentions("Pacientul ia Gefitinib și metformin zilnic, fără warfarină.")
-	if len(m) != 2 || m[0].Text != "gefitinib" || m[1].Text != "metformin" {
+	if len(m) != 3 || m[0].Text != "gefitinib" || m[1].Text != "metformin" || m[2].Text != "warfarin" {
 		t.Fatalf("mentions = %+v", m)
 	}
-	if m[0].Start >= m[0].End || m[1].Start <= m[0].End {
+	if m[0].Start >= m[0].End || m[1].Start <= m[0].End || m[2].Start <= m[1].End {
 		t.Fatalf("bad offsets: %+v", m)
 	}
 	if n := ix.FindMentions("no drugs are mentioned in this sentence"); len(n) != 0 {

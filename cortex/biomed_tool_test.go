@@ -91,6 +91,29 @@ func TestBiomedTool_MatchesOnlyWhenADrugIsMentioned(t *testing.T) {
 	}
 }
 
+func TestBiomedTool_MatchesRomanianInflectedDrugMentions(t *testing.T) {
+	tool := newTestBiomedTool(t, gefitinibRoutes())
+	if err := tool.Warm(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	q := strings.ToLower("Ce interactiuni are warfarina cu aspirina la o doza de 100 mg?")
+	if !tool.Match(q) {
+		t.Fatalf("expected match on Romanian-inflected drug mentions: %q", q)
+	}
+	mentions := tool.index.FindMentions(q)
+	var got []string
+	for _, m := range mentions {
+		got = append(got, m.Text)
+	}
+	if want := []string{"warfarin", "aspirin"}; len(got) != len(want) || got[0] != want[0] || got[1] != want[1] {
+		t.Fatalf("drug mentions = %v, want %v", got, want)
+	}
+
+	if tool.Match(strings.ToLower("Marina a cumparat o masina noua")) {
+		t.Fatal("must not match: no drug is mentioned")
+	}
+}
+
 func TestBiomedTool_OfflineWithoutCacheNeverMatchesAndNeverPanics(t *testing.T) {
 	routes := map[string]string{}
 	for k := range gefitinibRoutes() {

@@ -1644,8 +1644,12 @@ func (o *Organism) Save(dataDir string) error {
 
 	// 15. Broca 2.0 — MiniTransformer weights. Without this every training
 	// session is thrown away on restart, which silently negates SelfEvolve.
+	// Always the v2 binary format (NXTF2BIN): it is what the forge exports
+	// and what forge/nxtf.py reads back; the legacy gzip Save() would
+	// silently replace a forge-trained brain with a file Python cannot
+	// open (LoadMiniTransformer sniffs both, so loading is unaffected).
 	if o.Transformer != nil {
-		if err := o.Transformer.Save(filepath.Join(dataDir, "transformer.nxtf")); err != nil {
+		if err := o.Transformer.SaveBinary(filepath.Join(dataDir, "transformer.nxtf")); err != nil {
 			return fmt.Errorf("organism save transformer: %w", err)
 		}
 	}

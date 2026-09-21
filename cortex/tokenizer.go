@@ -64,6 +64,11 @@ type BPETokenizer struct {
 	// See tokenizer_gpt2.go.
 	ByteLevel bool `json:"byte_level,omitempty"`
 
+	// PreTok is the pre-tokenizer version. 0 (legacy files without the field)
+	// attaches the space marker to every token after punctuation; 2 attaches
+	// it only after real whitespace so "după-amiază" and „citat” round-trip.
+	PreTok int `json:"pretok,omitempty"`
+
 	// mergeRank caches "A\x00B" → merge priority (lower = applied first).
 	// Built from Merges on load/train.
 	mergeRank map[string]int
@@ -80,6 +85,7 @@ func NewBPETokenizer(vocabSize int) *BPETokenizer {
 		VocabSize: vocabSize,
 		TokenToID: make(map[string]int),
 		mergeRank: make(map[string]int),
+		PreTok:    2,
 	}
 }
 
@@ -87,12 +93,73 @@ func NewBPETokenizer(vocabSize int) *BPETokenizer {
 // Pre-Tokenization
 // ─────────────────────────────────────────────────────────────────────
 
-// PreTokenize splits text into pre-tokens at word boundaries.
-// Tokens that follow whitespace receive the Ġ prefix so the
-// tokenizer can reconstruct spaces during decoding.
+// PreTokenize splits text into pre-tokens (version 2): words, digit runs
+// and single punctuation/symbol runes. A pre-token carries the Ġ marker only
+// when whitespace precedes it, so decoding restores the original spacing
+// exactly ("după-amiază", „citat”). Leading whitespace is dropped.
+//
+// Example: "Hello world!" → ["Hello", "Ġworld", "!"]
+func PreTokenize(text string) []string {
+	if text == "" {
+		return nil
+	}
+	var result []string
+	var current strings.Builder
+	afterSpace := false
+	flush := func() {
+		if current.Len() > 0 {
+			result = append(result, current.String())
+			current.Reset()
+		}
+	}
+	for i := 0; i < len(text); {
+		r, size := utf8.DecodeRuneInString(text[i:])
+		if r == utf8.RuneError && size <= 1 {
+			i++
+			continue
+		}
+		if unicode.IsSpace(r) {
+			flush()
+			afterSpace = len(result) > 0
+			i += size
+			continue
+		}
+		if unicode.IsPunct(r) || unicode.IsSymbol(r) {
+			flush()
+			if afterSpace {
+				result = append(result, SpaceMarker+string(r))
+			} else {
+				result = append(result, string(r))
+			}
+			afterSpace = false
+			i += size
+			continue
+		}
+		if current.Len() == 0 && afterSpace {
+			current.WriteString(SpaceMarker)
+		}
+		current.WriteRune(r)
+		afterSpace = false
+		i += size
+	}
+	flush()
+	return result
+}
+
+// preTokenize picks the splitter matching the tokenizer's version.
+func (t *BPETokenizer) preTokenize(text string) []string {
+	if t.PreTok >= 2 {
+		return PreTokenize(text)
+	}
+	return PreTokenizeLegacy(text)
+}
+
+// PreTokenizeLegacy is the pre-v2 splitter, kept so tokenizers trained
+// before 2026-09-21 keep producing the ids their brains were trained on.
+// It marks every token after punctuation with Ġ even without whitespace.
 //
 // Example: "Hello world!" → ["Hello", "Ġworld", "Ġ!"]
-func PreTokenize(text string) []string {
+func PreTokenizeLegacy(text string) []string {
 	if text == "" {
 		return nil
 	}
@@ -209,7 +276,7 @@ func (t *BPETokenizer) trainPrepare(lines []string) []wordFreq {
 		if line == "" {
 			continue
 		}
-		preTokens := PreTokenize(line)
+		preTokens := t.preTokenize(line)
 		for _, pt := range preTokens {
 			wordCounts[pt]++
 		}
@@ -295,8 +362,8 @@ func (h pairHeap) Less(i, j int) bool {
 	}
 	return h[i].key < h[j].key
 }
-func (h pairHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
-func (h *pairHeap) Push(x any)        { *h = append(*h, x.(pairHeapEntry)) }
+func (h pairHeap) Swap(i, j int) { h[i], h[j] = h[j], h[i] }
+func (h *pairHeap) Push(x any)   { *h = append(*h, x.(pairHeapEntry)) }
 func (h *pairHeap) Pop() any {
 	old := *h
 	n := len(old)
@@ -502,7 +569,7 @@ func (t *BPETokenizer) Encode(text string) []int {
 			preTokens = append(preTokens, gpt2EncodeBytes(piece))
 		}
 	} else {
-		preTokens = PreTokenize(text)
+		preTokens = t.preTokenize(text)
 	}
 	var ids []int
 
@@ -643,6 +710,7 @@ type tokenizerJSON struct {
 	Merges    []MergePair    `json:"merges"`
 	Vocab     map[string]int `json:"vocab"`
 	ByteLevel bool           `json:"byte_level,omitempty"`
+	PreTok    int            `json:"pretok,omitempty"`
 }
 
 // Save writes the tokenizer to a JSON file.
@@ -652,6 +720,7 @@ func (t *BPETokenizer) Save(path string) error {
 		Merges:    t.Merges,
 		Vocab:     t.TokenToID,
 		ByteLevel: t.ByteLevel,
+		PreTok:    t.PreTok,
 	}
 
 	buf, err := json.MarshalIndent(data, "", "  ")
@@ -696,6 +765,7 @@ func LoadBPETokenizer(path string) (*BPETokenizer, error) {
 	}
 
 	return &BPETokenizer{
+		PreTok:    data.PreTok,
 		VocabSize: data.VocabSize,
 		Merges:    data.Merges,
 		TokenToID: data.Vocab,

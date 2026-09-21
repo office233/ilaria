@@ -184,6 +184,40 @@ in the config); it speaks only when the RxNorm index finds a drug in the input a
 silent offline. `cortex/swe` now holds a **real** sandbox (`RunGo`) that vets, builds and
 tests Go code through the actual toolchain, the organism's self-verification organ.
 
+## Ilaria-130M — the forge-trained language cortex (2026-09-22)
+
+The first real language cortex was trained from scratch in the forge (`forge/train_ilaria.py`)
+on a Colab GPU runtime and runs unchanged in the Go engine:
+
+| | |
+|---|---|
+| architecture | 12 layers, d 768, 12 heads, SwiGLU 2688, RoPE, ctx 1024, tied head — 128.1 M params |
+| tokenizer | byte-level BPE 32k trained on a balanced RO/EN sample (`forge/hf_tokenizer.py`), id-identical to the Go byte-level mode |
+| corpus | 5.8 M documents → 3.72 G tokens: FineWeb-2 RO, FineWeb-Edu, Wikipedia RO/EN (`forge/prepare_corpus.py`, `forge/concat_streams.py`) |
+| training | 11 500 steps × 262 k tokens = 3.0 G tokens, bf16 + `torch.compile`, ~210 k tok/s, ≈ 4 h |
+| validation | loss 2.894, perplexity **18.1** (best at step 10 000; `data/forge/brain-a/training.log`) |
+| held-out (Wikipedia articles created in 2025, `forge/eval/`) | perplexity **24.4** overall — RO 20.8, EN 28.7 (`forge/ppl.py`, float32) |
+| Go ≡ PyTorch on the real weights | max \|Δ logit\| 2·10⁻⁵, argmax identical on every position, identical token ids (`TestForgeBrainEquivalence`) |
+| continual-learning benchmark with this cortex | strict accuracy **89 %** (bias-only 1 %, frozen 1 %), memory recall 100 %, zero gradient updates |
+
+What it is not: an instruction-following model. Asked a question through the organism it continues text
+like the web it was trained on; phase 2 (distillation / SFT with the organs in the loop) is what turns the
+cortex into an assistant. Every answer of `cmd/cortex` now carries a provenance line
+(`[provenance] source=tool|memory|reasoning|broca|none tool=<name>`), so it is visible which module answered.
+
+```bash
+# generation on the GPU (needs CGO + -tags gpu, see above)
+go run -tags gpu ./cmd/nxtf-run -data-dir data/forge/brain-a -gpu -prompt "Ștefan cel Mare a fost" -max-tokens 60 -rep-penalty 1.2
+# Go ≡ PyTorch on the real weights
+python forge/dump_logits.py --brain data/forge/brain-a --out data/forge/brain-a/logits_ref.json
+NEXUS_BRAIN_DIR=$PWD/data/forge/brain-a go test ./cortex -run TestForgeBrainEquivalence -count=1 -v
+# perplexity on any UTF-8 text, both engines
+python forge/ppl.py --brain data/forge/brain-a --text forge/eval/heldout_wiki_2025.txt
+go run ./cmd/nxtf-ppl -data-dir data/forge/brain-a -text forge/eval/heldout_wiki_2025.txt
+```
+
+The Colab path (notebook, Drive layout, runner scripts) is documented in `forge/COLAB_GUIDE.md` and `forge/colab/`.
+
 ## Benchmark Performance (local, vs own dense baseline)
 
 | Operation | Speed | Allocations |

@@ -74,11 +74,11 @@ def build():
              "  --sources wiki_ro,wiki_en,fineweb2_ro,fineweb_edu \\\n"
              "  --max wiki_ro=300000 --max wiki_en=500000 --max fineweb2_ro=3000000 --max fineweb_edu=2000000 2>&1 | grep --line-buffered -v Warning\n"
              f"ls {DRIVE}/corpus | head -60; du -sh {DRIVE}/corpus"),
-        md("## Tokenizare (8 procese) + stream unic\n\nSare peste shard-urile care au deja `.bin`."),
+        md("## Tokenizare (8 procese) + stream unic\n\nSare peste shard-urile care au deja meta `.json` (scris la final, deci un `.bin` parțial se reface)."),
         code("%%shell\n"
              "cd /content/nexus\n"
-             f"for f in {DRIVE}/corpus/*.jsonl; do p=\"${{f%.jsonl}}\"; [ -f \"$p.bin\" ] || echo \"$p\"; done \\\n"
-             f"  | xargs -P 8 -I{{}} python forge/hf_tokenizer.py encode --tokenizer {DRIVE}/tokenizer.json --in {{}}.jsonl --out {{}}\n"
+             f"for f in {DRIVE}/corpus/*.jsonl; do p=\"${{f%.jsonl}}\"; [ -s \"$p.json\" ] || echo \"$p\"; done \\\n"
+             f"  | xargs -P \"$(nproc)\" -I{{}} python forge/hf_tokenizer.py encode --tokenizer {DRIVE}/tokenizer.json --in {{}}.jsonl --out {{}}\n"
              f"python forge/concat_streams.py --out {DRIVE}/train_stream \\\n"
              f"  --prefix ro={DRIVE}/corpus/fineweb2_ro --prefix ro={DRIVE}/corpus/wiki_ro \\\n"
              f"  --prefix en={DRIVE}/corpus/fineweb_edu --prefix en={DRIVE}/corpus/wiki_en\n"

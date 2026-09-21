@@ -54,6 +54,14 @@ func (r *ReasoningEngine) AttachTools(tr *ToolRegistry) {
 	r.Tools = tr
 }
 
+// ToolNames returns the registered tool names in dispatch order (nil-safe).
+func (r *ReasoningEngine) ToolNames() []string {
+	if r == nil || r.Tools == nil {
+		return nil
+	}
+	return r.Tools.Names()
+}
+
 // TryReason attempts to handle the input with deterministic reasoning.
 // Returns (answer, true) if the input matches a known reasoning pattern,
 // or ("", false) if the neural pipeline should handle it.
@@ -259,8 +267,6 @@ func (r *ReasoningEngine) solveCompoundWordProblem(input string, numbers []float
 // ─────────────────────────────────────────────────────────────────────
 // Pattern Recognition — Numeric sequence prediction
 // ─────────────────────────────────────────────────────────────────────
-
-
 
 func (r *ReasoningEngine) trySequence(input string) (string, bool) {
 	// Must look like a sequence question.

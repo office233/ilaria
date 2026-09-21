@@ -11,16 +11,16 @@ const NoConfidentResponse = "(no confident response)"
 // Config represents all configurations, sizes, thresholds, seeds, paths,
 // and learning knobs for the Nexus Cortex digital organism.
 type Config struct {
-	DataDir      string `json:"data_dir"`
-	Seed         int64  `json:"seed"`
-	Demo         bool   `json:"demo"`
-	NoSave       bool   `json:"no_save"`
-	Fresh        bool   `json:"fresh"`
-	MaxGenWords  int    `json:"max_gen_words"`
-	SDRSize      int    `json:"sdr_size"`
-	ActiveCount  int    `json:"active_count"`
-	MaxMemories  int    `json:"max_memories"`
-	ThinkCycles  int    `json:"think_cycles"`
+	DataDir     string `json:"data_dir"`
+	Seed        int64  `json:"seed"`
+	Demo        bool   `json:"demo"`
+	NoSave      bool   `json:"no_save"`
+	Fresh       bool   `json:"fresh"`
+	MaxGenWords int    `json:"max_gen_words"`
+	SDRSize     int    `json:"sdr_size"`
+	ActiveCount int    `json:"active_count"`
+	MaxMemories int    `json:"max_memories"`
+	ThinkCycles int    `json:"think_cycles"`
 
 	CerebellumConfThreshold uint8  `json:"cerebellum_conf_threshold"`
 	HippocampusRecallThresh uint8  `json:"hippocampus_recall_thresh"`
@@ -30,11 +30,11 @@ type Config struct {
 	PrefrontalPruneThresh   uint8  `json:"prefrontal_prune_thresh"`
 
 	// Thousand Brains configuration
-	ThousandBrainsColumns        int     `json:"thousand_brains_columns"`
-	ThousandBrainsColNeurons     int     `json:"thousand_brains_col_neurons"`
+	ThousandBrainsColumns         int     `json:"thousand_brains_columns"`
+	ThousandBrainsColNeurons      int     `json:"thousand_brains_col_neurons"`
 	ThousandBrainsColConnectivity float64 `json:"thousand_brains_col_connectivity"`
-	ThousandBrainsProcessTicks   int     `json:"thousand_brains_process_ticks"`
-	ThousandBrainsInputCurrent   uint8   `json:"thousand_brains_input_current"`
+	ThousandBrainsProcessTicks    int     `json:"thousand_brains_process_ticks"`
+	ThousandBrainsInputCurrent    uint8   `json:"thousand_brains_input_current"`
 
 	// Reward System configuration
 	RewardSystemCapacity int `json:"reward_system_capacity"`
@@ -66,11 +66,11 @@ type Config struct {
 	MinAttentionSalience int `json:"min_attention_salience"`
 
 	// Prefrontal Reasoning configuration
-	PrefrontalNetSize            int     `json:"prefrontal_net_size"`
-	PrefrontalConnectivity       float64 `json:"prefrontal_connectivity"`
-	PrefrontalInputCurrent       uint8   `json:"prefrontal_input_current"`
-	PrefrontalMaxHops            int     `json:"prefrontal_max_hops"`
-	PrefrontalConvergenceThresh  uint8   `json:"prefrontal_convergence_thresh"`
+	PrefrontalNetSize           int     `json:"prefrontal_net_size"`
+	PrefrontalConnectivity      float64 `json:"prefrontal_connectivity"`
+	PrefrontalInputCurrent      uint8   `json:"prefrontal_input_current"`
+	PrefrontalMaxHops           int     `json:"prefrontal_max_hops"`
+	PrefrontalConvergenceThresh uint8   `json:"prefrontal_convergence_thresh"`
 
 	// Encoder configuration
 	EncoderContextMaxSize int `json:"encoder_context_max_size"`
@@ -97,9 +97,9 @@ type Config struct {
 	HippoLtpThreshold          uint8 `json:"hippo_ltp_threshold"`
 
 	// Broca Language Generation configuration
-	BrocaConfidenceProximity   uint8  `json:"broca_confidence_proximity"`
-	BrocaTopNCandidates        int    `json:"broca_top_n_candidates"`
-	BrocaSequentialMultiplier  uint16 `json:"broca_sequential_multiplier"`
+	BrocaConfidenceProximity  uint8  `json:"broca_confidence_proximity"`
+	BrocaTopNCandidates       int    `json:"broca_top_n_candidates"`
+	BrocaSequentialMultiplier uint16 `json:"broca_sequential_multiplier"`
 
 	// Rhythm Engine configuration
 	RhythmSleepThreshold uint8 `json:"rhythm_sleep_threshold"`
@@ -110,8 +110,8 @@ type Config struct {
 	// Sequence Memory configuration
 	SequenceMemoryMaxTargets      int    `json:"sequence_memory_max_targets"`
 	SequenceMemoryIncrementWeight uint16 `json:"sequence_memory_increment_weight"`
-	SequenceMemoryLTPAmount       uint16 `json:"sequence_memory_ltp_amount"`        // LTP reinforcement delta (default 50)
-	SequenceMemoryLTDAmount       uint16 `json:"sequence_memory_ltd_amount"`        // LTD weakening delta (default 40)
+	SequenceMemoryLTPAmount       uint16 `json:"sequence_memory_ltp_amount"` // LTP reinforcement delta (default 50)
+	SequenceMemoryLTDAmount       uint16 `json:"sequence_memory_ltd_amount"` // LTD weakening delta (default 40)
 
 	// STDP Learning configuration
 	StdpPotentiate uint8 `json:"stdp_potentiate"`
@@ -126,10 +126,10 @@ type Config struct {
 	HomeostaticDecayRate      uint8 `json:"homeostatic_decay_rate"`
 
 	// WTA Columnar Inhibition configuration
-	WtaColumnSize        int    `json:"wta_column_size"`
-	WtaTraceIncrement    uint32 `json:"wta_trace_increment"`
-	WtaActivationThresh  uint32 `json:"wta_activation_thresh"`
-	WtaMaxInhibition     uint16 `json:"wta_max_inhibition"`
+	WtaColumnSize       int    `json:"wta_column_size"`
+	WtaTraceIncrement   uint32 `json:"wta_trace_increment"`
+	WtaActivationThresh uint32 `json:"wta_activation_thresh"`
+	WtaMaxInhibition    uint16 `json:"wta_max_inhibition"`
 
 	// Noradrenergic Reset configuration
 	NoradrenergicChaosThresholdPct int    `json:"noradrenergic_chaos_threshold_pct"`
@@ -140,12 +140,12 @@ type Config struct {
 	NoradrenergicCooldownPct       int    `json:"noradrenergic_cooldown_pct"`
 
 	// Brain Learning Weight configuration
-	BrainBigramWeight      uint16 `json:"brain_bigram_weight"`
-	BrainSkipgramWeight    uint16 `json:"brain_skipgram_weight"`
-	BrainSemanticWeight    uint16 `json:"brain_semantic_weight"`
-	BrainContextWindowSize int    `json:"brain_context_window_size"`
-	FeedbackLTPAmount      uint16 `json:"feedback_ltp_amount"`
-	FeedbackLTDAmount      uint16 `json:"feedback_ltd_amount"`
+	BrainBigramWeight        uint16 `json:"brain_bigram_weight"`
+	BrainSkipgramWeight      uint16 `json:"brain_skipgram_weight"`
+	BrainSemanticWeight      uint16 `json:"brain_semantic_weight"`
+	BrainContextWindowSize   int    `json:"brain_context_window_size"`
+	FeedbackLTPAmount        uint16 `json:"feedback_ltp_amount"`
+	FeedbackLTDAmount        uint16 `json:"feedback_ltd_amount"`
 	FeedbackNewSynapseWeight uint16 `json:"feedback_new_synapse_weight"`
 
 	// Broca Generation configuration
@@ -158,15 +158,15 @@ type Config struct {
 	SelfTrainUnstableConf uint8 `json:"self_train_unstable_conf"`
 
 	// Curiosity Dynamics configuration
-	CuriosityBoredThreshold    uint8 `json:"curiosity_bored_threshold"`
+	CuriosityBoredThreshold     uint8 `json:"curiosity_bored_threshold"`
 	CuriosityOverwhelmThreshold uint8 `json:"curiosity_overwhelm_threshold"`
-	CuriosityInterestIncrement uint8 `json:"curiosity_interest_increment"`
-	CuriosityInterestDecay     uint8 `json:"curiosity_interest_decay"`
-	CuriosityRateStep          uint8 `json:"curiosity_rate_step"`
+	CuriosityInterestIncrement  uint8 `json:"curiosity_interest_increment"`
+	CuriosityInterestDecay      uint8 `json:"curiosity_interest_decay"`
+	CuriosityRateStep           uint8 `json:"curiosity_rate_step"`
 
 	// Emotion Dynamics configuration
-	EmotionStabilityThreshold   int   `json:"emotion_stability_threshold"`
-	EmotionConfidenceBaseline   uint8 `json:"emotion_confidence_baseline"`
+	EmotionStabilityThreshold     int   `json:"emotion_stability_threshold"`
+	EmotionConfidenceBaseline     uint8 `json:"emotion_confidence_baseline"`
 	EmotionCuriositySweetSpotLow  uint8 `json:"emotion_curiosity_sweet_spot_low"`  // Lower boundary for curiosity (default 30)
 	EmotionCuriositySweetSpotHigh uint8 `json:"emotion_curiosity_sweet_spot_high"` // Upper boundary for curiosity (default 100)
 
@@ -176,9 +176,9 @@ type Config struct {
 	RewardLowValue      int8  `json:"reward_low_value"`
 
 	// Predictor configuration
-	PredictorWindowSize  int `json:"predictor_window_size"`
-	PredictorUnionDepth  int `json:"predictor_union_depth"`
-	PredictorMaxHistory  int `json:"predictor_max_history"`
+	PredictorWindowSize int `json:"predictor_window_size"`
+	PredictorUnionDepth int `json:"predictor_union_depth"`
+	PredictorMaxHistory int `json:"predictor_max_history"`
 
 	// Workspace (consciousness) configuration
 	WorkspaceMaxQueueSize    int   `json:"workspace_max_queue_size"`
@@ -202,9 +202,9 @@ type Config struct {
 	ErrorLearningThreshold uint8 `json:"error_learning_threshold"` // Min prediction error to trigger
 
 	// Attention Module configuration
-	AttentionHistorySize   int   `json:"attention_history_size"`    // Ring buffer capacity for context history
-	AttentionMinWeight     uint8 `json:"attention_min_weight"`      // Minimum weight to keep a bit active
-	AttentionContextBoost  uint8 `json:"attention_context_boost"`   // Bonus weight for bits active in current context
+	AttentionHistorySize    int   `json:"attention_history_size"`    // Ring buffer capacity for context history
+	AttentionMinWeight      uint8 `json:"attention_min_weight"`      // Minimum weight to keep a bit active
+	AttentionContextBoost   uint8 `json:"attention_context_boost"`   // Bonus weight for bits active in current context
 	AttentionFrequencyScale uint8 `json:"attention_frequency_scale"` // Weight per historical occurrence
 
 	// Analogy Engine configuration
@@ -216,39 +216,44 @@ type Config struct {
 	SleepStabilityThresh uint8 `json:"sleep_stability_thresh"` // Min prefrontal stability to reinforce
 
 	// Autonomous Learning configuration — all previously hardcoded
-	AutoSeedTopics   []string `json:"auto_seed_topics,omitempty"`   // Initial curiosity topics
-	AutoSeedDatasets []string `json:"auto_seed_datasets,omitempty"` // HuggingFace dataset IDs
-	AutoSearchLangs  []string `json:"auto_search_langs,omitempty"`  // Wikipedia search languages
-	AutoHFRowsPerDS  int      `json:"auto_hf_rows_per_ds"`         // Max rows per HF dataset
-	AutoLearnInterval int     `json:"auto_learn_interval_secs"`    // Seconds between learn cycles
-	AutoMaxGapsPerCycle int   `json:"auto_max_gaps_per_cycle"`     // Max gaps to address per cycle
+	AutoSeedTopics      []string `json:"auto_seed_topics,omitempty"`   // Initial curiosity topics
+	AutoSeedDatasets    []string `json:"auto_seed_datasets,omitempty"` // HuggingFace dataset IDs
+	AutoSearchLangs     []string `json:"auto_search_langs,omitempty"`  // Wikipedia search languages
+	AutoHFRowsPerDS     int      `json:"auto_hf_rows_per_ds"`          // Max rows per HF dataset
+	AutoLearnInterval   int      `json:"auto_learn_interval_secs"`     // Seconds between learn cycles
+	AutoMaxGapsPerCycle int      `json:"auto_max_gaps_per_cycle"`      // Max gaps to address per cycle
 
 	// Web server configuration
 	WebPort     string `json:"web_port,omitempty"`      // Dashboard port (default "8080")
 	WebBindAddr string `json:"web_bind_addr,omitempty"` // Bind address (default "127.0.0.1")
 
 	// WebLearner HTTP configuration — previously hardcoded
-	WebLearnerTimeoutSecs  int    `json:"web_learner_timeout_secs"`  // HTTP request timeout
-	WebLearnerRateLimitMs  int    `json:"web_learner_rate_limit_ms"` // Min pause between requests (ms)
-	WebLearnerBodyLimitMB  int    `json:"web_learner_body_limit_mb"` // Max HTTP response body (MB)
-	WebLearnerUserAgent    string `json:"web_learner_user_agent,omitempty"`
-	WebLearnerWikiBaseURL  string `json:"web_learner_wiki_base_url,omitempty"`  // e.g. "wikipedia.org"
-	WebLearnerHFSearchURL  string `json:"web_learner_hf_search_url,omitempty"`
-	WebLearnerHFRowsURL    string `json:"web_learner_hf_rows_url,omitempty"`
+	WebLearnerTimeoutSecs int    `json:"web_learner_timeout_secs"`  // HTTP request timeout
+	WebLearnerRateLimitMs int    `json:"web_learner_rate_limit_ms"` // Min pause between requests (ms)
+	WebLearnerBodyLimitMB int    `json:"web_learner_body_limit_mb"` // Max HTTP response body (MB)
+	WebLearnerUserAgent   string `json:"web_learner_user_agent,omitempty"`
+	WebLearnerWikiBaseURL string `json:"web_learner_wiki_base_url,omitempty"` // e.g. "wikipedia.org"
+	WebLearnerHFSearchURL string `json:"web_learner_hf_search_url,omitempty"`
+	WebLearnerHFRowsURL   string `json:"web_learner_hf_rows_url,omitempty"`
 
 	// WebGPU hardware acceleration configuration
 	WebGPUTimeoutSecs int `json:"webgpu_timeout_secs"`
 
 	// Quantum-Inspired Engine configuration
-	EnableQuantumInspired bool  `json:"enable_quantum_inspired"`  // Use QuantumRouter instead of ExpertRouter
-	QuantumTemperature     uint8 `json:"quantum_temperature"`       // PBit temperature (0=deterministic, 255=max stochastic)
-	QuantumMultiSamples    int   `json:"quantum_multi_samples"`     // Multi-sample passes (1=no multi-sample)
+	EnableQuantumInspired bool  `json:"enable_quantum_inspired"` // Use QuantumRouter instead of ExpertRouter
+	QuantumTemperature    uint8 `json:"quantum_temperature"`     // PBit temperature (0=deterministic, 255=max stochastic)
+	QuantumMultiSamples   int   `json:"quantum_multi_samples"`   // Multi-sample passes (1=no multi-sample)
 
 	// RadioCortex configuration
-	RadioCortexEnabled bool   `json:"radio_cortex_enabled"` // Enable RadioCortex (default false)
-	RadioNeuronCount  int    `json:"radio_neuron_count"`  // Number of radio neurons (default 1_000_000)
-	TrainingDataDir   string `json:"training_data_dir"`   // Directory with qa.json and texts.txt
-	NeuroRadioEnabled bool   `json:"neuro_radio_enabled"` // Enable NeuroRadioCortex (unified architecture)
+	RadioCortexEnabled bool `json:"radio_cortex_enabled"` // Enable RadioCortex (default false)
+
+	// Biomed organ (cortex/biomed): answers only from live public sources
+	// (RxNorm, ChEMBL, openFDA, Open Targets, PubMed) cached under BiomedCacheDir.
+	BiomedEnabled     bool   `json:"biomed_enabled"`             // Enable the biomedical Tool (default false)
+	BiomedCacheDir    string `json:"biomed_cache_dir,omitempty"` // Cache + knowledge graph dir (default ./data/knowledge/biomed)
+	RadioNeuronCount  int    `json:"radio_neuron_count"`         // Number of radio neurons (default 1_000_000)
+	TrainingDataDir   string `json:"training_data_dir"`          // Directory with qa.json and texts.txt
+	NeuroRadioEnabled bool   `json:"neuro_radio_enabled"`        // Enable NeuroRadioCortex (unified architecture)
 
 	// SignalCodec configuration
 	SignalCodecInitVocab  int `json:"signal_codec_init_vocab"`   // Initial vocab size for SignalCodec (default 1000)
@@ -271,11 +276,11 @@ type Config struct {
 	NRCInjectAmplitude       int `json:"nrc_inject_amplitude"`        // Inject amplitude for ProcessInput/TrainStep (default 200)
 
 	// FractalCortex
-	FractalNumLayers             int     `json:"fractal_num_layers"`              // Layers per cortex block (default 24)
-	FractalContextLen            int     `json:"fractal_context_len"`             // Attention context length (default 50)
-	FractalTopK                  int     `json:"fractal_top_k"`                   // Top-K for SharedCortexStack (default 3)
-	FractalDecayRate             int     `json:"fractal_decay_rate"`              // LinearScan decay rate (default 64)
-	FractalPerturbRate           int     `json:"fractal_perturb_rate"`            // Perturbation rate 0-255 (default 25)
+	FractalNumLayers             int     `json:"fractal_num_layers"`             // Layers per cortex block (default 24)
+	FractalContextLen            int     `json:"fractal_context_len"`            // Attention context length (default 50)
+	FractalTopK                  int     `json:"fractal_top_k"`                  // Top-K for SharedCortexStack (default 3)
+	FractalDecayRate             int     `json:"fractal_decay_rate"`             // LinearScan decay rate (default 64)
+	FractalPerturbRate           int     `json:"fractal_perturb_rate"`           // Perturbation rate 0-255 (default 25)
 	FractalNeurogenesisThreshold float64 `json:"fractal_neurogenesis_threshold"` // Error threshold for spawning blocks (default 0.8)
 	FractalMaxBlocks             int     `json:"fractal_max_blocks"`             // Max cortex blocks (default 8)
 
@@ -343,6 +348,7 @@ type Config struct {
 func DefaultConfig() Config {
 	return Config{
 		DataDir:                 "./data/cortex",
+		BiomedCacheDir:          "./data/knowledge/biomed",
 		Seed:                    42,
 		Demo:                    true,
 		NoSave:                  false,
@@ -360,11 +366,11 @@ func DefaultConfig() Config {
 		PrefrontalPruneThresh:   5,
 
 		// Thousand Brains defaults
-		ThousandBrainsColumns:        64,
-		ThousandBrainsColNeurons:     100,
+		ThousandBrainsColumns:         64,
+		ThousandBrainsColNeurons:      100,
 		ThousandBrainsColConnectivity: 0.10,
-		ThousandBrainsProcessTicks:   5,
-		ThousandBrainsInputCurrent:   200,
+		ThousandBrainsProcessTicks:    5,
+		ThousandBrainsInputCurrent:    200,
 
 		// Reward System defaults
 		RewardSystemCapacity: 1000,
@@ -396,11 +402,11 @@ func DefaultConfig() Config {
 		MinAttentionSalience: 50,
 
 		// Prefrontal Reasoning defaults
-		PrefrontalNetSize:            3000,
-		PrefrontalConnectivity:       0.05,
-		PrefrontalInputCurrent:       128,
-		PrefrontalMaxHops:            3,
-		PrefrontalConvergenceThresh:  240,
+		PrefrontalNetSize:           3000,
+		PrefrontalConnectivity:      0.05,
+		PrefrontalInputCurrent:      128,
+		PrefrontalMaxHops:           3,
+		PrefrontalConvergenceThresh: 240,
 
 		// Encoder defaults
 		EncoderContextMaxSize: 10,
@@ -427,9 +433,9 @@ func DefaultConfig() Config {
 		HippoLtpThreshold:          128,
 
 		// Broca Language Generation defaults
-		BrocaConfidenceProximity:   15,
-		BrocaTopNCandidates:        5,
-		BrocaSequentialMultiplier:  3,
+		BrocaConfidenceProximity:  15,
+		BrocaTopNCandidates:       5,
+		BrocaSequentialMultiplier: 3,
 
 		// Rhythm Engine defaults
 		RhythmSleepThreshold: 200,
@@ -456,10 +462,10 @@ func DefaultConfig() Config {
 		HomeostaticDecayRate:      1,
 
 		// WTA Columnar Inhibition defaults
-		WtaColumnSize:        100,
-		WtaTraceIncrement:    256,
-		WtaActivationThresh:  50,
-		WtaMaxInhibition:     100,
+		WtaColumnSize:       100,
+		WtaTraceIncrement:   256,
+		WtaActivationThresh: 50,
+		WtaMaxInhibition:    100,
 
 		// Noradrenergic Reset defaults
 		NoradrenergicChaosThresholdPct: 30,
@@ -488,17 +494,17 @@ func DefaultConfig() Config {
 		SelfTrainUnstableConf: 100,
 
 		// Curiosity Dynamics defaults
-		CuriosityBoredThreshold:    40,
+		CuriosityBoredThreshold:     40,
 		CuriosityOverwhelmThreshold: 200,
-		CuriosityInterestIncrement: 10,
-		CuriosityInterestDecay:     5,
-		CuriosityRateStep:          10,
+		CuriosityInterestIncrement:  10,
+		CuriosityInterestDecay:      5,
+		CuriosityRateStep:           10,
 
 		// Emotion Dynamics defaults
-		EmotionStabilityThreshold:       30,
-		EmotionConfidenceBaseline:       128,
-		EmotionCuriositySweetSpotLow:    30,
-		EmotionCuriositySweetSpotHigh:   100,
+		EmotionStabilityThreshold:     30,
+		EmotionConfidenceBaseline:     128,
+		EmotionCuriositySweetSpotLow:  30,
+		EmotionCuriositySweetSpotHigh: 100,
 
 		// Reward Curve defaults
 		RewardSweetSpotLow:  30,
@@ -532,9 +538,9 @@ func DefaultConfig() Config {
 		ErrorLearningThreshold: 100,
 
 		// Attention Module defaults
-		AttentionHistorySize:   10,
-		AttentionMinWeight:     64,
-		AttentionContextBoost:  100,
+		AttentionHistorySize:    10,
+		AttentionMinWeight:      64,
+		AttentionContextBoost:   100,
 		AttentionFrequencyScale: 25,
 
 		// Analogy Engine defaults
@@ -588,8 +594,8 @@ func DefaultConfig() Config {
 
 		// Quantum-Inspired Engine defaults (disabled by default for backward compat)
 		EnableQuantumInspired: false,
-		QuantumTemperature:    0,   // deterministic
-		QuantumMultiSamples:   1,   // no multi-sample
+		QuantumTemperature:    0, // deterministic
+		QuantumMultiSamples:   1, // no multi-sample
 
 		// RadioCortex defaults
 		RadioNeuronCount: 1_000_000, // 1M neurons (was hardcoded 100K)

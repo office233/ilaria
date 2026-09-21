@@ -72,7 +72,10 @@ func runInteractive(org *cortex.Organism) {
 				response = "(no response)"
 			}
 			s := org.Stats()
+			prov := org.LastProvenance()
 			fmt.Printf("💬 Response: %s\n", response)
+			fmt.Printf("   [provenance] source=%s tool=%s recalled=%d\n",
+				prov.Source, prov.Tool, prov.Recalled)
 			fmt.Printf("   Mood: %s | Surprise: %d/255 | Confidence: %d/255\n",
 				s.EmotionalMood, s.SurpriseLevel, org.Self.AvgConfidence)
 		}

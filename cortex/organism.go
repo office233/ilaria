@@ -120,6 +120,13 @@ type Organism struct {
 	// Runtime state.
 	InteractionCount uint64     // Atomically incremented on each Process() call
 	Rng              *rand.Rand // Deterministic random source
+
+	// provenance records which module answered the most recent Process()
+	// call. Set at every Process() return point; read via
+	// LastProvenance() (see provenance.go). Not synchronized — like the
+	// rest of Organism's per-turn scratch state, Process() is not safe
+	// for concurrent invocation.
+	provenance Provenance
 }
 
 // ─────────────────────────────────────────────────────────────────────
@@ -272,6 +279,7 @@ func (o *Organism) Process(input string) string {
 
 	input = strings.TrimSpace(input)
 	if input == "" {
+		o.provenance = Provenance{Source: SourceNone}
 		return ""
 	}
 
@@ -298,6 +306,11 @@ func (o *Organism) Process(input string) string {
 			o.learnFromInteraction(input, reasonedAnswer, combinedSDR)
 			o.WorkingMem.Store(combinedSDR, input, 255)
 			o.WorkingMem.Tick()
+			if toolName := o.Reasoning.LastTool(); toolName != "" {
+				o.provenance = Provenance{Source: SourceTool, Tool: toolName}
+			} else {
+				o.provenance = Provenance{Source: SourceReasoning}
+			}
 			return reasonedAnswer
 		}
 	}
@@ -379,6 +392,10 @@ func (o *Organism) Process(input string) string {
 			o.learnFromInteraction(input, cached.Text, combinedSDR)
 			o.WorkingMem.Store(combinedSDR, input, 180)
 			o.WorkingMem.Tick()
+			// Cerebellum caches a previously confident answer keyed by
+			// SDR — a replay of a stored record, not fresh generation,
+			// so it's classified as memory alongside Hippocampus recall.
+			o.provenance = Provenance{Source: SourceMemory, Recalled: 1}
 			return cached.Text
 		}
 	}
@@ -453,6 +470,7 @@ func (o *Organism) Process(input string) string {
 					o.learnFromInteraction(input, memoryText, combinedSDR)
 					o.WorkingMem.Store(combinedSDR, input, sim)
 					o.WorkingMem.Tick()
+					o.provenance = Provenance{Source: SourceMemory, Recalled: 1}
 					return memoryText
 				}
 			}
@@ -542,6 +560,7 @@ func (o *Organism) Process(input string) string {
 			o.learnFromInteraction(input, memoryText, combinedSDR)
 			o.WorkingMem.Store(combinedSDR, input, memorySimilarity)
 			o.WorkingMem.Tick()
+			o.provenance = Provenance{Source: SourceMemory, Recalled: 1}
 			return memoryText
 		}
 	}
@@ -640,6 +659,14 @@ func (o *Organism) Process(input string) string {
 		}
 	}
 
+	// ── PROVENANCE (generation phase): every path below this point
+	// either generates fresh text (Broca) or, in one case, falls back to
+	// a recalled memory. Default to SourceBroca and let the Hippocampus
+	// Direct Recall branch below override it when it actually fires.
+	provSource := SourceBroca
+	provRecalled := 0
+	provBiased := false
+
 	// ── 5. SPEAK (Broca) ─────────────────────────────────────────
 	// Priority 0: Broca 2.0 — Transformer-based autoregressive generation
 	// Uses BPE tokenizer + trained MiniTransformer for fluent text.
@@ -669,12 +696,16 @@ func (o *Organism) Process(input string) string {
 		if responseText == "" {
 			// Bias the transformer with whatever episodic memory knows
 			// about this input, so one-shot learned facts can surface.
+			bias := o.cognitiveBias(input)
 			responseText = o.Broca.GenerateWithTransformerBiased(
 				o.Transformer, o.Tokenizer,
 				understanding.Words, mem,
 				confidence, o.Config.MaxGenWords,
-				o.cognitiveBias(input),
+				bias,
 			)
+			if responseText != "" {
+				provBiased = len(bias) > 0
+			}
 		}
 	}
 
@@ -686,6 +717,9 @@ func (o *Organism) Process(input string) string {
 		answer := extractAnswerFromContext(memoryText)
 		if answer != "" && !sameText(answer, input) {
 			responseText = answer
+			provSource = SourceMemory
+			provRecalled = 1
+			provBiased = false
 		}
 	}
 
@@ -708,6 +742,13 @@ func (o *Organism) Process(input string) string {
 	// that's a degenerate loop, not a real response. Clear it and try the next.
 	if isRepetitive(responseText) {
 		responseText = ""
+		// Whatever cleared candidate this was (including a Hippocampus
+		// Direct Recall answer), the next attempt below is a fresh
+		// generation — reset provenance so a stale SourceMemory doesn't
+		// survive onto RadioCortex/Broca-generated text.
+		provSource = SourceBroca
+		provRecalled = 0
+		provBiased = false
 	}
 
 	// Priority 2: RadioCortex autoregressive generation (frequency-based)
@@ -822,6 +863,9 @@ func (o *Organism) Process(input string) string {
 
 	if responseText == "" {
 		responseText = NoConfidentResponse
+		provSource = SourceNone
+		provRecalled = 0
+		provBiased = false
 	}
 
 	// ── WORKING MEMORY: Store this interaction for next-turn context. ──
@@ -834,6 +878,7 @@ func (o *Organism) Process(input string) string {
 	// Age all WM slots — irrelevant items will fade automatically.
 	o.WorkingMem.Tick()
 
+	o.provenance = Provenance{Source: provSource, Recalled: provRecalled, Biased: provBiased}
 	return responseText
 }
 

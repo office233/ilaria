@@ -40,6 +40,13 @@ type ReasoningEngine struct {
 	// new capabilities can be added without touching this file. The
 	// hardcoded skills remain as a fallback for backward compatibility.
 	Tools *ToolRegistry
+
+	// lastTool records the name of the Tool that answered the most
+	// recent TryReason() call (ToolRegistry.Dispatch's toolName), or ""
+	// when the answer came from a hardcoded skill instead. Kept internal
+	// (rather than widening TryReason's return signature) so existing
+	// two-value callers stay source-compatible; see LastTool().
+	lastTool string
 }
 
 // NewReasoningEngine creates a new reasoning engine without tools.
@@ -62,10 +69,27 @@ func (r *ReasoningEngine) ToolNames() []string {
 	return r.Tools.Names()
 }
 
+// LastTool returns the name of the Tool that produced the answer on the
+// most recent successful TryReason() call, or "" when that answer came
+// from a hardcoded ReasoningEngine skill (arithmetic, sequence,
+// syllogism, sort, word problem) instead of the Tool registry. Only
+// meaningful immediately after a TryReason() call that returned ok=true;
+// nil-safe.
+func (r *ReasoningEngine) LastTool() string {
+	if r == nil {
+		return ""
+	}
+	return r.lastTool
+}
+
 // TryReason attempts to handle the input with deterministic reasoning.
 // Returns (answer, true) if the input matches a known reasoning pattern,
 // or ("", false) if the neural pipeline should handle it.
 func (r *ReasoningEngine) TryReason(input string) (string, bool) {
+	// Reset per call so a stale name from a previous hit never leaks
+	// into this call's result (only meaningful when the return is ok).
+	r.lastTool = ""
+
 	input = strings.TrimSpace(input)
 	if input == "" {
 		return "", false
@@ -74,7 +98,8 @@ func (r *ReasoningEngine) TryReason(input string) (string, bool) {
 	// Pluggable tools take priority over hardcoded skills. They're
 	// optional and side-effect-free; on miss we fall through.
 	if r.Tools != nil {
-		if ans, _, ok := r.Tools.Dispatch(input); ok {
+		if ans, name, ok := r.Tools.Dispatch(input); ok {
+			r.lastTool = name
 			return ans, true
 		}
 	}

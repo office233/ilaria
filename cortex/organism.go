@@ -219,6 +219,9 @@ func NewOrganism(cfg Config, rng *rand.Rand) *Organism {
 	tools.Register(MathSquareRootTool{})
 	tools.Register(MathPowerTool{})
 	tools.Register(NewHippoSearchTool(org.Hippocampus, org.Wernicke, org.Brain))
+	if cfg.BiomedEnabled {
+		tools.Register(NewBiomedTool(cfg.BiomedCacheDir))
+	}
 	org.Reasoning.AttachTools(tools)
 
 	// Only create RadioCortex if enabled
@@ -1977,6 +1980,9 @@ func LoadOrganism(cfg Config, rng *rand.Rand) (*Organism, error) {
 	loadedTools.Register(MathSquareRootTool{})
 	loadedTools.Register(MathPowerTool{})
 	loadedTools.Register(NewHippoSearchTool(o.Hippocampus, o.Wernicke, o.Brain))
+	if o.Config.BiomedEnabled {
+		loadedTools.Register(NewBiomedTool(o.Config.BiomedCacheDir))
+	}
 	o.Reasoning.AttachTools(loadedTools)
 
 	return o, nil

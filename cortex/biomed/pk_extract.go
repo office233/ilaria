@@ -64,7 +64,7 @@ func ExtractPK(text string) PKParameters {
 	if m := reVd.FindStringSubmatchIndex(text); m != nil {
 		pk.VdLiters = &Measured{Value: parseNum(text[m[2]:m[3]]), Unit: "L", Quote: sentenceAround(text, m[0])}
 	}
-	if m := reClearance.FindStringSubmatchIndex(text); m != nil {
+	if m := findDrugClearance(text); m != nil {
 		v := parseNum(text[m[2]:m[3]])
 		unit := strings.ToLower(text[m[4]:m[5]])
 		switch {
@@ -112,4 +112,18 @@ func sentenceAround(text string, pos int) string {
 		s = s[:400] + "…"
 	}
 	return s
+}
+
+// findDrugClearance returns the first clearance match that is about the drug,
+// skipping "creatinine clearance" (a renal-function covariate that labels
+// quote in mL/min and that would otherwise pass as drug clearance).
+func findDrugClearance(text string) []int {
+	for _, m := range reClearance.FindAllStringSubmatchIndex(text, -1) {
+		before := strings.ToLower(text[max(0, m[0]-16):m[0]])
+		if strings.Contains(before, "creatinin") {
+			continue
+		}
+		return m
+	}
+	return nil
 }

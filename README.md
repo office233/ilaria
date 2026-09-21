@@ -154,6 +154,36 @@ process answers paraphrased questions using the same frozen transformer
 
 ---
 
+## Biomedical organ with real sources (`cortex/biomed`)
+
+Ilaria's first *knowledge organ*: it answers drug questions **only** from live public
+sources and shows its evidence. There is no hand-written drug table; what a source
+does not know is listed under "Could not determine".
+
+| Source | What it provides |
+|---|---|
+| RxNorm (NLM) | drug-name normalization (any spelling → RxCUI), full name index for detecting mentions in free text |
+| ChEMBL (EMBL-EBI) | molecule properties, curated mechanism of action + protein target, measured IC50/Ki |
+| openFDA | the official FDA label: boxed warning, contraindications, interactions, dosing, special populations, pharmacokinetics |
+| Open Targets | disease normalization, target↔disease association scores, clinical-stage drugs |
+| PubMed | literature counts and PMIDs for (drug, variant) pairs |
+
+Responses are cached under `data/knowledge/biomed/` (this *is* the knowledge on disk;
+it grows with every entity met and can live on Google Drive) and every consult extends
+an evidence-carrying knowledge graph (`graph.json`). Pharmacokinetic parameters are
+extracted from the label text with their quoted sentence and feed a one-compartment
+model; if the label states no half-life, the simulation is refused instead of guessed.
+
+```bash
+go run ./cmd/nexus-biomed -query "gefitinib și warfarină la pacient cu EGFR T790M" -patient patient.json -dose 250
+```
+
+`patient.json` is either a FHIR Bundle or `{"active_medications":["warfarin"],"variants":[{"gene":"EGFR","change":"T790M"}],"labs":{"eGFR":{"value":38,"unit":"mL/min/1.73m2"}}}`.
+Inside the organism the same organ is a `Tool` (enable with `"biomed_enabled": true`
+in the config); it speaks only when the RxNorm index finds a drug in the input and stays
+silent offline. `cortex/swe` now holds a **real** sandbox (`RunGo`) that vets, builds and
+tests Go code through the actual toolchain, the organism's self-verification organ.
+
 ## Benchmark Performance (local, vs own dense baseline)
 
 | Operation | Speed | Allocations |

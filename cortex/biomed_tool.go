@@ -8,6 +8,7 @@ package cortex
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -179,15 +180,15 @@ func RenderConsult(res *biomed.ConsultResponse, romanian bool) string {
 			fmt.Fprintf(&sb, "%s:", l.pk)
 			any := false
 			if d.PK.HalfLifeHours != nil {
-				fmt.Fprintf(&sb, " t½ %.3g h;", d.PK.HalfLifeHours.Value)
+				fmt.Fprintf(&sb, " t½ %s h;", num(d.PK.HalfLifeHours.Value))
 				any = true
 			}
 			if d.PK.VdLiters != nil {
-				fmt.Fprintf(&sb, " Vd %.3g L;", d.PK.VdLiters.Value)
+				fmt.Fprintf(&sb, " Vd %s L;", num(d.PK.VdLiters.Value))
 				any = true
 			}
 			if d.PK.ClearanceLPerHour != nil {
-				fmt.Fprintf(&sb, " CL %.3g L/h;", d.PK.ClearanceLPerHour.Value)
+				fmt.Fprintf(&sb, " CL %s L/h;", num(d.PK.ClearanceLPerHour.Value))
 				any = true
 			}
 			if d.PK.ProteinBoundFraction != nil {
@@ -248,4 +249,17 @@ func RenderConsult(res *biomed.ConsultResponse, romanian bool) string {
 	}
 	sb.WriteString(res.Disclaimer + "\n")
 	return sb.String()
+}
+
+// num formats a quantity without scientific notation (1400 → "1400", 0.4312 → "0.431").
+func num(v float64) string {
+	if v != 0 && (v < 0.01 || v >= 1e6) {
+		return strconv.FormatFloat(v, 'g', 3, 64)
+	}
+	s := strconv.FormatFloat(v, 'f', 3, 64)
+	s = strings.TrimRight(strings.TrimRight(s, "0"), ".")
+	if s == "" || s == "-" {
+		return "0"
+	}
+	return s
 }

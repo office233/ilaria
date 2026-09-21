@@ -57,3 +57,16 @@ func TestExtractPK_NoNumbersMeansNil(t *testing.T) {
 		t.Fatalf("empty text must yield nil, got %+v", pk)
 	}
 }
+
+func TestExtractPK_IgnoresCreatinineClearance(t *testing.T) {
+	text := "Population pharmacokinetic analyses suggest that creatinine clearance (above 20 mL/min) has no clinically meaningful effect on exposure."
+	if pk := ExtractPK(text); pk.ClearanceLPerHour != nil {
+		t.Fatalf("creatinine clearance is a renal-function covariate, not drug clearance: got %+v", pk.ClearanceLPerHour)
+	}
+	// The drug's own clearance later in the same section must still be found.
+	text += " Apparent oral clearance of the drug was 600 mL/min."
+	pk := ExtractPK(text)
+	if pk.ClearanceLPerHour == nil || pk.ClearanceLPerHour.Value != 36 {
+		t.Fatalf("drug clearance must be found after skipping the creatinine sentence: %+v", pk.ClearanceLPerHour)
+	}
+}

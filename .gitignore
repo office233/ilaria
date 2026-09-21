@@ -86,3 +86,4 @@ data/cortex-eprime/
 data/eprime-*/
 forge/__pycache__/
 *.pt
+.superpowers/

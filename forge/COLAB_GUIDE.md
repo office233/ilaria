@@ -1,12 +1,19 @@
 # Faza 1 pe Google Colab (H100 94 GB) — cortexul de limbaj al Ilariei
 
-> **Actualizare 2026-09-21 (după-amiază): calea folosită efectiv este notebook-ul autonom
-> `forge/ilaria_phase1.ipynb`** (generat de `forge/make_colab_notebook.py`, urcat în Drive și rulat din Colab).
-> Motive: contul GitHub e suspendat (Colab nu poate clona repo-ul), iar încărcarea de fișiere prin browser nu e
-> posibilă din sesiunea automată. Notebook-ul poartă codul `forge/` ca zip base64, nu are nevoie de Go în Colab,
-> iar tokenizerul se antrenează acolo cu `tokenizers` (byte-level BPE 32k, `forge/hf_tokenizer.py`), verificat
-> id-cu-id identic cu modul byte-level al motorului Go (`cmd/tok-encode`, 306 linii, 0 diferențe). Ghidul de mai
-> jos rămâne valabil ca referință pentru varianta manuală cu Go.
+> **Actualizare 2026-09-21 (seara): calea care a funcționat efectiv.** Notebook-ul autonom
+> `forge/ilaria_phase1.ipynb` (generat de `forge/make_colab_notebook.py`, urcat în Drive; poartă codul `forge/` ca
+> zip base64, fără Go în Colab — contul GitHub e suspendat) a produs corpusul (5,8 M documente, 16 GB JSONL pe Drive,
+> ~2 h pe o sesiune CPU) și tokenizerul byte-level BPE 32k (`forge/hf_tokenizer.py`, verificat id-cu-id identic cu
+> modul byte-level al motorului Go prin `cmd/tok-encode`). Tokenizarea și antrenarea rulează din scripturile
+> `forge/colab/*.sh` puse în `MyDrive/ilaria/`, fiecare dintr-o celulă de o linie
+> `!bash /content/drive/MyDrive/ilaria/<script>.sh`, pentru că montarea Drive (FUSE) cade la mulți cititori paraleli:
+> `tokenize_local.sh` copiază shard-urile pe discul VM-ului, tokenizează cu toate nucleele (48 vCPU: 116 shard-uri,
+> **3 724 284 704 tokeni** în ~8 min) și copiază `train_stream.bin` (7,45 GB) înapoi pe Drive; `speedtest.sh` și
+> `train_a.sh` citesc stream-ul de pe discul local și scriu `checkpoint.pt` + `transformer.nxtf` + `tokenizer.json` în
+> `MyDrive/ilaria/brain-a` la fiecare 500 de pași (rularea din nou a celulei reia din checkpoint). Măsurat pe runtime-ul
+> GPU alocat de Colab (NVIDIA RTX PRO 6000 Blackwell 96 GB, 48 vCPU, ~8,9 unități/oră): rețeta A, 128,1 M parametri,
+> bf16 + `torch.compile`, **~210 k tok/s** → 11 500 pași (3 G tokeni) ≈ 4 h; val ppl 183 la pasul 500.
+> Ghidul de mai jos rămâne referința pentru varianta manuală cu Go.
 
 Scop: un model dens RO+EN antrenat de la zero pe H100, exportat în `transformer.nxtf`,
 care rulează în motorul Go de pe PC (GTX 1660 Ti) lângă hipocamp, puntea cognitivă și

@@ -41,9 +41,10 @@ class ChunkTests(unittest.TestCase):
 
 
 class ShardWriterTests(unittest.TestCase):
-    def test_writes_shards_and_resumes(self):
+    def test_writes_shards_and_records_raw_rows_for_resume(self):
         with tempfile.TemporaryDirectory() as d:
-            docs = [f"document numărul {i} " * 5 for i in range(25)]
+            # docs come as (raw_row_index, text); raw rows 0..49, every other row was filtered out
+            docs = [(2 * i, f"document numărul {i} " * 5) for i in range(25)]
             n = pc.write_shards(iter(docs), d, "wiki_ro", shard_docs=10)
             self.assertEqual(n, 25)
             files = sorted(f for f in os.listdir(d) if f.endswith(".jsonl"))
@@ -52,16 +53,39 @@ class ShardWriterTests(unittest.TestCase):
                 rows = [json.loads(l) for l in f]
             self.assertEqual(len(rows), 10)
             self.assertEqual(set(rows[0].keys()), {"text"})
-            # A second run with the same source skips the finished shards (resumable on Drive).
-            calls = []
-            n2 = pc.write_shards(iter(docs), d, "wiki_ro", shard_docs=10, on_skip=calls.append)
-            self.assertEqual(n2, 25)
-            self.assertEqual(len(calls), 3)
             self.assertTrue(pc.manifest_path(d, "wiki_ro").endswith("wiki_ro.manifest.json"))
             with open(pc.manifest_path(d, "wiki_ro"), encoding="utf-8") as f:
                 man = json.load(f)
             self.assertEqual(man["docs"], 25)
             self.assertEqual(man["shards"], 3)
+            self.assertEqual(man["complete"], [0, 1, 2])
+            self.assertEqual(man["raw_rows"], 49)  # last raw index (48) + 1 → HF stream .skip(49) resumes exactly
+            # Resume: the caller skips 49 raw rows in the stream and appends from shard 3.
+            plan = pc.resume_plan(d, "wiki_ro", limit=40)
+            self.assertEqual(plan, {"skip_rows": 49, "skip_docs": 0, "start_shard": 3, "remaining": 15})
+            more = [(49 + i, f"nou {i} " * 5) for i in range(15)]
+            n2 = pc.write_shards(iter(more), d, "wiki_ro", shard_docs=10, start_shard=3)
+            self.assertEqual(n2, 15)
+            files = sorted(f for f in os.listdir(d) if f.endswith(".jsonl"))
+            self.assertEqual(files[-2:], ["wiki_ro-00003.jsonl", "wiki_ro-00004.jsonl"])
+            with open(pc.manifest_path(d, "wiki_ro"), encoding="utf-8") as f:
+                man = json.load(f)
+            self.assertEqual(man["docs"], 40)
+            self.assertEqual(man["complete"], [0, 1, 2, 3, 4])
+            self.assertEqual(man["raw_rows"], 64)
+            self.assertEqual(pc.resume_plan(d, "wiki_ro", limit=40)["remaining"], 0)
+
+    def test_resume_plan_without_manifest_starts_fresh(self):
+        with tempfile.TemporaryDirectory() as d:
+            self.assertEqual(pc.resume_plan(d, "x", limit=7),
+                             {"skip_rows": 0, "skip_docs": 0, "start_shard": 0, "remaining": 7})
+
+    def test_resume_plan_handles_manifest_without_raw_rows(self):
+        with tempfile.TemporaryDirectory() as d:
+            with open(pc.manifest_path(d, "old"), "w", encoding="utf-8") as f:
+                json.dump({"docs": 120, "shards": 3, "shard_docs": 50, "complete": [0, 1, 2]}, f)
+            self.assertEqual(pc.resume_plan(d, "old", limit=200),
+                             {"skip_rows": 0, "skip_docs": 120, "start_shard": 3, "remaining": 80})
 
 
 class TokenizerSampleTests(unittest.TestCase):
@@ -84,6 +108,26 @@ class SourceRegistryTests(unittest.TestCase):
             self.assertIn(src.lang, ("ro", "en"))
             self.assertTrue(callable(src.stream))
             self.assertTrue(src.hf_id)
+
+    def test_docs_generator_yields_raw_index_and_honours_skip(self):
+        rows = [{"text": "x"}, {"text": "un text suficient de lung ca să treacă filtrul de lungime"},
+                {"text": "|| 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 ||"},
+                {"text": "alt text suficient de lung ca să treacă filtrul de lungime"}]
+
+        class FakeDS:
+            def __init__(self, rows):
+                self.rows = rows
+
+            def skip(self, n):
+                return FakeDS(self.rows[n:])
+
+            def __iter__(self):
+                return iter(self.rows)
+
+        out = list(pc._docs_from(FakeDS(rows), max_samples=None, max_len=3000, skip=0))
+        self.assertEqual([i for i, _ in out], [1, 3])
+        out = list(pc._docs_from(FakeDS(rows).skip(2), max_samples=None, max_len=3000, skip=2))
+        self.assertEqual([i for i, _ in out], [3])
 
 
 if __name__ == "__main__":

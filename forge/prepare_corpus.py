@@ -8,8 +8,11 @@ Sources (all streamed from HuggingFace, nothing is stored twice):
   fineweb_edu   HuggingFaceFW/fineweb-edu sample-10BT en   educational English web
 
 Output: <out-dir>/<source>-NNNNN.jsonl shards of {"text": ...} lines plus a
-<source>.manifest.json. Shards already listed as complete in the manifest are
-skipped on re-run, so an interrupted Colab session resumes where it stopped.
+<source>.manifest.json recording the complete shards, the number of documents
+written and `raw_rows` — how many rows of the HuggingFace stream those shards
+consumed (filtered rows included). A re-run `.skip()`s that many rows and
+appends new shards, so an interrupted Colab session resumes where it stopped
+without re-cleaning what is already on Drive.
 
 Usage:
     # corpus shards on Google Drive (Colab)
@@ -20,7 +23,7 @@ Usage:
     python forge/prepare_corpus.py --tokenizer-sample data/corpus/tokenizer_sample.txt --sample-bytes 200000000 \
         --sources wiki_ro,fineweb2_ro,tinystories,fineweb_edu
 
-Then: go run ./cmd/corpus-tokenize -tokenizer data/tokenizer.json -in <shard>.jsonl -out <shard>
+Then: python forge/hf_tokenizer.py encode --tokenizer <tokenizer.json> --in <shard>.jsonl --out <shard>
 """
 
 from __future__ import annotations
@@ -105,22 +108,36 @@ def _load(hf_id: str, config: Optional[str]):
     return load_dataset(hf_id, split="train", streaming=True)
 
 
-def _docs(hf_id: str, config: Optional[str], max_samples: Optional[int], max_len: int) -> Generator[str, None, None]:
+def _docs(hf_id: str, config: Optional[str], max_samples: Optional[int], max_len: int, skip: int = 0):
+    ds = _load(hf_id, config)
+    if skip:
+        ds = ds.skip(skip)
+    return _docs_from(ds, max_samples, max_len, skip)
+
+
+def _docs_from(ds, max_samples: Optional[int], max_len: int, skip: int = 0) -> Generator[tuple, None, None]:
+    """Yield (raw_row_index, cleaned_text).
+
+    Raw indices count every stream row, filtered or not, so the shard manifest
+    can record how many rows to `.skip()` when the run is resumed."""
     count = 0
-    for row in _load(hf_id, config):
+    for i, row in enumerate(ds, start=skip):
         t = clean_text(row.get("text", ""), max_len=max_len)
         if t:
-            yield t
+            yield i, t
             count += 1
             if max_samples and count >= max_samples:
                 return
 
 
-def _wiki(hf_id: str, config: str, max_samples: Optional[int]) -> Generator[str, None, None]:
+def _wiki(hf_id: str, config: str, max_samples: Optional[int], skip: int = 0) -> Generator[tuple, None, None]:
+    ds = _load(hf_id, config)
+    if skip:
+        ds = ds.skip(skip)
     count = 0
-    for row in _load(hf_id, config):
+    for i, row in enumerate(ds, start=skip):
         for chunk in chunk_paragraphs(row.get("text", ""), target_chars=600, max_len=4000):
-            yield chunk
+            yield i, chunk
             count += 1
             if max_samples and count >= max_samples:
                 return
@@ -132,26 +149,37 @@ class Source:
     hf_id: str
     config: Optional[str]
     lang: str
-    stream: Callable[[Optional[int]], Generator[str, None, None]]
+    stream: Callable[..., Generator[tuple, None, None]]  # stream(max_docs, skip=0) -> (raw_row, text)
     default_max: int
 
 
 SOURCES: Dict[str, Source] = {
     "tinystories": Source("tinystories", "roneneldan/TinyStories", None, "en",
-                          lambda n: _docs("roneneldan/TinyStories", None, n, 3000), 300_000),
+                          lambda n, skip=0: _docs("roneneldan/TinyStories", None, n, 3000, skip), 300_000),
     "wiki_ro": Source("wiki_ro", "wikimedia/wikipedia", "20231101.ro", "ro",
-                      lambda n: _wiki("wikimedia/wikipedia", "20231101.ro", n), 200_000),
+                      lambda n, skip=0: _wiki("wikimedia/wikipedia", "20231101.ro", n, skip), 200_000),
     "wiki_en": Source("wiki_en", "wikimedia/wikipedia", "20231101.en", "en",
-                      lambda n: _wiki("wikimedia/wikipedia", "20231101.en", n), 300_000),
+                      lambda n, skip=0: _wiki("wikimedia/wikipedia", "20231101.en", n, skip), 300_000),
     "fineweb2_ro": Source("fineweb2_ro", "HuggingFaceFW/fineweb-2", "ron_Latn", "ro",
-                          lambda n: _docs("HuggingFaceFW/fineweb-2", "ron_Latn", n, 8000), 2_000_000),
+                          lambda n, skip=0: _docs("HuggingFaceFW/fineweb-2", "ron_Latn", n, 8000, skip), 2_000_000),
     "fineweb_edu": Source("fineweb_edu", "HuggingFaceFW/fineweb-edu", "sample-10BT", "en",
-                          lambda n: _docs("HuggingFaceFW/fineweb-edu", "sample-10BT", n, 8000), 2_000_000),
+                          lambda n, skip=0: _docs("HuggingFaceFW/fineweb-edu", "sample-10BT", n, 8000, skip), 2_000_000),
 }
 
-# Kept for callers of the previous version.
-stream_tinystories = SOURCES["tinystories"].stream
-stream_wiki_ro = SOURCES["wiki_ro"].stream
+
+def texts(stream: Iterable[tuple]) -> Generator[str, None, None]:
+    """Drop the raw-row index from a (raw_row, text) stream."""
+    for _, t in stream:
+        yield t
+
+
+# Kept for callers of the previous version (text-only streams).
+def stream_tinystories(n: Optional[int] = None) -> Generator[str, None, None]:
+    return texts(SOURCES["tinystories"].stream(n))
+
+
+def stream_wiki_ro(n: Optional[int] = None) -> Generator[str, None, None]:
+    return texts(SOURCES["wiki_ro"].stream(n))
 
 
 # ---------------------------------------------------------------- output
@@ -176,56 +204,69 @@ def _save_manifest(out_dir: str, name: str, man: dict) -> None:
     os.replace(tmp, manifest_path(out_dir, name))
 
 
-def write_shards(docs: Iterator[str], out_dir: str, name: str, shard_docs: int = 50_000,
-                 on_skip: Optional[Callable[[int], None]] = None) -> int:
-    """Write docs as <name>-NNNNN.jsonl shards; complete shards are skipped on re-run."""
-    os.makedirs(out_dir, exist_ok=True)
+def resume_plan(out_dir: str, name: str, limit: Optional[int]) -> dict:
+    """What a re-run must do for one source.
+
+    skip_rows   rows of the HF stream to `.skip()` (manifests with `raw_rows`)
+    skip_docs   cleaned docs to drop after streaming from row 0 (manifests
+                written by the previous version, which had no raw-row count)
+    start_shard index of the first shard to write
+    remaining   docs still to write (None = no limit)"""
     man = _load_manifest(out_dir, name)
+    complete = sorted(man.get("complete", []))
+    if not complete:
+        return {"skip_rows": 0, "skip_docs": 0, "start_shard": 0, "remaining": limit}
+    done = int(man.get("docs", 0))
+    remaining = None if not limit else max(0, limit - done)
+    if "raw_rows" in man:
+        return {"skip_rows": int(man["raw_rows"]), "skip_docs": 0, "start_shard": complete[-1] + 1, "remaining": remaining}
+    return {"skip_rows": 0, "skip_docs": done, "start_shard": complete[-1] + 1, "remaining": remaining}
+
+
+def write_shards(docs: Iterator[tuple], out_dir: str, name: str, shard_docs: int = 50_000,
+                 start_shard: int = 0) -> int:
+    """Write (raw_row, text) docs as <name>-NNNNN.jsonl shards from start_shard on.
+
+    The manifest records the complete shards, the total docs and `raw_rows`
+    (= last raw row index + 1) so resume_plan can `.skip()` the stream on the
+    next run. Returns the number of docs written by this call."""
+    os.makedirs(out_dir, exist_ok=True)
+    man = _load_manifest(out_dir, name) if start_shard else {"docs": 0, "shards": 0, "complete": []}
     complete = set(man.get("complete", []))
-    total, shard = 0, 0
+    total = int(man.get("docs", 0))
+    raw_rows = int(man.get("raw_rows", 0))
+    written = 0
+    shard = start_shard
     exhausted = False
     while not exhausted:
         path = os.path.join(out_dir, f"{name}-{shard:05d}.jsonl")
-        if shard in complete and os.path.exists(path):
-            n = 0
-            for _ in range(shard_docs):
-                try:
-                    next(docs)
-                    n += 1
-                except StopIteration:
-                    exhausted = True
-                    break
-            total += n
-            if on_skip:
-                on_skip(shard)
-            shard += 1
-            continue
-        n = 0
         tmp = path + ".tmp"
+        n = 0
+        last_raw = raw_rows - 1
         with open(tmp, "w", encoding="utf-8", newline="\n") as f:
             for _ in range(shard_docs):
                 try:
-                    t = next(docs)
+                    raw, t = next(docs)
                 except StopIteration:
                     exhausted = True
                     break
                 f.write(json.dumps({"text": t}, ensure_ascii=False) + "\n")
                 n += 1
+                last_raw = raw
         if n == 0:
             os.remove(tmp)
             break
         os.replace(tmp, path)
         total += n
+        written += n
+        raw_rows = last_raw + 1
         complete.add(shard)
-        man = {"docs": total, "shards": shard + 1, "shard_docs": shard_docs, "complete": sorted(complete)}
+        man = {"docs": total, "shards": max(complete) + 1, "shard_docs": shard_docs,
+               "complete": sorted(complete), "raw_rows": raw_rows}
         _save_manifest(out_dir, name, man)
-        print(f"  [{name}] shard {shard:05d}: {n:,} docs (total {total:,})", flush=True)
+        print(f"  [{name}] shard {shard:05d}: {n:,} docs (total {total:,}, raw rows {raw_rows:,})", flush=True)
         shard += 1
-    man = _load_manifest(out_dir, name)
-    man["docs"] = max(man.get("docs", 0), total)
-    man["shards"] = max(man.get("shards", 0), shard if total else 0)
-    _save_manifest(out_dir, name, man)
-    return total
+    return written
 
 
 def write_tokenizer_sample(streams: Dict[str, Iterable[str]], path: str, max_bytes: int = 200_000_000) -> Dict[str, int]:
@@ -287,7 +328,7 @@ def main(argv: Optional[list] = None) -> None:
         # one interleaved stream per language, round-robin over that language's sources
         per_lang: Dict[str, list] = {}
         for n in names:
-            per_lang.setdefault(SOURCES[n].lang, []).append(SOURCES[n].stream(maxes.get(n)))
+            per_lang.setdefault(SOURCES[n].lang, []).append(texts(SOURCES[n].stream(maxes.get(n))))
 
         def roundrobin(gens):
             gens = list(gens)
@@ -303,13 +344,31 @@ def main(argv: Optional[list] = None) -> None:
 
     os.makedirs(args.out_dir, exist_ok=True)
     grand = 0
-    for n in names:
-        src = SOURCES[n]
-        limit = maxes.get(n, src.default_max)
-        print(f"\n--- {n} ({src.hf_id}{'/' + src.config if src.config else ''}, {src.lang}) up to {limit:,} docs ---", flush=True)
-        grand += write_shards(src.stream(limit), args.out_dir, n, args.shard_docs, on_skip=lambda k: print(f"  [{n}] shard {k:05d} already complete, skipped"))
-    print(f"\n[prepare_corpus] done: {grand:,} docs in {args.out_dir}")
-    print("Next: for each shard, go run ./cmd/corpus-tokenize -tokenizer data/tokenizer.json -in <shard>.jsonl -out <shard>")
+    for name in names:
+        src = SOURCES[name]
+        limit = maxes.get(name, src.default_max)
+        plan = resume_plan(args.out_dir, name, limit)
+        if plan["remaining"] == 0:
+            print(f"\n--- {name}: already complete ({limit:,} docs), skipped ---", flush=True)
+            continue
+        todo = "all" if plan["remaining"] is None else f"{plan['remaining']:,}"
+        print(f"\n--- {name} ({src.hf_id}{'/' + src.config if src.config else ''}, {src.lang}) up to {limit:,} docs; "
+              f"skip {plan['skip_rows']:,} raw rows, start at shard {plan['start_shard']}, {todo} docs to go ---", flush=True)
+        n_stream = None if plan["remaining"] is None else plan["remaining"] + plan["skip_docs"]
+        stream = src.stream(n_stream, skip=plan["skip_rows"])
+        if plan["skip_docs"]:
+            print(f"  [{name}] manifest from the previous version: re-streaming and dropping "
+                  f"{plan['skip_docs']:,} docs already on disk", flush=True)
+            for k in range(plan["skip_docs"]):
+                try:
+                    next(stream)
+                except StopIteration:
+                    break
+                if (k + 1) % 100_000 == 0:
+                    print(f"  [{name}] dropped {k + 1:,}/{plan['skip_docs']:,}", flush=True)
+        grand += write_shards(stream, args.out_dir, name, args.shard_docs, start_shard=plan["start_shard"])
+    print(f"\n[prepare_corpus] done: {grand:,} new docs in {args.out_dir}")
+    print("Next: python forge/hf_tokenizer.py encode --tokenizer <tokenizer.json> --in <shard>.jsonl --out <shard>")
 
 
 if __name__ == "__main__":

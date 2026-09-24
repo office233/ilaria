@@ -259,6 +259,10 @@ to upload user information in social app". The exported adapter (`export_adapter
 the Go engine (`cortex/vision_siglip*.go`, `cmd/ilaria-see`; tower Go≡PyTorch max |Δ| 1.3·10⁻³, projector
 6.7·10⁻⁵): a Wikimedia cat photo → "In this picture we can see a cat and it is in black and brown color.",
 a pug in a blanket → "A dog with a blanket on it on a path." — on the CPU, tower ≈ 1 min, prefill ≈ 2–3 min.
+`ilaria-see -gpu -cuda` splices the same header/image/tail embedding rows straight into the NVRTC decoder's
+resident residual buffer (`BitNetCUDADecoder.PrefillEmbeds`, `cortex/bitnet_cuda.go`) instead of the CPU
+prefill, cutting that 2–3 min down to **~3.6–3.8 s for 134 rows** and decoding at **~39 tok/s** — same
+captions as the CPU path, both GPU backends resident together in 3.4 GB of the 6 GB GTX 1660 Ti.
 
 ```bash
 go run ./cmd/ilaria-see -model data/forge/bitnet-2b4t/bitnet.nxtf -tokenizer data/pretrained/bitnet-b1.58-2B-4T/tokenizer.json \

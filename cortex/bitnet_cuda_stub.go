@@ -35,6 +35,11 @@ func (d *BitNetCUDADecoder) Prefill(ids []int) []float32 {
 	panic("cortex: BitNetCUDADecoder.Prefill: not compiled in (rebuild with -tags gpu)")
 }
 
+// PrefillEmbeds stub always panics, same rationale as Prefill.
+func (d *BitNetCUDADecoder) PrefillEmbeds(embeds [][]float32) []float32 {
+	panic("cortex: BitNetCUDADecoder.PrefillEmbeds: not compiled in (rebuild with -tags gpu)")
+}
+
 // Step stub always panics.
 func (d *BitNetCUDADecoder) Step(id int) []float32 {
 	panic("cortex: BitNetCUDADecoder.Step: not compiled in (rebuild with -tags gpu)")

@@ -447,6 +447,95 @@ func TestCUDATinyEquivalence(t *testing.T) {
 	t.Logf("tiny: %d prompts, max|Δlogit| = %.3e (tol %.0e)", len(fx.Prompts), worst, tol)
 }
 
+// TestCUDAPrefillEmbedsTinyEquivalence checks BitNetCUDADecoder.PrefillEmbeds
+// on the tiny synthetic fixture two ways: (1) against the CPU
+// BitNetDecoder.PrefillEmbeds on the SAME rows (m.EmbedTokens(p.IDs)) —
+// this is the actual cmd/ilaria-see call shape, spliced image/text
+// embeddings fed straight into the residual stream; (2) against the same
+// CUDA decoder's own Prefill(p.IDs) — the embedding-table lookup and the
+// caller-supplied-row path differ only in how d.xBuf gets filled (see
+// uploadResidualRow's doc comment in bitnet_cuda.go), so for identical
+// rows they must produce identical logits, not just close ones.
+func TestCUDAPrefillEmbedsTinyEquivalence(t *testing.T) {
+	compiledCUDAModule(t) // skip early if no CUDA, before loading the fixture
+
+	dir := filepath.Join("..", "forge", "fixtures")
+	nxtfPath := filepath.Join(dir, "bitnet_tiny.nxtf")
+	jsonPath := filepath.Join(dir, "bitnet_tiny.json")
+
+	raw, err := os.ReadFile(jsonPath)
+	if err != nil {
+		t.Skipf("fixture missing (%v) — run: python forge/bitnet_reference.py --tiny", err)
+	}
+	var fx bitnetRefFile
+	if err := json.Unmarshal(raw, &fx); err != nil {
+		t.Fatalf("fixture json: %v", err)
+	}
+	if len(fx.Prompts) == 0 {
+		t.Fatal("fixture has no prompts")
+	}
+
+	m, err := LoadBitNetModel(nxtfPath)
+	if err != nil {
+		t.Fatalf("LoadBitNetModel(%s): %v", nxtfPath, err)
+	}
+
+	const tol = 1e-4
+	worstVsCPU, worstVsCUDAIDs := 0.0, 0.0
+	for _, p := range fx.Prompts {
+		rows := m.EmbedTokens(p.IDs)
+
+		cpuDec := NewBitNetDecoder(m)
+		cpuLogits := cpuDec.PrefillEmbeds(rows)
+
+		cd, err := NewBitNetCUDADecoder(m)
+		if err != nil {
+			t.Fatalf("NewBitNetCUDADecoder: %v", err)
+		}
+		gpuEmbedLogits := cd.PrefillEmbeds(rows)
+
+		if len(gpuEmbedLogits) != len(cpuLogits) {
+			t.Fatalf("logits length: GPU %d vs CPU %d", len(gpuEmbedLogits), len(cpuLogits))
+		}
+		maxDiff := 0.0
+		for v := range cpuLogits {
+			d := math.Abs(float64(gpuEmbedLogits[v]) - float64(cpuLogits[v]))
+			if d > maxDiff {
+				maxDiff = d
+			}
+		}
+		if maxDiff > worstVsCPU {
+			worstVsCPU = maxDiff
+		}
+		if maxDiff > tol {
+			t.Errorf("PrefillEmbeds vs CPU PrefillEmbeds: max|Δ|=%.3e (tol %.0e)", maxDiff, tol)
+		}
+
+		// Same ids, via the embedding-table lookup path — must land on
+		// (near-)identical logits to the caller-supplied-row path above,
+		// since both paths converge on the same d.xBuf H2D copy.
+		cd.Reset()
+		gpuIDLogits := cd.Prefill(p.IDs)
+		maxDiff2 := 0.0
+		for v := range gpuIDLogits {
+			d := math.Abs(float64(gpuIDLogits[v]) - float64(gpuEmbedLogits[v]))
+			if d > maxDiff2 {
+				maxDiff2 = d
+			}
+		}
+		if maxDiff2 > worstVsCUDAIDs {
+			worstVsCUDAIDs = maxDiff2
+		}
+		if maxDiff2 > tol {
+			t.Errorf("PrefillEmbeds vs CUDA Prefill(ids): max|Δ|=%.3e (tol %.0e)", maxDiff2, tol)
+		}
+
+		cd.Close()
+	}
+	t.Logf("tiny PrefillEmbeds: %d prompts, max|Δ| vs CPU PrefillEmbeds = %.3e, max|Δ| vs CUDA Prefill(ids) = %.3e (tol %.0e)",
+		len(fx.Prompts), worstVsCPU, worstVsCUDAIDs, tol)
+}
+
 // ─────────────────────────────────────────────────────────────────────
 // (c) real checkpoint, gated on NEXUS_BITNET_DIR.
 // ─────────────────────────────────────────────────────────────────────
@@ -543,6 +632,125 @@ func TestCUDARealModelEquivalence(t *testing.T) {
 		len(fx.Prompts), agree, total, 100*agreeRate, rate)
 	if agreeRate < minArgmaxAgree {
 		t.Errorf("argmax agreement %.1f%% below %.0f%%", 100*agreeRate, 100*minArgmaxAgree)
+	}
+}
+
+// TestCUDARealModelPrefillEmbedsEquivalence checks
+// BitNetCUDADecoder.PrefillEmbeds against the CPU
+// BitNetDecoder.PrefillEmbeds on the real checkpoint, using real
+// embedding rows (m.EmbedTokens over ids concatenated across
+// logits_ref.json's prompts, since none of them alone reaches the
+// ~40-row budget this test targets) instead of token ids — the same
+// call shape cmd/ilaria-see uses for its spliced image+text embeddings,
+// just without needing a real vision tower/adapter here. Compares
+// argmax + KL of the prefill's last-row logits (the file's established
+// statistical-tolerance precedent for the real checkpoint — see
+// TestBitNetEquivalence's doc comment on why per-logit tolerances are
+// meaningless at this scale), then runs 3 Steps — both decoders driven
+// by the CPU decoder's own greedy token, so a later step's comparison
+// reflects that step's arithmetic rather than an already-diverged
+// trajectory — and checks argmax agreement. Skipped unless
+// NEXUS_BITNET_DIR is set (same convention as
+// TestCUDARealModelEquivalence).
+func TestCUDARealModelPrefillEmbedsEquivalence(t *testing.T) {
+	compiledCUDAModule(t)
+
+	dir := os.Getenv("NEXUS_BITNET_DIR")
+	if dir == "" {
+		t.Skip("NEXUS_BITNET_DIR not set — skipping real-checkpoint CUDA PrefillEmbeds equivalence test")
+	}
+	nxtfPath := filepath.Join(dir, "bitnet.nxtf")
+	jsonPath := filepath.Join(dir, "logits_ref.json")
+
+	raw, err := os.ReadFile(jsonPath)
+	if err != nil {
+		t.Fatalf("read %s: %v", jsonPath, err)
+	}
+	var fx bitnetRefFile
+	if err := json.Unmarshal(raw, &fx); err != nil {
+		t.Fatalf("fixture json: %v", err)
+	}
+	if len(fx.Prompts) == 0 {
+		t.Fatal("fixture has no prompts")
+	}
+
+	m, err := LoadBitNetModel(nxtfPath)
+	if err != nil {
+		t.Fatalf("LoadBitNetModel(%s): %v", nxtfPath, err)
+	}
+
+	const targetRows = 40
+	var ids []int
+	for _, p := range fx.Prompts {
+		ids = append(ids, p.IDs...)
+		if len(ids) >= targetRows {
+			break
+		}
+	}
+	if len(ids) > targetRows {
+		ids = ids[:targetRows]
+	}
+	if len(ids) == 0 {
+		t.Fatal("no ids available to build a real-embedding sequence")
+	}
+	rows := m.EmbedTokens(ids)
+	t.Logf("built a %d-row real-embedding sequence from %d fixture prompts", len(rows), len(fx.Prompts))
+
+	cpuDec := NewBitNetDecoder(m)
+	cpuLogits := cpuDec.PrefillEmbeds(rows)
+
+	cd, err := NewBitNetCUDADecoder(m)
+	if err != nil {
+		t.Fatalf("NewBitNetCUDADecoder: %v", err)
+	}
+	defer cd.Close()
+
+	prefillStart := time.Now()
+	gpuLogits := cd.PrefillEmbeds(rows)
+	prefillElapsed := time.Since(prefillStart)
+
+	// Both sides are this codebase's own Go math (rmsnorm summation order
+	// and the fp16 lm_head embedding copy are the only deviations — see
+	// bitnet_cuda.go's PRECISION section), so this is tighter than
+	// TestBitNetEquivalence's Go-vs-PyTorch 0.03 nats.
+	const maxKL = 0.05
+	const minStepAgree = 2 // of 3 Step calls
+
+	cpuArgmax := argmaxFloat32(cpuLogits)
+	gpuArgmax := argmaxFloat32(gpuLogits)
+	refKL := make([]float64, len(cpuLogits))
+	for i, v := range cpuLogits {
+		refKL[i] = float64(v)
+	}
+	kl, meanAbs, maxAbs := distributionGap(refKL, gpuLogits)
+	t.Logf("PrefillEmbeds real: %d rows in %s, argmax CPU=%d GPU=%d, KL=%.4f mean|Δ|=%.4f max|Δ|=%.3f",
+		len(rows), prefillElapsed, cpuArgmax, gpuArgmax, kl, meanAbs, maxAbs)
+	if cpuArgmax != gpuArgmax {
+		t.Errorf("prefill argmax mismatch: CPU %d vs GPU %d", cpuArgmax, gpuArgmax)
+	}
+	if kl > maxKL {
+		t.Errorf("prefill KL(CPU‖GPU) = %.4f, want < %.4f", kl, maxKL)
+	}
+
+	agree := 0
+	cpuLog, gpuLog := cpuLogits, gpuLogits
+	for i := 0; i < 3; i++ {
+		cpuNext := argmaxFloat32(cpuLog)
+		gpuNext := argmaxFloat32(gpuLog)
+		if cpuNext == gpuNext {
+			agree++
+		} else {
+			t.Logf("step %d: argmax disagreement CPU %d vs GPU %d", i, cpuNext, gpuNext)
+		}
+		// Drive both decoders on the SAME (CPU-greedy) token so each
+		// step's comparison reflects that step's arithmetic, not an
+		// already-diverged trajectory.
+		cpuLog = cpuDec.Step(cpuNext)
+		gpuLog = cd.Step(cpuNext)
+	}
+	t.Logf("PrefillEmbeds real: 3-step argmax agreement %d/3", agree)
+	if agree < minStepAgree {
+		t.Errorf("3-step argmax agreement %d/3 below %d/3", agree, minStepAgree)
 	}
 }
 

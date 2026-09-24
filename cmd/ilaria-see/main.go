@@ -3,7 +3,8 @@ package main
 // ilaria-see — end-to-end multimodal caption runner: SigLIP2-base vision
 // tower + pixel shuffle + projector (cortex/vision_siglip.go) spliced into
 // BitNet b1.58's input embeddings (cortex.BitNetDecoder.PrefillEmbeds,
-// cortex/bitnet_decode.go) via cortex.BitNetModel.EmbedTokens, greedy
+// cortex/bitnet_decode.go, or -cuda's cortex.BitNetCUDADecoder.PrefillEmbeds,
+// cortex/bitnet_cuda.go) via cortex.BitNetModel.EmbedTokens, greedy
 // decoded with the KV-cached decoder — the Go-side counterpart to
 // forge/multimodal/mm_model.py's BitNetVLM.generate_caption.
 //
@@ -14,6 +15,19 @@ package main
 //	    -adapter data/forge/eyes/projector_seed42 \
 //	    -image data/forge/eyes/synthetic_shapes.png \
 //	    -prompt "Describe the image briefly." -max-tokens 40
+//
+// -cuda (needs a -tags gpu build) runs the whole BitNet prefill+decode on
+// the GPU via the NVRTC-compiled decoder (cmd/bitnet-run's -cuda backend):
+// PrefillEmbeds uploads each of the header/image/tail embedding rows
+// straight into the resident residual buffer (no per-row embedding-table
+// lookup — see bitnet_cuda.go's uploadResidualRow) and every subsequent
+// token is a resident-KV-cache Step, replacing the CPU prefill that takes
+// minutes for a ~130-row multimodal sequence. Combinable with -gpu (which
+// separately controls the vision tower's cuBLAS backend); -cuda takes
+// precedence over -gpu's OWN int8-cuBLAS BitNet backend specifically (a
+// known-buggy path at this row count — see cortex/bitnet_gpu.go), matching
+// cmd/bitnet-run's -gpu/-cuda precedence exactly. On any CUDA construction
+// error, a warning is printed and the run falls back to the CPU decoder.
 //
 // -adapter names an export_adapter.py PREFIX (PREFIX.safetensors +
 // PREFIX.json — e.g. data/forge/eyes/projector_seed42, the fixed-seed
@@ -64,7 +78,8 @@ func main() {
 	prompt := flag.String("prompt", "Describe the image briefly.", "Caption instruction (the <image> marker is added automatically)")
 	maxTokens := flag.Int("max-tokens", 40, "Max number of tokens to generate")
 	maxTextLen := flag.Int("max-text-len", 256, "Per-segment token truncation, matching BitNetVLM(max_text_len=...) (mm_model.py)")
-	gpuFlag := flag.Bool("gpu", false, "Route the vision tower's dense/attention matmuls through resident fp32 cuBLAS and the BitNet prefill through the resident int8 cuBLAS backend (needs a -tags gpu build and CUDA; see cortex/vision_siglip_gpu.go and cortex/bitnet_gpu.go). Falls back to CPU with a warning if unavailable.")
+	gpuFlag := flag.Bool("gpu", false, "Route the vision tower's dense/attention matmuls through resident fp32 cuBLAS and (unless -cuda is also set) the BitNet prefill through the resident int8 cuBLAS backend (needs a -tags gpu build and CUDA; see cortex/vision_siglip_gpu.go and cortex/bitnet_gpu.go). Falls back to CPU with a warning if unavailable.")
+	cudaFlag := flag.Bool("cuda", false, "Run the whole BitNet prefill+decode on the GPU via the NVRTC-compiled decoder (needs a -tags gpu build; see cortex/bitnet_cuda.go and cmd/bitnet-run's -cuda — takes precedence over -gpu's own int8-cuBLAS BitNet backend, not over -gpu's vision-tower backend). Falls back to CPU with a warning if unavailable.")
 	flag.Parse()
 
 	fail := func(stage string, err error) {
@@ -125,14 +140,20 @@ func main() {
 			fmt.Fprintf(os.Stderr, "[ilaria-see] vision GPU backend enabled in %.2fs\n", time.Since(towerGPUStart).Seconds())
 		}
 
-		bitnetGPUStart := time.Now()
-		if err := cortex.EnableBitNetGPU(model); err != nil {
-			fmt.Fprintf(os.Stderr, "[ilaria-see] warning: BitNet GPU backend unavailable, prefill/decode stay on CPU: %v\n", err)
-		} else {
-			fmt.Fprintf(os.Stderr, "[ilaria-see] BitNet GPU backend enabled in %.2fs\n", time.Since(bitnetGPUStart).Seconds())
-			if free, total, err := compute.MemInfoInt8(); err == nil {
-				fmt.Fprintf(os.Stderr, "[ilaria-see] GPU memory: %.0f MiB used / %.0f MiB total\n",
-					float64(total-free)/(1<<20), float64(total)/(1<<20))
+		// The int8 cuBLAS BitNet backend (bitnet_gpu.go) is a known bug at
+		// this row count (see file doc comment) — -cuda's NVRTC decoder
+		// supersedes it, so skip enabling it when -cuda is also set,
+		// mirroring cmd/bitnet-run's `*gpu && !*cudaFlag` precedence.
+		if !*cudaFlag {
+			bitnetGPUStart := time.Now()
+			if err := cortex.EnableBitNetGPU(model); err != nil {
+				fmt.Fprintf(os.Stderr, "[ilaria-see] warning: BitNet GPU backend unavailable, prefill/decode stay on CPU: %v\n", err)
+			} else {
+				fmt.Fprintf(os.Stderr, "[ilaria-see] BitNet GPU backend enabled in %.2fs\n", time.Since(bitnetGPUStart).Seconds())
+				if free, total, err := compute.MemInfoInt8(); err == nil {
+					fmt.Fprintf(os.Stderr, "[ilaria-see] GPU memory: %.0f MiB used / %.0f MiB total\n",
+						float64(total-free)/(1<<20), float64(total)/(1<<20))
+				}
 			}
 		}
 	}
@@ -192,7 +213,38 @@ func main() {
 		stopSet[eot] = true
 	}
 
-	dec := cortex.NewBitNetDecoder(model)
+	// multimodalDecoder is the common PrefillEmbeds/Step/Len surface
+	// *cortex.BitNetDecoder (CPU, always available) and
+	// *cortex.BitNetCUDADecoder (GPU, -tags gpu) both satisfy — same
+	// stepDecoder pattern cmd/bitnet-run uses for Prefill(ids).
+	type multimodalDecoder interface {
+		PrefillEmbeds(embeds [][]float32) []float32
+		Step(id int) []float32
+		Len() int
+	}
+
+	var dec multimodalDecoder
+	var cudaDec *cortex.BitNetCUDADecoder // non-nil only when the -cuda decoder is in use, for its device-side Argmax()
+	if *cudaFlag {
+		cudaStart := time.Now()
+		cd, err := cortex.NewBitNetCUDADecoder(model)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "[ilaria-see] warning: CUDA decoder unavailable, prefill/decode fall back to CPU: %v\n", err)
+		} else {
+			fmt.Fprintf(os.Stderr, "[ilaria-see] CUDA decoder ready (kernels compiled, weights uploaded) in %.2fs\n", time.Since(cudaStart).Seconds())
+			if free, total, err := compute.DeviceMemInfo(); err == nil {
+				fmt.Fprintf(os.Stderr, "[ilaria-see] GPU memory: %.0f MiB used / %.0f MiB total\n",
+					float64(total-free)/(1<<20), float64(total)/(1<<20))
+			}
+			defer cd.Close()
+			dec = cd
+			cudaDec = cd
+		}
+	}
+	if dec == nil {
+		dec = cortex.NewBitNetDecoder(model)
+	}
+
 	prefillStart := time.Now()
 	logits := dec.PrefillEmbeds(fullEmbeds)
 	prefillElapsed := time.Since(prefillStart)
@@ -200,12 +252,19 @@ func main() {
 	var newIDs []int
 	genStart := time.Now()
 	for i := 0; i < *maxTokens; i++ {
-		best := 0
-		bestVal := logits[0]
-		for v := 1; v < len(logits); v++ {
-			if logits[v] > bestVal {
-				bestVal = logits[v]
-				best = v
+		var best int
+		if cudaDec != nil {
+			// Device-side argmax kernel — see bitnet_cuda.go's Argmax,
+			// same op cmd/bitnet-run's -cuda path would use.
+			best = cudaDec.Argmax()
+		} else {
+			best = 0
+			bestVal := logits[0]
+			for v := 1; v < len(logits); v++ {
+				if logits[v] > bestVal {
+					bestVal = logits[v]
+					best = v
+				}
 			}
 		}
 		newIDs = append(newIDs, best)

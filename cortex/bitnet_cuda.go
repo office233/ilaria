@@ -876,6 +876,22 @@ func (d *BitNetCUDADecoder) attnDecode(li, pos int) error {
 // The per-token decode pipeline.
 // ─────────────────────────────────────────────────────────────────────
 
+// uploadResidualRow H2D-copies a single Cfg.EmbedDim-length row directly
+// into d.xBuf as the residual-stream input for the step about to run —
+// shared by runStep (an embedding-TABLE lookup row) and runStepEmbed (a
+// caller-supplied row, e.g. PrefillEmbeds's projected image/text
+// embeddings): both are, from the kernels' point of view, just "the
+// float32 vector that becomes x for this position", identical to how
+// BitNetDecoder.PrefillEmbeds (bitnet_decode.go) uses a caller's row
+// directly as x instead of going through Embed.
+func (d *BitNetCUDADecoder) uploadResidualRow(row []float32) error {
+	dModel := d.m.Cfg.EmbedDim
+	if len(row) != dModel {
+		return fmt.Errorf("row length %d, want %d", len(row), dModel)
+	}
+	return d.xBuf.CopyFromHost(unsafe.Pointer(&row[0]), dModel*4)
+}
+
 // runStep runs one full decoder pass for token `id` at absolute
 // position `pos`, updating every layer's KV cache at row `pos`, and
 // returns that position's VocabSize logits — the GPU-resident mirror of
@@ -883,16 +899,37 @@ func (d *BitNetCUDADecoder) attnDecode(li, pos int) error {
 // keeping only the last call's result — "process the prompt token by
 // token with the same kernels") and Step (single call).
 func (d *BitNetCUDADecoder) runStep(id, pos int) ([]float32, error) {
-	cfg := d.m.Cfg
-	dModel := cfg.EmbedDim
+	dModel := d.m.Cfg.EmbedDim
 
 	// Exact float32 input embedding row, straight from the model's own
 	// table — see file doc comment's PRECISION section for why this
 	// deliberately does NOT go through the fp16 copy.
 	row := d.m.Embed[id*dModel : (id+1)*dModel]
-	if err := d.xBuf.CopyFromHost(unsafe.Pointer(&row[0]), dModel*4); err != nil {
+	if err := d.uploadResidualRow(row); err != nil {
 		return nil, fmt.Errorf("copy input embedding: %w", err)
 	}
+	return d.runStepFromResidual(pos)
+}
+
+// runStepEmbed is runStep's PrefillEmbeds counterpart: row is used
+// DIRECTLY as the residual-stream input for position pos (no embedding
+// lookup) — the GPU-resident mirror of what BitNetDecoder.PrefillEmbeds
+// does per row (bitnet_decode.go).
+func (d *BitNetCUDADecoder) runStepEmbed(row []float32, pos int) ([]float32, error) {
+	if err := d.uploadResidualRow(row); err != nil {
+		return nil, fmt.Errorf("copy input embed row: %w", err)
+	}
+	return d.runStepFromResidual(pos)
+}
+
+// runStepFromResidual runs every layer plus final_norm/lm_head for the
+// step at absolute position pos, assuming d.xBuf already holds that
+// position's residual-stream input (put there by runStep's embedding
+// lookup or runStepEmbed's caller-supplied row) — the part of a decode
+// step shared by both entry points.
+func (d *BitNetCUDADecoder) runStepFromResidual(pos int) ([]float32, error) {
+	cfg := d.m.Cfg
+	dModel := cfg.EmbedDim
 
 	for li := 0; li < cfg.NumLayers; li++ {
 		lw := &d.layers[li]
@@ -1031,6 +1068,44 @@ func (d *BitNetCUDADecoder) Prefill(ids []int) []float32 {
 		logits = l
 	}
 	d.pos = len(ids)
+	return logits
+}
+
+// PrefillEmbeds is the embeddings-level counterpart to Prefill(ids) — the
+// CUDA-decoder mirror of BitNetDecoder.PrefillEmbeds (bitnet_decode.go):
+// each row of embeds (length Cfg.EmbedDim) is used DIRECTLY as the
+// residual-stream input of that position (via runStepEmbed's H2D copy
+// into d.xBuf, the same buffer runStep's embedding-table lookup fills),
+// instead of an id -> embedding-table lookup, so a caller that splices
+// non-text-token embeddings (e.g. projected image tokens, see
+// cmd/ilaria-see) into the row sequence gets the same GPU decoder
+// behavior text-only prompts get via Prefill. Rows are processed
+// sequentially, one runStepEmbed call per row — no batched prefill kernel,
+// matching Prefill's own token-by-token loop. Returns the last row's
+// logits exactly like BitNetDecoder.PrefillEmbeds. Panics (matching
+// Prefill's and BitNetDecoder.PrefillEmbeds's own panic-on-misuse
+// contracts) on a CUDA error, an empty embeds slice, a row whose length
+// isn't Cfg.EmbedDim, being called with cached state already present
+// (call Reset first), or more rows than Cfg.MaxSeqLen.
+func (d *BitNetCUDADecoder) PrefillEmbeds(embeds [][]float32) []float32 {
+	if len(embeds) == 0 {
+		panic("cortex: BitNetCUDADecoder.PrefillEmbeds: empty embeds")
+	}
+	if d.pos != 0 {
+		panic("cortex: BitNetCUDADecoder.PrefillEmbeds: decoder already has cached state; call Reset first")
+	}
+	if len(embeds) > d.m.Cfg.MaxSeqLen {
+		panic(fmt.Sprintf("cortex: BitNetCUDADecoder.PrefillEmbeds: %d rows exceeds Cfg.MaxSeqLen %d", len(embeds), d.m.Cfg.MaxSeqLen))
+	}
+	var logits []float32
+	for t, row := range embeds {
+		l, err := d.runStepEmbed(row, t)
+		if err != nil {
+			panic(fmt.Sprintf("cortex: BitNetCUDADecoder.PrefillEmbeds: %v", err))
+		}
+		logits = l
+	}
+	d.pos = len(embeds)
 	return logits
 }
 

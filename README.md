@@ -276,6 +276,26 @@ go run ./cmd/bitnet-run -model data/forge/bitnet-2b4t/bitnet.nxtf -tokenizer dat
 # → "The sky appears blue because of a phenomenon called Rayleigh scattering, …"
 ```
 
+### Ears (in progress): Whisper-small encoder → stack-and-project → ternary cortex
+
+Stage 1 groundwork for the "ears" modality (no trained projector yet): a from-scratch Go port of the
+`openai/whisper-small` ENCODER plus its log-mel front end — reflect-padded STFT framing, a periodic Hann
+window, a direct real DFT (n_fft=400 isn't a power of 2), the exported mel filterbank as a plain matmul (no
+librosa/slaney formula in Go at all), two strided Conv1d+GELU layers, fixed sinusoidal positions, and 12
+pre-LN transformer layers — plus `StackFrames` (Ultravox-style temporal token reduction, k=8) and the
+projector module shape (`cortex/audio_whisper*.go`, `cmd/ilaria-hear`). Checked against the real checkpoint
+on a synthetic 3 s test tone (`forge/multimodal/export_whisper_tower.py`, `dump_audio_reference.py`):
+log-mel max|Δ| 1.2·10⁻³ over the front 64 values; conv-stack/hidden-layer/final-output max|Δ| 0.01–0.08 with
+relative L2 error 1.4·10⁻⁴–1.4·10⁻³ throughout (the growing max|Δ| in the last few layers tracks Whisper's
+own "massive activation" outlier channels — a handful of dimensions with much larger magnitude than the
+rest of the 768-wide vector — not a systematic drift: relL2 stays flat); the random-weight projector
+(round-tripped through `export_audio_adapter.py`, same format the vision projector uses) matches to
+3.0·10⁻³. A 3 s clip (150 real frames of Whisper's fixed 1 500-frame/30 s window) takes ~80–90 s to encode
+on the CPU. `cmd/ilaria-hear` runs the same tower + `StackFrames` + (if `-adapter` is given) projector +
+`-cuda` NVRTC-decoder splice as `ilaria-see` does for images, but since `train_stage1_audio.py` hasn't
+produced a trained checkpoint yet, only the plumbing is validated end-to-end — decoded text with the random
+projector is not a real transcript.
+
 ## Benchmark Performance (local, vs own dense baseline)
 
 | Operation | Speed | Allocations |

@@ -10,7 +10,7 @@ if [ -d ilaria/.git ]; then (cd ilaria && git pull --ff-only 2>&1 | tail -1); el
 cd /content/ilaria || exit 1
 git log --oneline -1
 [ -f forge/multimodal/train_stage1_audio.py ] || { echo "forge/multimodal/train_stage1_audio.py missing on GitHub -- push the repo first"; exit 1; }
-pip -q install -U datasets tokenizers safetensors huggingface_hub torchaudio soundfile 2>&1 | tail -1
+pip -q install -U datasets tokenizers safetensors "huggingface_hub>=1.5,<2" torchaudio soundfile 2>&1 | tail -1  # hub 2.x breaks the preinstalled transformers
 python -c "import torch, transformers; print('torch', torch.__version__, '| transformers', transformers.__version__, '| cuda', torch.cuda.is_available())"
 nvidia-smi --query-gpu=name,memory.total --format=csv
 [ -s /content/bitnet-b1.58-2B-4T/model.safetensors ] || python - <<'EOF'

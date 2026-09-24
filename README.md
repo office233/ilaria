@@ -228,6 +228,32 @@ go run ./cmd/nxtf-ppl -data-dir data/forge/brain-a -text forge/eval/heldout_wiki
 
 The Colab path (notebook, Drive layout, runner scripts) is documented in `forge/COLAB_GUIDE.md` and `forge/colab/`.
 
+## Ternary English cortex — BitNet b1.58 2B4T inside the Go engine (2026-09-24)
+
+The study in `docs/research/2026-09-24-ilaria-1.58-multimodal-studiu.md` concluded that a natively-trained
+1.58-bit model beats any 16→1.58-bit conversion at equal size, so Ilaria's English cortex is Microsoft's
+open BitNet b1.58 2B4T (MIT, 4 T tokens), imported into the engine's own ternary format and run with the
+same integer arithmetic bitnet.cpp uses (ternary weights × int8 per-token activations, int32 accumulation):
+
+- `forge/import_bitnet.py` → NXTF v3 (`NXTF3BIN`, ternary tiles packed exactly like `PackTernaryTile`), 1.83 GB
+  because the tied 128k×2560 embedding is kept in float32; loads in ~3 s (`cortex/bitnet_persist.go`).
+- `cortex/bitnet*.go`: BitLinear, RMSNorm/subln, GQA 20/5, ReLU² GLU, half-rotate RoPE, KV-cache decoder,
+  greedy and top-k/top-p sampling; `cortex/tokenizer_llama3.go`: Llama-3 byte-level BPE with a hand-written
+  cl100k pre-tokenizer (309/309 test lines identical to HF `tokenizers`) and the BitNet chat template.
+- Verification: a tiny BitNet built with HF code matches to 5·10⁻⁷; the real 2.4B checkpoint is compared
+  statistically (`TestBitNetEquivalence`, `NEXUS_BITNET_DIR`), because int8 activation quantization in 210
+  layers makes per-logit tolerances meaningless — PyTorch itself differs by 0.37 between 1 and 4 BLAS threads:
+  KL(PyTorch ‖ Go) 0.0002–0.016 nats, argmax agreement 45/46, greedy prefixes identical.
+- Speed today: ~0.5–1 tok/s on 8 CPU threads in pure Go (bitnet.cpp: 80–110 with LUT kernels); CPU tuning
+  and an int8 cuBLAS GPU path are in progress.
+
+```bash
+python forge/import_bitnet.py --hf-dir data/pretrained/bitnet-b1.58-2B-4T --out data/forge/bitnet-2b4t/bitnet.nxtf
+go run ./cmd/bitnet-run -model data/forge/bitnet-2b4t/bitnet.nxtf -tokenizer data/pretrained/bitnet-b1.58-2B-4T/tokenizer.json \
+   -chat -prompt "Explain in two sentences why the sky is blue." -max-tokens 60 -greedy
+# → "The sky appears blue because of a phenomenon called Rayleigh scattering, …"
+```
+
 ## Benchmark Performance (local, vs own dense baseline)
 
 | Operation | Speed | Allocations |

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"regexp"
 	"sort"
 	"strings"
 	"unicode"
@@ -68,6 +69,34 @@ type BPETokenizer struct {
 	// attaches the space marker to every token after punctuation; 2 attaches
 	// it only after real whitespace so "după-amiază" and „citat” round-trip.
 	PreTok int `json:"pretok,omitempty"`
+
+	// Llama3 marks the tiktoken-style byte-level BPE mode used by Meta's
+	// Llama-3 tokenizer (and microsoft/bitnet-b1.58-2B-4T, which reuses it
+	// verbatim, per LoadHFTokenizerJSON). Distinct from the plain GPT-2
+	// byte-level mode above ByteLevel: the pre-tokenization regex differs
+	// (llama3PreTokenize), merges respect IgnoreMerges, and there are 256
+	// named special tokens instead of one. See tokenizer_llama3.go.
+	Llama3 bool `json:"llama3,omitempty"`
+
+	// IgnoreMerges mirrors the HF tokenizer.json model.ignore_merges flag:
+	// when true, a whole pre-token that is already a vocab entry is
+	// emitted as that single token directly, bypassing the merge loop.
+	// This is required for exact parity with tiktoken-derived vocabs —
+	// the merge list alone does not always reconstruct every vocab entry
+	// (empirically true for ~0.5% of BitNet-2B4T's vocab).
+	IgnoreMerges bool `json:"ignore_merges,omitempty"`
+
+	// SpecialTokens maps a special token's literal text (e.g.
+	// "<|eot_id|>") to its vocabulary id. Populated in Llama3 mode; nil
+	// otherwise. Encode recognises these as atomic units wherever they
+	// occur in input text (matching HF's split_special_tokens=False
+	// behaviour); Decode skips them like the other special-role tokens.
+	SpecialTokens map[string]int `json:"special_tokens,omitempty"`
+
+	// specialTokenRe matches any SpecialTokens key against raw input
+	// text; built once at load time (buildSpecialTokenMatcher), not
+	// persisted.
+	specialTokenRe *regexp.Regexp
 
 	// mergeRank caches "A\x00B" → merge priority (lower = applied first).
 	// Built from Merges on load/train.
@@ -561,6 +590,9 @@ func applyMerge(symbols []string, a, b, merged string) []string {
 // Unknown characters that weren't seen during training map to <UNK>
 // (char-level mode only — byte-level coverage is total by construction).
 func (t *BPETokenizer) Encode(text string) []int {
+	if t.Llama3 {
+		return t.encodeLlama3(text)
+	}
 	var preTokens []string
 	if t.ByteLevel {
 		// GPT-2 semantics: split first, then rewrite each piece into
@@ -664,7 +696,8 @@ func (t *BPETokenizer) Decode(ids []int) string {
 		token := t.IDToToken[id]
 		// Skip special tokens during decode
 		if token == TokenPAD || token == TokenBOS || token == TokenEOS ||
-			token == TokenUNK || token == TokenSEP || token == GPT2EndOfText {
+			token == TokenUNK || token == TokenSEP || token == GPT2EndOfText ||
+			t.isRegisteredSpecial(token) {
 			continue
 		}
 		b.WriteString(token)
@@ -788,40 +821,67 @@ func (t *BPETokenizer) ActualVocabSize() int {
 // byte-level (GPT-2) mode — that vocabulary defines no other specials,
 // and GPT-2 itself uses endoftext as BOS, EOS and padding alike.
 
-// PadID returns the ID for the <PAD> token.
+// PadID returns the ID for the <PAD> token. In Llama3 mode there is no
+// pad token (tokenizer_config.json declares pad_token: null for
+// BitNet-2B4T), so this returns -1.
 func (t *BPETokenizer) PadID() int {
+	if t.Llama3 {
+		return -1
+	}
 	if t.ByteLevel {
 		return t.gpt2SpecialID()
 	}
 	return t.TokenToID[TokenPAD]
 }
 
-// UnkID returns the ID for the <UNK> token.
+// UnkID returns the ID for the <UNK> token. In Llama3 mode byte-level
+// coverage is total (as in GPT-2 mode) and there is no dedicated unk
+// role, so this returns -1.
 func (t *BPETokenizer) UnkID() int {
+	if t.Llama3 {
+		return -1
+	}
 	if t.ByteLevel {
 		return t.gpt2SpecialID()
 	}
 	return t.TokenToID[TokenUNK]
 }
 
-// BosID returns the ID for the <BOS> token.
+// BosID returns the ID for the beginning-of-text token: <|begin_of_text|>
+// (128000) in Llama3 mode.
 func (t *BPETokenizer) BosID() int {
+	if t.Llama3 {
+		return t.TokenToID["<|begin_of_text|>"]
+	}
 	if t.ByteLevel {
 		return t.gpt2SpecialID()
 	}
 	return t.TokenToID[TokenBOS]
 }
 
-// EosID returns the ID for the <EOS> token.
+// EosID returns the ID BitNet-2B4T's tokenizer_config.json designates as
+// eos_token: <|eot_id|> (128009), the instruct end-of-turn marker —
+// confirmed by generation_config.json, whose eos_token_id list includes
+// it alongside 128001. The base Llama-3 model's own eos, <|end_of_text|>
+// (128001, per special_tokens_map.json), is exposed separately as
+// EndOfTextID(); EotID() returns the same id as this method under a name
+// that doesn't require knowing the two happen to coincide here.
 func (t *BPETokenizer) EosID() int {
+	if t.Llama3 {
+		return t.TokenToID["<|eot_id|>"]
+	}
 	if t.ByteLevel {
 		return t.gpt2SpecialID()
 	}
 	return t.TokenToID[TokenEOS]
 }
 
-// SepID returns the ID for the <SEP> token.
+// SepID returns the ID for the <SEP> token. Llama3 mode defines no
+// separator role, so this returns -1.
 func (t *BPETokenizer) SepID() int {
+	if t.Llama3 {
+		return -1
+	}
 	if t.ByteLevel {
 		return t.gpt2SpecialID()
 	}

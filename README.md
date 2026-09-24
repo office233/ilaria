@@ -244,8 +244,24 @@ same integer arithmetic bitnet.cpp uses (ternary weights × int8 per-token activ
   statistically (`TestBitNetEquivalence`, `NEXUS_BITNET_DIR`), because int8 activation quantization in 210
   layers makes per-logit tolerances meaningless — PyTorch itself differs by 0.37 between 1 and 4 BLAS threads:
   KL(PyTorch ‖ Go) 0.0002–0.016 nats, argmax agreement 45/46, greedy prefixes identical.
-- Speed today: ~0.5–1 tok/s on 8 CPU threads in pure Go (bitnet.cpp: 80–110 with LUT kernels); CPU tuning
-  and an int8 cuBLAS GPU path are in progress.
+- Speed today: ~0.5–1 tok/s on 8 CPU threads in pure Go (bitnet.cpp: 80–110 with LUT kernels); the CPU
+  path was tuned 2.6–2.8× and an int8 cuBLAS GPU path exists (bit-exact) but is not faster yet — real GPU
+  speed needs kernels that keep activations on the device.
+
+### Eyes (2026-09-24): SigLIP2 → pixel-shuffle → projector → ternary cortex
+
+Stage 1 of `forge/multimodal/` (projector only, SigLIP2-base and BitNet frozen, Cauldron caption subsets,
+2 000 steps × 128 images ≈ 1.7 h on one Colab GPU, ~25 compute units) turned the ternary cortex into a
+captioner: loss 4.2 → 1.0, captions such as "a person surfing on the water" and "Screen displaying the option
+to upload user information in social app". The exported adapter (`export_adapter.py`, 24.25 M params) runs in
+the Go engine (`cortex/vision_siglip*.go`, `cmd/ilaria-see`; tower Go≡PyTorch max |Δ| 1.3·10⁻³, projector
+6.7·10⁻⁵): a Wikimedia cat photo → "In this picture we can see a cat and it is in black and brown color.",
+a pug in a blanket → "A dog with a blanket on it on a path." — on the CPU, tower ≈ 1 min, prefill ≈ 2–3 min.
+
+```bash
+go run ./cmd/ilaria-see -model data/forge/bitnet-2b4t/bitnet.nxtf -tokenizer data/pretrained/bitnet-b1.58-2B-4T/tokenizer.json \
+   -tower data/forge/eyes/siglip2_base.nxtf -adapter data/forge/eyes/adapter_export -image photo.jpg
+```
 
 ```bash
 python forge/import_bitnet.py --hf-dir data/pretrained/bitnet-b1.58-2B-4T --out data/forge/bitnet-2b4t/bitnet.nxtf

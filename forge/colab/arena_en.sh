@@ -14,7 +14,7 @@ nvidia-smi --query-gpu=name,memory.total --format=csv
 [ -d /content/nexus ] || { echo "cloning repo ($(date +%H:%M:%S))"; git clone --depth 1 https://github.com/office233/ilaria /content/nexus || exit 1; }
 cd /content/nexus || exit 1
 
-pip install -q -U lm_eval "huggingface_hub[cli]"
+pip install -q -U lm_eval "huggingface_hub[cli]>=1.5,<2"  # hub 2.x breaks the preinstalled transformers (requires <2.0)
 
 mkdir -p data/pretrained/bitnet-b1.58-2B-4T data/forge/brain-a results docs/benchmarks
 if [ ! -f data/pretrained/bitnet-b1.58-2B-4T/model.safetensors ]; then

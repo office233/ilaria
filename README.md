@@ -244,9 +244,11 @@ same integer arithmetic bitnet.cpp uses (ternary weights × int8 per-token activ
   statistically (`TestBitNetEquivalence`, `NEXUS_BITNET_DIR`), because int8 activation quantization in 210
   layers makes per-logit tolerances meaningless — PyTorch itself differs by 0.37 between 1 and 4 BLAS threads:
   KL(PyTorch ‖ Go) 0.0002–0.016 nats, argmax agreement 45/46, greedy prefixes identical.
-- Speed today: ~0.5–1 tok/s on 8 CPU threads in pure Go (bitnet.cpp: 80–110 with LUT kernels); the CPU
-  path was tuned 2.6–2.8× and an int8 cuBLAS GPU path exists (bit-exact) but is not faster yet — real GPU
-  speed needs kernels that keep activations on the device.
+- Speed: `cmd/bitnet-run -cuda` runs the whole decode step on the GPU with kernels compiled at run time by
+  NVRTC (no nvcc): ternary weights stay packed (0.6 GB), KV cache resident, fp16 tied head — **37–40 tok/s on
+  a GTX 1660 Ti** (2.9 GB), argmax identical to the CPU path on the real model. Pure-Go CPU decode is
+  ~0.5–1 tok/s on 8 threads (bitnet.cpp reaches 80–110 with LUT kernels). The vision tower also runs on the
+  GPU through cuBLAS (`ilaria-see -gpu`, 61 s → 8 s).
 
 ### Eyes (2026-09-24): SigLIP2 → pixel-shuffle → projector → ternary cortex
 

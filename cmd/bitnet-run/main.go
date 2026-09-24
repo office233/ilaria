@@ -52,6 +52,7 @@ import (
 	"time"
 
 	cortex "nexus-cortex/cortex"
+	"nexus-cortex/cortex/compute"
 )
 
 func main() {
@@ -69,6 +70,7 @@ func main() {
 	repPenalty := flag.Float64("rep-penalty", 1.2, "Repetition penalty (<=1 disables)")
 	seed := flag.Int64("seed", 42, "Sampler RNG seed")
 	stream := flag.Bool("stream", false, "Print each token as it is generated instead of only at the end")
+	gpu := flag.Bool("gpu", false, "Enable resident cuBLAS int8 GPU backend for every BitLinear (needs a -tags gpu build; see cortex/bitnet_gpu.go)")
 	flag.Parse()
 
 	fail := func(stage string, err error) {
@@ -87,6 +89,18 @@ func main() {
 	}
 	fmt.Fprintf(os.Stderr, "[bitnet-run] loaded %s in %.2fs (vocab=%d layers=%d embed=%d)\n",
 		*modelPath, time.Since(loadStart).Seconds(), model.Cfg.VocabSize, model.Cfg.NumLayers, model.Cfg.EmbedDim)
+
+	if *gpu {
+		gpuStart := time.Now()
+		if err := cortex.EnableBitNetGPU(model); err != nil {
+			fail("enable gpu", err)
+		}
+		fmt.Fprintf(os.Stderr, "[bitnet-run] GPU backend enabled in %.2fs\n", time.Since(gpuStart).Seconds())
+		if free, total, err := compute.MemInfoInt8(); err == nil {
+			fmt.Fprintf(os.Stderr, "[bitnet-run] GPU memory: %.0f MiB used / %.0f MiB total\n",
+				float64(total-free)/1024/1024, float64(total)/1024/1024)
+		}
+	}
 
 	var promptIDs []int
 	var tok *cortex.BPETokenizer

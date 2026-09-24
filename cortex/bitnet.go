@@ -41,8 +41,6 @@ package cortex
 import (
 	"math"
 	"math/rand"
-	"runtime"
-	"sync"
 )
 
 // BitNetConfig holds the hyperparameters needed to build and run a BitNet
@@ -191,8 +189,15 @@ func applyRoPEHalf(x, cos, sin []float32, scratch []float32) {
 // bitnetAttention runs self-attention for one decoder layer over the whole
 // (already AttnNorm-normalized) sequence, causal, with grouped-query
 // attention: query head h reads KV head h/(NumHeads/NumKVHeads) — see
-// repeat_kv, modeling_bitnet.py:114-123. Returns O(attn_sub_norm(attn)).
-func bitnetAttention(layer *BitNetLayer, xNormed [][]float32, cos, sin [][]float32, cfg BitNetConfig) [][]float32 {
+// repeat_kv, modeling_bitnet.py:114-123. Returns O(attn_sub_norm(attn)),
+// plus the RoPE-applied K and (un-rotated) V projections it computed
+// internally on the way there — K[t]/V[t] have length nKV*hd, exactly the
+// per-token KV-cache row BitNetDecoder.Prefill needs (bitnet_decode.go).
+// Returning them (instead of recomputing via a separate projectKV pass, as
+// an earlier version of this function's caller did) costs nothing extra:
+// they are the same slices this function already builds and would
+// otherwise discard.
+func bitnetAttention(layer *BitNetLayer, xNormed [][]float32, cos, sin [][]float32, cfg BitNetConfig) (attn, K, V [][]float32) {
 	T := len(xNormed)
 	d := cfg.EmbedDim
 	hd := cfg.headDim()
@@ -201,8 +206,8 @@ func bitnetAttention(layer *BitNetLayer, xNormed [][]float32, cos, sin [][]float
 	nRep := nHeads / nKV
 
 	Q := layer.Q.ForwardBatch(xNormed) // T x d
-	K := layer.K.ForwardBatch(xNormed) // T x (nKV*hd)
-	V := layer.V.ForwardBatch(xNormed) // T x (nKV*hd)
+	K = layer.K.ForwardBatch(xNormed)  // T x (nKV*hd)
+	V = layer.V.ForwardBatch(xNormed)  // T x (nKV*hd)
 
 	scratch := make([]float32, hd)
 	for t := 0; t < T; t++ {
@@ -261,7 +266,7 @@ func bitnetAttention(layer *BitNetLayer, xNormed [][]float32, cos, sin [][]float
 	for t := range attnOut {
 		attnOut[t] = RMSNorm(attnOut[t], layer.AttnSubNorm, cfg.RMSNormEps)
 	}
-	return layer.O.ForwardBatch(attnOut)
+	return layer.O.ForwardBatch(attnOut), K, V
 }
 
 // ─────────────────────────────────────────────────────────────────────
@@ -295,8 +300,12 @@ func bitnetMLP(layer *BitNetLayer, x [][]float32, cfg BitNetConfig) [][]float32 
 
 // bitnetDecoderLayer runs one full pre-norm decoder layer (attention block
 // + FFN block, each with its own residual), matching
-// BitNetDecoderLayer.forward (modeling_bitnet.py:235-266).
-func bitnetDecoderLayer(layer *BitNetLayer, x [][]float32, cos, sin [][]float32, cfg BitNetConfig) [][]float32 {
+// BitNetDecoderLayer.forward (modeling_bitnet.py:235-266). Also returns the
+// layer's RoPE-applied K and (un-rotated) V projections (see
+// bitnetAttention's doc comment) — Forward (below) discards them; Prefill
+// (bitnet_decode.go) captures them into the KV cache instead of re-deriving
+// them with a second projectKV pass.
+func bitnetDecoderLayer(layer *BitNetLayer, x [][]float32, cos, sin [][]float32, cfg BitNetConfig) (out, K, V [][]float32) {
 	T := len(x)
 	d := cfg.EmbedDim
 
@@ -304,7 +313,7 @@ func bitnetDecoderLayer(layer *BitNetLayer, x [][]float32, cos, sin [][]float32,
 	for t := range x {
 		normed[t] = RMSNorm(x[t], layer.AttnNorm, cfg.RMSNormEps)
 	}
-	attnOut := bitnetAttention(layer, normed, cos, sin, cfg)
+	attnOut, K, V := bitnetAttention(layer, normed, cos, sin, cfg)
 
 	resid1 := make([][]float32, T)
 	for t := range x {
@@ -321,7 +330,7 @@ func bitnetDecoderLayer(layer *BitNetLayer, x [][]float32, cos, sin [][]float32,
 	}
 	ffnOut := bitnetMLP(layer, normed2, cfg)
 
-	out := make([][]float32, T)
+	out = make([][]float32, T)
 	for t := range resid1 {
 		row := make([]float32, d)
 		for k := 0; k < d; k++ {
@@ -329,7 +338,7 @@ func bitnetDecoderLayer(layer *BitNetLayer, x [][]float32, cos, sin [][]float32,
 		}
 		out[t] = row
 	}
-	return out
+	return out, K, V
 }
 
 // ─────────────────────────────────────────────────────────────────────
@@ -354,7 +363,7 @@ func (m *BitNetModel) Forward(ids []int) [][]float32 {
 	cos, sin := ropeCosSin(T, hd, m.Cfg.RopeTheta)
 
 	for _, layer := range m.Layers {
-		x = bitnetDecoderLayer(layer, x, cos, sin, m.Cfg)
+		x, _, _ = bitnetDecoderLayer(layer, x, cos, sin, m.Cfg)
 	}
 
 	for t := range x {
@@ -368,36 +377,18 @@ func (m *BitNetModel) Forward(ids []int) [][]float32 {
 	// memory once and dotted against every token immediately, instead of
 	// sweeping the whole table once per token (same cache-blocking fix as
 	// BitLinear.ForwardBatch), and rows are additionally sharded across
-	// GOMAXPROCS goroutines (each v is independent, so this changes
-	// neither the arithmetic nor the result).
+	// the shared worker pool via bitnetParallelFor (each v is independent,
+	// so this changes neither the arithmetic nor the result — see
+	// bitnetParallelFor's doc comment in bitnet_linear.go).
 	V := m.Cfg.VocabSize
 	logits := make([][]float32, T)
 	for t := range logits {
 		logits[t] = make([]float32, V)
 	}
 
-	workers := runtime.GOMAXPROCS(0)
-	if workers > V {
-		workers = V
-	}
-	if workers < 2 {
-		lmHeadRows(m.Embed, d, 0, V, x, logits)
-	} else {
-		chunk := (V + workers - 1) / workers
-		var wg sync.WaitGroup
-		for start := 0; start < V; start += chunk {
-			end := start + chunk
-			if end > V {
-				end = V
-			}
-			wg.Add(1)
-			go func(start, end int) {
-				defer wg.Done()
-				lmHeadRows(m.Embed, d, start, end, x, logits)
-			}(start, end)
-		}
-		wg.Wait()
-	}
+	bitnetParallelFor(V, func(start, end int) {
+		lmHeadRows(m.Embed, d, start, end, x, logits)
+	})
 	return logits
 }
 

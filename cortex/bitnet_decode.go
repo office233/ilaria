@@ -28,10 +28,10 @@ package cortex
 //
 //   - Prefill calls the existing, unmodified bitnetDecoderLayer/
 //     bitnetAttention/bitnetMLP to produce the hidden states (so Prefill's
-//     output is Forward's output, not an approximation of it), and
-//     separately re-derives each layer's K/V via projectKV — the identical
-//     RMSNorm + ForwardBatch + applyRoPEHalf calls bitnetAttention performs
-//     internally — purely to capture them into the cache.
+//     output is Forward's output, not an approximation of it); bitnetAttention
+//     also returns the RoPE-applied K / (un-rotated) V it computed
+//     internally on the way there, which Prefill captures into the cache
+//     directly — no separate re-derivation pass.
 //   - Step projects Q/K/V/O/Gate/Up/Down via BitLinear.ForwardBatch on a
 //     length-1 batch (not the plain single-row Forward, which multiplies
 //     xScale*Scale in a different order and so is not guaranteed bit-
@@ -65,8 +65,6 @@ package cortex
 import (
 	"fmt"
 	"math"
-	"runtime"
-	"sync"
 )
 
 // BitNetDecoder is an incremental, KV-cached decoder for one BitNetModel.
@@ -84,6 +82,75 @@ type BitNetDecoder struct {
 	layerV [][][]float32 // [layer][pos] -> V row (no RoPE), len kvDim
 
 	pos int // number of tokens cached so far == next absolute position
+
+	// stepBuf holds fixed-size scratch buffers reused across every layer
+	// of every Step call (lazily allocated on first Step, then kept for
+	// the decoder's lifetime — see newBitNetStepBuf's doc comment). Step
+	// runs once per generated token, so without reuse these would
+	// otherwise be freshly allocated 30 times (once per layer) on every
+	// single token. Not used by Prefill/Forward, which stay on the
+	// original allocating RMSNorm/bitnetDecoderLayer path shared with
+	// Forward — that path runs once per generation (not once per token),
+	// so its allocation cost is far less impactful, and reusing buffers
+	// there would mean threading scratch state through code Forward also
+	// calls, which risks the very bit-exactness this package is built to
+	// preserve for no measurable benefit.
+	stepBuf *bitNetStepBuf
+}
+
+// bitNetStepBuf groups BitNetDecoder.Step's reusable per-step scratch
+// buffers. Every buffer here is overwritten at the start of the layer
+// iteration that uses it (or is a running accumulator explicitly reset to
+// zero first — see decodeStepAttention's attnOut) before being read, so
+// reuse across layers/steps changes nothing about the arithmetic; it only
+// avoids repeated make([]float32, ...) calls for the same fixed sizes.
+// Nothing stored here is retained past the Step call that fills it — the
+// KV cache (BitNetDecoder.layerK/layerV) keeps its own freshly-allocated
+// slices every time, since those must persist across future Steps.
+type bitNetStepBuf struct {
+	scratch []float32 // len hd — applyRoPEHalf's rotate-half scratch
+	weights []float32 // len Cfg.MaxSeqLen — attention softmax weights, sliced [:pos+1]
+	x       []float32 // len EmbedDim — the residual stream, overwritten each layer
+	resid   []float32 // len EmbedDim — post-attention residual sum
+	normed  []float32 // len EmbedDim — AttnNorm(x) / FinalNorm(x) scratch
+	attnOut []float32 // len EmbedDim — running attention output accumulator
+	normed2 []float32 // len EmbedDim — FFNNorm(resid)
+	mlpRow  []float32 // len FFNDim — relu2(gate)*up, then FFNSubNorm(...) in place
+}
+
+func newBitNetStepBuf(cfg BitNetConfig, hd int) *bitNetStepBuf {
+	return &bitNetStepBuf{
+		scratch: make([]float32, hd),
+		weights: make([]float32, cfg.MaxSeqLen),
+		x:       make([]float32, cfg.EmbedDim),
+		resid:   make([]float32, cfg.EmbedDim),
+		normed:  make([]float32, cfg.EmbedDim),
+		attnOut: make([]float32, cfg.EmbedDim),
+		normed2: make([]float32, cfg.EmbedDim),
+		mlpRow:  make([]float32, cfg.FFNDim),
+	}
+}
+
+// rmsNormInto computes the same value as cortex.RMSNorm(x, weight, eps)
+// (rmsnorm.go) but writes into dst instead of allocating a fresh slice —
+// duplicated here (rather than changing RMSNorm's signature, which is
+// outside this file's scope and shared with non-BitNet callers) purely so
+// BitNetDecoder.Step's hot path can reuse fixed-size buffers instead of
+// allocating 4 fresh EmbedDim/FFNDim slices per layer (120 allocations
+// per generated token). dst and x may alias (safe: every element is read
+// before that same index is written, exactly like RMSNorm's own
+// allocate-and-fill loop). len(dst)/len(weight) must equal len(x).
+func rmsNormInto(dst, x, weight []float32, eps float64) {
+	var sumSq float64
+	for _, v := range x {
+		f := float64(v)
+		sumSq += f * f
+	}
+	variance := sumSq / float64(len(x))
+	invStd := 1.0 / math.Sqrt(variance+eps)
+	for i, v := range x {
+		dst[i] = weight[i] * float32(float64(v)*invStd)
+	}
 }
 
 // NewBitNetDecoder builds a decoder for m with empty cache state. The RoPE
@@ -120,26 +187,6 @@ func (d *BitNetDecoder) Len() int {
 	return d.pos
 }
 
-// projectKV computes the RoPE-applied K and (un-rotated) V projections for
-// one layer's AttnNorm-normalized input rows — exactly the computation
-// bitnetAttention performs internally on its way to producing attention
-// output, extracted here so Prefill can capture what bitnetAttention would
-// otherwise keep local. Because this calls the identical functions
-// (BitLinear.ForwardBatch, applyRoPEHalf) on the identical inputs
-// bitnetAttention would use, the results are bit-for-bit what
-// bitnetAttention computed internally, not merely numerically close.
-func projectKV(layer *BitNetLayer, xNormed [][]float32, cos, sin [][]float32, hd, nKV int) (K, V [][]float32) {
-	K = layer.K.ForwardBatch(xNormed)
-	V = layer.V.ForwardBatch(xNormed)
-	scratch := make([]float32, hd)
-	for t := range K {
-		for h := 0; h < nKV; h++ {
-			applyRoPEHalf(K[t][h*hd:(h+1)*hd], cos[t], sin[t], scratch)
-		}
-	}
-	return K, V
-}
-
 // Prefill processes a prompt as one batch, filling every layer's KV cache
 // and returning the last position's logits (equal to Forward(ids)[len-1]).
 // Must be called on a freshly-constructed or just-Reset decoder — calling
@@ -170,33 +217,37 @@ func (d *BitNetDecoder) Prefill(ids []int) []float32 {
 	sin := d.sin[:T]
 
 	for li, layer := range d.m.Layers {
-		normed := make([][]float32, T)
-		for t := range x {
-			normed[t] = RMSNorm(x[t], layer.AttnNorm, cfg.RMSNormEps)
-		}
-		K, V := projectKV(layer, normed, cos, sin, d.hd, cfg.NumKVHeads)
+		// bitnetDecoderLayer is the same unmodified code path Forward uses
+		// — Prefill's hidden states are Forward's hidden states, not a
+		// re-implementation of them — and now also returns the layer's
+		// RoPE-applied K / (un-rotated) V projections it computed
+		// internally on the way there, so they're captured into the cache
+		// directly instead of re-deriving them with a second AttnNorm +
+		// K.ForwardBatch/V.ForwardBatch + RoPE pass (the "double work" a
+		// separate projectKV call used to do here).
+		var K, V [][]float32
+		x, K, V = bitnetDecoderLayer(layer, x, cos, sin, cfg)
 		d.layerK[li] = append(d.layerK[li], K...)
 		d.layerV[li] = append(d.layerV[li], V...)
-
-		// Unmodified existing batched code path — Prefill's hidden states
-		// are Forward's hidden states, not a re-implementation of them.
-		x = bitnetDecoderLayer(layer, x, cos, sin, cfg)
 	}
 
-	for t := range x {
-		x[t] = RMSNorm(x[t], d.m.FinalNorm, cfg.RMSNormEps)
-	}
+	// Only the last position's logits are ever returned, so only RMSNorm
+	// that one row instead of all T (Forward, which the equivalence test
+	// checks against every position of, still norms the full sequence).
+	last := RMSNorm(x[T-1], d.m.FinalNorm, cfg.RMSNormEps)
 	d.pos = T
 
-	return d.lmHead(x[T-1])
+	return d.lmHead(last)
 }
 
 // decodeStepAttention runs one decoder layer's attention block for a single
 // new token at absolute position pos: projects Q/K/V, applies RoPE to Q/K,
 // appends K/V to the layer's cache, attends over cache[0:pos+1], and
 // returns O(attn_sub_norm(attn)) — see the file doc comment for why this
-// reproduces bitnetAttention's per-position arithmetic exactly.
-func (d *BitNetDecoder) decodeStepAttention(li int, layer *BitNetLayer, xNormed []float32, pos int) []float32 {
+// reproduces bitnetAttention's per-position arithmetic exactly. scratch,
+// weights and attnOut come from buf (bitNetStepBuf) instead of being
+// allocated fresh on every call — see bitNetStepBuf's doc comment.
+func (d *BitNetDecoder) decodeStepAttention(li int, layer *BitNetLayer, xNormed []float32, pos int, buf *bitNetStepBuf) []float32 {
 	cfg := d.m.Cfg
 	hd := d.hd
 	nHeads := cfg.NumHeads
@@ -208,7 +259,7 @@ func (d *BitNetDecoder) decodeStepAttention(li int, layer *BitNetLayer, xNormed 
 	v := layer.V.ForwardBatch([][]float32{xNormed})[0]
 
 	cosT, sinT := d.cos[pos], d.sin[pos]
-	scratch := make([]float32, hd)
+	scratch := buf.scratch
 	for h := 0; h < nHeads; h++ {
 		applyRoPEHalf(q[h*hd:(h+1)*hd], cosT, sinT, scratch)
 	}
@@ -220,8 +271,11 @@ func (d *BitNetDecoder) decodeStepAttention(li int, layer *BitNetLayer, xNormed 
 	d.layerV[li] = append(d.layerV[li], v)
 
 	scale := float32(1.0 / math.Sqrt(float64(hd)))
-	attnOut := make([]float32, cfg.EmbedDim)
-	weights := make([]float32, pos+1) // reused per head, like bitnetAttention's
+	attnOut := buf.attnOut
+	for i := range attnOut {
+		attnOut[i] = 0 // running accumulator (out[kk] +=below) — reset each call
+	}
+	weights := buf.weights[:pos+1] // reused per head, like bitnetAttention's
 
 	for h := 0; h < nHeads; h++ {
 		kvh := h / nRep
@@ -258,16 +312,18 @@ func (d *BitNetDecoder) decodeStepAttention(li int, layer *BitNetLayer, xNormed 
 		}
 	}
 
-	attnOut = RMSNorm(attnOut, layer.AttnSubNorm, cfg.RMSNormEps)
+	rmsNormInto(attnOut, attnOut, layer.AttnSubNorm, cfg.RMSNormEps) // in place — safe, see rmsNormInto's doc comment
 	return layer.O.ForwardBatch([][]float32{attnOut})[0]
 }
 
-// decodeStepMLP mirrors bitnetMLP for a single token row.
-func decodeStepMLP(layer *BitNetLayer, xNormed []float32, cfg BitNetConfig) []float32 {
+// decodeStepMLP mirrors bitnetMLP for a single token row. row comes from
+// buf.mlpRow (bitNetStepBuf) instead of a fresh FFNDim-length allocation
+// every call.
+func decodeStepMLP(layer *BitNetLayer, xNormed []float32, cfg BitNetConfig, buf *bitNetStepBuf) []float32 {
 	gate := layer.Gate.ForwardBatch([][]float32{xNormed})[0]
 	up := layer.Up.ForwardBatch([][]float32{xNormed})[0]
 
-	row := make([]float32, cfg.FFNDim)
+	row := buf.mlpRow
 	for k := 0; k < cfg.FFNDim; k++ {
 		r := gate[k]
 		if r < 0 {
@@ -275,7 +331,7 @@ func decodeStepMLP(layer *BitNetLayer, xNormed []float32, cfg BitNetConfig) []fl
 		}
 		row[k] = r * r * up[k]
 	}
-	row = RMSNorm(row, layer.FFNSubNorm, cfg.RMSNormEps)
+	rmsNormInto(row, row, layer.FFNSubNorm, cfg.RMSNormEps) // in place — safe, see rmsNormInto's doc comment
 	return layer.Down.ForwardBatch([][]float32{row})[0]
 }
 
@@ -294,65 +350,55 @@ func (d *BitNetDecoder) Step(id int) []float32 {
 	pos := d.pos
 	dModel := cfg.EmbedDim
 
-	x := make([]float32, dModel)
+	if d.stepBuf == nil {
+		d.stepBuf = newBitNetStepBuf(cfg, d.hd)
+	}
+	buf := d.stepBuf
+
+	// x and resid are reused across all 30 layers (see bitNetStepBuf's doc
+	// comment): each layer reads x to produce resid, reads resid twice
+	// (FFNNorm input, then the final residual sum), and only THEN
+	// overwrites x with that sum — so by the time either buffer is
+	// written, nothing later in the same iteration still needs its old
+	// value, and the next iteration reads the freshly-written one.
+	x := buf.x
 	copy(x, d.m.Embed[id*dModel:(id+1)*dModel])
+	resid := buf.resid
 
 	for li, layer := range d.m.Layers {
-		normed := RMSNorm(x, layer.AttnNorm, cfg.RMSNormEps)
-		attnOut := d.decodeStepAttention(li, layer, normed, pos)
+		rmsNormInto(buf.normed, x, layer.AttnNorm, cfg.RMSNormEps)
+		attnOut := d.decodeStepAttention(li, layer, buf.normed, pos, buf)
 
-		resid1 := make([]float32, dModel)
-		for i := range resid1 {
-			resid1[i] = x[i] + attnOut[i]
+		for i := 0; i < dModel; i++ {
+			resid[i] = x[i] + attnOut[i]
 		}
 
-		normed2 := RMSNorm(resid1, layer.FFNNorm, cfg.RMSNormEps)
-		ffnOut := decodeStepMLP(layer, normed2, cfg)
+		rmsNormInto(buf.normed2, resid, layer.FFNNorm, cfg.RMSNormEps)
+		ffnOut := decodeStepMLP(layer, buf.normed2, cfg, buf)
 
-		out := make([]float32, dModel)
-		for i := range out {
-			out[i] = resid1[i] + ffnOut[i]
+		for i := 0; i < dModel; i++ {
+			x[i] = resid[i] + ffnOut[i]
 		}
-		x = out
 	}
 
-	x = RMSNorm(x, d.m.FinalNorm, cfg.RMSNormEps)
+	rmsNormInto(buf.normed, x, d.m.FinalNorm, cfg.RMSNormEps)
 	d.pos++
-	return d.lmHead(x)
+	return d.lmHead(buf.normed)
 }
 
 // lmHead projects a single [EmbedDim] hidden vector to VocabSize logits,
-// reusing Forward's own row-sharded lmHeadRows so the arithmetic (and its
-// GOMAXPROCS-sharded parallelism) is identical to what Forward does for
-// the last position of a batch.
+// reusing Forward's own row-sharded lmHeadRows so the arithmetic is
+// identical to what Forward does for the last position of a batch, and
+// the same shared worker pool (bitnetParallelFor, bitnet_linear.go) so the
+// sharding itself is identical too.
 func (d *BitNetDecoder) lmHead(x []float32) []float32 {
 	cfg := d.m.Cfg
 	V := cfg.VocabSize
 	xs := [][]float32{x}
 	logits := [][]float32{make([]float32, V)}
 
-	workers := runtime.GOMAXPROCS(0)
-	if workers > V {
-		workers = V
-	}
-	if workers < 2 {
-		lmHeadRows(d.m.Embed, cfg.EmbedDim, 0, V, xs, logits)
-		return logits[0]
-	}
-
-	chunk := (V + workers - 1) / workers
-	var wg sync.WaitGroup
-	for start := 0; start < V; start += chunk {
-		end := start + chunk
-		if end > V {
-			end = V
-		}
-		wg.Add(1)
-		go func(start, end int) {
-			defer wg.Done()
-			lmHeadRows(d.m.Embed, cfg.EmbedDim, start, end, xs, logits)
-		}(start, end)
-	}
-	wg.Wait()
+	bitnetParallelFor(V, func(start, end int) {
+		lmHeadRows(d.m.Embed, cfg.EmbedDim, start, end, xs, logits)
+	})
 	return logits[0]
 }

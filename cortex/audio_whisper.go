@@ -8,10 +8,19 @@ package cortex
 // PyTorch ground truth this mirrors; see that file's module docstring for
 // the architecture overview, and cortex/vision_siglip.go for the "eyes"
 // tower this file's structure deliberately parallels as closely as the
-// audio modality allows). CPU float32 only, inference only — no training,
-// and no GPU hook (unlike vision_siglip.go's SiglipVisionTower.gpu): the
-// Whisper encoder forward is the only expensive piece here and every
-// project deliverable routes it through the CPU path.
+// audio modality allows). CPU float32 only, inference only — no training.
+//
+// GPU hook: WhisperEncoderTower.gpu (optional, nil by default) mirrors
+// SiglipVisionTower.gpu exactly — conv1dGeluForward, whisperAttention and
+// whisperMLP all thread it through to denseForward (and, in
+// whisperAttention, its own QK^T/softmax@V step) exactly as
+// vision_siglip.go's patchEmbed/siglipAttention/siglipMLP thread
+// SiglipVisionTower.gpu through. See audioGPUBackend below for the
+// interface (a per-modality duplicate of visionGPUBackend, same
+// rationale as AudioProjector's own doc comment: keeps the eyes/ears GPU
+// hooks independent) and cortex/audio_whisper_gpu.go (build tag `gpu`,
+// EnableWhisperGPU/DisableWhisperGPU) for the resident fp32 cuBLAS
+// implementation.
 //
 // Ground truth is the installed `transformers` 5.3.0 source
 // (transformers/models/whisper/modeling_whisper.py:
@@ -187,6 +196,44 @@ type WhisperEncoderTower struct {
 	FinalLNWeight, FinalLNBias []float32 // [Hidden]
 
 	MelFilters []float32 // [NumMelBins*NumFreqBins] row-major, index = melBin*NumFreqBins
+
+	// gpu is the tower's optional GPU backend hook — nil (the default)
+	// keeps every call on the CPU path implemented directly in this
+	// file. Set by EnableWhisperGPU (audio_whisper_gpu.go, tag gpu) /
+	// left nil by its stub (audio_whisper_gpu_stub.go, tag !gpu).
+	// conv1dGeluForward and whisperAttention each check it with a
+	// single `if gpu != nil` at their top and fall through to the
+	// existing CPU code whenever the backend is absent or declines
+	// (ok=false) — same contract as SiglipVisionTower.gpu.
+	gpu audioGPUBackend
+}
+
+// audioGPUBackend is the optional GPU hook threaded through
+// conv1dGeluForward/whisperAttention/whisperMLP by
+// WhisperEncoderTower.gpu — the "ears" counterpart to vision_siglip.go's
+// visionGPUBackend, method-for-method identical (so a value of this type
+// satisfies denseForward's `gpu visionGPUBackend` parameter directly, via
+// Go's structural interface assignability, with no explicit conversion)
+// but kept as its own named type rather than reused, so the eyes/ears GPU
+// hooks stay independent — same per-modality-duplication rationale as
+// AudioProjector's own doc comment. Implemented by
+// audio_whisper_gpu.go's whisperGPUBackend (resident fp32 cuBLAS); every
+// method may decline (return ok=false), in which case the caller falls
+// back to the CPU path unconditionally, so a GPU hiccup degrades speed,
+// not output.
+type audioGPUBackend interface {
+	// Dense computes y = x @ w + b (row-major, w stored [in,out], b len
+	// out) for every row of x, using a GPU-resident copy of w uploaded
+	// ahead of time (EnableWhisperGPU) and identified by w's backing-array
+	// identity. ok=false (weight not resident, or the GPU call errored)
+	// means the caller must use the CPU path.
+	Dense(x [][]float32, w, bias []float32, in, out int) (y [][]float32, ok bool)
+
+	// Attention computes bidirectional multi-head self-attention
+	// (softmax(QK^T*scale) @ V per head, concatenated back to width
+	// heads*headDim) given per-token Q/K/V already projected to that
+	// width. ok=false means the caller must use the CPU path.
+	Attention(q, k, v [][]float32, heads, headDim int) (out [][]float32, ok bool)
 }
 
 // NewWhisperEncoderTower allocates a zero-initialized tower ready for a
@@ -403,8 +450,8 @@ func (m *WhisperEncoderTower) ForwardDebug(mel [][]float32, captureLayers []int)
 	cfg := m.Cfg
 	x := transposeMel(mel) // [NumMelFrames][NumMelBins] token-major, for conv1's im2col
 
-	x = conv1dGeluForward(x, m.Conv1Weight, m.Conv1Bias, cfg.NumMelBins, cfg.Hidden, 3, 1, 1)
-	x = conv1dGeluForward(x, m.Conv2Weight, m.Conv2Bias, cfg.Hidden, cfg.Hidden, 3, 2, 1)
+	x = conv1dGeluForward(x, m.Conv1Weight, m.Conv1Bias, cfg.NumMelBins, cfg.Hidden, 3, 1, 1, m.gpu)
+	x = conv1dGeluForward(x, m.Conv2Weight, m.Conv2Bias, cfg.Hidden, cfg.Hidden, 3, 2, 1, m.gpu)
 
 	convOut = make([][]float32, len(x))
 	for t, row := range x {
@@ -483,7 +530,14 @@ func transposeMel(mel [][]float32) [][]float32 {
 // actual matmul — float64 accumulation, parallelized — via an im2col
 // unfold, exactly as vision_siglip.go's patchEmbed unfolds Conv2d
 // patches, one spatial dimension fewer.
-func conv1dGeluForward(x [][]float32, weight, bias []float32, inCh, outCh, kernel, stride, padding int) [][]float32 {
+//
+// gpu is the tower's optional GPU backend hook (WhisperEncoderTower.gpu)
+// — when non-nil and it recognizes weight (uploaded resident by
+// EnableWhisperGPU), denseForward runs this matmul on the GPU instead;
+// nil (e.g. every call from TestConv1dGeluForwardHandComputed, which
+// never enables a GPU backend) or a decline (ok=false) falls through to
+// denseForward's own CPU loop unchanged.
+func conv1dGeluForward(x [][]float32, weight, bias []float32, inCh, outCh, kernel, stride, padding int, gpu audioGPUBackend) [][]float32 {
 	Tin := len(x)
 	Tout := (Tin+2*padding-kernel)/stride + 1
 	patches := make([][]float32, Tout)
@@ -502,7 +556,7 @@ func conv1dGeluForward(x [][]float32, weight, bias []float32, inCh, outCh, kerne
 		}
 		patches[to] = vec
 	}
-	out := denseForward(patches, weight, bias, inCh*kernel, outCh, nil)
+	out := denseForward(patches, weight, bias, inCh*kernel, outCh, gpu)
 	geluExactInPlace(out)
 	return out
 }
@@ -515,11 +569,11 @@ func conv1dGeluForward(x [][]float32, weight, bias []float32, inCh, outCh, kerne
 func (m *WhisperEncoderTower) encoderLayer(layer *whisperEncoderLayer, x [][]float32) [][]float32 {
 	cfg := m.Cfg
 	normed1 := siglipLayerNorm(x, layer.LN1Weight, layer.LN1Bias, cfg.LayerNormEps)
-	attnOut := whisperAttention(layer, normed1, cfg)
+	attnOut := whisperAttention(layer, normed1, cfg, m.gpu)
 	resid1 := addRows(x, attnOut)
 
 	normed2 := siglipLayerNorm(resid1, layer.LN2Weight, layer.LN2Bias, cfg.LayerNormEps)
-	mlpOut := whisperMLP(layer, normed2, cfg)
+	mlpOut := whisperMLP(layer, normed2, cfg, m.gpu)
 	return addRows(resid1, mlpOut)
 }
 
@@ -531,17 +585,24 @@ func (m *WhisperEncoderTower) encoderLayer(layer *whisperEncoderLayer, x [][]flo
 // siglipAttention CPU path (same softmax/weighted-sum reduction in
 // float64, same bitnetParallelFor row-parallelism, same rationale — see
 // that function's doc comment); duplicated rather than shared because the
-// two operate on different layer/config types and this file has no GPU
-// hook to thread through.
-func whisperAttention(layer *whisperEncoderLayer, xNormed [][]float32, cfg WhisperEncoderConfig) [][]float32 {
+// two operate on different layer/config types (gpu is audioGPUBackend
+// here, visionGPUBackend there — see audioGPUBackend's doc comment for
+// why they're separate named types despite the identical method set).
+func whisperAttention(layer *whisperEncoderLayer, xNormed [][]float32, cfg WhisperEncoderConfig, gpu audioGPUBackend) [][]float32 {
 	T := len(xNormed)
 	hidden := cfg.Hidden
 	heads := cfg.NumHeads
 	hd := cfg.headDim()
 
-	Q := denseForward(xNormed, layer.QWeight, layer.QBias, hidden, hidden, nil)
-	K := denseForward(xNormed, layer.KWeight, layer.KBias, hidden, hidden, nil)
-	V := denseForward(xNormed, layer.VWeight, layer.VBias, hidden, hidden, nil)
+	Q := denseForward(xNormed, layer.QWeight, layer.QBias, hidden, hidden, gpu)
+	K := denseForward(xNormed, layer.KWeight, layer.KBias, hidden, hidden, gpu)
+	V := denseForward(xNormed, layer.VWeight, layer.VBias, hidden, hidden, gpu)
+
+	if gpu != nil {
+		if attnOut, ok := gpu.Attention(Q, K, V, heads, hd); ok {
+			return denseForward(attnOut, layer.OWeight, layer.OBias, hidden, hidden, gpu)
+		}
+	}
 
 	scale := float32(1.0 / math.Sqrt(float64(hd)))
 	out := make([][]float32, T)
@@ -595,17 +656,17 @@ func whisperAttention(layer *whisperEncoderLayer, xNormed [][]float32, cfg Whisp
 		}
 	})
 
-	return denseForward(out, layer.OWeight, layer.OBias, hidden, hidden, nil)
+	return denseForward(out, layer.OWeight, layer.OBias, hidden, hidden, gpu)
 }
 
 // whisperMLP computes fc2(gelu_exact(fc1(x))) — matches
 // WhisperEncoderLayer.forward with activation_function="gelu" (the exact
 // erf variant — NOT gelu_pytorch_tanh, which vision_siglip.go's own
 // siglipMLP uses for the unrelated SigLIP2 tower).
-func whisperMLP(layer *whisperEncoderLayer, x [][]float32, cfg WhisperEncoderConfig) [][]float32 {
-	h := denseForward(x, layer.FC1Weight, layer.FC1Bias, cfg.Hidden, cfg.Intermediate, nil)
+func whisperMLP(layer *whisperEncoderLayer, x [][]float32, cfg WhisperEncoderConfig, gpu audioGPUBackend) [][]float32 {
+	h := denseForward(x, layer.FC1Weight, layer.FC1Bias, cfg.Hidden, cfg.Intermediate, gpu)
 	geluExactInPlace(h)
-	return denseForward(h, layer.FC2Weight, layer.FC2Bias, cfg.Intermediate, cfg.Hidden, nil)
+	return denseForward(h, layer.FC2Weight, layer.FC2Bias, cfg.Intermediate, cfg.Hidden, gpu)
 }
 
 // ─────────────────────────────────────────────────────────────────────

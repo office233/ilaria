@@ -141,7 +141,7 @@ func TestConv1dGeluForwardHandComputed(t *testing.T) {
 	x := [][]float32{{1}, {2}, {3}, {4}}
 	weight := []float32{0, 1, 0} // [inCh*kernel=3, outCh=1], flattened (inCh outer, kernel inner) — single channel
 	bias := []float32{0}
-	got := conv1dGeluForward(x, weight, bias, 1, 1, 3, 1, 1)
+	got := conv1dGeluForward(x, weight, bias, 1, 1, 3, 1, 1, nil)
 	if len(got) != 4 {
 		t.Fatalf("got %d output positions, want 4", len(got))
 	}
@@ -162,7 +162,7 @@ func TestConv1dGeluForwardHandComputed(t *testing.T) {
 		// deliberately checks the padding boundary, not x[0] specifically.)
 		x := [][]float32{{1}, {2}, {3}, {4}}
 		weight := []float32{1, 0, 0}
-		got := conv1dGeluForward(x, weight, bias, 1, 1, 3, 2, 1)
+		got := conv1dGeluForward(x, weight, bias, 1, 1, 3, 2, 1, nil)
 		if len(got) != 2 {
 			t.Fatalf("got %d output positions, want 2 (Tout=(4+2-3)/2+1=2)", len(got))
 		}

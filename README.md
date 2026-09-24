@@ -299,10 +299,16 @@ own "massive activation" outlier channels — a handful of dimensions with much 
 rest of the 768-wide vector — not a systematic drift: relL2 stays flat); the random-weight projector
 (round-tripped through `export_audio_adapter.py`, same format the vision projector uses) matches to
 3.0·10⁻³. A 3 s clip (150 real frames of Whisper's fixed 1 500-frame/30 s window) takes ~80–90 s to encode
-on the CPU. `cmd/ilaria-hear` runs the same tower + `StackFrames` + (if `-adapter` is given) projector +
-`-cuda` NVRTC-decoder splice as `ilaria-see` does for images, but since `train_stage1_audio.py` hasn't
-produced a trained checkpoint yet, only the plumbing is validated end-to-end — decoded text with the random
-projector is not a real transcript.
+on the CPU. A resident fp32 cuBLAS GPU backend for the encoder now exists too
+(`cortex/audio_whisper_gpu.go`, `EnableWhisperGPU`/`cmd/ilaria-hear -gpu`, mirroring the vision tower's own
+`-gpu` backend): on the same 3 s clip, tower forward drops from **73.1 s on the CPU to 22.0 s on the GPU**
+(~3.3× in the same session; ~3.9× measured back-to-back in `TestWhisperGPUTowerMatchesCPU`, machine-load
+dependent) with the same accuracy — GPU-vs-PyTorch-reference max|Δ|/relL2 at every stage match the CPU
+path's own numbers to 4 significant figures (e.g. final-output max|Δ| 7.65·10⁻² vs the CPU path's
+7.64·10⁻², both well inside the 0.12 abs / 2·10⁻³ relL2 tolerances). `cmd/ilaria-hear` runs the same tower +
+`StackFrames` + (if `-adapter` is given) projector + `-cuda` NVRTC-decoder splice as `ilaria-see` does for
+images, but since `train_stage1_audio.py` hasn't produced a trained checkpoint yet, only the plumbing is
+validated end-to-end — decoded text with the random projector is not a real transcript.
 
 ## Benchmark Performance (local, vs own dense baseline)
 

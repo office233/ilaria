@@ -34,11 +34,15 @@ package main
 // real forge/multimodal/train_stage1_audio.py checkpoint has been
 // exported), so the decoder has no reason to produce anything
 // audio-relevant. -cuda is symmetric with cmd/ilaria-see's own -cuda
-// (same decoder types, same fallback-to-CPU-with-a-warning behavior); a
-// separate "-gpu" flag for the Whisper tower's OWN matmuls (analogous to
-// ilaria-see's vision-tower -gpu) is deliberately NOT implemented —
-// cortex/audio_whisper.go has no GPU backend hook at all (see that
-// file's doc comment) — this is out of scope for stage 1 "ears".
+// (same decoder types, same fallback-to-CPU-with-a-warning behavior).
+// -gpu routes the Whisper tower's OWN matmuls (conv1d/q/k/v/o/fc1/fc2 +
+// attention) through the resident fp32 cuBLAS backend
+// (cortex/audio_whisper_gpu.go, EnableWhisperGPU/DisableWhisperGPU) —
+// the "ears" analogue of cmd/ilaria-see's vision-tower -gpu; same
+// fallback-to-CPU-with-a-warning behavior, and freely combinable with
+// -cuda (they gate independent halves of the pipeline: -gpu the tower
+// forward, -cuda the BitNet prefill/decode), matching cmd/ilaria-see's
+// own `-gpu -cuda` combination.
 //
 // -adapter names an export_audio_adapter.py PREFIX (PREFIX.safetensors +
 // PREFIX.json — e.g. data/forge/ears/projector_seed42, the fixed-seed
@@ -107,6 +111,7 @@ func main() {
 	maxTokens := flag.Int("max-tokens", 40, "Max number of tokens to generate")
 	maxTextLen := flag.Int("max-text-len", 256, "Per-segment token truncation, matching BitNetVLM(max_text_len=...) (mm_model.py)")
 	cudaFlag := flag.Bool("cuda", false, "Run the whole BitNet prefill+decode on the GPU via the NVRTC-compiled decoder (needs a -tags gpu build; see cortex/bitnet_cuda.go and cmd/bitnet-run's -cuda). Falls back to CPU with a warning if unavailable.")
+	gpuFlag := flag.Bool("gpu", false, "Route the Whisper tower's dense/attention matmuls through resident fp32 cuBLAS (needs a -tags gpu build; see cortex/audio_whisper_gpu.go and cmd/ilaria-see's -gpu). Falls back to CPU with a warning if unavailable. Combinable with -cuda.")
 	flag.Parse()
 
 	fail := func(stage string, err error) {
@@ -137,6 +142,25 @@ func main() {
 	}
 	fmt.Fprintf(os.Stderr, "[ilaria-hear] loaded Whisper encoder %s in %.2fs (mel_bins=%d hidden=%d layers=%d max_source_positions=%d)\n",
 		*towerPath, time.Since(towerStart).Seconds(), tower.Cfg.NumMelBins, tower.Cfg.Hidden, tower.Cfg.NumLayers, tower.Cfg.MaxSourcePositions)
+
+	// -gpu: route the tower's dense/attention matmuls through resident
+	// fp32 cuBLAS (cortex/audio_whisper_gpu.go). Non-fatal on failure: a
+	// warning is printed and the run continues on the CPU path, matching
+	// every other GPU hook in this codebase (a mid-run CUDA hiccup
+	// degrades speed, not output) — same pattern as cmd/ilaria-see's
+	// -gpu.
+	if *gpuFlag {
+		towerGPUStart := time.Now()
+		if err := cortex.EnableWhisperGPU(tower); err != nil {
+			fmt.Fprintf(os.Stderr, "[ilaria-hear] warning: audio GPU backend unavailable, tower stays on CPU: %v\n", err)
+		} else {
+			fmt.Fprintf(os.Stderr, "[ilaria-hear] audio GPU backend enabled in %.2fs\n", time.Since(towerGPUStart).Seconds())
+			if free, total, err := compute.DeviceMemInfo(); err == nil {
+				fmt.Fprintf(os.Stderr, "[ilaria-hear] GPU memory: %.0f MiB used / %.0f MiB total\n",
+					float64(total-free)/(1<<20), float64(total)/(1<<20))
+			}
+		}
+	}
 
 	wf, err := os.Open(*wavPath)
 	if err != nil {

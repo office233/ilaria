@@ -1,0 +1,14 @@
+{"prompt": "What is 48213 * 9071?", "expected_tool": "calc", "expect_substring": "437340123"}
+{"prompt": "What is the square root of 2, to 6 decimal places?", "expected_tool": "calc", "expect_substring": "1.41421"}
+{"prompt": "Convert 72 miles to kilometres.", "expected_tool": "convert", "expect_substring": "115.9"}
+{"prompt": "What day of the week is it today?", "expected_tool": "time", "expect_substring": "Thursday"}
+{"prompt": "Run this Go program and tell me exactly what it prints:\n\npackage main\n\nimport \"fmt\"\n\nfunc main() {\n\tfmt.Println(\"hello from sandbox\")\n}\n", "expected_tool": "go_run", "expect_substring": "hello from sandbox"}
+{"prompt": "What is in the file notes.txt?", "expected_tool": "read_file", "expect_substring": "PINEAPPLE-42"}
+{"prompt": "What is 2 to the power of 16?", "expected_tool": "calc", "expect_substring": "65536"}
+{"prompt": "How many kilograms is 150 pounds?", "expected_tool": "convert", "expect_substring": "68.04"}
+{"prompt": "What is the capital of France?", "expected_tool": "", "expect_substring": "Paris"}
+{"prompt": "Write a haiku about rain.", "expected_tool": "", "expect_substring": ""}
+{"prompt": "Explain in one sentence why the sky is blue.", "expected_tool": "", "expect_substring": ""}
+{"prompt": "What is the largest planet in the solar system?", "expected_tool": "", "expect_substring": "Jupiter"}
+{"prompt": "Give me one synonym for the word 'happy'.", "expected_tool": "", "expect_substring": ""}
+{"prompt": "Translate 'good morning' into French.", "expected_tool": "", "expect_substring": ""}

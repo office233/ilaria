@@ -310,6 +310,45 @@ path's own numbers to 4 significant figures (e.g. final-output max|Δ| 7.65·10�
 images, but since `train_stage1_audio.py` hasn't produced a trained checkpoint yet, only the plumbing is
 validated end-to-end — decoded text with the random projector is not a real transcript.
 
+## Hands (tools): an LLM-driven tool loop over BitNet 2B4T (2026-09-24)
+
+`cortex/toolloop.go` + `cmd/ilaria-chat` give the ternary cortex hands: the model itself decides to
+call a tool, rather than the engine pattern-matching raw text the way `cortex/tools.go`'s
+`ToolRegistry` does. The system prompt lists the available tools and two few-shot examples and asks
+for exactly one line, `CALL <tool>: <args>`; generation stops the moment that line is complete, the
+named tool runs, and its result is fed back as a `Tool: ...` turn — any capitalized role name renders
+under the checkpoint's own chat template (`Role: content<|eot_id|>`), which is what makes a synthetic
+"Tool" turn as natural to feed back as a real "User" turn. A per-turn budget (`-max-calls`, default 3)
+forces a final answer once spent. Multi-turn runs without ever re-Prefilling: only the very first user
+turn does a full `Prefill`; every later message — a tool result, the next user turn, the `Assistant: `
+generation header — extends the same KV cache one `Step` at a time.
+
+Six tools ship today: `calc` (a hand-written `math/big`-backed evaluator — `+ - * / ^`, parentheses,
+`sqrt()` — no code execution), `time`, `convert` (adapts the existing deterministic `UnitConvertTool`),
+`go_run` (compiles and runs a program through `cortex/swe`'s real `go vet`/`go test` sandbox, 20 s
+deadline), `read_file` (rooted at `-workdir`, 8 KB cap, rejects path escapes), and `biomed` (only
+registered with `-biomed-cache`, live public sources).
+
+Measured on the real 2.4 B checkpoint, CUDA decoder, 14 prompts (8 that need a tool, 6 that don't —
+`cmd/ilaria-chat/testdata/tools_eval.jsonl`, full breakdown in
+[`docs/benchmarks/tools_eval.md`](docs/benchmarks/tools_eval.md)): **tool-selection accuracy 5/8**,
+**false-call rate 0/6** (it never invents a tool call it doesn't need), **answer accuracy 7/10**. This
+is a base chat model that was never trained on function calling — it gets the bare `CALL tool: args`
+syntax right about half the time it's needed, sometimes picks the right tool but writes arguments the
+parser can't read ("sqrt(2) 6" for "to 6 decimal places"), and for two prompts (today's date, a
+file's contents) it skips the tool entirely and hallucinates a fluent, wrong answer instead — "The
+current date and time is Wednesday, October 18, 2021," offered with no hedging. None of that was
+tuned away: the only fix made after seeing real numbers was a protocol bug (the loop wasn't
+re-emitting the `Assistant: ` header after a tool result, so the model — never trained to emit that
+header itself — just stopped generating), not a prompt change.
+
+```bash
+go run -tags gpu ./cmd/ilaria-chat -cuda -model data/forge/bitnet-2b4t/bitnet.nxtf \
+   -tokenizer data/pretrained/bitnet-b1.58-2B-4T/tokenizer.json \
+   -workdir cmd/ilaria-chat/testdata -prompt "What is 48213 * 9071?"
+# → "48213 times 9071 is 437340123."
+```
+
 ## Benchmark Performance (local, vs own dense baseline)
 
 | Operation | Speed | Allocations |

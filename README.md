@@ -310,6 +310,24 @@ path's own numbers to 4 significant figures (e.g. final-output max|Δ| 7.65·10�
 images, but since `train_stage1_audio.py` hasn't produced a trained checkpoint yet, only the plumbing is
 validated end-to-end — decoded text with the random projector is not a real transcript.
 
+## Arena (EN) — where Ilaria-130M actually stands
+
+Same lm-evaluation-harness tasks and few-shot settings as the BitNet b1.58 2B4T report, run locally on the full test
+sets (`forge/eval/arena_en.py`, log in `docs/benchmarks/arena_en.md`):
+
+| Task (0-shot unless noted) | Ilaria-130M | BitNet 2B4T (paper) |
+|---|---|---|
+| ARC-Challenge acc_norm | 23.5 | 49.9 |
+| ARC-Easy acc_norm | 41.3 | 74.8 |
+| HellaSwag acc_norm | 28.5 | 68.4 |
+| PIQA acc_norm | 58.3 | 77.1 |
+| WinoGrande acc | 53.5 | 71.9 |
+| MMLU 5-shot acc | 24.9 | 53.2 |
+
+Honest reading: a 128M dense model trained on 3 G tokens is at chance on MMLU/HellaSwag and only above chance on
+ARC-Easy/PIQA — which is exactly why the English cortex is the native-ternary BitNet 2B4T and Ilaria-130M stays the
+Romanian/one-shot-memory brain. GSM8K/IFEval (generative) for the 130M model are not run yet.
+
 ## Hands (tools): an LLM-driven tool loop over BitNet 2B4T (2026-09-24)
 
 `cortex/toolloop.go` + `cmd/ilaria-chat` give the ternary cortex hands: the model itself decides to

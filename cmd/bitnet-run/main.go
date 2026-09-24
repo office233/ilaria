@@ -55,6 +55,16 @@ import (
 	"nexus-cortex/cortex/compute"
 )
 
+// stepDecoder is the common Prefill/Step/Len surface *cortex.BitNetDecoder
+// (CPU, always available) and *cortex.BitNetCUDADecoder (GPU, -tags gpu)
+// both satisfy, so this CLI can drive either one identically once
+// construction has picked which to use.
+type stepDecoder interface {
+	Prefill(ids []int) []float32
+	Step(id int) []float32
+	Len() int
+}
+
 func main() {
 	modelPath := flag.String("model", "", "Path to a BitNet NXTF v3 checkpoint (required)")
 	tokenizerPath := flag.String("tokenizer", "", "Path to an HF tokenizer.json (optional — falls back to -ids)")
@@ -71,6 +81,7 @@ func main() {
 	seed := flag.Int64("seed", 42, "Sampler RNG seed")
 	stream := flag.Bool("stream", false, "Print each token as it is generated instead of only at the end")
 	gpu := flag.Bool("gpu", false, "Enable resident cuBLAS int8 GPU backend for every BitLinear (needs a -tags gpu build; see cortex/bitnet_gpu.go)")
+	cudaFlag := flag.Bool("cuda", false, "Run the whole per-token decode step on the GPU via NVRTC-compiled CUDA kernels, residual stream and KV cache resident on the device (needs a -tags gpu build; see cortex/bitnet_cuda.go — takes precedence over -gpu, which uses a different, PCIe-round-tripping backend)")
 	flag.Parse()
 
 	fail := func(stage string, err error) {
@@ -90,7 +101,7 @@ func main() {
 	fmt.Fprintf(os.Stderr, "[bitnet-run] loaded %s in %.2fs (vocab=%d layers=%d embed=%d)\n",
 		*modelPath, time.Since(loadStart).Seconds(), model.Cfg.VocabSize, model.Cfg.NumLayers, model.Cfg.EmbedDim)
 
-	if *gpu {
+	if *gpu && !*cudaFlag {
 		gpuStart := time.Now()
 		if err := cortex.EnableBitNetGPU(model); err != nil {
 			fail("enable gpu", err)
@@ -169,7 +180,23 @@ func main() {
 		return tok.Decode([]int{id})
 	}
 
-	dec := cortex.NewBitNetDecoder(model)
+	var dec stepDecoder
+	if *cudaFlag {
+		cudaStart := time.Now()
+		cd, err := cortex.NewBitNetCUDADecoder(model)
+		if err != nil {
+			fail("cuda", err)
+		}
+		defer cd.Close()
+		fmt.Fprintf(os.Stderr, "[bitnet-run] CUDA decoder ready (kernels compiled, weights uploaded) in %.2fs\n", time.Since(cudaStart).Seconds())
+		if free, total, err := compute.DeviceMemInfo(); err == nil {
+			fmt.Fprintf(os.Stderr, "[bitnet-run] GPU memory: %.0f MiB used / %.0f MiB total\n",
+				float64(total-free)/1024/1024, float64(total)/1024/1024)
+		}
+		dec = cd
+	} else {
+		dec = cortex.NewBitNetDecoder(model)
+	}
 
 	prefillStart := time.Now()
 	logits := dec.Prefill(promptIDs)

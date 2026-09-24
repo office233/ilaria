@@ -39,6 +39,19 @@ into the image embeddings so the projector (which sits before the LLM in the
 graph) receives a gradient. This is the opposite of VisionAdapter's own
 frozen tower, which IS wrapped in `torch.no_grad()` there, because nothing
 trainable sits upstream of it.
+
+Modality-generic since P4 "ears" (audio_adapter.py): BitNetVLM's splicing
+logic never actually depended on the adapter being a VisionAdapter -- only
+on it being callable as `adapter(features)` and returning something that
+indexes as `embeds[i]` per sample. `__init__` takes a `placeholder` argument
+(default IMAGE_PLACEHOLDER) so `_split_prompt` can look for AUDIO_PLACEHOLDER
+("<audio>") instead, and `encode(features)` calls `self.adapter(features)`
+(`self.adapter is self.vision_adapter`, kept as a name-stable attribute/
+param for every eyes caller). train_stage1_audio.py builds a BitNetVLM with
+an audio_adapter.AudioAdapter in place of VisionAdapter and
+placeholder=AUDIO_PLACEHOLDER; train_stage1.py/train_stage2.py/tests are
+untouched and keep using `vision_adapter=`/`encode_images`/`generate_caption`
+exactly as before.
 """
 
 from __future__ import annotations
@@ -57,6 +70,7 @@ import torch  # noqa: E402
 import torch.nn as nn
 
 IMAGE_PLACEHOLDER = "<image>"
+AUDIO_PLACEHOLDER = "<audio>"  # audio_adapter.AudioAdapter's marker (ears, P4) -- symmetry with IMAGE_PLACEHOLDER
 
 
 def pad_and_stack(samples: list):
@@ -80,12 +94,27 @@ def pad_and_stack(samples: list):
 
 
 class BitNetVLM(nn.Module):
-    def __init__(self, llm, tokenizer, vision_adapter, max_text_len: int = 256):
+    def __init__(self, llm, tokenizer, vision_adapter, max_text_len: int = 256, placeholder: str = IMAGE_PLACEHOLDER):
+        """`vision_adapter` is any module shaped like VisionAdapter/AudioAdapter:
+        callable as `adapter(features)` (or `adapter(*features)` when
+        `features` is a tuple -- see `encode`), returning either a
+        [B, N, llm_hidden] tensor or a length-B list of [N_i, llm_hidden]
+        tensors, plus a `.trainable_parameters()` method. The parameter/
+        attribute name stays `vision_adapter` (not renamed to `adapter`) so
+        every existing eyes caller (train_stage1.py, train_stage2.py,
+        BitNetVLMStage2) that reads `vlm.vision_adapter.*` keeps working
+        unchanged; `self.adapter` below is a plain alias to the SAME object
+        for generic/modality-agnostic code (audio_adapter's ears path).
+        `placeholder` is the marker `_split_prompt` looks for in the prompt
+        text -- "<image>" by default (eyes), pass AUDIO_PLACEHOLDER
+        ("<audio>") for the ears scripts."""
         super().__init__()
         self.llm = llm
         self.tokenizer = tokenizer
         self.vision_adapter = vision_adapter
+        self.adapter = vision_adapter
         self.max_text_len = max_text_len
+        self.placeholder = placeholder
 
         for p in self.llm.parameters():
             p.requires_grad = False
@@ -113,14 +142,29 @@ class BitNetVLM(nn.Module):
         return self.embed_tokens(idx)
 
     def _split_prompt(self, prompt: str) -> tuple:
-        if IMAGE_PLACEHOLDER not in prompt:
-            prompt = IMAGE_PLACEHOLDER + "\n" + prompt
-        before, after = prompt.split(IMAGE_PLACEHOLDER, 1)
+        if self.placeholder not in prompt:
+            prompt = self.placeholder + "\n" + prompt
+        before, after = prompt.split(self.placeholder, 1)
         return before, after
 
+    def encode(self, features):
+        """Generic modality encode: `features` -> [B, N, llm_hidden] tensor,
+        or a length-B list of [N_i, llm_hidden] tensors (a variable-length
+        modality, e.g. audio -- see audio_adapter.AudioAdapter.forward).
+        Calls whichever adapter this instance was built with. `features` is
+        normally a single tensor (VisionAdapter's pixel_values); pass a
+        tuple to splat multiple positional args into the adapter (e.g.
+        AudioAdapter.forward's (input_features, num_frames))."""
+        if isinstance(features, tuple):
+            return self.adapter(*features)
+        return self.adapter(features)
+
     def encode_images(self, pixel_values: torch.Tensor) -> torch.Tensor:
-        """pixel_values: [B,3,H,W] -> [B, tokens_per_image, llm_hidden]."""
-        return self.vision_adapter(pixel_values)
+        """pixel_values: [B,3,H,W] -> [B, tokens_per_image, llm_hidden].
+        Name-stable alias of `encode` kept for the eyes scripts/tests
+        (train_stage1.py, train_stage2.py's BitNetVLMStage2) -- do not
+        remove or change its signature."""
+        return self.encode(pixel_values)
 
     def _prefix_embeds(self, prompt: str, img_embeds_i: torch.Tensor) -> torch.Tensor:
         before, after = self._split_prompt(prompt)
@@ -140,37 +184,73 @@ class BitNetVLM(nn.Module):
         labels = torch.tensor([-100] * prefix.shape[0] + answer_ids, dtype=torch.long, device=prefix.device)
         return inputs_embeds, labels
 
-    def forward(self, prompts: list, answers: list, pixel_values: torch.Tensor):
-        """prompts/answers: parallel lists of str, one per sample. pixel_values:
-        [B,3,H,W] (one image per sample -- stage 1 alignment). Returns
-        (loss, logits) from the underlying HF CausalLM forward."""
-        img_embeds = self.encode_images(pixel_values)  # [B, N_img, hidden]
-        samples = [self.build_sample(p, a, img_embeds[i]) for i, (p, a) in enumerate(zip(prompts, answers))]
+    def forward(self, prompts: list, answers: list, features):
+        """prompts/answers: parallel lists of str, one per sample. features:
+        whatever `encode` accepts for this instance's adapter -- [B,3,H,W]
+        pixel_values (one image per sample, VisionAdapter) or an
+        (input_features, num_frames) tuple (AudioAdapter). Returns
+        (loss, logits) from the underlying HF CausalLM forward. Parameter
+        was named `pixel_values` before this became modality-generic;
+        renamed here since every call site passes it positionally."""
+        embeds_per_sample = self.encode(features)  # [B, N, hidden] tensor, or a length-B list of [N_i, hidden]
+        samples = [self.build_sample(p, a, embeds_per_sample[i]) for i, (p, a) in enumerate(zip(prompts, answers))]
         embeds, labels, attn = pad_and_stack(samples)
         out = self.llm(inputs_embeds=embeds, attention_mask=attn, labels=labels)
         return out.loss, out.logits
 
-    @torch.no_grad()
-    def generate_caption(self, pixel_values_1: torch.Tensor, prompt: str = "<image>\nDescribe the image briefly.",
-                          max_new_tokens: int = 20) -> str:
-        """pixel_values_1: [3,H,W], a single image. Greedy decode via the
-        HF `generate()` machinery (KV-cached), seeded with the spliced
-        prefix's inputs_embeds -- only the newly generated tokens come back
-        when generate() is started from inputs_embeds rather than input_ids."""
-        was_training = self.training
-        self.eval()
-        img = self.encode_images(pixel_values_1.unsqueeze(0))[0]
+    def _greedy_generate(self, prefix: torch.Tensor, max_new_tokens: int) -> str:
+        """prefix: [1,T,H] inputs_embeds for one sample, already unsqueezed
+        to batch size 1. Shared tail of generate_caption/
+        generate_from_features: greedy decode via the HF `generate()`
+        machinery (KV-cached), seeded with the spliced prefix's
+        inputs_embeds -- only the newly generated tokens come back when
+        generate() is started from inputs_embeds rather than input_ids."""
         # generate() runs outside autocast: inputs_embeds must match the LLM's own dtype (bf16 on Colab).
-        prefix = self._prefix_embeds(prompt, img).unsqueeze(0).to(self.llm.get_input_embeddings().weight.dtype)
+        prefix = prefix.to(self.llm.get_input_embeddings().weight.dtype)
         attn = torch.ones(prefix.shape[:2], dtype=torch.long, device=prefix.device)
         pad_id = self.tokenizer.pad_token_id
         if pad_id is None:
             pad_id = self.eot_id
         out_ids = self.llm.generate(inputs_embeds=prefix, attention_mask=attn, max_new_tokens=max_new_tokens,
                                      do_sample=False, eos_token_id=self.eot_id, pad_token_id=pad_id)
+        return self.tokenizer.decode(out_ids[0], skip_special_tokens=True)
+
+    @torch.no_grad()
+    def generate_caption(self, pixel_values_1: torch.Tensor, prompt: str = "<image>\nDescribe the image briefly.",
+                          max_new_tokens: int = 20) -> str:
+        """pixel_values_1: [3,H,W], a single image (unbatched -- this method
+        adds the batch dim itself). Unchanged behaviour from before this
+        module became modality-generic; see `generate_from_features` for
+        the audio/generic equivalent (audio preprocessing already returns a
+        batch dim even for one clip, so it is not unsqueezed here)."""
+        was_training = self.training
+        self.eval()
+        img = self.encode_images(pixel_values_1.unsqueeze(0))[0]
+        prefix = self._prefix_embeds(prompt, img).unsqueeze(0)
+        text = self._greedy_generate(prefix, max_new_tokens)
         if was_training:
             self.train()
-        return self.tokenizer.decode(out_ids[0], skip_special_tokens=True)
+        return text
+
+    @torch.no_grad()
+    def generate_from_features(self, features_1, prompt: str, max_new_tokens: int = 20) -> str:
+        """Like generate_caption but for a single ALREADY-BATCHED-TO-ONE
+        sample of any modality this instance's adapter accepts -- e.g. an
+        (input_features [1,n_mels,T], num_frames [1]) tuple for AudioAdapter
+        (see audio_adapter.py's `prepare_features`, which always returns a
+        batch dim, even for a length-1 list of clips). Unlike
+        generate_caption, `features_1` is NOT unsqueezed here -- the
+        caller's own batch-of-one preprocessing already has it. Used by
+        train_stage1_audio.py's eval; train_stage1.py/train_stage2.py keep
+        using generate_caption unchanged."""
+        was_training = self.training
+        self.eval()
+        img = self.encode(features_1)[0]
+        prefix = self._prefix_embeds(prompt, img).unsqueeze(0)
+        text = self._greedy_generate(prefix, max_new_tokens)
+        if was_training:
+            self.train()
+        return text
 
 
 # ---------------------------------------------------------------------------

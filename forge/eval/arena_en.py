@@ -41,6 +41,7 @@ os.environ.setdefault("TORCHDYNAMO_DISABLE", "1")  # see forge/bitnet_reference.
 
 import argparse  # noqa: E402
 import datetime  # noqa: E402
+import traceback  # noqa: E402
 import json  # noqa: E402
 import sys  # noqa: E402
 
@@ -125,19 +126,24 @@ def load_ilaria_lm(brain_dir: str, device: str, max_gen_toks: int, batch_size):
     return Ilaria130MLM(brain_dir=brain_dir, device=device, max_gen_toks=max_gen_toks, batch_size=batch_size)
 
 
-def group_tasks(tasks: list[str], chat_eligible: bool) -> dict[tuple[int, bool], list[str]]:
+def group_tasks(tasks: list[str], chat_eligible: bool) -> dict[tuple[int, bool, bool], list[str]]:
     """Group tasks by (num_fewshot, use_chat_format) so each distinct
     combination is a single simple_evaluate() call (num_fewshot and
     apply_chat_template are both call-wide, not per-task, in this harness
     version)."""
-    groups: dict[tuple[int, bool], list[str]] = {}
+    groups: dict[tuple[int, bool, bool], list[str]] = {}
     for t in tasks:
         fewshot = FEWSHOT_BY_TASK.get(t)
         if fewshot is None:
             print(f"[arena_en] warning: {t!r} has no known BitNet-report few-shot setting; defaulting to 0-shot", file=sys.stderr)
             fewshot = 0
         chat = chat_eligible and t in CHAT_TASKS
-        groups.setdefault((fewshot, chat), []).append(t)
+        # generative tasks (gsm8k, ifeval) always get their own group, even
+        # without chat formatting, so a failure in one of them (e.g. a
+        # missing optional dependency) cannot take the log-likelihood tasks
+        # of the same few-shot setting down with it — see main()'s per-group
+        # save.
+        groups.setdefault((fewshot, chat, t in CHAT_TASKS), []).append(t)
     return groups
 
 
@@ -225,39 +231,65 @@ def main(argv=None) -> None:
 
     task_manager = TaskManager()  # build the task-yaml index once, reuse across every group below
 
-    combined: dict = {"results": {}, "versions": {}, "n-shot": {}, "higher_is_better": {}}
-    for (fewshot, chat), group_task_names in groups.items():
+    out_path = args.out or os.path.join(REPO_ROOT, "results", f"{args.system}.json")
+    if not os.path.isabs(out_path):
+        out_path = os.path.join(REPO_ROOT, out_path)
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+
+    def save(combined: dict) -> None:
+        with open(out_path, "w", encoding="utf-8") as f:
+            json.dump(combined, f, indent=2, default=str)
+
+    # Each (num_fewshot, chat) group is evaluated independently and the
+    # accumulated results are written to disk after EVERY group: an hour of
+    # MMLU/GSM8K must never be lost because a later group fails to even
+    # load (on 2026-09-24 IFEval's `langdetect` import did exactly that on
+    # Colab and took the whole run's results with it). A failing group is
+    # recorded under "errors" and the run continues with the next one; the
+    # exit status is non-zero only if nothing at all was evaluated.
+    combined: dict = {"results": {}, "versions": {}, "n-shot": {}, "higher_is_better": {}, "errors": {}}
+    for (fewshot, chat, _generative), group_task_names in groups.items():
         print(f"[arena_en] running {group_task_names} num_fewshot={fewshot} chat_template={chat} limit={limit}")
-        out = simple_evaluate(
-            model=lm,
-            tasks=group_task_names,
-            num_fewshot=fewshot,
-            limit=limit,
-            apply_chat_template=chat,
-            fewshot_as_multiturn=chat,
-            log_samples=args.log_samples,
-            task_manager=task_manager,
-            random_seed=1234,
-            numpy_random_seed=1234,
-            torch_random_seed=1234,
-            fewshot_random_seed=1234,
-        )
+        try:
+            out = simple_evaluate(
+                model=lm,
+                tasks=group_task_names,
+                num_fewshot=fewshot,
+                limit=limit,
+                apply_chat_template=chat,
+                fewshot_as_multiturn=chat,
+                log_samples=args.log_samples,
+                task_manager=task_manager,
+                random_seed=1234,
+                numpy_random_seed=1234,
+                torch_random_seed=1234,
+                fewshot_random_seed=1234,
+            )
+        except Exception as e:  # noqa: BLE001 - any failure of one group must not sink the others
+            msg = f"{type(e).__name__}: {e}"
+            print(f"[arena_en] GROUP FAILED {group_task_names}: {msg}", file=sys.stderr)
+            traceback.print_exc()
+            combined["errors"][",".join(group_task_names)] = msg
+            save(combined)
+            continue
         for key in ("results", "versions", "n-shot", "higher_is_better"):
             combined[key].update(out.get(key, {}))
         if args.log_samples:
             combined.setdefault("samples", {}).update(out.get("samples", {}))
+        save(combined)
+        print(f"[arena_en] saved partial results ({len(combined['results'])} task entries) -> {out_path}")
+
+    if not combined["results"]:
+        print(f"[arena_en] no group succeeded: {combined['errors']}", file=sys.stderr)
+        sys.exit(1)
 
     rows = build_rows(combined)
     table = render_table(rows, with_reference=True)
     print()
     print(table)
-
-    out_path = args.out or os.path.join(REPO_ROOT, "results", f"{args.system}.json")
-    if not os.path.isabs(out_path):
-        out_path = os.path.join(REPO_ROOT, out_path)
-    os.makedirs(os.path.dirname(out_path), exist_ok=True)
-    with open(out_path, "w", encoding="utf-8") as f:
-        json.dump(combined, f, indent=2, default=str)
+    if combined["errors"]:
+        print(f"\n[arena_en] WARNING: failed groups: {combined['errors']}")
+    save(combined)
     print(f"\n[arena_en] wrote {out_path}")
 
     bench_md = args.bench_md if os.path.isabs(args.bench_md) else os.path.join(REPO_ROOT, args.bench_md)

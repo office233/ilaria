@@ -264,6 +264,14 @@ resident residual buffer (`BitNetCUDADecoder.PrefillEmbeds`, `cortex/bitnet_cuda
 prefill, cutting that 2–3 min down to **~3.6–3.8 s for 134 rows** and decoding at **~39 tok/s** — same
 captions as the CPU path, both GPU backends resident together in 3.4 GB of the 6 GB GTX 1660 Ti.
 
+**Video via frames** — `ilaria-see -video clip.mp4 -frames 6` (ffmpeg/ffprobe on PATH) captions evenly spaced
+frames with the same tower/projector (decoder `Reset` between frames, no temp files: JPEG over a pipe) and then asks
+the cortex, in a plain text turn, to summarise the numbered captions. On a 4-second test clip made from the two test
+images (cat → dog) it printed the two cat captions, the two dog captions and
+*"The video shows a cat in the center of the frame with a blurred background, followed by a dog on a path with a
+blanket and leaves on the ground…"*. The stage-1 projector only saw single images, so frames are summarised through
+text rather than spliced into one prompt; multi-image prompts come with stage 2.
+
 ```bash
 go run ./cmd/ilaria-see -model data/forge/bitnet-2b4t/bitnet.nxtf -tokenizer data/pretrained/bitnet-b1.58-2B-4T/tokenizer.json \
    -tower data/forge/eyes/siglip2_base.nxtf -adapter data/forge/eyes/adapter_export -image photo.jpg

@@ -221,4 +221,4 @@ class VisionAdapter(nn.Module):
             patch_tokens = self.tower(pixel_values=pixel_values).last_hidden_state
         shuffled = pixel_shuffle(patch_tokens, self.grid_side, self.grid_side,
                                   self.config.shuffle_factor, self.config.grid_policy)
-        return self.projector(shuffled)
+        return self.projector(shuffled.to(self.projector[0].weight.dtype))  # tower may run in bf16 outside autocast (eval)

@@ -259,7 +259,7 @@ def run_tiny(out_dir: str) -> None:
 
     os.makedirs(out_dir, exist_ok=True)
     nxtf_path = os.path.join(out_dir, "bitnet_tiny.nxtf")
-    writer = NXTFWriter(nxtf_path, cfg)
+    writer = NXTFWriter(nxtf_path, "bitnet", cfg)
     embed = model.model.embed_tokens.weight.detach().float().numpy()
     final_norm = model.model.norm.weight.detach().float().numpy()
     write_top(writer, embed, final_norm)

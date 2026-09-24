@@ -271,3 +271,53 @@ func TestBitNetGenerateSampledDeterministicAndStops(t *testing.T) {
 		t.Errorf("expected the forced stop token %d, got %d", firstGreedy, got)
 	}
 }
+
+// TestBitNetPrefillEmbedsMatchesPrefill checks that
+// PrefillEmbeds(EmbedTokens(ids)) is bit-identical to Prefill(ids) — the
+// contract cortex/vision_siglip.go's multimodal prefix-building relies on
+// (splicing projected image embeddings into a text-token embedding
+// sequence via PrefillEmbeds must reduce to plain Prefill(ids) when there
+// are no image rows at all).
+func TestBitNetPrefillEmbedsMatchesPrefill(t *testing.T) {
+	m, fx := loadTinyBitNetFixture(t)
+
+	for pi, p := range fx.Prompts {
+		decA := NewBitNetDecoder(m)
+		wantLogits := decA.Prefill(p.IDs)
+
+		decB := NewBitNetDecoder(m)
+		embeds := m.EmbedTokens(p.IDs)
+		gotLogits := decB.PrefillEmbeds(embeds)
+
+		if d := maxAbsDiff32(wantLogits, gotLogits); d != 0 {
+			t.Errorf("prompt %d: PrefillEmbeds(EmbedTokens(ids)) vs Prefill(ids) last-position logits differ: max|Δ| = %.3e (want exactly 0)", pi, d)
+		}
+
+		// Also check every cached KV row across every layer, not just the
+		// returned logits — a divergence upstream of the final RMSNorm/
+		// lmHead could otherwise cancel out at the last position by
+		// coincidence.
+		for li := range m.Layers {
+			if len(decA.layerK[li]) != len(decB.layerK[li]) {
+				t.Fatalf("prompt %d layer %d: cached K length %d vs %d", pi, li, len(decA.layerK[li]), len(decB.layerK[li]))
+			}
+			for s := range decA.layerK[li] {
+				if d := maxAbsDiff32(decA.layerK[li][s], decB.layerK[li][s]); d != 0 {
+					t.Errorf("prompt %d layer %d pos %d: cached K differs: max|Δ| = %.3e", pi, li, s, d)
+				}
+				if d := maxAbsDiff32(decA.layerV[li][s], decB.layerV[li][s]); d != 0 {
+					t.Errorf("prompt %d layer %d pos %d: cached V differs: max|Δ| = %.3e", pi, li, s, d)
+				}
+			}
+		}
+
+		// A subsequent Step from either decoder must also agree — proves
+		// the caches are interchangeable, not just the snapshot at Prefill
+		// time.
+		stepA := decA.Step(0)
+		stepB := decB.Step(0)
+		if d := maxAbsDiff32(stepA, stepB); d != 0 {
+			t.Errorf("prompt %d: post-prefill Step logits differ: max|Δ| = %.3e (want exactly 0)", pi, d)
+		}
+	}
+}

@@ -192,25 +192,60 @@ func (d *BitNetDecoder) Len() int {
 // Must be called on a freshly-constructed or just-Reset decoder — calling
 // it twice without an intervening Reset panics, as does a prompt longer
 // than Cfg.MaxSeqLen (see file doc comment's "MaxSeqLen policy").
+//
+// Implemented as a thin wrapper over PrefillEmbeds: it looks up each id's
+// row from the tied embedding table (the exact same slice EmbedTokens
+// would return) and hands the resulting [][]float32 to PrefillEmbeds,
+// which copies each row before use — so this is bit-identical to the
+// pre-PrefillEmbeds implementation that built x directly, not an
+// approximation of it.
 func (d *BitNetDecoder) Prefill(ids []int) []float32 {
 	if len(ids) == 0 {
 		panic("cortex: BitNetDecoder.Prefill: empty ids")
 	}
+	dModel := d.m.Cfg.EmbedDim
+	embeds := make([][]float32, len(ids))
+	for t, id := range ids {
+		embeds[t] = d.m.Embed[id*dModel : (id+1)*dModel]
+	}
+	return d.PrefillEmbeds(embeds)
+}
+
+// PrefillEmbeds is the embeddings-level counterpart to Prefill(ids): it
+// processes T caller-supplied input embeddings (each length Cfg.EmbedDim)
+// as one batch, filling every layer's KV cache and returning the last
+// position's logits — exactly what Prefill(ids) does after the
+// id -> embedding-table lookup, so a caller that splices non-text-token
+// embeddings (e.g. projected image tokens) into the row sequence gets the
+// same decoder behavior text-only prompts get. Must be called on a
+// freshly-constructed or just-Reset decoder — calling it twice without an
+// intervening Reset panics, as does a sequence longer than Cfg.MaxSeqLen
+// (see file doc comment's "MaxSeqLen policy"). Every row is copied into a
+// freshly-allocated slice before use, so the caller's embeds (and, when
+// called from Prefill, the model's own Embed table rows) are never
+// mutated or aliased into the KV cache.
+func (d *BitNetDecoder) PrefillEmbeds(embeds [][]float32) []float32 {
+	if len(embeds) == 0 {
+		panic("cortex: BitNetDecoder.PrefillEmbeds: empty embeds")
+	}
 	if d.pos != 0 {
-		panic("cortex: BitNetDecoder.Prefill: decoder already has cached state; call Reset first")
+		panic("cortex: BitNetDecoder.PrefillEmbeds: decoder already has cached state; call Reset first")
 	}
 	cfg := d.m.Cfg
-	T := len(ids)
+	T := len(embeds)
 	if T > cfg.MaxSeqLen {
-		panic(fmt.Sprintf("cortex: BitNetDecoder.Prefill: %d prompt tokens exceeds Cfg.MaxSeqLen %d", T, cfg.MaxSeqLen))
+		panic(fmt.Sprintf("cortex: BitNetDecoder.PrefillEmbeds: %d rows exceeds Cfg.MaxSeqLen %d", T, cfg.MaxSeqLen))
 	}
 
 	dModel := cfg.EmbedDim
 	x := make([][]float32, T)
-	for t, id := range ids {
-		row := make([]float32, dModel)
-		copy(row, d.m.Embed[id*dModel:(id+1)*dModel])
-		x[t] = row
+	for t, row := range embeds {
+		if len(row) != dModel {
+			panic(fmt.Sprintf("cortex: BitNetDecoder.PrefillEmbeds: row %d has length %d, want %d", t, len(row), dModel))
+		}
+		cp := make([]float32, dModel)
+		copy(cp, row)
+		x[t] = cp
 	}
 
 	cos := d.cos[:T]

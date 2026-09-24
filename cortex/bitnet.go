@@ -509,6 +509,26 @@ func (m *BitNetModel) GenerateSampled(prompt []int, maxNew int, temp float64, to
 	return seq
 }
 
+// EmbedTokens looks up each id's row from the tied embedding table
+// (Embed, VocabSize x EmbedDim row-major — the same table Forward/Prefill
+// index into) and returns them as freshly-allocated, independently-owned
+// rows. This is the Go equivalent of HF's
+// `model.get_input_embeddings()(ids)` for BitNetForCausalLM's tied
+// embedding, used by callers that build a multimodal input sequence by
+// splicing other embeddings (e.g. projected image tokens, see
+// cortex/vision_siglip.go) between text token embeddings and running the
+// result through BitNetDecoder.PrefillEmbeds instead of Prefill(ids).
+func (m *BitNetModel) EmbedTokens(ids []int) [][]float32 {
+	d := m.Cfg.EmbedDim
+	out := make([][]float32, len(ids))
+	for t, id := range ids {
+		row := make([]float32, d)
+		copy(row, m.Embed[id*d:(id+1)*d])
+		out[t] = row
+	}
+	return out
+}
+
 // ParamCount returns the total number of scalar parameters: the tied
 // embedding table, the final norm, and per layer the four RMSNorm weight
 // vectors plus the seven BitLinear weight matrices (Out*In each).

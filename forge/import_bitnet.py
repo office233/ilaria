@@ -46,6 +46,13 @@ Packing layout (ternary tensors): mirrors cortex/ternary.go's
 PackTernaryTile bit-for-bit — see pack_ternary_tile() below. Row-major
 over Out, ceil(In/16) tiles per row, each tile a little-endian uint32.
 
+The NXTF v3 container itself (magic/header/blob streaming — the `NXTFWriter`
+class) lives in forge/nxtf3.py, shared with forge/multimodal/export_tower.py
+(arch "siglip2_vision"); this module still owns everything "bitnet"-shaped
+(write_top/write_layer, ternary packing, HF-checkpoint import) and always
+calls NXTFWriter with arch="bitnet", so its output is byte-for-byte
+unchanged from before that refactor.
+
 HF's on-disk packing (unrelated 2-bit format, decoded here via
 hf_unpack_packed) is different: transformers packs 4 output-rows per
 uint8 byte (see transformers/integrations/bitnet.py: pack_weights /
@@ -62,13 +69,11 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import shutil
-import struct
 from typing import Any
 
 import numpy as np
 
-MAGIC = b"NXTF3BIN"
+from nxtf3 import NXTFWriter, f32_bytes as _f32_bytes
 
 # ---------------------------------------------------------------------------
 # Ternary packing — mirrors cortex/ternary.go: PackTernaryTile exactly.
@@ -168,60 +173,6 @@ def hf_unpack_packed(packed: np.ndarray, out_features: int) -> np.ndarray:
     return full[:out_features, ...]
 
 
-# ---------------------------------------------------------------------------
-# NXTF v3 writer
-# ---------------------------------------------------------------------------
-
-class NXTFWriter:
-    """Streams tensor blobs to a temp file (so we never hold more than one
-    tensor's raw bytes in memory at a time), then concatenates
-    magic+header+blobs into the final file on finalize()."""
-
-    def __init__(self, out_path: str, config: dict[str, Any]):
-        self.out_path = out_path
-        self.config = config
-        self.tensors: list[dict[str, Any]] = []
-        os.makedirs(os.path.dirname(out_path) or ".", exist_ok=True)
-        self._tmp_path = out_path + ".blob.tmp"
-        self._tmp = open(self._tmp_path, "wb")
-        self._offset = 0
-
-    def add(self, name: str, kind: str, shape: list[int], data: bytes, scale: float | None = None) -> None:
-        entry: dict[str, Any] = {
-            "name": name,
-            "kind": kind,
-            "shape": list(shape),
-            "offset": self._offset,
-            "bytes": len(data),
-        }
-        if scale is not None:
-            entry["scale"] = float(scale)
-        self.tensors.append(entry)
-        self._tmp.write(data)
-        self._offset += len(data)
-
-    def finalize(self) -> None:
-        self._tmp.close()
-        header = {
-            "version": 3,
-            "arch": "bitnet",
-            "config": self.config,
-            "tensors": self.tensors,
-        }
-        hdr_bytes = json.dumps(header).encode("utf-8")
-        with open(self.out_path, "wb") as out:
-            out.write(MAGIC)
-            out.write(struct.pack("<I", len(hdr_bytes)))
-            out.write(hdr_bytes)
-            with open(self._tmp_path, "rb") as tmp:
-                shutil.copyfileobj(tmp, out, length=4 * 1024 * 1024)
-        os.remove(self._tmp_path)
-
-
-def _f32_bytes(arr: np.ndarray) -> bytes:
-    return np.ascontiguousarray(arr, dtype="<f4").tobytes()
-
-
 def write_top(writer: NXTFWriter, embed: np.ndarray, final_norm: np.ndarray) -> None:
     """Shared importer step: embedding table + final RMSNorm weight.
     Called identically by the real-checkpoint importer and the --tiny
@@ -252,7 +203,7 @@ def export_bitnet_nxtf(out_path: str, config: dict[str, Any], embed: np.ndarray,
                         final_norm: np.ndarray, layers: list[dict[str, Any]]) -> None:
     """Convenience wrapper: write a complete model in one call (used by the
     --tiny fixture generator, which holds everything in memory already)."""
-    w = NXTFWriter(out_path, config)
+    w = NXTFWriter(out_path, "bitnet", config)
     write_top(w, embed, final_norm)
     for i, layer in enumerate(layers):
         write_layer(w, i, layer)
@@ -299,7 +250,7 @@ def import_from_hf_dir(hf_dir: str, out_path: str) -> None:
     ]
 
     st_path = os.path.join(hf_dir, "model.safetensors")
-    writer = NXTFWriter(out_path, cfg)
+    writer = NXTFWriter(out_path, "bitnet", cfg)
 
     with safe_open(st_path, framework="pt", device="cpu") as f:
         def f32(name: str) -> np.ndarray:

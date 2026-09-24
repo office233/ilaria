@@ -160,7 +160,8 @@ class BitNetVLM(nn.Module):
         was_training = self.training
         self.eval()
         img = self.encode_images(pixel_values_1.unsqueeze(0))[0]
-        prefix = self._prefix_embeds(prompt, img).unsqueeze(0)
+        # generate() runs outside autocast: inputs_embeds must match the LLM's own dtype (bf16 on Colab).
+        prefix = self._prefix_embeds(prompt, img).unsqueeze(0).to(self.llm.get_input_embeddings().weight.dtype)
         attn = torch.ones(prefix.shape[:2], dtype=torch.long, device=prefix.device)
         pad_id = self.tokenizer.pad_token_id
         if pad_id is None:

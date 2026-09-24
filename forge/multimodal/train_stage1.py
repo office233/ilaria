@@ -319,8 +319,11 @@ def main() -> None:
         if (step + 1) % args.eval_every == 0 or step + 1 == args.steps:
             eval_pool = held_out if args.smoke else [next(sample_source) for _ in range(args.eval_samples)]
             print(f"[eval] step {step + 1}:")
-            for line in run_eval_captions(vlm, eval_pool, image_processor, device):
-                print(line)
+            try:
+                for line in run_eval_captions(vlm, eval_pool, image_processor, device):
+                    print(line)
+            except Exception as e:  # monitoring must never kill a multi-hour run
+                print(f"[eval] skipped: {type(e).__name__}: {e}")
 
     print(f"[stage1] DONE @ step {args.steps} -> {args.out}/checkpoint.pt")
 

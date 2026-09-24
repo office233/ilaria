@@ -398,7 +398,9 @@ type Runner struct {
 	maxTokens    int // per-segment generation budget (one CALL-line attempt, or the final answer)
 	seq          []int
 	transcript   strings.Builder
-	started      bool
+	started      bool   // system prefix has been Prefilled (see primeSystem)
+	prefixLen    int    // tokens in that prefix = the TruncateTo target of ResetToSystem
+	prefixText   string // its rendered text, restored into transcript by ResetToSystem
 	log          io.Writer
 }
 
@@ -457,21 +459,13 @@ func toolLoopMaxIterations(maxCalls int) int {
 // produces a plain non-CALL answer (or the turn is force-ended — see the
 // file doc comment).
 func (r *Runner) UserTurn(ctx context.Context, userText string) (TurnResult, error) {
-	var logits []float32
 	if !r.started {
-		prompt := Llama3ChatPrompt(r.systemPrompt, userText)
-		r.transcript.WriteString(prompt)
-		ids := r.tok.Encode(prompt)
-		if len(ids) == 0 {
-			return TurnResult{}, fmt.Errorf("toolloop: empty prompt encoding")
+		if err := r.primeSystem(); err != nil {
+			return TurnResult{}, err
 		}
-		logits = r.dec.Prefill(ids)
-		r.seq = append(r.seq, ids...)
-		r.started = true
-	} else {
-		r.feedMessage("user", userText)
-		logits = r.feedGenerationHeader()
 	}
+	r.feedMessage("user", userText)
+	logits := r.feedGenerationHeader()
 
 	var result TurnResult
 	forced := false
@@ -597,6 +591,50 @@ func (r *Runner) argmax(logits []float32) int {
 		}
 	}
 	return best
+}
+
+// primeSystem Prefills the rendered system prompt ("System: ...<|eot_id|>")
+// once and remembers its length, so later turns only ever Step new
+// tokens and ResetToSystem can rewind to exactly this point. Splitting
+// the first turn into system / user / header pieces is token-identical
+// to encoding Llama3ChatPrompt(system, user) in one call: the pieces meet
+// at <|eot_id|> special tokens, which the tokenizer isolates before BPE,
+// so no merge can straddle the boundary.
+func (r *Runner) primeSystem() error {
+	rendered := "System: " + strings.TrimSpace(r.systemPrompt) + "<|eot_id|>"
+	ids := r.tok.Encode(rendered)
+	if len(ids) == 0 {
+		return fmt.Errorf("toolloop: empty system prompt encoding")
+	}
+	r.dec.Prefill(ids) // logits discarded: generation never starts right after the system turn
+	r.seq = append(r.seq[:0], ids...)
+	r.transcript.Reset()
+	r.transcript.WriteString(rendered)
+	r.prefixLen = len(ids)
+	r.prefixText = rendered
+	r.started = true
+	return nil
+}
+
+// ResetToSystem rewinds the conversation to just after the system prompt
+// so the next UserTurn starts a fresh conversation without re-running the
+// system prefix: a decoder that implements TruncateTo(n) (both BitNet
+// decoders do) keeps its cached prefix rows; any other decoder is Reset
+// and the prefix is re-Prefilled by the next turn. With the real system
+// prompt (a few hundred tokens) this is the difference between ~25 s and
+// ~2 s of prefill per independent prompt on the 1660 Ti.
+func (r *Runner) ResetToSystem() {
+	if t, ok := r.dec.(interface{ TruncateTo(int) }); ok && r.started && r.prefixLen > 0 {
+		t.TruncateTo(r.prefixLen)
+		r.seq = r.seq[:r.prefixLen]
+		r.transcript.Reset()
+		r.transcript.WriteString(r.prefixText)
+		return
+	}
+	r.dec.Reset()
+	r.seq = r.seq[:0]
+	r.transcript.Reset()
+	r.started = false
 }
 
 // feedMessage renders "{Role}: {content}<|eot_id|>" (any role name works

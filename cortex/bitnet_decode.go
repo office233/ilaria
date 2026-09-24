@@ -181,6 +181,22 @@ func (d *BitNetDecoder) Reset() {
 	d.pos = 0
 }
 
+// TruncateTo drops every cached position from n onward, so the next Step
+// continues at absolute position n — the prefix-caching primitive
+// cortex.Runner uses to keep a long system prompt's KV rows across
+// independent conversations (Reset + re-Prefill of the same prefix would
+// recompute exactly the same rows). n must be within [0, Len()].
+func (d *BitNetDecoder) TruncateTo(n int) {
+	if n < 0 || n > d.pos {
+		panic(fmt.Sprintf("cortex: BitNetDecoder.TruncateTo(%d): cache holds %d positions", n, d.pos))
+	}
+	for i := range d.layerK {
+		d.layerK[i] = d.layerK[i][:n]
+		d.layerV[i] = d.layerV[i][:n]
+	}
+	d.pos = n
+}
+
 // Len returns the number of tokens currently cached (the next token's
 // absolute position).
 func (d *BitNetDecoder) Len() int {

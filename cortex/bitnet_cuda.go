@@ -1042,6 +1042,17 @@ func (d *BitNetCUDADecoder) Len() int { return d.pos }
 // reads rows [0,pos]), so no device memory needs to be cleared.
 func (d *BitNetCUDADecoder) Reset() { d.pos = 0 }
 
+// TruncateTo is BitNetDecoder.TruncateTo's GPU mirror: the resident KV
+// cache is addressed by absolute position and attention reads rows
+// [0, pos], so dropping the tail is just moving pos back — later Steps
+// overwrite the stale rows in place. n must be within [0, Len()].
+func (d *BitNetCUDADecoder) TruncateTo(n int) {
+	if n < 0 || n > d.pos {
+		panic(fmt.Sprintf("cortex: BitNetCUDADecoder.TruncateTo(%d): cache holds %d positions", n, d.pos))
+	}
+	d.pos = n
+}
+
 // Prefill processes ids as one prompt, filling every layer's KV cache
 // and returning the last position's logits. Panics (matching the GPU
 // backend's established fail-loud precedent — see bitLinearGPUImpl.forward's

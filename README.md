@@ -367,6 +367,8 @@ go run -tags gpu ./cmd/ilaria-chat -cuda -model data/forge/bitnet-2b4t/bitnet.nx
 # → "48213 times 9071 is 437340123."
 ```
 
+The system prompt is prefilled once and reused across prompts (`Runner.ResetToSystem`, `TruncateTo` on both decoders): an independent prompt costs 0.7–2.3 s end to end on the 1660 Ti instead of ~26 s.
+
 ## Benchmark Performance (local, vs own dense baseline)
 
 | Operation | Speed | Allocations |

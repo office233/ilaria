@@ -2,6 +2,7 @@ package cortex
 
 import (
 	"context"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -274,7 +275,10 @@ func TestToolLoopOneCallThenForcedAnswer(t *testing.T) {
 	// irrelevant; it exists only to keep the script's slot count aligned
 	// with the real sequence of Prefill/Step calls Runner makes.
 	dec := &fakeStepDecoder{
-		script: []int{idCall1, idNL1, 0, idCall2, idNL2, 0, idFinal, idEOS},
+		// Leading 0, 0: the system Prefill and the user-turn Step whose
+		// logits Runner discards before the "Assistant: " header Step
+		// (see primeSystem/UserTurn); generation starts at idCall1.
+		script: []int{0, 0, idCall1, idNL1, 0, idCall2, idNL2, 0, idFinal, idEOS},
 		vocab:  8,
 	}
 	tok := fakeTokenizer{pieces: map[int]string{
@@ -338,7 +342,7 @@ func TestToolLoopUnknownTool(t *testing.T) {
 	// Slot 2 (between idNL and idFinal) is the discarded first half of
 	// feedToolResult's two Step calls — see the comment in
 	// TestToolLoopOneCallThenForcedAnswer.
-	dec := &fakeStepDecoder{script: []int{idCall, idNL, 0, idFinal, idEOS}, vocab: 8}
+	dec := &fakeStepDecoder{script: []int{0, 0, idCall, idNL, 0, idFinal, idEOS}, vocab: 8} // leading 0, 0: system Prefill + user Step slots
 	tok := fakeTokenizer{pieces: map[int]string{
 		idCall:  "CALL frobnicate: 1",
 		idNL:    "\n",
@@ -369,7 +373,7 @@ func TestToolLoopDirectAnswerNoCall(t *testing.T) {
 		idFinal = 1 // "Paris."
 		idEOS   = 2
 	)
-	dec := &fakeStepDecoder{script: []int{idFinal, idEOS}, vocab: 8}
+	dec := &fakeStepDecoder{script: []int{0, 0, idFinal, idEOS}, vocab: 8} // leading 0, 0: system Prefill + user Step slots
 	tok := fakeTokenizer{pieces: map[int]string{idFinal: "Paris.", idEOS: ""}}
 	r := NewRunner(dec, tok, []int{idEOS}, 10000, []ChatTool{CalcChatTool{}}, 3, 10, nil)
 	result, err := r.UserTurn(context.Background(), "What is the capital of France?")
@@ -408,5 +412,65 @@ func TestSafeJoinRejectsEscape(t *testing.T) {
 	wantAbs, _ := filepath.Abs(want)
 	if gotAbs != wantAbs {
 		t.Errorf("safeJoin = %q, want %q", got, want)
+	}
+}
+
+// truncatingFakeDecoder is fakeStepDecoder plus TruncateTo, recording how
+// many times each of Prefill/TruncateTo/Reset ran.
+type truncatingFakeDecoder struct {
+	fakeStepDecoder
+	prefills, truncates, resets int
+	lastTruncate                int
+}
+
+func (d *truncatingFakeDecoder) Prefill(ids []int) []float32 {
+	d.prefills++
+	return d.fakeStepDecoder.Prefill(ids)
+}
+func (d *truncatingFakeDecoder) Reset() { d.resets++; d.fakeStepDecoder.Reset() }
+func (d *truncatingFakeDecoder) TruncateTo(n int) {
+	d.truncates++
+	d.lastTruncate = n
+	d.length = n
+	d.idx = 0
+}
+
+// TestToolLoopResetToSystemReusesPrefix: with a TruncateTo-capable
+// decoder, two independent prompts share one system Prefill — the second
+// prompt rewinds to the prefix length instead of Reset + re-Prefill, and
+// the transcript restarts from the system turn.
+func TestToolLoopResetToSystemReusesPrefix(t *testing.T) {
+	const (
+		idFinal = 1
+		idEOS   = 7
+	)
+	dec := &truncatingFakeDecoder{fakeStepDecoder: fakeStepDecoder{script: []int{0, 0, idFinal, idEOS}, vocab: 8}}
+	tok := fakeTokenizer{pieces: map[int]string{idFinal: "Everest.", idEOS: ""}}
+	r := NewRunner(dec, tok, []int{idEOS}, 4096, nil, 1, 8, io.Discard)
+
+	res, err := r.UserTurn(context.Background(), "tallest mountain?")
+	if err != nil || res.Answer != "Everest." {
+		t.Fatalf("turn 1: answer %q err %v", res.Answer, err)
+	}
+	if dec.prefills != 1 {
+		t.Fatalf("turn 1: prefills = %d, want 1", dec.prefills)
+	}
+	r.ResetToSystem()
+	if dec.truncates != 1 || dec.lastTruncate != 1 || dec.resets != 0 {
+		t.Fatalf("ResetToSystem: truncates=%d lastTruncate=%d resets=%d, want 1/1/0 (fake tokenizer: system prefix = 1 token)",
+			dec.truncates, dec.lastTruncate, dec.resets)
+	}
+	if got := r.Transcript(); !strings.HasPrefix(got, "System: ") || !strings.HasSuffix(got, "<|eot_id|>") || strings.Contains(got, "tallest mountain?") {
+		t.Fatalf("transcript after ResetToSystem = %q, want the system turn only (the few-shot examples inside it are fine)", got)
+	}
+	res, err = r.UserTurn(context.Background(), "tallest mountain again?")
+	if err != nil || res.Answer != "Everest." {
+		t.Fatalf("turn 2: answer %q err %v", res.Answer, err)
+	}
+	if dec.prefills != 1 {
+		t.Fatalf("turn 2 re-Prefilled: prefills = %d, want still 1", dec.prefills)
+	}
+	if got := r.Transcript(); strings.Count(got, "System: ") != 1 || strings.Contains(got, "tallest mountain?<|eot_id|>") || strings.Count(got, "User: tallest mountain again?") != 1 {
+		t.Fatalf("transcript after turn 2 = %q, want the system turn and only the second user turn", got)
 	}
 }

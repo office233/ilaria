@@ -28,6 +28,9 @@ func (d *BitNetCUDADecoder) Len() int { return 0 }
 // Reset stub is a no-op.
 func (d *BitNetCUDADecoder) Reset() {}
 
+// TruncateTo stub is a no-op.
+func (d *BitNetCUDADecoder) TruncateTo(n int) {}
+
 // Prefill stub always panics — construction already fails in stub
 // builds, so a caller reaching this has ignored NewBitNetCUDADecoder's
 // error.

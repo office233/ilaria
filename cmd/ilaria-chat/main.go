@@ -186,9 +186,10 @@ type evalItem struct {
 	ExpectSubstring string `json:"expect_substring,omitempty"`
 }
 
-// runEval runs every prompt in path through a fresh Runner (the decoder
-// is Reset between prompts so each one starts from the same clean KV
-// cache — no cross-prompt leakage), and prints a per-prompt table
+// runEval runs every prompt in path through one Runner rewound with
+// ResetToSystem between prompts (the cached system-prompt rows are kept,
+// everything after them is dropped — no cross-prompt leakage, no
+// re-prefill of the shared prefix), and prints a per-prompt table
 // followed by three honest, measured totals: tool-selection accuracy
 // (over prompts that DO need a tool), false-call rate (over prompts that
 // do NOT), and answer accuracy (over prompts carrying an
@@ -226,9 +227,9 @@ func runEval(path string, dec cortex.StepDecoder, tok cortex.Tokenizer, stopIDs 
 	var noToolTotal, falseCalls int
 	var substrTotal, substrOK int
 
+	runner := cortex.NewRunner(dec, tok, stopIDs, maxSeqLen, tools, maxCalls, maxTokens, os.Stderr)
 	for _, it := range items {
-		dec.Reset()
-		runner := cortex.NewRunner(dec, tok, stopIDs, maxSeqLen, tools, maxCalls, maxTokens, os.Stderr)
+		runner.ResetToSystem()
 
 		start := time.Now()
 		res, err := runner.UserTurn(context.Background(), it.Prompt)

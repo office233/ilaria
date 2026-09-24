@@ -137,3 +137,12 @@ exactly the failure modes you'd expect from a base chat model that was never tra
 bugs in the loop itself: the loop faithfully executes whatever the model actually writes, correctly
 refuses unknown tools and malformed calls, and (per `false-call rate: 0/6`) never calls a tool
 uninvited.
+
+## Addendum — system-prompt KV reuse (same day, later run)
+
+`Runner` now Prefills the system prompt once and `ResetToSystem()` rewinds the decoder to it
+(`TruncateTo(n)` on both BitNet decoders) instead of Reset + re-Prefill per prompt. Re-running the
+exact command above gave the **identical table and totals** (greedy decoding, token-identical
+prompt), with the per-prompt time falling from ~26 s to **0.7–2.3 s** (the first prompt pays the
+one-time ~11 s system prefill). The 26 s figures above were almost entirely the ~500-token system
+prompt being re-prefilled sequentially; the model's own answers take 1–2 s.

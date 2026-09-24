@@ -14,6 +14,29 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from forge import prepare_corpus as pc  # noqa: E402
 
 
+class ScrubPiiTests(unittest.TestCase):
+    def test_masks_email_phone_and_iban(self):
+        text = ("Scrieți la ion.popescu@exemplu.ro sau sunați la 0723 882 313 ori +40 756 582 225. "
+                "Plata în contul RO49AAAA1B31007593840000.")
+        out = pc.scrub_pii(text)
+        self.assertNotIn("ion.popescu@exemplu.ro", out)
+        self.assertNotIn("882 313", out)
+        self.assertNotIn("582 225", out)
+        self.assertNotIn("RO49AAAA1B31007593840000", out)
+        self.assertIn("[EMAIL]", out)
+        self.assertEqual(out.count("[PHONE]"), 2)
+        self.assertIn("[IBAN]", out)
+
+    def test_keeps_years_numbers_and_ordinary_text(self):
+        text = "În 1859, la 24 ianuarie, s-au unit 2 principate; populația era de 3.864.848 locuitori."
+        self.assertEqual(pc.scrub_pii(text), text)
+
+    def test_clean_text_applies_scrubbing(self):
+        out = pc.clean_text("Contact pentru presă: contact@firma.ro, program de luni până vineri.")
+        self.assertIn("[EMAIL]", out)
+        self.assertNotIn("contact@firma.ro", out)
+
+
 class CleanTextTests(unittest.TestCase):
     def test_normalizes_whitespace_and_keeps_diacritics(self):
         self.assertEqual(pc.clean_text("Ștefan   cel Mare\n\n\n\nera domn."), "Ștefan cel Mare\n\nera domn.")

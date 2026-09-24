@@ -48,12 +48,27 @@ _BOILERPLATE = re.compile(
 )
 _MIN_ALPHA_RATIO = 0.5
 
+# Personal-data masking (promised in the EuroHPC ethics self-assessment):
+# e-mail addresses, phone numbers and IBANs are replaced by placeholders
+# before tokenisation. Phones need a leading +CC or 0 and at least 9 digits,
+# so years, dates and population counts stay untouched.
+_EMAIL = re.compile(r"\b[\w.+-]+@[\w-]+(?:\.[\w-]+)+\b")
+_IBAN = re.compile(r"\b[A-Z]{2}\d{2}(?: ?[A-Z0-9]{4}){2,7}(?: ?[A-Z0-9]{1,4})?\b")
+_PHONE = re.compile(r"(?<![\w.])(?:\+\d{1,3}[ .-]?|0)\d{2,3}(?:[ .-]?\d{2,4}){2,3}(?!\w|\.\d)")
+
+
+def scrub_pii(text: str) -> str:
+    """Mask e-mail addresses, IBANs and phone numbers with [EMAIL]/[IBAN]/[PHONE]."""
+    text = _EMAIL.sub("[EMAIL]", text)
+    text = _IBAN.sub("[IBAN]", text)
+    return _PHONE.sub("[PHONE]", text)
+
 
 def clean_text(text: str, min_len: int = 20, max_len: int = 3000) -> str:
-    """Normalize whitespace, drop boilerplate/table-like text, cut long text at a sentence."""
+    """Normalize whitespace, mask personal data, drop boilerplate/table-like text, cut long text at a sentence."""
     if not text:
         return ""
-    text = text.replace("\r", "")
+    text = scrub_pii(text.replace("\r", ""))
     text = re.sub(r"[ \t]+", " ", text)
     text = re.sub(r"\n{3,}", "\n\n", text)
     text = "\n".join(line.strip() for line in text.split("\n")).strip()

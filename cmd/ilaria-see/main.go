@@ -50,6 +50,7 @@ import (
 	"unicode"
 
 	cortex "nexus-cortex/cortex"
+	"nexus-cortex/cortex/compute"
 )
 
 const imageMarker = "<image>"
@@ -63,6 +64,7 @@ func main() {
 	prompt := flag.String("prompt", "Describe the image briefly.", "Caption instruction (the <image> marker is added automatically)")
 	maxTokens := flag.Int("max-tokens", 40, "Max number of tokens to generate")
 	maxTextLen := flag.Int("max-text-len", 256, "Per-segment token truncation, matching BitNetVLM(max_text_len=...) (mm_model.py)")
+	gpuFlag := flag.Bool("gpu", false, "Route the vision tower's dense/attention matmuls through resident fp32 cuBLAS and the BitNet prefill through the resident int8 cuBLAS backend (needs a -tags gpu build and CUDA; see cortex/vision_siglip_gpu.go and cortex/bitnet_gpu.go). Falls back to CPU with a warning if unavailable.")
 	flag.Parse()
 
 	fail := func(stage string, err error) {
@@ -106,6 +108,34 @@ func main() {
 	}
 	fmt.Fprintf(os.Stderr, "[ilaria-see] loaded projector %s (in=%d mlp=%d out=%d)\n",
 		*adapterPrefix, projector.In, projector.Mlp, projector.Out)
+
+	// -gpu: route the tower's dense/attention matmuls through resident
+	// fp32 cuBLAS (cortex/vision_siglip_gpu.go) and the BitNet prefill
+	// through the resident int8 cuBLAS backend (cortex/bitnet_gpu.go,
+	// same one cmd/bitnet-run -gpu uses). Both failure modes are
+	// non-fatal: a warning is printed and the run continues on the CPU
+	// path for whichever half declined, matching every other GPU hook
+	// in this codebase (a mid-run CUDA hiccup degrades speed, not
+	// output).
+	if *gpuFlag {
+		towerGPUStart := time.Now()
+		if err := cortex.EnableSiglipGPU(tower); err != nil {
+			fmt.Fprintf(os.Stderr, "[ilaria-see] warning: vision GPU backend unavailable, tower stays on CPU: %v\n", err)
+		} else {
+			fmt.Fprintf(os.Stderr, "[ilaria-see] vision GPU backend enabled in %.2fs\n", time.Since(towerGPUStart).Seconds())
+		}
+
+		bitnetGPUStart := time.Now()
+		if err := cortex.EnableBitNetGPU(model); err != nil {
+			fmt.Fprintf(os.Stderr, "[ilaria-see] warning: BitNet GPU backend unavailable, prefill/decode stay on CPU: %v\n", err)
+		} else {
+			fmt.Fprintf(os.Stderr, "[ilaria-see] BitNet GPU backend enabled in %.2fs\n", time.Since(bitnetGPUStart).Seconds())
+			if free, total, err := compute.MemInfoInt8(); err == nil {
+				fmt.Fprintf(os.Stderr, "[ilaria-see] GPU memory: %.0f MiB used / %.0f MiB total\n",
+					float64(total-free)/(1<<20), float64(total)/(1<<20))
+			}
+		}
+	}
 
 	f, err := os.Open(*imagePath)
 	if err != nil {

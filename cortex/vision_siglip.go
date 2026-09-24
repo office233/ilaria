@@ -134,6 +134,39 @@ type SiglipVisionTower struct {
 	Layers []*siglipEncoderLayer
 
 	PostLNWeight, PostLNBias []float32 // [Hidden]
+
+	// gpu is the optional GPU backend hook for this tower's dense
+	// (patch-embed/q/k/v/o/fc1/fc2) and attention score/value matmuls —
+	// nil (the default) keeps every call on the CPU path implemented
+	// directly in this file. Set by EnableSiglipGPU
+	// (vision_siglip_gpu.go, tag gpu) / left nil by its stub
+	// (vision_siglip_gpu_stub.go, tag !gpu). denseForward and
+	// siglipAttention each check it with a single `if gpu != nil` at
+	// their top and fall through to the existing CPU code whenever the
+	// backend is absent or declines (ok=false).
+	gpu visionGPUBackend
+}
+
+// visionGPUBackend is the optional GPU hook threaded through
+// denseForward/siglipAttention by SiglipVisionTower.gpu. Implemented by
+// vision_siglip_gpu.go's siglipGPUBackend (resident fp32 cuBLAS); every
+// method may decline (return ok=false) — e.g. an unrecognized weight or
+// a mid-run CUDA error — in which case the caller falls back to the CPU
+// path unconditionally, so a GPU hiccup degrades speed, not output
+// (same failure-mode contract as transformer_gpu.go's gpuMatVecInto).
+type visionGPUBackend interface {
+	// Dense computes y = x @ w + b (row-major, w stored [in,out], b
+	// len out) for every row of x, using a GPU-resident copy of w
+	// uploaded ahead of time (EnableSiglipGPU) and identified by w's
+	// backing-array identity. ok=false (weight not resident, or the
+	// GPU call errored) means the caller must use the CPU path.
+	Dense(x [][]float32, w, b []float32, in, out int) (y [][]float32, ok bool)
+
+	// Attention computes bidirectional multi-head self-attention
+	// (softmax(QK^T*scale) @ V per head, concatenated back to width
+	// heads*headDim) given per-token Q/K/V already projected to that
+	// width. ok=false means the caller must use the CPU path.
+	Attention(q, k, v [][]float32, heads, headDim int) (out [][]float32, ok bool)
 }
 
 // NewSiglipVisionTower allocates a zero-initialized tower ready for a
@@ -225,7 +258,7 @@ func (m *SiglipVisionTower) patchEmbed(pixelValues []float32) [][]float32 {
 			patches[gy*grid+gx] = vec
 		}
 	}
-	return denseForward(patches, m.PatchEmbedWeight, m.PatchEmbedBias, inFeat, cfg.Hidden)
+	return denseForward(patches, m.PatchEmbedWeight, m.PatchEmbedBias, inFeat, cfg.Hidden, m.gpu)
 }
 
 // encoderLayer runs one pre-norm block (attention sub-layer + MLP
@@ -233,11 +266,11 @@ func (m *SiglipVisionTower) patchEmbed(pixelValues []float32) [][]float32 {
 func (m *SiglipVisionTower) encoderLayer(layer *siglipEncoderLayer, x [][]float32) [][]float32 {
 	cfg := m.Cfg
 	normed1 := siglipLayerNorm(x, layer.LN1Weight, layer.LN1Bias, cfg.LayerNormEps)
-	attnOut := siglipAttention(layer, normed1, cfg)
+	attnOut := siglipAttention(layer, normed1, cfg, m.gpu)
 	resid1 := addRows(x, attnOut)
 
 	normed2 := siglipLayerNorm(resid1, layer.LN2Weight, layer.LN2Bias, cfg.LayerNormEps)
-	mlpOut := siglipMLP(layer, normed2, cfg)
+	mlpOut := siglipMLP(layer, normed2, cfg, m.gpu)
 	return addRows(resid1, mlpOut)
 }
 
@@ -245,15 +278,21 @@ func (m *SiglipVisionTower) encoderLayer(layer *siglipEncoderLayer, x [][]float3
 // self-attention over the whole sequence — matches SiglipAttention.forward
 // with is_causal=False and no attention_mask (vision tokens attend to
 // every other token, unlike bitnet.go's causal GQA attention).
-func siglipAttention(layer *siglipEncoderLayer, xNormed [][]float32, cfg SiglipVisionConfig) [][]float32 {
+func siglipAttention(layer *siglipEncoderLayer, xNormed [][]float32, cfg SiglipVisionConfig, gpu visionGPUBackend) [][]float32 {
 	T := len(xNormed)
 	hidden := cfg.Hidden
 	heads := cfg.NumHeads
 	hd := cfg.headDim()
 
-	Q := denseForward(xNormed, layer.QWeight, layer.QBias, hidden, hidden)
-	K := denseForward(xNormed, layer.KWeight, layer.KBias, hidden, hidden)
-	V := denseForward(xNormed, layer.VWeight, layer.VBias, hidden, hidden)
+	Q := denseForward(xNormed, layer.QWeight, layer.QBias, hidden, hidden, gpu)
+	K := denseForward(xNormed, layer.KWeight, layer.KBias, hidden, hidden, gpu)
+	V := denseForward(xNormed, layer.VWeight, layer.VBias, hidden, hidden, gpu)
+
+	if gpu != nil {
+		if attnOut, ok := gpu.Attention(Q, K, V, heads, hd); ok {
+			return denseForward(attnOut, layer.OWeight, layer.OBias, hidden, hidden, gpu)
+		}
+	}
 
 	scale := float32(1.0 / math.Sqrt(float64(hd)))
 	out := make([][]float32, T)
@@ -313,15 +352,15 @@ func siglipAttention(layer *siglipEncoderLayer, xNormed [][]float32, cfg SiglipV
 		}
 	})
 
-	return denseForward(out, layer.OWeight, layer.OBias, hidden, hidden)
+	return denseForward(out, layer.OWeight, layer.OBias, hidden, hidden, gpu)
 }
 
 // siglipMLP computes fc2(gelu_pytorch_tanh(fc1(x))) — matches
 // SiglipMLP.forward with hidden_act="gelu_pytorch_tanh".
-func siglipMLP(layer *siglipEncoderLayer, x [][]float32, cfg SiglipVisionConfig) [][]float32 {
-	h := denseForward(x, layer.FC1Weight, layer.FC1Bias, cfg.Hidden, cfg.Intermediate)
+func siglipMLP(layer *siglipEncoderLayer, x [][]float32, cfg SiglipVisionConfig, gpu visionGPUBackend) [][]float32 {
+	h := denseForward(x, layer.FC1Weight, layer.FC1Bias, cfg.Hidden, cfg.Intermediate, gpu)
 	geluTanhInPlace(h)
-	return denseForward(h, layer.FC2Weight, layer.FC2Bias, cfg.Intermediate, cfg.Hidden)
+	return denseForward(h, layer.FC2Weight, layer.FC2Bias, cfg.Intermediate, cfg.Hidden, gpu)
 }
 
 // ─────────────────────────────────────────────────────────────────────
@@ -340,7 +379,19 @@ func siglipMLP(layer *siglipEncoderLayer, x [][]float32, cfg SiglipVisionConfig)
 // (bitnet_linear.go) — safe here too since every row of the output is
 // independent and each goroutine only ever writes the disjoint y[t]
 // indices its [start,end) chunk owns.
-func denseForward(x [][]float32, w, b []float32, in, out int) [][]float32 {
+//
+// gpu is the tower's optional GPU backend hook (SiglipVisionTower.gpu) —
+// when non-nil and it recognizes w (uploaded resident by
+// EnableSiglipGPU), it runs this matmul on the GPU instead; nil (e.g.
+// every call from SiglipProjector.Forward, which is never GPU-backed —
+// see that method) or a decline (ok=false) falls through to the CPU
+// loop below unchanged.
+func denseForward(x [][]float32, w, b []float32, in, out int, gpu visionGPUBackend) [][]float32 {
+	if gpu != nil {
+		if y, ok := gpu.Dense(x, w, b, in, out); ok {
+			return y
+		}
+	}
 	T := len(x)
 	y := make([][]float32, T)
 	bitnetParallelFor(T, func(start, end int) {
@@ -529,9 +580,12 @@ type SiglipProjector struct {
 // Forward runs fc2(gelu_exact(fc1(x))) for every row of x (each row: one
 // pixel-shuffled image token, len p.In) and returns len(x) rows of len p.Out.
 func (p *SiglipProjector) Forward(x [][]float32) [][]float32 {
-	h := denseForward(x, p.FC1Weight, p.FC1Bias, p.In, p.Mlp)
+	// gpu=nil: the projector (121 tokens, two small Linear layers) is
+	// deliberately never GPU-backed — see the task-level design note in
+	// vision_siglip_gpu.go's doc comment.
+	h := denseForward(x, p.FC1Weight, p.FC1Bias, p.In, p.Mlp, nil)
 	geluExactInPlace(h)
-	return denseForward(h, p.FC2Weight, p.FC2Bias, p.Mlp, p.Out)
+	return denseForward(h, p.FC2Weight, p.FC2Bias, p.Mlp, p.Out, nil)
 }
 
 // ─────────────────────────────────────────────────────────────────────

@@ -17,7 +17,10 @@ package cortex
 // history depends on their exact RNG consumption. New callers should
 // use GenerateSampled.
 
-import "math"
+import (
+	"math"
+	"math/rand"
+)
 
 // SampleConfig collects every sampling knob for GenerateSampled.
 // Zero-valued fields fall back to sane behaviour (see normalise).
@@ -87,12 +90,35 @@ func applyRepetitionPenalty(logits []float32, seq []int, window int, penalty flo
 	}
 }
 
+// ApplyRepetitionPenalty and SampleTopKTopP are exported wrappers around
+// this file's shared repetition-penalty and top-k/top-p sampling helpers,
+// for callers outside the package that need per-token control instead of a
+// whole-sequence Generate* call — e.g. cmd/bitnet-run's -stream loop, which
+// drives BitNetDecoder one token at a time and must reuse the exact same
+// sampling arithmetic GenerateSampled uses rather than reimplementing it.
+func ApplyRepetitionPenalty(logits []float32, seq []int, window int, penalty float32) {
+	applyRepetitionPenalty(logits, seq, window, penalty)
+}
+
+func SampleTopKTopP(rng *rand.Rand, logits []float32, topK int, topP float32) int {
+	return sampleTopKTopP(rng, logits, topK, topP)
+}
+
+// sampleTopKTopP is the method form used by MiniTransformer's generation
+// paths; it just forwards to the package-level sampleTopKTopP using the
+// model's own RNG.
+func (m *MiniTransformer) sampleTopKTopP(logits []float32, topK int, topP float32) int {
+	return sampleTopKTopP(m.Rng, logits, topK, topP)
+}
+
 // sampleTopKTopP samples from the top-k candidates, optionally reduced
 // further to the smallest set whose probability mass reaches topP.
 // With topP disabled the candidate set and probabilities are identical
 // to topKSample's, though the two are separate code paths on purpose
-// (see file header).
-func (m *MiniTransformer) sampleTopKTopP(logits []float32, topK int, topP float32) int {
+// (see file header). Shared by MiniTransformer.sampleTopKTopP and
+// BitNetModel.GenerateSampled (cortex/bitnet.go) — the "shared top-k/
+// top-p sampler" both are meant to reuse rather than reimplement.
+func sampleTopKTopP(rng *rand.Rand, logits []float32, topK int, topP float32) int {
 	type cand struct {
 		idx int
 		val float32
@@ -155,7 +181,7 @@ func (m *MiniTransformer) sampleTopKTopP(logits []float32, topK int, topP float3
 		}
 	}
 
-	r := m.Rng.Float32()
+	r := rng.Float32()
 	cum := float32(0)
 	for i := 0; i < n; i++ {
 		cum += probs[i]

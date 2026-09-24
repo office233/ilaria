@@ -1,10 +1,20 @@
-# NexusCortex
+# Ilaria
 
-[![CI](https://github.com/office233/Nexuscortex/actions/workflows/ci.yml/badge.svg)](https://github.com/office233/Nexuscortex/actions/workflows/ci.yml)
+[![CI](https://github.com/office233/ilaria/actions/workflows/ci.yml/badge.svg)](https://github.com/office233/ilaria/actions/workflows/ci.yml)
 
-Experimental sparse cognitive architecture written in Go.
+A Romanian-first small language model with its own Go inference engine and a hippocampus-inspired memory that learns new facts in one shot.
 
-NexusCortex is a research and learning project exploring whether ideas from Sparse Distributed Representations, associative memory, online learning, sparse routing, and local-first compute can be combined into a small cognitive-system prototype.
+Ilaria is an independent research project: a bilingual (Romanian–English) language cortex trained from scratch
+(see [Ilaria-130M](#ilaria-130m--the-forge-trained-language-cortex-2026-09-22)), served by an engine written in Go,
+and wrapped in a cognitive architecture — Sparse Distributed Representations, associative memory, online learning,
+sparse routing and local-first compute.
+
+**Ilaria is built to power [Swypik](https://swypik.com)** — a video-native social-commerce platform for Romania and
+Central-Eastern Europe, and its companion Romanian ERP. There Ilaria's job is content moderation, a Romanian
+shopping assistant, captions and translation, and product-quality scoring, and its one-shot memory lets it learn a
+new product, price or policy the moment it appears, without retraining.
+
+(Formerly *NexusCortex*; Go module and command names still carry the old prefix.)
 
 This is not a replacement for frontier LLMs. It is not an AGI claim. The goal is to understand and implement low-level AI system primitives from scratch.
 
@@ -102,7 +112,7 @@ graph TD
 ### Project Structure
 
 ```
-Nexuscortex/
+ilaria/
 ├── cmd/
 │   ├── cortex/              # Interactive CLI
 │   ├── cortex-train/        # Curriculum trainer
@@ -316,8 +326,8 @@ go run ./cmd/cortex-web -port 8080 -data-dir ./data/cortex -open
 
 ```bash
 # Clone
-git clone https://github.com/office233/Nexuscortex.git
-cd Nexuscortex
+git clone https://github.com/office233/ilaria.git
+cd ilaria
 
 # Build
 go build ./...

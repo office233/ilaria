@@ -115,8 +115,7 @@ func AssembleV2(source string) (V2Program, error) {
 	labels := map[string]int{}
 	var lines []v2AsmLine
 	pc := 0
-	for n, raw := range strings.Split(source, "
-") {
+	for n, raw := range strings.Split(source, "\n") {
 		text := strings.TrimSpace(strings.SplitN(raw, "#", 2)[0])
 		if text == "" {
 			continue
@@ -341,11 +340,32 @@ func boolIntV2(v bool) int64 {
 
 // RunV2 executes STV2 deterministically using checked signed arithmetic.
 func RunV2(p V2Program, initial [8]int64, fuel int) (Result, error) {
+	return runV2(p, initial, fuel, false)
+}
+
+// MaxExactInteger is the conservative exact-integer domain shared with Swyp number.
+const MaxExactInteger int64 = (1 << 53) - 1
+
+// RunV2Exact rejects initial and intermediate values outside the safe-integer domain.
+// This does not make DIV floating-point division; the Swyp lowering pass rejects /.
+// RunV2 keeps its original checked int64 semantics for assembly callers.
+func RunV2Exact(p V2Program, initial [8]int64, fuel int) (Result, error) {
+	return runV2(p, initial, fuel, true)
+}
+
+func runV2(p V2Program, initial [8]int64, fuel int, exact bool) (Result, error) {
 	if err := p.Validate(); err != nil {
 		return Result{}, err
 	}
 	if fuel < 1 || fuel > MaxFuel {
 		return Result{}, fmt.Errorf("fuel must be 1..%d", MaxFuel)
+	}
+	if exact {
+		for i, v := range initial {
+			if v < -MaxExactInteger || v > MaxExactInteger {
+				return Result{}, fmt.Errorf("r%d outside exact-integer domain", i)
+			}
+		}
 	}
 	r := initial
 	pc := 0
@@ -455,6 +475,9 @@ func RunV2(p V2Program, initial [8]int64, fuel int) (Result, error) {
 			r[i.A] = v
 		case V2Halt:
 			return Result{Value: r[i.A], Steps: step, Registers: r}, nil
+		}
+		if exact && (r[i.A] < -MaxExactInteger || r[i.A] > MaxExactInteger) {
+			return Result{}, fmt.Errorf("instruction %d: result outside exact-integer domain", pc-1)
 		}
 	}
 	return Result{}, fmt.Errorf("execution fuel exhausted")

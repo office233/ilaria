@@ -1,0 +1,233 @@
+[
+  {
+    "id": "home",
+    "name": "Swypik",
+    "route": "/",
+    "group": "community",
+    "icon": "Home"
+  },
+  {
+    "id": "discover",
+    "name": "Discover",
+    "route": "/discover",
+    "group": "shopping",
+    "icon": "Compass"
+  },
+  {
+    "id": "reels",
+    "name": "Create",
+    "route": "/reels/record",
+    "group": "community",
+    "icon": "Video"
+  },
+  {
+    "id": "shop",
+    "name": "Shop",
+    "route": "/shop",
+    "group": "shopping",
+    "icon": "ShoppingBag"
+  },
+  {
+    "id": "categories",
+    "name": "Categories",
+    "route": "/categories",
+    "group": "shopping",
+    "icon": "LayoutGrid"
+  },
+  {
+    "id": "live",
+    "name": "Live",
+    "route": "/live",
+    "group": "shopping",
+    "icon": "Radio",
+    "feature": "live"
+  },
+  {
+    "id": "orders",
+    "name": "Orders",
+    "route": "/orders",
+    "group": "shopping",
+    "icon": "Package"
+  },
+  {
+    "id": "cart",
+    "name": "Cart",
+    "route": "/cart",
+    "group": "shopping",
+    "icon": "ShoppingCart"
+  },
+  {
+    "id": "collections",
+    "name": "Collections",
+    "route": "/collections",
+    "group": "shopping",
+    "icon": "Bookmark"
+  },
+  {
+    "id": "go",
+    "name": "Go",
+    "route": "/go",
+    "group": "mobility",
+    "icon": "Car",
+    "feature": "go"
+  },
+  {
+    "id": "food",
+    "name": "Food",
+    "route": "/food",
+    "group": "mobility",
+    "icon": "UtensilsCrossed",
+    "feature": "food"
+  },
+  {
+    "id": "stays",
+    "name": "Stays",
+    "route": "/stays",
+    "group": "travel",
+    "icon": "BedDouble",
+    "feature": "stays"
+  },
+  {
+    "id": "fly",
+    "name": "Fly",
+    "route": "/fly",
+    "group": "travel",
+    "icon": "Plane",
+    "feature": "fly"
+  },
+  {
+    "id": "movies",
+    "name": "Movies",
+    "route": "/movies",
+    "group": "entertainment",
+    "icon": "Clapperboard",
+    "feature": "movies"
+  },
+  {
+    "id": "music",
+    "name": "Music",
+    "route": "/music",
+    "group": "entertainment",
+    "icon": "Music",
+    "feature": "music"
+  },
+  {
+    "id": "gaming",
+    "name": "Gaming",
+    "route": "/gaming",
+    "group": "entertainment",
+    "icon": "Gamepad2",
+    "feature": "gaming"
+  },
+  {
+    "id": "news",
+    "name": "News",
+    "route": "/news",
+    "group": "entertainment",
+    "icon": "Newspaper",
+    "feature": "news"
+  },
+  {
+    "id": "messages",
+    "name": "Messenger",
+    "route": "/inbox",
+    "group": "community",
+    "icon": "MessageSquareText",
+    "feature": "messenger"
+  },
+  {
+    "id": "notifications",
+    "name": "Notifications",
+    "route": "/notifications",
+    "group": "community",
+    "icon": "Bell"
+  },
+  {
+    "id": "missions",
+    "name": "Missions",
+    "route": "/missions",
+    "group": "community",
+    "icon": "Target",
+    "feature": "missions"
+  },
+  {
+    "id": "seller",
+    "name": "Seller",
+    "route": "/seller",
+    "group": "business",
+    "icon": "Store",
+    "roles": ["seller"]
+  },
+  {
+    "id": "creator",
+    "name": "Creator",
+    "route": "/creator",
+    "group": "business",
+    "icon": "Sparkles",
+    "roles": ["creator"]
+  },
+  {
+    "id": "liveStudio",
+    "name": "Live Studio",
+    "route": "/creator/live",
+    "group": "business",
+    "icon": "Video",
+    "feature": "live",
+    "roles": ["creator"]
+  },
+  {
+    "id": "host",
+    "name": "Host",
+    "route": "/stays/manage",
+    "group": "business",
+    "icon": "KeyRound",
+    "feature": "stays",
+    "roles": ["host"]
+  },
+  {
+    "id": "courier",
+    "name": "Courier",
+    "route": "/courier",
+    "group": "business",
+    "icon": "Bike",
+    "roles": ["courier"]
+  },
+  {
+    "id": "fleet",
+    "name": "Fleet",
+    "route": "/fleet",
+    "group": "business",
+    "icon": "Truck",
+    "roles": ["fleet"]
+  },
+  {
+    "id": "admin",
+    "name": "Admin",
+    "route": "/admin",
+    "group": "business",
+    "icon": "Shield",
+    "roles": ["admin"]
+  },
+  {
+    "id": "account",
+    "name": "Account",
+    "route": "/account",
+    "group": "settings",
+    "icon": "User"
+  },
+  {
+    "id": "myStays",
+    "name": "My Stays",
+    "route": "/account/stays",
+    "group": "settings",
+    "icon": "Luggage",
+    "feature": "stays"
+  },
+  {
+    "id": "help",
+    "name": "Help",
+    "route": "/help",
+    "group": "settings",
+    "icon": "HelpCircle"
+  }
+]

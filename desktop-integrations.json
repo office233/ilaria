@@ -1,0 +1,11 @@
+{
+  "platform_url": "https://swypik.com",
+  "studio_url": "http://127.0.0.1:4848",
+  "nexus_url": "http://127.0.0.1:8080",
+  "workspaces": [
+    { "name": "Swypik", "path": "E:/Swypik/swypik/app" },
+    { "name": "Nexus · Ilaria", "path": "D:/nexus" },
+    { "name": "Swypik Studio", "path": "E:/Swypik Studio" },
+    { "name": "Cinema Studio", "path": "E:/Swypik movies" }
+  ]
+}

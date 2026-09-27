@@ -1,0 +1,44 @@
+name: STV2 validation
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@v7
+        with:
+          go-version: stable
+          cache: false
+      - name: Environment
+        run: |
+          go version
+          gcc --version | head -1
+          node --version
+      - name: Full repository tests
+        run: go test -count=1 -timeout=180s ./...
+      - name: Static analysis
+        run: go vet ./...
+      - name: Race detector
+        run: go test -race -count=1 -timeout=180s ./experiments/ternaryvm ./internal/swyplang ./cmd/swyp-stv2
+      - name: Decoder fuzzing
+        run: go test ./experiments/ternaryvm -run '^$' -fuzz '^FuzzSTV2DecodeAudit$' -fuzztime=10s -parallel=2
+      - name: Assembler fuzzing
+        run: go test ./experiments/ternaryvm -run '^$' -fuzz '^FuzzSTV2AssemblyAudit$' -fuzztime=10s -parallel=2
+      - name: Compiler fuzzing
+        run: go test ./internal/swyplang -run '^$' -fuzz '^FuzzSTV2CompilerAudit$' -fuzztime=10s -parallel=2
+      - name: End-to-end example
+        run: go run ./cmd/swyp-stv2 examples/swyp/sum.stv2.swyp 100
+      - name: Benchmark (diagnostic, not a release gate)
+        run: go test ./internal/swyplang -run '^$' -bench '^BenchmarkSTV2LoweredSum$' -benchmem -benchtime=200ms -count=3

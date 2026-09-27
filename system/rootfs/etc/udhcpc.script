@@ -1,0 +1,13 @@
+#!/bin/sh
+set -f
+case "$1" in
+ deconfig) ip address flush dev "$interface" ;;
+ bound|renew)
+  ifconfig "$interface" "$ip" netmask "${subnet:-255.255.255.0}" up
+  for gateway in $router; do ip route replace default via "$gateway" dev "$interface"; break; done
+  : > /etc/resolv.conf
+  for server in $dns; do printf 'nameserver %s\n' "$server" >> /etc/resolv.conf; done
+  printf 'SWYPIK_NET_READY iface=%s address=%s\n' "$interface" "$ip"
+  ;;
+esac
+exit 0

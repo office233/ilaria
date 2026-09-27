@@ -1,83 +1,13 @@
 package boot
-
-import (
-	"fmt"
-	"time"
-)
-
-// TargetPlatform identifies whether the installation is for Desktop or Mobile.
+import("fmt";"time")
 type TargetPlatform string
-
-const (
-	PlatformWindows TargetPlatform = "windows"
-	PlatformAndroid TargetPlatform = "android"
-	PlatformBareMetal TargetPlatform = "bare_metal_x86"
-	PlatformBareMobile TargetPlatform = "bare_metal_arm64"
-)
-
-// InstallMode defines whether it's non-destructive in-place or full OS replacement.
+const(PlatformWindows TargetPlatform="windows";PlatformAndroid TargetPlatform="android";PlatformBareMetal TargetPlatform="bare_metal_x86";PlatformBareMobile TargetPlatform="bare_metal_arm64")
 type InstallMode string
-
-const (
-	ModeInPlaceTakeover   InstallMode = "in_place_preserve_data"
-	ModeBareMetalOverwrite InstallMode = "full_os_replacement"
-)
-
-// DeployConfig holds user settings for the deployment.
-type DeployConfig struct {
-	Platform    TargetPlatform `json:"platform"`
-	Mode        InstallMode    `json:"mode"`
-	TargetDrive string         `json:"target_drive"`
-	PreserveUserData bool      `json:"preserve_user_data"`
-}
-
-// DeployLog records deployment steps.
-type DeployLog struct {
-	Step      string    `json:"step"`
-	Status    string    `json:"status"`
-	Timestamp time.Time `json:"timestamp"`
-}
-
-// SystemInstaller coordinates OS takeover and bare-metal provisioning.
-type SystemInstaller struct {
-	Logs []DeployLog
-}
-
-func NewSystemInstaller() *SystemInstaller {
-	return &SystemInstaller{
-		Logs: make([]DeployLog, 0),
-	}
-}
-
-// ExecuteDeploy simulates and verifies the deployment pipeline.
-func (s *SystemInstaller) ExecuteDeploy(cfg DeployConfig) ([]DeployLog, error) {
-	s.recordStep("Init", "Target platform verified: "+string(cfg.Platform))
-
-	if cfg.Mode == ModeInPlaceTakeover {
-		if cfg.PreserveUserData {
-			s.recordStep("Data Safety", "Indexing existing user directories (Zero data lost)")
-		}
-		s.recordStep("Shell Integration", "Injecting SwypikOS Native Core as default system shell")
-		s.recordStep("Services", "Launching Ilaria AI, Swarm Daemon & Native GPU Compositor")
-		s.recordStep("Complete", "SwypikOS active in 0-loss mode")
-		return s.Logs, nil
-	}
-
-	if cfg.Mode == ModeBareMetalOverwrite {
-		s.recordStep("Partitioning", fmt.Sprintf("Formatting target drive %s with SwypikFS", cfg.TargetDrive))
-		s.recordStep("Kernel Provisioning", "Writing sovereign Linux microkernel + SwypikOS Go runtime")
-		s.recordStep("EFI Bootloader", "Installing \\EFI\\Swypik\\bootx64.efi into NVRAM")
-		s.recordStep("Complete", "Windows permanently replaced. SwypikOS boots directly on bare-metal.")
-		return s.Logs, nil
-	}
-
-	return s.Logs, fmt.Errorf("unknown mode: %s", cfg.Mode)
-}
-
-func (s *SystemInstaller) recordStep(step, status string) {
-	s.Logs = append(s.Logs, DeployLog{
-		Step:      step,
-		Status:    status,
-		Timestamp: time.Now(),
-	})
-}
+const(ModeInPlaceTakeover InstallMode="in_place_preserve_data";ModeBareMetalOverwrite InstallMode="full_os_replacement")
+type DeployConfig struct{Platform TargetPlatform `json:"platform"`;Mode InstallMode `json:"mode"`;TargetDrive string `json:"target_drive"`;PreserveUserData bool `json:"preserve_user_data"`}
+type DeployLog struct{Step string `json:"step"`;Status string `json:"status"`;Timestamp time.Time `json:"timestamp"`}
+type SystemInstaller struct{Logs []DeployLog}
+func NewSystemInstaller()*SystemInstaller{return &SystemInstaller{Logs:[]DeployLog{}}}
+// ExecuteDeploy no longer reports a fictitious installation. This API cannot
+// partition, format, install a bootloader or replace an operating system.
+func(s *SystemInstaller)ExecuteDeploy(cfg DeployConfig)([]DeployLog,error){return nil,fmt.Errorf("legacy deployment simulation is disabled: no disks were changed; build and boot the RAM-only ISO using scripts/build-os.sh")}

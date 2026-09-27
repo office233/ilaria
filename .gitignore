@@ -3,7 +3,6 @@
 *.exe
 *.test
 coverage.out
-desktop/node_modules/
 *.vault
 *.vault.tmp
 data/
@@ -11,3 +10,6 @@ swarm_state.json
 swarm_azure_cache.json
 **/swarm_state.json
 **/swarm_azure_cache.json
+out/
+__pycache__/
+*.pyc

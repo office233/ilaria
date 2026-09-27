@@ -1,48 +1,5 @@
 package coder
-
-import (
-	"context"
-	"strings"
-	"testing"
-	"time"
-)
-
-func TestOutputIsBoundedWhileAllWritesAreConsumed(t *testing.T) {
-	out := &commandOutput{}
-	chunk := []byte(strings.Repeat("x", 4096))
-	for i := 0; i < 1000; i++ {
-		n, err := out.Write(chunk)
-		if err != nil || n != len(chunk) {
-			t.Fatalf("write: %d %v", n, err)
-		}
-	}
-	if out.buffer.Len() != maxCommandOutput || !strings.HasSuffix(out.String(), "[Output truncated at 256 KiB]") {
-		t.Fatal("output was not bounded and labeled")
-	}
-}
-
-func TestCanceledCommandDoesNotRun(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-	result := NewEngine().ExecuteCommandContext(ctx, "echo SHOULD_NOT_RUN")
-	if result.Success || strings.Contains(result.Output, "SHOULD_NOT_RUN") || !strings.Contains(result.Output, "canceled") {
-		t.Fatalf("canceled command: %+v", result)
-	}
-}
-
-func TestRunningCommandDeadline(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
-	defer cancel()
-	start := time.Now()
-	// cmd builtins only: this exercises cancellation without spawning children.
-	result := NewEngine().ExecuteCommandContext(ctx, "for /L %i in (1,1,100000000) do @echo working")
-	if result.Success || !strings.Contains(result.Output, "deadline exceeded") {
-		t.Fatalf("deadline not reported: success=%v", result.Success)
-	}
-	if time.Since(start) > 3*time.Second {
-		t.Fatal("command did not stop promptly")
-	}
-	if len(result.Output) > maxCommandOutput+200 {
-		t.Fatal("command output exceeds bound")
-	}
-}
+import("context";"runtime";"strings";"testing";"time")
+func TestOutputIsBoundedWhileAllWritesAreConsumed(t *testing.T){out:=&commandOutput{};chunk:=[]byte(strings.Repeat("x",4096));for i:=0;i<1000;i++{n,err:=out.Write(chunk);if err!=nil||n!=len(chunk){t.Fatalf("write: %d %v",n,err)}};if out.buffer.Len()!=maxCommandOutput||!strings.HasSuffix(out.String(),"[Output truncated at 256 KiB]"){t.Fatal("output was not bounded and labeled")}}
+func TestCanceledCommandDoesNotRun(t *testing.T){ctx,cancel:=context.WithCancel(context.Background());cancel();result:=NewEngine().ExecuteCommandContext(ctx,"echo SHOULD_NOT_RUN");if result.Success||strings.Contains(result.Output,"SHOULD_NOT_RUN")||!strings.Contains(result.Output,"canceled"){t.Fatalf("canceled command: %+v",result)}}
+func TestRunningCommandDeadline(t *testing.T){if runtime.GOOS!="windows"{t.Skip("Windows CMD lifecycle test; Linux agent has no shell tool")};ctx,cancel:=context.WithTimeout(context.Background(),100*time.Millisecond);defer cancel();start:=time.Now();result:=NewEngine().ExecuteCommandContext(ctx,"for /L %i in (1,1,100000000) do @echo working");if result.Success||!strings.Contains(result.Output,"deadline exceeded"){t.Fatalf("deadline not reported: success=%v",result.Success)};if time.Since(start)>3*time.Second{t.Fatal("command did not stop promptly")};if len(result.Output)>maxCommandOutput+200{t.Fatal("command output exceeds bound")}}

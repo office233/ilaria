@@ -1,35 +1,16 @@
 package search
-
-import (
-	"strings"
-	"testing"
-)
-
-func TestCleanText(t *testing.T) {
-	raw := "<div><h1>Title</h1><script>alert('bad')</script><p>Clean content</p></div>"
-	cleaned := CleanText(raw)
-
-	if strings.Contains(cleaned, "alert") {
-		t.Errorf("Expected script to be stripped")
-	}
-	if !strings.Contains(cleaned, "Title") || !strings.Contains(cleaned, "Clean content") {
-		t.Errorf("Expected content to remain, got '%s'", cleaned)
-	}
+import("context";"encoding/json";"net/http";"net/http/httptest";"net/netip";"path/filepath";"strings";"testing")
+func TestIndexPersistentBM25(t *testing.T){path:=filepath.Join(t.TempDir(),"index.json");e,err:=Open(path);if err!=nil{t.Fatal(err)};if err=e.Upsert(Document{URL:"https://example.org/go",Title:"Go networking",Text:"Go connects using network sockets"});err!=nil{t.Fatal(err)};if err=e.Upsert(Document{URL:"https://example.org/garden",Title:"Garden",Text:"Flowers grow in a garden"});err!=nil{t.Fatal(err)};restored,err:=Open(path);if err!=nil{t.Fatal(err)};r,err:=restored.Search("networking");if err!=nil||len(r.Sources)!=1||r.Sources[0].URL!="https://example.org/go"{t.Fatalf("%+v %v",r,err)};if r.AIAnswer!=""||r.AdsStripped!=0||r.TrackersBlocked!=0{t.Fatal("fabricated answer or counters")};if err:=restored.Delete("https://example.org/go");err!=nil{t.Fatal(err)};r,_=restored.Search("networking");if len(r.Sources)!=0{t.Fatal("deleted document remains searchable")}}
+func TestEmptyIndexDoesNotInventSources(t *testing.T){r,err:=NewEngine().Search("golang");if err!=nil||len(r.Sources)!=0{t.Fatalf("%+v %v",r,err)}}
+func TestCleanText(t *testing.T){v:=CleanText("<div>A &amp; B<script>alert('bad')</script></div>");if v!="A & B"{t.Fatal(v)}}
+func TestPrivateAddressDenied(t *testing.T){for _,s:=range []string{"127.0.0.1","10.0.0.1","169.254.169.254","100.64.0.1","::1","::ffff:127.0.0.1","2001:db8::1"}{if publicAddress(netip.MustParseAddr(s)){t.Fatal(s)}};if !publicAddress(netip.MustParseAddr("93.184.216.34")){t.Fatal("public IP rejected")}}
+func TestRobotsLongestAllow(t *testing.T){p:=parseRobots("User-agent: *\nDisallow: /private\nAllow: /private/public\nDisallow: /*?token=*\n");if p.allowed("/private/a")||!p.allowed("/private/public/a")||p.allowed("/x?token=secret"){t.Fatal("robots rules")}}
+func TestRobotsSpecificGroup(t *testing.T){p:=parseRobots("User-agent: *\nDisallow: /\nUser-agent: SwypikBot\nDisallow: /secrets\n");if !p.allowed("/docs")||p.allowed("/secrets"){t.Fatal("specific group not selected")}}
+func TestCrawlerOwnCorpus(t *testing.T){
+ hits:=map[string]int{};mux:=http.NewServeMux();mux.HandleFunc("/",func(w http.ResponseWriter,r *http.Request){hits[r.URL.Path]++;if r.UserAgent()!=UserAgent{t.Error("missing user agent")};if r.URL.Path=="/robots.txt"{w.Header().Set("Content-Type","text/plain");_,_=w.Write([]byte("User-agent: *\nDisallow: /private"));return};w.Header().Set("Content-Type","text/html");switch r.URL.Path{case "/":_,_=w.Write([]byte(`<html><head><title>Native systems</title></head><body>Swypik Linux networking<a href="/second">second</a><a href="/private">secret</a><a href="/noindex">noindex</a></body></html>`));case "/second":_,_=w.Write([]byte(`<title>Drivers</title><p>Linux networking drivers</p>`));case "/noindex":_,_=w.Write([]byte(`<meta name="robots" content="noindex"><p>Never index this word excluded</p>`));default:t.Error("unexpected request")}})
+ srv:=httptest.NewServer(mux);defer srv.Close();client:=srv.Client();original:=client.Transport;client.Transport=roundTripFunc(func(req *http.Request)(*http.Response,error){req.URL.Scheme="http";req.URL.Host=strings.TrimPrefix(srv.URL,"http://");return original.RoundTrip(req)});e:=NewEngine();report,err:=e.crawl(context.Background(),"https://example.org/",8,client,0);if err!=nil{t.Fatal(err)};if report.Indexed!=2||hits["/private"]!=0{t.Fatalf("%+v hits=%v",report,hits)};r,_:=e.Search("networking");if len(r.Sources)!=2{t.Fatalf("%+v",r)};r,_=e.Search("excluded");if len(r.Sources)!=0{t.Fatal("noindex ignored")};data,_:=json.Marshal(r);if strings.Contains(string(data),"swypik.internal"){t.Fatal("synthetic URL")}
 }
-
-func TestSearch(t *testing.T) {
-	e := NewEngine()
-	res, err := e.Search("golang systems architecture")
-
-	if err != nil {
-		t.Fatalf("Unexpected search error: %v", err)
-	}
-
-	if res.Query != "golang systems architecture" {
-		t.Errorf("Unexpected query in result: %s", res.Query)
-	}
-
-	if len(res.Sources) == 0 {
-		t.Errorf("Expected sources to be returned")
-	}
-}
+type roundTripFunc func(*http.Request)(*http.Response,error)
+func(f roundTripFunc)RoundTrip(r *http.Request)(*http.Response,error){return f(r)}
+func TestCrawlerRobotsFailureClosed(t *testing.T){e:=NewEngine();client:=&http.Client{Transport:roundTripFunc(func(r *http.Request)(*http.Response,error){return &http.Response{StatusCode:503,Body:http.NoBody,Header:http.Header{},Request:r},nil})};_,err:=e.crawl(context.Background(),"https://example.org/",1,client,0);if err==nil{t.Fatal("robots failure did not stop crawl")}}
+func TestExtractionNoScript(t *testing.T){title,text,_,noindex,_,err:=extract(`<title>Good</title><script>secret <tag></script><p>visible</p><meta name="robots" content="noindex">`);if err!=nil||title!="Good"||strings.Contains(text,"secret")||!noindex{t.Fatalf("%q %q %v %v",title,text,noindex,err)}}

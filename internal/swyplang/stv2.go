@@ -35,9 +35,21 @@ func (m *STV2Module) Run(args []int64, fuel int) (vm.Result, error) {
 	if len(args) != m.arguments {
 		return vm.Result{}, fmt.Errorf("STV2 expects %d arguments, got %d", m.arguments, len(args))
 	}
+	if err := checkSTV2Metadata(m.arguments, m.resultType); err != nil {
+		return vm.Result{}, err
+	}
 	var initial [8]int64
 	copy(initial[:], args)
-	return vm.RunV2Exact(m.code, initial, fuel)
+	r, err := vm.RunV2Exact(m.code, initial, fuel)
+	if err != nil {
+		return vm.Result{}, err
+	}
+	// Serialized metadata is a contract, not proof of source-level type checking.
+	// Do not silently coerce an arbitrary integer from a loaded module to bool.
+	if m.resultType == "bool" && r.Value != 0 && r.Value != 1 {
+		return vm.Result{}, fmt.Errorf("SWYPB: boolean result must be 0 or 1")
+	}
+	return r, nil
 }
 
 type stv2CompileError struct{ err error }

@@ -31,13 +31,30 @@ jobs:
       - name: Static analysis
         run: go vet ./...
       - name: Race detector
-        run: go test -race -count=1 -timeout=180s ./experiments/ternaryvm ./internal/swyplang ./cmd/swyp-stv2
+        run: go test -race -count=1 -timeout=180s ./experiments/ternaryvm ./internal/swyplang ./cmd/swyp-stv2 ./cmd/swyp
       - name: Decoder fuzzing
         run: go test ./experiments/ternaryvm -run '^$' -fuzz '^FuzzSTV2DecodeAudit$' -fuzztime=10s -parallel=2
       - name: Assembler fuzzing
         run: go test ./experiments/ternaryvm -run '^$' -fuzz '^FuzzSTV2AssemblyAudit$' -fuzztime=10s -parallel=2
       - name: Compiler fuzzing
         run: go test ./internal/swyplang -run '^$' -fuzz '^FuzzSTV2CompilerAudit$' -fuzztime=10s -parallel=2
+      - name: Module contract tests
+        run: go test -v -count=1 -run '^TestSWYPB' ./internal/swyplang ./cmd/swyp
+      - name: Module loader fuzzing
+        run: go test ./internal/swyplang -run '^$' -fuzz '^FuzzSWYPBLoad$' -fuzztime=10s -parallel=2
+      - name: Source-free module execution
+        run: |
+          work="$(mktemp -d)"
+          trap 'rm -rf "$work"' EXIT
+          go build -o "$work/swyp" ./cmd/swyp
+          cp examples/swyp/sum.stv2.swyp "$work/source.swyp"
+          "$work/swyp" compile --target stv2 -o "$work/sum.swypb" "$work/source.swyp"
+          rm "$work/source.swyp"
+          result="$(PATH="$work" "$work/swyp" exec "$work/sum.swypb" 100)"
+          printf '%s\n' "$result"
+          printf '%s\n' "$result" | python3 -c 'import json,sys; r=json.load(sys.stdin); assert r["format"]=="SWYPB" and r["value"]==5050 and r["module_bytes"]==157'
+          GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -o "$work/swyp.exe" ./cmd/swyp
+          GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -o "$work/swyp-arm64" ./cmd/swyp
       - name: End-to-end example
         run: go run ./cmd/swyp-stv2 examples/swyp/sum.stv2.swyp 100
       - name: Benchmark (diagnostic, not a release gate)

@@ -1,5 +1,23 @@
 # Swyp Lang
 
+## Compiled Swyp modules (experimental)
+
+Swyp source stays `.swyp`. The main `swyp` executable can now compile the existing
+safe-integer subset to a self-describing `.swypb` file and run it in another
+process without the original source, a Go toolchain, GCC, or an AI service:
+
+```sh
+swyp compile --target stv2 -o sum.swypb examples/swyp/sum.stv2.swyp
+swyp exec sum.swypb 100
+```
+
+The second command returns JSON with `value: 5050`. Build the updated tool once
+with `go build -o swyp ./cmd/swyp` (Windows: `swyp.exe`); that build is a developer
+step, not how Swyp programs are written. Compile does not execute the program.
+Output files must be new. See [module format and limits](docs/SWYPB_FORMAT.md).
+This is bytecode for the Swyp VM, not a standalone native application or a new
+language. The source subset and existing backends are unchanged.
+
 Version 0.5 adds counterexample refinement to **program synthesis without an LLM**. Given numeric
 input/output examples, `synth` searches arithmetic expressions and saves a new
 type-checked program. It matches examples; it does not prove general correctness.

@@ -38,12 +38,15 @@ func execute(args []string) error {
 	if len(args) > 0 && args[0] == "draft" {
 		return draftCommand(args[1:])
 	}
+	if len(args) > 0 && args[0] == "ternary" {
+		return ternaryCommand(args[1:])
+	}
 	if len(args) == 1 && args[0] == "version" {
-		fmt.Println("Swyp Lang 0.5.0-experimental (non-LLM refinement, operation graphs, Nexus worker)")
+		fmt.Println("Swyp Lang 0.5.0-experimental (non-LLM refinement, operation graphs, Nexus worker, STV2 ternary VM)")
 		return nil
 	}
 	if len(args) < 2 || (args[0] != "run" && args[0] != "check" && args[0] != "build" && args[0] != "emit-c" && args[0] != "web") {
-		return fmt.Errorf("usage: swyp worker < spec.json | synth -o new.swyp spec.json | run [-steps N] file.swyp [numbers] | check file.swyp | build -o app.exe file.swyp | web -o app.html file.swyp | emit-c file.swyp | draft -prompt task.txt -o new.swyp | expand/repair -o new.swyp [-response fixture] input.swyp | version")
+		return fmt.Errorf("usage: swyp worker < spec.json | synth -o new.swyp spec.json | run [-steps N] file.swyp [numbers] | check file.swyp | build -o app.exe file.swyp | web -o app.html file.swyp | emit-c file.swyp | ternary [-steps N] file.tasm [initial-r0] | draft -prompt task.txt -o new.swyp | expand/repair -o new.swyp [-response fixture] input.swyp | version")
 	}
 	flags := flag.NewFlagSet(args[0], flag.ContinueOnError)
 	steps := flags.Int("steps", 1_000_000, "interpreter evaluation budget")

@@ -1,0 +1,64 @@
+name: Verify SwypikOS
+
+on:
+  push:
+    branches: [main, improvement/agentic-network-audit]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  source-snapshot:
+    name: Auditable source snapshot
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Archive tracked source only
+        run: git archive --format=zip HEAD -o source.zip
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: audited-source-${{ github.sha }}
+          path: source.zip
+          retention-days: 1
+          if-no-files-found: error
+  windows:
+    name: Windows tests and build
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version: stable
+          cache: false
+      - name: Record toolchain
+        run: |
+          go version
+          node --version
+      - name: Go unit tests
+        run: go test -count=1 -timeout=5m ./...
+      - name: Go static checks
+        run: go vet ./...
+      - name: Race detector
+        run: go test -race -count=1 -timeout=5m ./...
+      - name: JavaScript checks
+        shell: pwsh
+        run: |
+          node --check ui/web/desktop.js
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node --check ui/web/native.js
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node --test ui/web/desktop.test.cjs desktop/policy.test.cjs desktop/host.test.cjs desktop/connectors.test.cjs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Build Windows shell
+        run: go build -trimpath -o bin/swypik-os.exe ./cmd/swypik-os

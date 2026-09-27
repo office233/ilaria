@@ -1,0 +1,28 @@
+{
+  "status": "Training, export verification and Go evaluation complete; not promoted due to regressions",
+  "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+  "steps": 200,
+  "training_loop_seconds": 327.5090130560002,
+  "peak_allocated_gpu_gb": 11.49031936,
+  "validation_loss_before": 0.3048250519783443,
+  "validation_loss_after": 0.1449691960034421,
+  "weights_sha256": "13daee41cfedc30e04e75b9c5828a5cc2b4483f6a34012cac35aef22ff53368a",
+  "metadata_sha256": "1b9843e1bd0bdc4cc12b766eae80fb05a005ab21184f0285bd0279be6ba828a8",
+  "checkpoint_sha256": "2b0b6c0eb281bbb113f78837dd78dd95f016d60ef4d7667c8221db874d243450",
+  "project_evaluation_max_tokens": 256,
+  "previous_regression_max_tokens": 128,
+  "current_regression_max_tokens": 256,
+  "regression_comparison_note": "Token ceiling increased; inspect outputs and disclose this difference.",
+  "scores": {
+    "v5_project": 6,
+    "v6_project": 10,
+    "project_total": 16,
+    "v5_english_regression": 57,
+    "v6_english_regression": 54,
+    "regression_total": 58
+  },
+  "code_pass": 3,
+  "code_total": 4,
+  "false_calls": 1,
+  "no_tool_cases": 39
+}

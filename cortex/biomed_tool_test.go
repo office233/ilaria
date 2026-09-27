@@ -149,7 +149,7 @@ func TestBiomedTool_ExecuteReportsSourcesInTheQuestionLanguage(t *testing.T) {
 }
 
 func TestOrganism_RegistersBiomedToolOnlyWhenEnabled(t *testing.T) {
-	cfg := DefaultConfig()
+	cfg := organismTestConfig(t)
 	cfg.BiomedEnabled = false
 	off := NewOrganism(cfg, rand.New(rand.NewSource(1)))
 	for _, n := range off.Reasoning.ToolNames() {

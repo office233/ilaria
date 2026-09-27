@@ -205,14 +205,14 @@ func NewOrganism(cfg Config, rng *rand.Rand) *Organism {
 		SleepConsolidator: NewSleepConsolidator(cfg),
 		Reasoning:         NewReasoningEngine(),
 
-		// FractalCortex: Infinite growing MoC ALBERT layers
-		FractalCortex: NewFractalCortex(cfg, engine),
-
 		Sensory: NewSensorySystem(encoder, cfg),
 		Motor:   NewMotorSystem(cfg),
 		Rhythm:  NewRhythmEngine(cfg),
 
 		Rng: rng,
+	}
+	if !cfg.DisableFractalCortex {
+		org.FractalCortex = NewFractalCortex(cfg, engine)
 	}
 
 	// Wire the pluggable Tool registry into Reasoning. Order matters —

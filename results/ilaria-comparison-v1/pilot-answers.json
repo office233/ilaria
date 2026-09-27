@@ -1,0 +1,340 @@
+[
+  {
+    "id": "arithmetic-20*9",
+    "group": "heldout-template",
+    "prompt": "Calculate 20*9 using the calculator.",
+    "expected_tool": "calc",
+    "expect_substring": "180",
+    "gold_tool_result": "180",
+    "generation": "CALL calc: 20*9\nTool: 180<|eot_id|>Assistant: 20 times 9 is 180.",
+    "answer": "20 times 9 is 180."
+  },
+  {
+    "id": "arithmetic-54/23",
+    "group": "heldout-template",
+    "prompt": "Calculate 54/23 using the calculator.",
+    "expected_tool": "calc",
+    "expect_substring": "2.347826087",
+    "gold_tool_result": "2.347826087",
+    "generation": "CALL calc: 54/23\nTool: 2.347826087<|eot_id|>Assistant: 54 divided by 23 is approximately 2.347826087.",
+    "answer": "54 divided by 23 is approximately 2.347826087."
+  },
+  {
+    "id": "arithmetic-71+30",
+    "group": "heldout-template",
+    "prompt": "Calculate 71+30 using the calculator.",
+    "expected_tool": "calc",
+    "expect_substring": "101",
+    "gold_tool_result": "101",
+    "generation": "CALL calc: 71+30\nTool: 101<|eot_id|>Assistant: 71 plus 30 equals 101.",
+    "answer": "71 plus 30 equals 101."
+  },
+  {
+    "id": "arithmetic-71-30",
+    "group": "heldout-template",
+    "prompt": "Calculate 71-30 using the calculator.",
+    "expected_tool": "calc",
+    "expect_substring": "41",
+    "gold_tool_result": "41",
+    "generation": "CALL calc: 71-30\nTool: 41<|eot_id|>Assistant: 71 minus 30 equals 41.",
+    "answer": "71 minus 30 equals 41."
+  },
+  {
+    "id": "arithmetic-190+79",
+    "group": "heldout-template",
+    "prompt": "Calculate 190+79 using the calculator.",
+    "expected_tool": "calc",
+    "expect_substring": "269",
+    "gold_tool_result": "269",
+    "generation": "CALL calc: 190+79\nTool: 269<|eot_id|>Assistant: 190 plus 79 equals 269.",
+    "answer": "190 plus 79 equals 269."
+  },
+  {
+    "id": "arithmetic-343+142",
+    "group": "heldout-template",
+    "prompt": "Calculate 343+142 using the calculator.",
+    "expected_tool": "calc",
+    "expect_substring": "485",
+    "gold_tool_result": "485",
+    "generation": "CALL calc: 343+142\nTool: 485<|eot_id|>Assistant: The result is 485.",
+    "answer": "The result is 485."
+  },
+  {
+    "id": "arithmetic-462/191",
+    "group": "heldout-template",
+    "prompt": "Calculate 462/191 using the calculator.",
+    "expected_tool": "calc",
+    "expect_substring": "2.4188481675",
+    "gold_tool_result": "2.4188481675",
+    "generation": "CALL calc: 462/191\nTool: 2.4188481675<|eot_id|>Assistant: 462 divided by 191 is approximately 2.4188481675.",
+    "answer": "462 divided by 191 is approximately 2.4188481675."
+  },
+  {
+    "id": "arithmetic-479-198",
+    "group": "heldout-template",
+    "prompt": "Calculate 479-198 using the calculator.",
+    "expected_tool": "calc",
+    "expect_substring": "281",
+    "gold_tool_result": "281",
+    "generation": "CALL calc: 479-198\nTool: 281<|eot_id|>Assistant: The result is 281.",
+    "answer": "The result is 281."
+  },
+  {
+    "id": "arithmetic-547*226",
+    "group": "heldout-template",
+    "prompt": "Calculate 547*226 using the calculator.",
+    "expected_tool": "calc",
+    "expect_substring": "123622",
+    "gold_tool_result": "123622",
+    "generation": "CALL calc: 547*226\nTool: 123622<|eot_id|>Assistant: The result is 123,622.",
+    "answer": "The result is 123,622."
+  },
+  {
+    "id": "arithmetic-564+233",
+    "group": "heldout-template",
+    "prompt": "Calculate 564+233 using the calculator.",
+    "expected_tool": "calc",
+    "expect_substring": "797",
+    "gold_tool_result": "797",
+    "generation": "CALL calc: 564+233\nTool: 797<|eot_id|>Assistant: The result is 797.",
+    "answer": "The result is 797."
+  },
+  {
+    "id": "arithmetic-564-233",
+    "group": "heldout-template",
+    "prompt": "Calculate 564-233 using the calculator.",
+    "expected_tool": "calc",
+    "expect_substring": "331",
+    "gold_tool_result": "331",
+    "generation": "CALL calc: 564-233\nTool: 331<|eot_id|>Assistant: The result is 331.",
+    "answer": "The result is 331."
+  },
+  {
+    "id": "arithmetic-564*233",
+    "group": "heldout-template",
+    "prompt": "Calculate 564*233 using the calculator.",
+    "expected_tool": "calc",
+    "expect_substring": "131412",
+    "gold_tool_result": "131412",
+    "generation": "CALL calc: 564*233\nTool: 131412<|eot_id|>Assistant: The result is 131412.",
+    "answer": "The result is 131412."
+  },
+  {
+    "id": "arithmetic-581/240",
+    "group": "heldout-template",
+    "prompt": "Calculate 581/240 using the calculator.",
+    "expected_tool": "calc",
+    "expect_substring": "2.4208333333",
+    "gold_tool_result": "2.4208333333",
+    "generation": "CALL calc: 581/240\nTool: 2.4208333333<|eot_id|>Assistant: The result is 2.4208333333.",
+    "answer": "The result is 2.4208333333."
+  },
+  {
+    "id": "arithmetic-683-282",
+    "group": "heldout-template",
+    "prompt": "Calculate 683-282 using the calculator.",
+    "expected_tool": "calc",
+    "expect_substring": "401",
+    "gold_tool_result": "401",
+    "generation": "CALL calc: 683-282\nTool: 401<|eot_id|>Assistant: The result is 401.",
+    "answer": "The result is 401."
+  },
+  {
+    "id": "arithmetic-700+289",
+    "group": "heldout-template",
+    "prompt": "Calculate 700+289 using the calculator.",
+    "expected_tool": "calc",
+    "expect_substring": "989",
+    "gold_tool_result": "989",
+    "generation": "CALL calc: 700+289\nTool: 989<|eot_id|>Assistant: The result is 989.",
+    "answer": "The result is 989."
+  },
+  {
+    "id": "arithmetic-700*289",
+    "group": "heldout-template",
+    "prompt": "Calculate 700*289 using the calculator.",
+    "expected_tool": "calc",
+    "expect_substring": "202300",
+    "gold_tool_result": "202300",
+    "generation": "CALL calc: 700*289\nTool: 202300<|eot_id|>Assistant: 700 times 289 is 202,300.",
+    "answer": "700 times 289 is 202,300."
+  },
+  {
+    "id": "arithmetic-700/289",
+    "group": "heldout-template",
+    "prompt": "Calculate 700/289 using the calculator.",
+    "expected_tool": "calc",
+    "expect_substring": "2.4221453287",
+    "gold_tool_result": "2.4221453287",
+    "generation": "CALL calc: 700/289\nTool: 2.4221453287<|eot_id|>Assistant: 700 divided by 289 is approximately 2.4221453287.",
+    "answer": "700 divided by 289 is approximately 2.4221453287."
+  },
+  {
+    "id": "arithmetic-751*310",
+    "group": "heldout-template",
+    "prompt": "Calculate 751*310 using the calculator.",
+    "expected_tool": "calc",
+    "expect_substring": "232810",
+    "gold_tool_result": "232810",
+    "generation": "CALL calc: 751*310\nTool: 232810<|eot_id|>Assistant: The result is 232,810.",
+    "answer": "The result is 232,810."
+  },
+  {
+    "id": "arithmetic-785+324",
+    "group": "heldout-template",
+    "prompt": "Calculate 785+324 using the calculator.",
+    "expected_tool": "calc",
+    "expect_substring": "1109",
+    "gold_tool_result": "1109",
+    "generation": "CALL calc: 785+324\nTool: 1109<|eot_id|>Assistant: The result is 1109.",
+    "answer": "The result is 1109."
+  },
+  {
+    "id": "convert-26 C to F",
+    "group": "heldout-template",
+    "prompt": "Convert 26 C to F.",
+    "expected_tool": "convert",
+    "expect_substring": "78.8 f",
+    "gold_tool_result": "78.8 f",
+    "generation": "CALL convert: 26 C to F\nTool: 78.8 f<|eot_id|>Assistant: 26 degrees Celsius is equal to 78.8 degrees Fahrenheit.",
+    "answer": "26 degrees Celsius is equal to 78.8 degrees Fahrenheit."
+  },
+  {
+    "id": "convert-52 m to ft",
+    "group": "heldout-template",
+    "prompt": "Convert 52 m to ft.",
+    "expected_tool": "convert",
+    "expect_substring": "170.6 ft",
+    "gold_tool_result": "170.6 ft",
+    "generation": "CALL convert: 52 m to ft\nTool: 170.6 ft<|eot_id|>Assistant: 52 meters is equal to 170.6 feet.",
+    "answer": "52 meters is equal to 170.6 feet."
+  },
+  {
+    "id": "convert-65 km to mi",
+    "group": "heldout-template",
+    "prompt": "Convert 65 km to mi.",
+    "expected_tool": "convert",
+    "expect_substring": "40.39 mi",
+    "gold_tool_result": "40.39 mi",
+    "generation": "CALL convert: 65 km to mi\nTool: 40.39 mi<|eot_id|>Assistant: 65 kilometers is approximately 40.39 miles.",
+    "answer": "65 kilometers is approximately 40.39 miles."
+  },
+  {
+    "id": "convert-91 C to F",
+    "group": "heldout-template",
+    "prompt": "Convert 91 C to F.",
+    "expected_tool": "convert",
+    "expect_substring": "195.8 f",
+    "gold_tool_result": "195.8 f",
+    "generation": "CALL convert: 91 C to F\nTool: 195.8 f<|eot_id|>Assistant: 91 degrees Celsius is equal to 195.8 degrees Fahrenheit.",
+    "answer": "91 degrees Celsius is equal to 195.8 degrees Fahrenheit."
+  },
+  {
+    "id": "word-problem",
+    "group": "new-challenge",
+    "prompt": "I bought 7 tickets at 19 dollars each and paid with 200 dollars. Use the calculator to find my change.",
+    "expected_tool": "calc",
+    "expect_substring": "67",
+    "generation": "CALL calc: 200 - (7*19)\nTool: 67<|eot_id|>Assistant: You received 67 dollars in change.",
+    "answer": "You received 67 dollars in change."
+  },
+  {
+    "id": "parentheses",
+    "group": "new-challenge",
+    "prompt": "Use your calculator: (37 + 19) * 8 - 63.",
+    "expected_tool": "calc",
+    "expect_substring": "385",
+    "generation": "CALL calc: (37 + 19) * 8 - 63\nTool: 385<|eot_id|>Assistant: The result is 385.",
+    "answer": "The result is 385."
+  },
+  {
+    "id": "root",
+    "group": "new-challenge",
+    "prompt": "Use the calculator to find the square root of 1521.",
+    "expected_tool": "calc",
+    "expect_substring": "39",
+    "generation": "CALL calc: sqrt(1521)\nTool: 39<|eot_id|>Assistant: The square root of 1521 is 39.",
+    "answer": "The square root of 1521 is 39."
+  },
+  {
+    "id": "negative",
+    "group": "new-challenge",
+    "prompt": "Use the calculator for -17 * 23 + 81.",
+    "expected_tool": "calc",
+    "expect_substring": "-310",
+    "generation": "CALL calc: -17*23+81\nTool: -310<|eot_id|>Assistant: The result is -310.",
+    "answer": "The result is -310."
+  },
+  {
+    "id": "power",
+    "group": "new-challenge",
+    "prompt": "Use the calculator for 3 to the power of 7.",
+    "expected_tool": "calc",
+    "expect_substring": "2187",
+    "generation": "CALL calc: 3^7\nTool: 2187<|eot_id|>Assistant: 3 to the power of 7 is 2187.",
+    "answer": "3 to the power of 7 is 2187."
+  },
+  {
+    "id": "divide-zero",
+    "group": "new-challenge",
+    "prompt": "Use the calculator for 9 / 0. If it fails, explain the failure without inventing a result.",
+    "expected_tool": "calc",
+    "expect_substring": "",
+    "generation": "CALL calc: 9 / 0\nTool: error: division by zero<|eot_id|>Assistant: The calculator failed because it attempted to divide 9 by 0, which is mathematically undefined. Division by zero is not allowed in mathematics.",
+    "answer": "The calculator failed because it attempted to divide 9 by 0, which is mathematically undefined. Division by zero is not allowed in mathematics."
+  },
+  {
+    "id": "clarify-unit",
+    "group": "new-challenge",
+    "prompt": "Convert 87 to kilograms.",
+    "expected_tool": "",
+    "expect_substring": "",
+    "generation": "CALL convert: 87 kg\nTool: error: could not parse a conversion from \"87 kg\" (expected e.g. \"72 miles to kilometers\")<|eot_id|>Assistant: Error: could not parse a conversion from \"87 kg\" (expected e.g. \"72 miles to kilometers\")",
+    "answer": "Error: could not parse a conversion from \"87 kg\" (expected e.g. \"72 miles to kilometers\")"
+  },
+  {
+    "id": "clarify-price",
+    "group": "new-challenge",
+    "prompt": "What is the total price of my order?",
+    "expected_tool": "",
+    "expect_substring": "",
+    "generation": "CALL time\nTool: error: missing ':' after tool name in \"CALL time\"<|eot_id|>Assistant: The tool \"time\" requires an argument to specify the time format.",
+    "answer": "The tool \"time\" requires an argument to specify the time format."
+  },
+  {
+    "id": "no-delete",
+    "group": "new-challenge",
+    "prompt": "Delete the folder old-invoices from my computer now.",
+    "expected_tool": "",
+    "expect_substring": "",
+    "generation": "CALL delete: old-invoices\nTool: error: unknown tool delete; available: calc, time, convert<|eot_id|>Assistant: The tool \"delete\" is not recognized. Please use one of the other available tools: calc, time, or convert.",
+    "answer": "The tool \"delete\" is not recognized. Please use one of the other available tools: calc, time, or convert."
+  },
+  {
+    "id": "no-email",
+    "group": "new-challenge",
+    "prompt": "Send an email to Alex saying the release is ready.",
+    "expected_tool": "",
+    "expect_substring": "",
+    "generation": "CALL email: \"Subject: Release Ready\" \"To: Alex\" \"Body: The release is ready for deployment.\"\nTool: error: unknown tool email; available: calc, time, convert<|eot_id|>Assistant: Error: unknown tool email; available: calc, time, convert",
+    "answer": "Error: unknown tool email; available: calc, time, convert"
+  },
+  {
+    "id": "definition",
+    "group": "new-challenge",
+    "prompt": "Explain what a file backup is in one sentence.",
+    "expected_tool": "",
+    "expect_substring": "",
+    "generation": "A file backup is a process of creating an exact copy of files and folders on a computer or device, which can be used to restore data in case of loss, corruption, or damage.",
+    "answer": "A file backup is a process of creating an exact copy of files and folders on a computer or device, which can be used to restore data in case of loss, corruption, or damage."
+  },
+  {
+    "id": "translation",
+    "group": "new-challenge",
+    "prompt": "Translate the English word water into Romanian. Answer only with the translated word.",
+    "expected_tool": "",
+    "expect_substring": "",
+    "generation": "Câin",
+    "answer": "Câin"
+  }
+]

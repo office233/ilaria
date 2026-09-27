@@ -105,6 +105,7 @@ func main() {
 	towerPath := flag.String("tower", "", "Path to a Whisper encoder NXTF v3 checkpoint (required, forge/multimodal/export_whisper_tower.py)")
 	wavPath := flag.String("wav", "", "Path to a 16-bit PCM or 32-bit float WAV file (required)")
 	adapterPrefix := flag.String("adapter", "", "Prefix of a projector export (PREFIX.safetensors/.json); if omitted, stops after the tower forward + stack_frames step and prints the stacked token count")
+	loraPrefix := flag.String("lora", "", "LoRA export prefix for the BitNet decoder")
 	modelPath := flag.String("model", "", "Path to a BitNet NXTF v3 checkpoint (required if -adapter is set)")
 	tokenizerPath := flag.String("tokenizer", "", "Path to an HF tokenizer.json (required if -adapter is set)")
 	prompt := flag.String("prompt", "Transcribe the audio.", "Instruction (the <audio> marker is added automatically)")
@@ -211,6 +212,12 @@ func main() {
 	model, err := cortex.LoadBitNetModel(*modelPath)
 	if err != nil {
 		fail("model", err)
+	}
+	if *loraPrefix != "" {
+		if err := cortex.LoadBitNetLoRA(model, *loraPrefix); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
 	}
 	fmt.Fprintf(os.Stderr, "[ilaria-hear] loaded BitNet %s in %.2fs (vocab=%d layers=%d embed=%d)\n",
 		*modelPath, time.Since(loadStart).Seconds(), model.Cfg.VocabSize, model.Cfg.NumLayers, model.Cfg.EmbedDim)

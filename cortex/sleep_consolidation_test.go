@@ -8,7 +8,7 @@ import (
 // helper: build a minimal organism wired enough for sleep consolidation.
 func newConsolidationTestOrg(t *testing.T) *Organism {
 	t.Helper()
-	cfg := DefaultConfig()
+	cfg := organismTestConfig(t)
 	cfg.DataDir = t.TempDir()
 	cfg.SleepReplayCount = 5
 	cfg.SleepInterleaveRatio = 2

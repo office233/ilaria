@@ -139,8 +139,9 @@ func bitnetParallelFor(n int, fn func(start, end int)) {
 // Forward/ForwardBatch (maxAbs(x)/127, matching ActQuant above).
 type BitLinear struct {
 	In, Out int
-	Tiles   []TernaryTile // len = Out * ceil(In/16)
-	Scale   float32       // per-tensor absmean weight scale ("weight_scale")
+	Tiles   []TernaryTile  // len = Out * ceil(In/16)
+	Scale   float32        // per-tensor absmean weight scale ("weight_scale")
+	lora    *bitLinearLoRA // immutable after loading, before decoder construction
 
 	// gpu, when non-nil, serves ForwardBatch from a resident GPU backend
 	// (see bitnet_backend.go / bitnet_gpu.go, build tag `gpu`) instead of
@@ -405,6 +406,7 @@ func (l *BitLinear) Forward(x []float32) []float32 {
 		acc := dotTernaryInt8(row, qx)
 		out[j] = float32(acc) * factor
 	}
+	l.addLoRA(x, out)
 	return out
 }
 
@@ -426,7 +428,11 @@ func (l *BitLinear) Forward(x []float32) []float32 {
 // only iteration order/parallelism changes, not the arithmetic.
 func (l *BitLinear) ForwardBatch(x [][]float32) [][]float32 {
 	if l.gpu != nil { // GPU HOOK — see bitnet_backend.go / bitnet_gpu.go
-		return l.gpu.forward(x)
+		out := l.gpu.forward(x)
+		for i := range x {
+			l.addLoRA(x[i], out[i])
+		}
+		return out
 	}
 	T := len(x)
 	out := make([][]float32, T)
@@ -452,6 +458,9 @@ func (l *BitLinear) ForwardBatch(x [][]float32) [][]float32 {
 	bitnetParallelFor(l.Out, func(start, end int) {
 		bitLinearForwardRows(tiles, tpr, start, end, qxs, xScales, scale, out)
 	})
+	for i := range x {
+		l.addLoRA(x[i], out[i])
+	}
 	return out
 }
 

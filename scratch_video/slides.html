@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>YC Founder Pitch Slides</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+    body { width: 1920px; height: 1080px; background: #090a0f; color: #fff; overflow: hidden; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; }
+    .slide { display: none; width: 1920px; height: 1080px; padding: 80px 120px; position: absolute; top: 0; left: 0; flex-direction: column; justify-content: space-between; }
+    .active { display: flex; }
+    
+    .badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 9999px; background: rgba(255, 102, 0, 0.15); border: 1px solid rgba(255, 102, 0, 0.4); color: #ff6600; font-size: 20px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; width: fit-content; }
+    .title { font-size: 64px; font-weight: 800; line-height: 1.1; margin-top: 20px; background: linear-gradient(135deg, #ffffff 0%, #a5b4fc 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .subtitle { font-size: 28px; color: #94a3b8; margin-top: 15px; max-width: 1400px; line-height: 1.4; }
+    
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; margin-top: 40px; }
+    .card { background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; padding: 35px; backdrop-filter: blur(10px); }
+    .card h3 { font-size: 28px; font-weight: 700; color: #38bdf8; margin-bottom: 15px; }
+    .card p { font-size: 20px; color: #cbd5e1; line-height: 1.5; }
+    .metric { font-size: 48px; font-weight: 800; color: #f59e0b; margin-top: 15px; }
+    
+    .footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 30px; }
+    .founder-info { font-size: 24px; color: #e2e8f0; font-weight: 600; }
+    .yc-tag { color: #ff6600; font-weight: 700; font-size: 24px; display: flex; align-items: center; gap: 10px; }
+    .yc-box { background: #ff6600; color: #fff; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-weight: 900; border-radius: 6px; }
+  </style>
+</head>
+<body>
+
+  <!-- Slide 1: Introduction -->
+  <div class="slide" id="slide1">
+    <div>
+      <div class="badge">Founder Presentation • Y Combinator W27</div>
+      <h1 class="title">Swypik & Ilaria Ecosystem</h1>
+      <p class="subtitle">An autonomous AI-powered commerce and enterprise operating system built by solo technical founder Abel Varga.</p>
+    </div>
+    <div class="grid">
+      <div class="card">
+        <h3>1. Swypik Platform</h3>
+        <p>Vertical video-native shopping and short-series streaming (Swypik Movies). Live at next.swypik.com.</p>
+        <div class="metric">14,000+ Items</div>
+      </div>
+      <div class="card">
+        <h3>2. Multi-ERP Engine</h3>
+        <p>High-concurrency Go 1.26 + React 19 ERP with automated government tax compliance (ANAF e-Factura/SPV).</p>
+        <div class="metric">Go Monolith</div>
+      </div>
+      <div class="card">
+        <h3>3. Ilaria / NexusCortex</h3>
+        <p>Proprietary neuro-symbolic AI brain using Sparse Distributed Representations (SDR) and custom CUDA kernels.</p>
+        <div class="metric">&lt; 10ms Recall</div>
+      </div>
+    </div>
+    <div class="footer">
+      <div class="founder-info">Abel Varga — Founder & CTO • Bucharest, Romania</div>
+      <div class="yc-tag"><span class="yc-box">Y</span> Winter 2027 Application</div>
+    </div>
+  </div>
+
+  <!-- Slide 2: Swypik Commerce -->
+  <div class="slide" id="slide2">
+    <div>
+      <div class="badge">Front-End Consumer Discovery</div>
+      <h1 class="title">Swypik: Video-First Commerce & Streaming</h1>
+      <p class="subtitle">Replacing boring catalog search with high-converting short creator videos and vertical series.</p>
+    </div>
+    <div class="grid">
+      <div class="card">
+        <h3>Video Feed & Creator Reels</h3>
+        <p>TikTok-Shop-style creator marketplace with in-feed checkout and real-time commission payouts.</p>
+        <div class="metric">4,700+ Videos</div>
+      </div>
+      <div class="card">
+        <h3>Swypik Movies & Music</h3>
+        <p>Vertical streaming micro-series with tokenized HLS DRM security and creator paywalls.</p>
+        <div class="metric">HLS Streaming</div>
+      </div>
+      <div class="card">
+        <h3>Production Stack</h3>
+        <p>Next.js 14 App Router, Go Platform API, PostgreSQL 16, Redis 7, Cloudflare R2, and Stripe payments.</p>
+        <div class="metric">Live in Prod</div>
+      </div>
+    </div>
+    <div class="footer">
+      <div class="founder-info">next.swypik.com • 7 Languages Supported</div>
+      <div class="yc-tag"><span class="yc-box">Y</span> Winter 2027</div>
+    </div>
+  </div>
+
+  <!-- Slide 3: Multi-ERP Engine -->
+  <div class="slide" id="slide3">
+    <div>
+      <div class="badge">Enterprise Back-End Operations</div>
+      <h1 class="title">Multi-ERP: Enterprise Operating System</h1>
+      <p class="subtitle">Automating Romanian and European fiscal compliance, warehouse logistics, and multi-tenant inventory.</p>
+    </div>
+    <div class="grid">
+      <div class="card">
+        <h3>ANAF e-Factura & SPV</h3>
+        <p>Zero third-party middleware: native asynchronous SOAP/XML pipeline with automated token validation.</p>
+        <div class="metric">100% Native</div>
+      </div>
+      <div class="card">
+        <h3>e-Transport & Logistics</h3>
+        <p>Automated real-time cargo tracking codes (UIT) and fleet dispatching directly connected to live orders.</p>
+        <div class="metric">Real-Time Sync</div>
+      </div>
+      <div class="card">
+        <h3>Go + React Architecture</h3>
+        <p>Extreme backend throughput in Go 1.26 with React 19 / TypeScript SPA, sqlc, and PostgreSQL row-level security.</p>
+        <div class="metric">High Concurrency</div>
+      </div>
+    </div>
+    <div class="footer">
+      <div class="founder-info">Multi-Tenant Romanian ERP • SAGA Database Integration</div>
+      <div class="yc-tag"><span class="yc-box">Y</span> Winter 2027</div>
+    </div>
+  </div>
+
+  <!-- Slide 4: NexusCortex & Ilaria AI -->
+  <div class="slide" id="slide4">
+    <div>
+      <div class="badge">DeepTech Core Cognitive AI</div>
+      <h1 class="title">NexusCortex & Ilaria: Sparse Cognitive Brain</h1>
+      <p class="subtitle">Biologically inspired cognitive architecture designed for ultra-fast multimodal inference.</p>
+    </div>
+    <div class="grid">
+      <div class="card">
+        <h3>Sparse Representations</h3>
+        <p>High-dimensional SDR vectors enabling associative memory and sub-second semantic retrieval without giant GPU clusters.</p>
+        <div class="metric">SDR Vectors</div>
+      </div>
+      <div class="card">
+        <h3>Custom CUDA Kernels</h3>
+        <p>Handcrafted C++ / CUDA kernels integrated with Go via DLL abstractions for extreme matrix throughput.</p>
+        <div class="metric">cuBLAS / CUDA</div>
+      </div>
+      <div class="card">
+        <h3>Supercomputing Grant</h3>
+        <p>Selected candidate for EuroHPC Fast Lane supercomputer allocation (H100 GPUs) & €5,000 Azure AI grant.</p>
+        <div class="metric">EuroHPC / H100</div>
+      </div>
+    </div>
+    <div class="footer">
+      <div class="founder-info">github.com/office233 • Proprietary AI Architecture</div>
+      <div class="yc-tag"><span class="yc-box">Y</span> Winter 2027</div>
+    </div>
+  </div>
+
+  <!-- Slide 5: The Ask & Traction -->
+  <div class="slide" id="slide5">
+    <div>
+      <div class="badge">Vision & Investment Ask</div>
+      <h1 class="title">Scaling with Y Combinator Winter 2027</h1>
+      <p class="subtitle">Bringing the autonomous commerce operating system to European and global markets.</p>
+    </div>
+    <div class="grid">
+      <div class="card">
+        <h3>Solo Technical Founder</h3>
+        <p>100% of the entire stack (Ilaria AI + Swypik Platform + Multi-ERP) designed and coded by Abel Varga.</p>
+        <div class="metric">Full Ownership</div>
+      </div>
+      <div class="card">
+        <h3>Capital Efficiency</h3>
+        <p>Bootstrapped to date with €15,000 personal capital + €5,000 Microsoft AI grant, operating at peak development speed.</p>
+        <div class="metric">Bootstrapped</div>
+      </div>
+      <div class="card">
+        <h3>The YC Partner</h3>
+        <p>Seeking $500,000 SAFE from Y Combinator to scale GPU clusters, expand EU merchant network, and set up US HQ in SF.</p>
+        <div class="metric">$500,000 W27</div>
+      </div>
+    </div>
+    <div class="footer">
+      <div class="founder-info">Abel Varga • Founder & CTO • THERAPIUM GROUP SRL</div>
+      <div class="yc-tag"><span class="yc-box">Y</span> Winter 2027 Application</div>
+    </div>
+  </div>
+
+  <script>
+    function showSlide(num) {
+      document.querySelectorAll('.slide').forEach(s => s.classList.remove('active'));
+      const target = document.getElementById('slide' + num);
+      if (target) target.classList.add('active');
+    }
+    const params = new URLSearchParams(window.location.search);
+    const s = params.get('slide') || 1;
+    showSlide(s);
+  </script>
+</body>
+</html>

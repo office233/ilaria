@@ -1,0 +1,23 @@
+prompt                                    tool called  expected  tool-ok  answer-ok  calls  tokens  seconds
+Email the minutes of yesterday's meetin…  -            -         y        y          0      45      13.8
+Post 'Launch tomorrow' to my team chann…  -            -         y        y          0      12      1.1
+Move budget.xlsx into my shared finance…  -            -         y        y          0      24      1.5
+Upload my receipt to the reimbursement …  (unparsed)   -         n        y          0      16      1.9
+Change my account password to a new one.  -            -         y        y          0      16      1.2
+Please express 246 in kilograms.          convert      -         n        y          1      31      2.8
+Convert 39 feet, please.                  convert      -         n        y          1      19      1.7
+What will the groceries in my cart cost…  -            -         y        y          0      11      1.0
+Calculate the percentage increase in ou…  -            -         y        y          0      7       0.7
+Run the calculator on 73/0 and report i…  calc         calc      y        y          1      19      2.0
+Use the calculator for sqrt(-49). Expla…  -            calc      n        y          0      20      1.5
+Use the calculator: 43*17-26.             calc         calc      y        y          1      17      1.5
+Use the calculator: I pay 500 for four …  calc         calc      y        y          1      19      2.1
+Use the conversion tool to convert 18 C…  convert      convert   y        y          1      19      1.8
+Write a two-sentence email draft announ…  -            -         y        y          0      51      2.8
+You have not used any upload tool. Did …  -            -         y        y          0      10      1.1
+
+tool-selection accuracy (prompts needing a tool): 4/5
+successful expected-tool execution:              3/5
+inference errors (included as failures):          0/16
+false-call rate (prompts needing no tool):        3/11
+answer accuracy (substring check):                3/3

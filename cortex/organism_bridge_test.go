@@ -26,7 +26,7 @@ func TestOrganism_EnsureBridgeNilWhenIncomplete(t *testing.T) {
 }
 
 func TestOrganism_CognitiveBiasReachesLiveRecall(t *testing.T) {
-	cfg := DefaultConfig()
+	cfg := organismTestConfig(t)
 	rng := rand.New(rand.NewSource(7))
 	org := NewOrganism(cfg, rng)
 
@@ -89,7 +89,7 @@ func TestOrganism_BridgeRebuildsOnTokenizerSwap(t *testing.T) {
 	// Loading a different checkpoint replaces the tokenizer. A stale
 	// bridge would then emit token IDs from the OLD vocabulary — silent
 	// corruption. Verify the bridge notices.
-	cfg := DefaultConfig()
+	cfg := organismTestConfig(t)
 	rng := rand.New(rand.NewSource(7))
 	org := NewOrganism(cfg, rng)
 

@@ -17,7 +17,7 @@ func TestOrganismSave_KeepsTransformerAsNXTF2BIN(t *testing.T) {
 	if err != nil {
 		t.Skipf("fixture missing (%v) — run: python forge/make_fixture.py", err)
 	}
-	org := NewOrganism(DefaultConfig(), rand.New(rand.NewSource(1)))
+	org := NewOrganism(organismTestConfig(t), rand.New(rand.NewSource(1)))
 	org.Transformer = m
 
 	dir := t.TempDir()

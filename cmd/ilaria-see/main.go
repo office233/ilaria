@@ -87,6 +87,7 @@ import (
 const imageMarker = "<image>"
 
 func main() {
+	loraPrefix := flag.String("lora", "", "LoRA export prefix for the BitNet decoder")
 	modelPath := flag.String("model", "", "Path to a BitNet NXTF v3 checkpoint (required)")
 	tokenizerPath := flag.String("tokenizer", "", "Path to an HF tokenizer.json (required)")
 	towerPath := flag.String("tower", "", "Path to a SigLIP2 vision tower NXTF v3 checkpoint (required, forge/multimodal/export_tower.py)")
@@ -128,6 +129,12 @@ func main() {
 	model, err := cortex.LoadBitNetModel(*modelPath)
 	if err != nil {
 		fail("model", err)
+	}
+	if *loraPrefix != "" {
+		if err := cortex.LoadBitNetLoRA(model, *loraPrefix); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
 	}
 	fmt.Fprintf(os.Stderr, "[ilaria-see] loaded BitNet %s in %.2fs (vocab=%d layers=%d embed=%d)\n",
 		*modelPath, time.Since(loadStart).Seconds(), model.Cfg.VocabSize, model.Cfg.NumLayers, model.Cfg.EmbedDim)

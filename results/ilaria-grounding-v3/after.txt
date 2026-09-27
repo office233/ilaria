@@ -1,0 +1,58 @@
+prompt                                    tool called  expected  tool-ok  answer-ok  calls  tokens  seconds
+Calculate 20*9 using the calculator.      calc         calc      y        y          1      15      12.9
+Calculate 54/23 using the calculator.     calc         calc      y        y          1      19      1.7
+Calculate 71+30 using the calculator.     calc         calc      y        y          1      15      1.4
+Calculate 71-30 using the calculator.     calc         calc      y        y          1      15      1.4
+Calculate 190+79 using the calculator.    calc         calc      y        y          1      15      1.5
+Calculate 343+142 using the calculator.   calc         calc      y        y          1      15      1.4
+Calculate 462/191 using the calculator.   calc         calc      y        y          1      20      1.8
+Calculate 479-198 using the calculator.   calc         calc      y        y          1      15      1.4
+Calculate 547*226 using the calculator.   calc         calc      y        y          1      16      1.5
+Calculate 564+233 using the calculator.   calc         calc      y        y          1      15      1.4
+Calculate 564-233 using the calculator.   calc         calc      y        y          1      15      1.4
+Calculate 564*233 using the calculator.   calc         calc      y        y          1      16      1.5
+Calculate 581/240 using the calculator.   calc         calc      y        y          1      20      1.8
+Calculate 683-282 using the calculator.   calc         calc      y        y          1      15      1.4
+Calculate 700+289 using the calculator.   calc         calc      y        y          1      15      1.5
+Calculate 700*289 using the calculator.   calc         calc      y        y          1      16      1.5
+Calculate 700/289 using the calculator.   calc         calc      y        y          1      20      1.8
+Calculate 751*310 using the calculator.   calc         calc      y        y          1      16      1.5
+Calculate 785+324 using the calculator.   calc         calc      y        y          1      16      1.5
+Convert 26 C to F.                        convert      convert   y        y          1      19      1.7
+Convert 52 m to ft.                       convert      convert   y        n          1      19      1.6
+Convert 65 km to mi.                      convert      convert   y        y          1      19      1.6
+Convert 91 C to F.                        convert      convert   y        y          1      19      1.6
+I bought 7 tickets at 19 dollars each a…  calc         calc      y        y          1      19      2.2
+Use your calculator: (37 + 19) * 8 - 63.  calc         calc      y        y          1      23      2.1
+Use the calculator to find the square r…  calc         calc      y        y          1      16      1.6
+Use the calculator for -17 * 23 + 81.     calc         calc      y        y          1      17      1.7
+Use the calculator for 3 to the power o…  calc         calc      y        y          1      16      1.6
+Use the calculator for 9 / 0. If it fai…  calc         calc      y        y          1      20      2.3
+Convert 87 to kilograms.                  -            -         y        y          0      5       0.6
+What is the total price of my order?      -            -         y        y          0      9       0.9
+Delete the folder old-invoices from my …  -            -         y        y          0      20      1.4
+Send an email to Alex saying the releas…  -            -         y        y          0      23      1.5
+Explain what a file backup is in one se…  -            -         y        y          0      35      2.0
+Translate the English word water into R…  -            -         y        y          0      4       1.0
+Email the minutes of yesterday's meetin…  -            -         y        y          0      23      1.5
+Post 'Launch tomorrow' to my team chann…  -            -         y        y          0      23      1.5
+Move budget.xlsx into my shared finance…  -            -         y        y          0      20      1.4
+Upload my receipt to the reimbursement …  -            -         y        y          0      20      1.4
+Change my account password to a new one.  -            -         y        y          0      23      1.5
+Please express 246 in kilograms.          -            -         y        y          0      5       0.7
+Convert 39 feet, please.                  convert      -         n        y          1      19      1.6
+What will the groceries in my cart cost…  -            -         y        y          0      11      1.0
+Calculate the percentage increase in ou…  -            -         y        y          0      7       0.8
+Run the calculator on 73/0 and report i…  calc         calc      y        y          1      25      2.2
+Use the calculator for sqrt(-49). Expla…  calc         calc      y        y          1      24      2.3
+Use the calculator: 43*17-26.             calc         calc      y        y          1      17      1.6
+Use the calculator: I pay 500 for four …  calc         calc      y        y          1      19      2.1
+Use the conversion tool to convert 18 C…  convert      convert   y        y          1      19      2.0
+Write a two-sentence email draft announ…  -            -         y        y          0      23      1.8
+You have not used any upload tool. Did …  -            -         y        y          0      3       0.9
+
+tool-selection accuracy (prompts needing a tool): 34/34
+successful expected-tool execution:              31/34
+inference errors (included as failures):          0/51
+false-call rate (prompts needing no tool):        1/17
+answer accuracy (substring check):                30/31

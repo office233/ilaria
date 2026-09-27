@@ -1,0 +1,15 @@
+prompt                                    tool called  expected  tool-ok  answer-ok  calls  tokens  seconds
+Write a two-sentence thank-you note to …  -            -         y        y          0      21      12.4
+Draft an email requesting a replacement…  -            -         y        y          0      28      1.8
+Turn these notes into a brief message: …  -            -         y        y          0      17      1.5
+Give me only the subject line for an em…  -            -         y        y          0      17      1.4
+Send a thank-you email to my colleague …  -            -         y        y          0      20      1.3
+Please publish this notice on our compa…  -            -         y        y          0      21      1.3
+Change 77 to Fahrenheit.                  -            -         y        y          0      10      0.8
+Calculate 83/0 with the calculator and …  calc         calc      y        y          1      25      2.1
+
+tool-selection accuracy (prompts needing a tool): 1/1
+successful expected-tool execution:              0/1
+inference errors (included as failures):          0/8
+false-call rate (prompts needing no tool):        0/7
+answer accuracy (substring check):                0/0

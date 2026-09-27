@@ -1,0 +1,37 @@
+- region "Cell 23 output":
+      - generic "Show/hide output":
+        - button "Show/hide output"
+      - generic "Code cell output actions":
+        - button "Code cell output actions"
+      - text: "{'train': {'en': 909}, 'validation': {'en': 221}} {\"train\": {\"en\": 909}, \"validation\": {\"en\": 221}} The tokenizer you are loading from '/content/models/04c3b9ad9361b824064a1f25ea60a8be9599b127' with an incorrect regex pattern:"
+      - link "https://huggingface.co/mistralai/Mistral-Small-3.1-24B-Instruct-2503/discussions/84#69121093e8b480e709447d5e":
+        - /url: https://huggingface.co/mistralai/Mistral-Small-3.1-24B-Instruct-2503/discussions/84#69121093e8b480e709447d5e
+      - text: ". This will lead to incorrect tokenization. You should set the `fix_mistral_regex=True` flag when loading this tokenizer to fix this issue. `torch_dtype` is deprecated! Use `dtype` instead! You have loaded a BitNet model on CPU and have a CUDA device available, make sure to set your model on a GPU device in order to run your model. Loading weights: 0%| | 0/542 [00:00<?, ?it/s] Loading weights: 42%|████▏ | 230/542 [00:00<00:00, 2295.24it/s] Loading weights: 100%|██████████| 542/542 [00:00<00:00, 2759.81it/s] [mm_model] unpacked 210 offline AutoBitLinear modules from /content/models/04c3b9ad9361b824064a1f25ea60a8be9599b127 {\"step\": 0, \"validation_assistant_loss\": {\"en\": 0.291499724260143}} {\"step\": 25, \"elapsed_seconds\": 37.952703091999865, \"seconds_per_step\": 1.5181081236799947, \"peak_gpu_gb\": 11.466203136} {\"step\": 50, \"elapsed_seconds\": 75.90955746300006, \"seconds_per_step\": 1.518191149260001, \"peak_gpu_gb\": 11.466203136} {\"step\": 50, \"validation_assistant_loss\": {\"en\": 0.19748524830347905}} {\"step\": 75, \"elapsed_seconds\": 124.27197196099951, \"seconds_per_step\": 1.6569596261466601, \"peak_gpu_gb\": 11.466283008} {\"step\": 100, \"elapsed_seconds\": 161.49892122999972, \"seconds_per_step\": 1.6149892122999971, \"peak_gpu_gb\": 11.466283008} {\"step\": 100, \"validation_assistant_loss\": {\"en\": 0.16737897008056898}} {\"step\": 125, \"elapsed_seconds\": 208.1225932110001, \"seconds_per_step\": 1.6649807456880008, \"peak_gpu_gb\": 11.466283008} {\"step\": 150, \"elapsed_seconds\": 244.00420115499946, \"seconds_per_step\": 1.626694674366663, \"peak_gpu_gb\": 11.46643968} {\"step\": 150, \"validation_assistant_loss\": {\"en\": 0.15550540020950854}} DRAFTING V5 COMPLETE: /content/drive/MyDrive/ilaria/swypikos-en/runs/drafting-v5-150steps"
+  - link "Colab paid products Link will open in a new tab":
+    - /url: /signup?utm_source=footer&utm_medium=link&utm_campaign=footer_links
+    - text: Colab paid products
+  - text: "-"
+  - link "Cancel Google AI contracts here Link will open in a new tab":
+    - /url: https://support.google.com/googleone/answer/9056360?authuser=0
+    - text: Cancel Google AI contracts here
+- generic "Toggle Gemini":
+  - button "Toggle Gemini"
+- region "Runtime status bar":
+  - button "Variables":
+    - generic: Variables
+  - button "Terminal":
+    - generic: Terminal
+  - button "9:48 PM":
+    - generic: 9:48 PM
+  - button "G4 (Python 3)":
+    - generic: G4 (Python 3)
+- alert
+- alert
+- dialog:
+  - iframe:
+    - region
+    - dialog:
+      - dialog "Share \"Ilaria_SwypikOS_H100_Pilot.ipynb\""
+    - iframe [id="I__HC_94253229"] [name="I__HC_94253229"]:
+      - strong: contacts.google.com
+      - text: refused to connect.

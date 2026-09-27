@@ -1,0 +1,36 @@
+{
+  "tasks": {
+    "path": "results\\ilaria-comparison-v1\\tasks.jsonl",
+    "sha256": "44715078b846983dc826664114c48fbdeccddf6233bfbc8402a4128635c4280f"
+  },
+  "tokenizer": {
+    "path": "data\\pretrained\\bitnet-b1.58-2B-4T\\tokenizer.json",
+    "sha256": "e134af98b985517b4f068e3755ae90d4e9cd2d45d328325dc503f1c6b2d06cc7"
+  },
+  "pilot_weights": {
+    "path": "C:\\Users\\Pos5\\Downloads\\adapter-step50.safetensors",
+    "sha256": "7147a3e0413405f5fa9736ee0ccd55682c04a21d2e790160bda29e9de5ccffa5"
+  },
+  "claude_weights": {
+    "path": "C:\\Users\\Pos5\\Downloads\\stage2_export.safetensors",
+    "sha256": "b6152b497c130136560a74b6b42c0d6df42c1684c352ec3d0c040ef4a100278a"
+  },
+  "base": {
+    "path": "data\\forge\\bitnet-2b4t\\bitnet.nxtf",
+    "sha256": "2c86cd33e2c8f5def360d28eedc73e74dc6b74c77b148e0a0bd77e4332dd9cdd"
+  },
+  "settings": {
+    "max_tokens_per_segment": 128,
+    "max_tool_calls": 3,
+    "decoder": "Go CUDA greedy",
+    "variants": [
+      "base",
+      "claude-stage2-step6000",
+      "pilot-step50"
+    ]
+  },
+  "behavior_v2_weights": {
+    "path": "C:\\Users\\Pos5\\Downloads\\adapter-step100.safetensors",
+    "sha256": "4dd69c47fa74122b9423b67b235278dfd2de7fe2b167cfabdae566e08bfd637e"
+  }
+}

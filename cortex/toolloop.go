@@ -194,6 +194,9 @@ func (GoRunChatTool) Call(ctx context.Context, args string) (string, error) {
 		b.WriteString("\nstderr:\n")
 		b.WriteString(truncateForTool(errOut, 1500))
 	}
+	if !res.Success {
+		return "", fmt.Errorf("Go execution failed: %s", b.String())
+	}
 	return b.String(), nil
 }
 
@@ -227,7 +230,32 @@ func (t *ReadFileChatTool) Call(_ context.Context, args string) (string, error) 
 	if err != nil {
 		return "", err
 	}
-	data, err := os.ReadFile(full)
+	root, err := os.OpenRoot(t.workdir)
+	if err != nil {
+		return "", err
+	}
+	defer root.Close()
+	rootPath, err := filepath.Abs(t.workdir)
+	if err != nil {
+		return "", err
+	}
+	name, err := filepath.Rel(rootPath, full)
+	if err != nil {
+		return "", err
+	}
+	f, err := root.Open(name)
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+	info, err := f.Stat()
+	if err != nil {
+		return "", err
+	}
+	if !info.Mode().IsRegular() {
+		return "", fmt.Errorf("read_file requires a regular file")
+	}
+	data, err := io.ReadAll(io.LimitReader(f, readFileMaxBytes+1))
 	if err != nil {
 		return "", err
 	}
@@ -279,7 +307,7 @@ func truncateForTool(s string, n int) string {
 // Protocol: system prompt and CALL-line parsing
 // ─────────────────────────────────────────────────────────────────────
 
-const toolLoopSystemTemplate = `You are Ilaria, a helpful assistant with access to a small set of tools.
+const toolLoopSystemTemplate = `You are Ilaria, the local assistant for SwypikOS. Respond in English by default, unless the user explicitly requests another language. Never claim an action succeeded unless its tool result confirms success. Tool errors are failures, not evidence of completion.
 
 If you need a tool, reply with EXACTLY one line in this form and nothing else — no words before it, no words after it, no explanation:
 CALL <tool>: <args>
@@ -402,6 +430,8 @@ type Runner struct {
 	prefixLen    int    // tokens in that prefix = the TruncateTo target of ResetToSystem
 	prefixText   string // its rendered text, restored into transcript by ResetToSystem
 	log          io.Writer
+	ctx          context.Context
+	feedErr      error
 }
 
 // NewRunner constructs a Runner. stopIDs are the token ids that end a
@@ -459,6 +489,13 @@ func toolLoopMaxIterations(maxCalls int) int {
 // produces a plain non-CALL answer (or the turn is force-ended — see the
 // file doc comment).
 func (r *Runner) UserTurn(ctx context.Context, userText string) (TurnResult, error) {
+	r.ctx = ctx
+	if err := ctx.Err(); err != nil {
+		return TurnResult{}, err
+	}
+	if r.feedErr != nil {
+		return TurnResult{}, r.feedErr
+	}
 	if !r.started {
 		if err := r.primeSystem(); err != nil {
 			return TurnResult{}, err
@@ -466,6 +503,9 @@ func (r *Runner) UserTurn(ctx context.Context, userText string) (TurnResult, err
 	}
 	r.feedMessage("user", userText)
 	logits := r.feedGenerationHeader()
+	if r.feedErr != nil {
+		return TurnResult{}, r.feedErr
+	}
 
 	var result TurnResult
 	forced := false
@@ -475,6 +515,9 @@ func (r *Runner) UserTurn(ctx context.Context, userText string) (TurnResult, err
 			forced = true
 		}
 		segText, toks, isCall := r.generateSegment(logits)
+		if r.feedErr != nil {
+			return result, r.feedErr
+		}
 		result.Tokens += toks
 		r.transcript.WriteString(segText)
 		r.transcript.WriteString("\n") // cosmetic only — see feedToolResult's doc comment
@@ -548,6 +591,13 @@ func (r *Runner) UserTurn(ctx context.Context, userText string) (TurnResult, err
 func (r *Runner) generateSegment(logits []float32) (text string, tokens int, isCall bool) {
 	var ids []int
 	for i := 0; i < r.maxTokens; i++ {
+		if r.ctx != nil && r.ctx.Err() != nil {
+			r.feedErr = r.ctx.Err()
+			return
+		}
+		if r.feedErr != nil {
+			return
+		}
 		next := r.argmax(logits)
 		ids = append(ids, next)
 		r.seq = append(r.seq, next)
@@ -606,6 +656,9 @@ func (r *Runner) primeSystem() error {
 	if len(ids) == 0 {
 		return fmt.Errorf("toolloop: empty system prompt encoding")
 	}
+	if len(ids) > r.maxSeqLen {
+		return fmt.Errorf("toolloop: system prompt exceeds context capacity")
+	}
 	r.dec.Prefill(ids) // logits discarded: generation never starts right after the system turn
 	r.seq = append(r.seq[:0], ids...)
 	r.transcript.Reset()
@@ -624,6 +677,8 @@ func (r *Runner) primeSystem() error {
 // prompt (a few hundred tokens) this is the difference between ~25 s and
 // ~2 s of prefill per independent prompt on the 1660 Ti.
 func (r *Runner) ResetToSystem() {
+	r.feedErr = nil
+	r.ctx = nil
 	if t, ok := r.dec.(interface{ TruncateTo(int) }); ok && r.started && r.prefixLen > 0 {
 		t.TruncateTo(r.prefixLen)
 		r.seq = r.seq[:r.prefixLen]
@@ -672,14 +727,100 @@ func (r *Runner) feedToolResult(content string) []float32 {
 // slice except the last — the KV-cache-preserving way to extend a
 // conversation without a full re-Prefill.
 func (r *Runner) feedRaw(text string) []float32 {
-	r.transcript.WriteString(text)
 	ids := r.tok.Encode(text)
+	if r.feedErr != nil {
+		return nil
+	}
+	if len(ids) > r.maxSeqLen-r.dec.Len() {
+		r.feedErr = fmt.Errorf("toolloop: context capacity exceeded")
+		return nil
+	}
+	r.transcript.WriteString(text)
 	var logits []float32
 	for _, id := range ids {
+		if r.ctx != nil && r.ctx.Err() != nil {
+			r.feedErr = r.ctx.Err()
+			return nil
+		}
 		logits = r.dec.Step(id)
 		r.seq = append(r.seq, id)
 	}
 	return logits
+}
+
+// ChatMessage contains text conversation history, not executable tool calls.
+type ChatMessage struct {
+	Role    string `json:"role"`
+	Content string `json:"content"`
+}
+
+// RestoreHistory starts an independent conversation and replays only text.
+// Prior actions are never executed again. Callers must serialize Runner use.
+func (r *Runner) RestoreHistory(ctx context.Context, history []ChatMessage) error {
+	r.ResetToSystem()
+	r.ctx = ctx
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	if !r.started {
+		if err := r.primeSystem(); err != nil {
+			return err
+		}
+	}
+	for i, m := range history {
+		role := "user"
+		if i%2 == 1 {
+			role = "assistant"
+		}
+		if m.Role != role {
+			return fmt.Errorf("history must alternate user and assistant")
+		}
+		r.feedMessage(m.Role, m.Content)
+		if r.feedErr != nil {
+			return r.feedErr
+		}
+	}
+	if len(history)%2 != 0 {
+		return fmt.Errorf("history must contain complete turns")
+	}
+	return nil
+}
+
+// ConversationTurn trims oldest complete turns to the model's token budget.
+// It never truncates the new request, and never re-executes historic actions.
+func (r *Runner) ConversationTurn(ctx context.Context, history []ChatMessage, prompt string) (TurnResult, error) {
+	if len(history)%2 != 0 {
+		return TurnResult{}, fmt.Errorf("history must contain complete turns")
+	}
+	for i, m := range history {
+		role := "user"
+		if i%2 == 1 {
+			role = "assistant"
+		}
+		if m.Role != role {
+			return TurnResult{}, fmt.Errorf("invalid history role")
+		}
+	}
+	cost := func(role, content string) int {
+		return len(r.tok.Encode(fmt.Sprintf("%s: %s<|eot_id|>", capitalizeRole(role), strings.TrimSpace(content))))
+	}
+	budget := r.maxSeqLen - cost("system", r.systemPrompt) - cost("user", prompt) - len(r.tok.Encode("Assistant: ")) - r.maxTokens
+	if budget < 0 {
+		return TurnResult{}, fmt.Errorf("prompt exceeds model context budget")
+	}
+	start := len(history)
+	for start >= 2 {
+		pair := cost(history[start-2].Role, history[start-2].Content) + cost(history[start-1].Role, history[start-1].Content)
+		if pair > budget {
+			break
+		}
+		budget -= pair
+		start -= 2
+	}
+	if err := r.RestoreHistory(ctx, history[start:]); err != nil {
+		return TurnResult{}, err
+	}
+	return r.UserTurn(ctx, prompt)
 }
 
 func capitalizeRole(role string) string {

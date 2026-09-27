@@ -1,0 +1,321 @@
+{
+  "sources": {
+    "D:\\swyp lang\\docs\\SWYP_LANG.md": "5011d230e785905eb10a61b6c2a487de815b2771e12647290bfb19d3d8633149",
+    "D:\\swyp lang\\cmd\\swyp\\worker.go": "45f79f4b9f66ac7795fe85a967498a7ef67752c0557367ceaf0b1b5479a90116",
+    "D:\\swyp lang\\bridge\\nexus\\tool.go": "d5692d16631b2695d68ca78133ee1baadc1aff859339be2e06949bbcff4d7a41",
+    "D:\\swypik-os\\README.md": "bb8440d575137f1610098d52525a483cdfb9d3cc36a1621820263a3ade61dc52",
+    "D:\\nexus\\cmd\\ilaria-serve\\main.go": "2526268a3855eba7603e9036c2c5e0d34af3e225434f35defff8f66ad3182ae7"
+  },
+  "compiler_checks": [
+    {
+      "split": "train",
+      "a": 2,
+      "b": 5,
+      "inputs": [
+        -3,
+        0,
+        2.5,
+        11
+      ],
+      "source_sha256": "362fd9bd959788fda567040d3b486d5ca6fd6693cfbbe08f09d8a4803b7db11b"
+    },
+    {
+      "split": "train",
+      "a": 3,
+      "b": 6,
+      "inputs": [
+        -3,
+        0,
+        2.5,
+        11
+      ],
+      "source_sha256": "1321cc533cd8ebbb73b70f543fb2bcb5ba9dd547c2bc255bcbd64c6bc3ae84e6"
+    },
+    {
+      "split": "train",
+      "a": 4,
+      "b": 7,
+      "inputs": [
+        -3,
+        0,
+        2.5,
+        11
+      ],
+      "source_sha256": "8d5be6bb349b61de7aca05392bbf771eb8878fd11b7eb4c265e0e1811e630ee2"
+    },
+    {
+      "split": "train",
+      "a": 5,
+      "b": 8,
+      "inputs": [
+        -3,
+        0,
+        2.5,
+        11
+      ],
+      "source_sha256": "04d407a92614f72493e74bfbb659a6abadc2b923ba0ecdc7f221e796a12973e3"
+    },
+    {
+      "split": "train",
+      "a": 6,
+      "b": 9,
+      "inputs": [
+        -3,
+        0,
+        2.5,
+        11
+      ],
+      "source_sha256": "fa486c656c9a38dc2d7d7a3ac2c38587cc6ce3f0ca557940b22deb7f629f7879"
+    },
+    {
+      "split": "train",
+      "a": 7,
+      "b": 10,
+      "inputs": [
+        -3,
+        0,
+        2.5,
+        11
+      ],
+      "source_sha256": "41722e8e5b3febf8460f7762c4f82e9dbe200f4772ba995bd85bbe36dbfc783e"
+    },
+    {
+      "split": "train",
+      "a": 8,
+      "b": 11,
+      "inputs": [
+        -3,
+        0,
+        2.5,
+        11
+      ],
+      "source_sha256": "451b2a0de6d5dc924a8a41edded9ecae92a9292b1c27ca73b82550b9982d82c2"
+    },
+    {
+      "split": "train",
+      "a": 9,
+      "b": 12,
+      "inputs": [
+        -3,
+        0,
+        2.5,
+        11
+      ],
+      "source_sha256": "75ed71fba08769b903818d2a6806d31eebf2fb5970e4577c2581854c09bd51bd"
+    },
+    {
+      "split": "train",
+      "a": 10,
+      "b": 13,
+      "inputs": [
+        -3,
+        0,
+        2.5,
+        11
+      ],
+      "source_sha256": "32307aff56e42cb17e56946c8ce6df5f8fe64d5a22ec0df9178c02fd6a55b55e"
+    },
+    {
+      "split": "train",
+      "a": 11,
+      "b": 14,
+      "inputs": [
+        -3,
+        0,
+        2.5,
+        11
+      ],
+      "source_sha256": "39222917c069cb5e752599daa3e6afa14114aa9dc6a1ba47ed81f41170d1f48d"
+    },
+    {
+      "split": "train",
+      "a": 12,
+      "b": 15,
+      "inputs": [
+        -3,
+        0,
+        2.5,
+        11
+      ],
+      "source_sha256": "8d4da8f137f72529ef628b19d66abed6935ec91ee261006ec3d31e50ee2f1f1e"
+    },
+    {
+      "split": "train",
+      "a": 13,
+      "b": 16,
+      "inputs": [
+        -3,
+        0,
+        2.5,
+        11
+      ],
+      "source_sha256": "6d63f4766c83ee5f87b8b4d178374e8139b1c586ffcc8d70e9dd3f863a299eb7"
+    },
+    {
+      "split": "train",
+      "a": 14,
+      "b": 17,
+      "inputs": [
+        -3,
+        0,
+        2.5,
+        11
+      ],
+      "source_sha256": "d4fcde2eb31cd13ba52232a955f66d5e869151e288e69271a12c187f4af98456"
+    },
+    {
+      "split": "train",
+      "a": 15,
+      "b": 18,
+      "inputs": [
+        -3,
+        0,
+        2.5,
+        11
+      ],
+      "source_sha256": "83d2105e538094be63cffdb52b080ca0c0aebd8c95dfe1564087bb4cfc40ef73"
+    },
+    {
+      "split": "train",
+      "a": 16,
+      "b": 19,
+      "inputs": [
+        -3,
+        0,
+        2.5,
+        11
+      ],
+      "source_sha256": "a95888310f3f6784156bc8032a95fea18a775d9f10deee147cfd93587db4fbdf"
+    },
+    {
+      "split": "train",
+      "a": 17,
+      "b": 20,
+      "inputs": [
+        -3,
+        0,
+        2.5,
+        11
+      ],
+      "source_sha256": "b2036d6db4875ff100a1762e74cda6b0ac2ebf30eee4f0adab4bd2b9a2c6c5a9"
+    },
+    {
+      "split": "train",
+      "a": 18,
+      "b": 21,
+      "inputs": [
+        -3,
+        0,
+        2.5,
+        11
+      ],
+      "source_sha256": "6a2270310f7cb62f90a5a4d96b7bd8663ab7705495042af00b4e76a5cb3fbc9f"
+    },
+    {
+      "split": "train",
+      "a": 19,
+      "b": 22,
+      "inputs": [
+        -3,
+        0,
+        2.5,
+        11
+      ],
+      "source_sha256": "0cd355fb46573f9d80913849bc2755767d3ed090c8b5b7ff4d9b80aebb76d463"
+    },
+    {
+      "split": "train",
+      "a": 20,
+      "b": 23,
+      "inputs": [
+        -3,
+        0,
+        2.5,
+        11
+      ],
+      "source_sha256": "918ba0f3a8071cffe7813af4b1dd4211b2827b957b0294b27287634684587a5f"
+    },
+    {
+      "split": "train",
+      "a": 21,
+      "b": 24,
+      "inputs": [
+        -3,
+        0,
+        2.5,
+        11
+      ],
+      "source_sha256": "f4a69d433f49a661e41e0967f8a1e8e95b5244e6fd1c6514b9015c775c20fb2b"
+    },
+    {
+      "split": "validation",
+      "a": 25,
+      "b": 28,
+      "inputs": [
+        -3,
+        0,
+        2.5,
+        11
+      ],
+      "source_sha256": "8fbd313ecd12e09b9413b33cbc696748066623c4d76d378d9b958a80453356e5"
+    },
+    {
+      "split": "validation",
+      "a": 26,
+      "b": 29,
+      "inputs": [
+        -3,
+        0,
+        2.5,
+        11
+      ],
+      "source_sha256": "7ea93f6a0616bd4ee5172d0b3a42add8586f6fb994ad5ce3427bb95485782a06"
+    },
+    {
+      "split": "validation",
+      "a": 27,
+      "b": 30,
+      "inputs": [
+        -3,
+        0,
+        2.5,
+        11
+      ],
+      "source_sha256": "96a674a5a5776acd2b946145f8c9cad0fbcb42e51937ab0dbd2ccedfc5025b50"
+    },
+    {
+      "split": "validation",
+      "a": 28,
+      "b": 31,
+      "inputs": [
+        -3,
+        0,
+        2.5,
+        11
+      ],
+      "source_sha256": "cfac3638c494b4488130e324690f3ba7e245f58b1db1cea82041ed2f1fe7e48f"
+    },
+    {
+      "split": "validation",
+      "a": 29,
+      "b": 32,
+      "inputs": [
+        -3,
+        0,
+        2.5,
+        11
+      ],
+      "source_sha256": "d0649a1cfffc544b8edea2b953beeca09fdc0e5a55112040032f978de6ce4738"
+    }
+  ],
+  "train": {
+    "rows": 1081,
+    "sha256": "d3013706c8da73946df42c24d039ab284fc657e97a1ab12a27a0413606700037"
+  },
+  "validation": {
+    "rows": 256,
+    "sha256": "62ae1351315fec76d97e875fbefad25dd35dd1ce0ad0361edc1dc2a3a6b3b0da"
+  },
+  "split_limitations": "Project evaluation tests similar concepts with different prompts; code validation holds out coefficients, not families. Small development pilot, not independent broad benchmark.",
+  "evaluation_sha256": "96cbdaaa3533134dcb09d935b6521ea1cd8f7df28a598bc17c8e97c4e36218ac"
+}

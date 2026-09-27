@@ -6,7 +6,7 @@ import (
 )
 
 func TestRunSuiteIsolatedUsesFreshOrganismPerCase(t *testing.T) {
-	cfg := DefaultConfig()
+	cfg := organismTestConfig(t)
 	cfg.DataDir = t.TempDir()
 	cases := []TestCase{
 		{Input: "unknown one", MustNotEqualInput: true},

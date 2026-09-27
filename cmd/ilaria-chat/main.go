@@ -39,6 +39,8 @@ import (
 
 func main() {
 	modelPath := flag.String("model", "", "Path to a BitNet NXTF v3 checkpoint (required)")
+	adapter := flag.String("adapter", "", "LoRA export prefix (.json/.safetensors)")
+	unsafeGo := flag.Bool("allow-host-go", false, "Allow model-generated Go to run with YOUR host permissions (not an OS sandbox)")
 	tokenizerPath := flag.String("tokenizer", "", "Path to an HF tokenizer.json (required)")
 	cudaFlag := flag.Bool("cuda", false, "Run prefill+decode on the GPU via the NVRTC-compiled decoder (needs a -tags gpu build; see cortex/bitnet_cuda.go and cmd/bitnet-run's -cuda)")
 	prompt := flag.String("prompt", "", "One-shot prompt; when empty, stdin becomes an interactive multi-turn REPL")
@@ -62,6 +64,11 @@ func main() {
 	model, err := cortex.LoadBitNetModel(*modelPath)
 	if err != nil {
 		fail("model", err)
+	}
+	if *adapter != "" {
+		if err := cortex.LoadBitNetLoRA(model, *adapter); err != nil {
+			fail("adapter", err)
+		}
 	}
 	fmt.Fprintf(os.Stderr, "[ilaria-chat] loaded %s in %.2fs (vocab=%d layers=%d embed=%d)\n",
 		*modelPath, time.Since(loadStart).Seconds(), model.Cfg.VocabSize, model.Cfg.NumLayers, model.Cfg.EmbedDim)
@@ -91,6 +98,9 @@ func main() {
 	}
 
 	tools := buildTools(*workdir, *biomedCache)
+	if *unsafeGo {
+		tools = append(tools, cortex.GoRunChatTool{})
+	}
 	fmt.Fprintf(os.Stderr, "[ilaria-chat] tools: %s\n", strings.Join(toolNames(tools), ", "))
 
 	if *evalPath != "" {
@@ -124,7 +134,6 @@ func buildTools(workdir, biomedCache string) []cortex.ChatTool {
 		cortex.CalcChatTool{},
 		cortex.TimeChatTool{},
 		cortex.ConvertChatTool{},
-		cortex.GoRunChatTool{},
 	}
 	if workdir != "" {
 		tools = append(tools, cortex.NewReadFileChatTool(workdir))
@@ -186,6 +195,18 @@ type evalItem struct {
 	ExpectSubstring string `json:"expect_substring,omitempty"`
 }
 
+func successfulExpectedTool(it evalItem, res cortex.TurnResult) bool {
+	if it.ExpectedTool == "" {
+		return len(res.ToolCalls) == 0
+	}
+	for _, call := range res.ToolCalls {
+		if call.Tool == it.ExpectedTool && call.Err == nil {
+			return true
+		}
+	}
+	return false
+}
+
 // runEval runs every prompt in path through one Runner rewound with
 // ResetToSystem between prompts (the cached system-prompt rows are kept,
 // everything after them is dropped — no cross-prompt leakage, no
@@ -223,18 +244,28 @@ func runEval(path string, dec cortex.StepDecoder, tok cortex.Tokenizer, stopIDs 
 	w := tabwriter.NewWriter(os.Stdout, 2, 2, 2, ' ', 0)
 	fmt.Fprintln(w, "prompt\ttool called\texpected\ttool-ok\tanswer-ok\tcalls\ttokens\tseconds")
 
-	var toolTotal, toolCorrect int
+	var toolTotal, toolCorrect, toolExecuted, inferenceErrors int
 	var noToolTotal, falseCalls int
 	var substrTotal, substrOK int
 
 	runner := cortex.NewRunner(dec, tok, stopIDs, maxSeqLen, tools, maxCalls, maxTokens, os.Stderr)
 	for _, it := range items {
+		// Failed inference stays in the denominator; it is not a skipped task.
+		if it.ExpectedTool == "" {
+			noToolTotal++
+		} else {
+			toolTotal++
+		}
+		if it.ExpectSubstring != "" {
+			substrTotal++
+		}
 		runner.ResetToSystem()
 
 		start := time.Now()
 		res, err := runner.UserTurn(context.Background(), it.Prompt)
 		elapsed := time.Since(start)
 		if err != nil {
+			inferenceErrors++
 			fmt.Fprintf(os.Stderr, "[eval] error on %q: %v\n", it.Prompt, err)
 			fmt.Fprintf(w, "%s\tERROR\t%s\t-\t-\t-\t-\t%.1f\n", truncateEval(it.Prompt, 40), orDash(it.ExpectedTool), elapsed.Seconds())
 			continue
@@ -250,22 +281,22 @@ func runEval(path string, dec cortex.StepDecoder, tok cortex.Tokenizer, stopIDs 
 
 		var toolOK bool
 		if it.ExpectedTool == "" {
-			noToolTotal++
 			toolOK = len(res.ToolCalls) == 0
 			if len(res.ToolCalls) > 0 {
 				falseCalls++
 			}
 		} else {
-			toolTotal++
 			toolOK = firstTried == it.ExpectedTool
 			if toolOK {
 				toolCorrect++
 			}
 		}
+		if it.ExpectedTool != "" && successfulExpectedTool(it, res) {
+			toolExecuted++
+		}
 
 		answerOK := true
 		if it.ExpectSubstring != "" {
-			substrTotal++
 			answerOK = strings.Contains(strings.ToLower(res.Answer), strings.ToLower(it.ExpectSubstring))
 			if answerOK {
 				substrOK++
@@ -284,6 +315,8 @@ func runEval(path string, dec cortex.StepDecoder, tok cortex.Tokenizer, stopIDs 
 
 	fmt.Println()
 	fmt.Printf("tool-selection accuracy (prompts needing a tool): %d/%d\n", toolCorrect, toolTotal)
+	fmt.Printf("successful expected-tool execution:              %d/%d\n", toolExecuted, toolTotal)
+	fmt.Printf("inference errors (included as failures):          %d/%d\n", inferenceErrors, len(items))
 	fmt.Printf("false-call rate (prompts needing no tool):        %d/%d\n", falseCalls, noToolTotal)
 	fmt.Printf("answer accuracy (substring check):                %d/%d\n", substrOK, substrTotal)
 	return nil

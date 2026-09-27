@@ -1,0 +1,7 @@
+region "Cell 19 output":
+      - generic "Show/hide output":
+        - button "Show/hide output"
+      - generic "Code cell output actions":
+        - button "Code cell output actions"
+      - iframe:
+        - generic: "VERIFIED: grounding v3, 250 steps, 420 finite tensors, v2 lineage confirmed Validation: {'en': 0.2516466593858174} { \"checkpoint.pt\": \"d818967caad6f0544cd1d29a588cb9e4a3283c2d2af83395606892ddca058f0d\", \"adapter-step250.json\": \"29efa0e3548cf7270cd6ebbcffe4f74b930e0a62c642545b576c5a3c0fae5556\", \"adapter-step250.safetensors\": \"e36695151882767c51d75af41f31ea5230b8772a28a75c021700182690f8f5b9\" }"

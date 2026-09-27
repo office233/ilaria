@@ -627,7 +627,9 @@ type BitNetCUDADecoder struct {
 	hd, kvDim int
 	pos       int
 
-	logitsHost []float32 // reused host-side landing buffer for the D2H logits copy
+	logitsHost  []float32 // reused host-side landing buffer for the D2H logits copy
+	loraWeights map[*compute.DeviceBuffer]*cudaLoRA
+	loraInput   *compute.DeviceBuffer // original activation before actQuant
 }
 
 // NewBitNetCUDADecoder compiles the CUDA kernels, uploads every
@@ -640,12 +642,12 @@ func NewBitNetCUDADecoder(m *BitNetModel) (dec *BitNetCUDADecoder, err error) {
 	hd := cfg.headDim()
 	kvDim := cfg.NumKVHeads * hd
 
-	mod, err := compute.CompileKernels(bitnetCUDASource)
+	mod, err := compute.CompileKernels(bitnetCUDASource + bitnetLoRACUDASource)
 	if err != nil {
 		return nil, fmt.Errorf("compile kernels: %w", err)
 	}
 
-	d := &BitNetCUDADecoder{m: m, mod: mod, hd: hd, kvDim: kvDim}
+	d := &BitNetCUDADecoder{m: m, mod: mod, hd: hd, kvDim: kvDim, loraWeights: make(map[*compute.DeviceBuffer]*cudaLoRA)}
 
 	// On any error from here on, free whatever was already allocated
 	// before propagating — defer runs after the named return `err` is
@@ -692,6 +694,14 @@ func NewBitNetCUDADecoder(m *BitNetModel) (dec *BitNetCUDADecoder, err error) {
 			return nil, 0, 0, 0, e
 		}
 		tpr := int32((l.In + 15) / 16)
+		if l.lora != nil {
+			adapter, e := uploadCUDALoRA(l)
+			if e != nil {
+				buf.Free()
+				return nil, 0, 0, 0, e
+			}
+			d.loraWeights[buf] = adapter
+		}
 		return buf, tpr, int32(l.Out), l.Scale, nil
 	}
 
@@ -797,6 +807,7 @@ func (d *BitNetCUDADecoder) rmsnorm(x *compute.DeviceBuffer, n int, weight *comp
 }
 
 func (d *BitNetCUDADecoder) actQuant(x *compute.DeviceBuffer, n int, qx *compute.DeviceBuffer) error {
+	d.loraInput = x
 	args := compute.NewKernelArgs().AddDevicePtr(x).AddInt32(int32(n)).AddDevicePtr(qx).AddDevicePtr(d.xScaleBuf)
 	defer args.Release()
 	return d.mod.Launch("act_quant_kernel", [3]uint32{1, 1, 1}, [3]uint32{cudaActQuantBlock, 1, 1}, 0, args)
@@ -815,7 +826,10 @@ func (d *BitNetCUDADecoder) gemvOut(tiles *compute.DeviceBuffer, tpr, out int32,
 		AddFloat32(scale).
 		AddDevicePtrOffset(yBuf, yByteOffset)
 	defer args.Release()
-	return d.mod.Launch("bitlinear_gemv_kernel", [3]uint32{uint32(out), 1, 1}, [3]uint32{cudaGEMVBlock, 1, 1}, 0, args)
+	if err := d.mod.Launch("bitlinear_gemv_kernel", [3]uint32{uint32(out), 1, 1}, [3]uint32{cudaGEMVBlock, 1, 1}, 0, args); err != nil {
+		return err
+	}
+	return d.addCUDALoRA(tiles, yBuf, yByteOffset)
 }
 
 func (d *BitNetCUDADecoder) gemv(tiles *compute.DeviceBuffer, tpr, out int32, qx *compute.DeviceBuffer, scale float32, y *compute.DeviceBuffer) error {
@@ -1187,6 +1201,9 @@ func (d *BitNetCUDADecoder) Argmax() int {
 func (d *BitNetCUDADecoder) Close() {
 	if d == nil {
 		return
+	}
+	for _, a := range d.loraWeights {
+		a.close()
 	}
 	for i := range d.layers {
 		lw := &d.layers[i]

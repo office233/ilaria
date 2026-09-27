@@ -100,6 +100,8 @@ import torch  # noqa: E402
 import torch.nn as nn  # noqa: E402
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from holdout import partition_samples
 import data_instruct  # noqa: E402
 import lora_bitlinear  # noqa: E402
 from data import build_image_processor, preprocess_images, tiny_pixel_values  # noqa: E402
@@ -301,14 +303,19 @@ def save_checkpoint(path: str, vlm: BitNetVLMStage2, opt, step: int, args) -> No
         "vision_adapter_config": va_cfg,
         "opt": opt.state_dict(),
         "step": step,
+        "validation_partition": "sha256-image-or-prompt-v1",
         "args": vars(args),
     }, path)
 
 
-def load_checkpoint(path: str, vlm: BitNetVLMStage2, opt, device: str) -> int:
+def load_checkpoint(path: str, vlm: BitNetVLMStage2, opt, device: str, validation_fraction=None) -> int:
     # weights_only=False: carries optimizer state + an argparse.Namespace,
     # not just tensors -- trusted input (this script's own checkpoint.pt).
     ck = torch.load(path, map_location=device, weights_only=False)
+    if ck.get("validation_partition") != "sha256-image-or-prompt-v1":
+        raise ValueError("legacy checkpoint has no disjoint validation contract; export for inference, but start a new run for held-out evaluation")
+    if validation_fraction is not None and ck.get("args", {}).get("validation_fraction") != validation_fraction:
+        raise ValueError("resume must preserve the validation fraction to avoid train/eval overlap")
     vlm.vision_adapter.projector.load_state_dict(ck["projector"])
     lora_bitlinear.load_lora_state_dict(vlm.llm, ck["lora"])
     if opt is not None and "opt" in ck:
@@ -382,6 +389,8 @@ def build_argparser() -> argparse.ArgumentParser:
     ap.add_argument("--max-images", type=int, default=data_instruct.DEFAULT_MAX_IMAGES)
     ap.add_argument("--max-turns", type=int, default=data_instruct.DEFAULT_MAX_TURNS)
     ap.add_argument("--text-ratio", type=float, default=0.0)
+    ap.add_argument("--validation-fraction", type=float, default=0.05,
+                    help="Deterministic content-hash holdout; identical images never cross partitions")
     ap.add_argument("--text-dataset", default=data_instruct.TEXT_INSTRUCT_DATASET)
     ap.add_argument("--text-config", default=data_instruct.TEXT_INSTRUCT_CONFIG)
     # optim -- two param groups (projector, LoRA), see module docstring
@@ -428,9 +437,10 @@ def make_sample_source(args):
                                                    max_turns=args.max_turns, seed=args.seed)
 
     def factory():
-        return data_instruct.instruct_mixture(vision_factory, text_ratio=args.text_ratio,
+        mixed = data_instruct.instruct_mixture(vision_factory, text_ratio=args.text_ratio,
                                                 text_dataset=args.text_dataset, text_config=args.text_config,
                                                 streaming=args.streaming, max_turns=args.max_turns, seed=args.seed)
+        return partition_samples(mixed, fraction=args.validation_fraction)
     return cycle(factory)
 
 
@@ -441,9 +451,10 @@ def make_eval_source(args):
     datasets_list = args.datasets.split(",") if args.datasets else None
 
     def eval_factory():
-        return data_instruct.build_vision_stream(source=args.source, subsets=datasets_list, streaming=args.streaming,
+        stream = data_instruct.build_vision_stream(source=args.source, subsets=datasets_list, streaming=args.streaming,
                                                    max_images=args.max_images, max_turns=args.max_turns,
-                                                   seed=args.seed + 777)
+                                                   seed=args.seed)
+        return partition_samples(stream, validation=True, fraction=args.validation_fraction)
     return cycle(eval_factory)
 
 
@@ -454,6 +465,10 @@ def main() -> None:
         pass
 
     args = build_argparser().parse_args()
+    if not 0 < args.validation_fraction < 1:
+        raise ValueError("--validation-fraction must lie between zero and one")
+    if int(os.environ.get("WORLD_SIZE", "1")) > 1:
+        raise ValueError("stage2 is single-process; use forge/train_tools.py for distributed text/tool SFT")
 
     if args.smoke:
         args.steps = args.smoke_steps
@@ -492,7 +507,7 @@ def main() -> None:
 
     start_step = 0
     if args.resume and os.path.exists(args.resume):
-        start_step = load_checkpoint(args.resume, vlm, opt, device)
+        start_step = load_checkpoint(args.resume, vlm, opt, device, args.validation_fraction)
         print(f"[stage2] resumed from {args.resume} @ step {start_step}")
 
     use_amp = device == "cuda" and not args.smoke

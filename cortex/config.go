@@ -276,6 +276,7 @@ type Config struct {
 	NRCInjectAmplitude       int `json:"nrc_inject_amplitude"`        // Inject amplitude for ProcessInput/TrainStep (default 200)
 
 	// FractalCortex
+	DisableFractalCortex         bool    `json:"disable_fractal_cortex"`         // Skip experimental dense fractal allocation when unused
 	FractalNumLayers             int     `json:"fractal_num_layers"`             // Layers per cortex block (default 24)
 	FractalContextLen            int     `json:"fractal_context_len"`            // Attention context length (default 50)
 	FractalTopK                  int     `json:"fractal_top_k"`                  // Top-K for SharedCortexStack (default 3)

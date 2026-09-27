@@ -15,7 +15,7 @@ func TestOrganismNoEchoRegression(t *testing.T) {
 
 	// Initialize a fresh organism in a temporary directory with a Config
 	rng := rand.New(rand.NewSource(42))
-	cfg := DefaultConfig()
+	cfg := organismTestConfig(t)
 	cfg.DataDir = tempDir
 	org := NewOrganism(cfg, rng)
 	org.FractalCortex = nil // Disable FractalCortex to test pure empty-brain fallback
@@ -41,7 +41,7 @@ func TestOrganismRecovery(t *testing.T) {
 	tempDir := t.TempDir()
 
 	rng := rand.New(rand.NewSource(42))
-	cfg := DefaultConfig()
+	cfg := organismTestConfig(t)
 	cfg.DataDir = tempDir
 	cfg.PrefrontalInputCurrent = 128
 	cfg.HippoReconsolidationThresh = 200
@@ -127,7 +127,7 @@ func TestOrganismRecovery(t *testing.T) {
 func TestOrganismLearnQADoesNotPersistDirectAnswerMap(t *testing.T) {
 	tempDir := t.TempDir()
 	rng := rand.New(rand.NewSource(42))
-	cfg := DefaultConfig()
+	cfg := organismTestConfig(t)
 	cfg.DataDir = tempDir
 
 	org := NewOrganism(cfg, rng)
@@ -149,9 +149,9 @@ func TestOrganismLearnQADoesNotPersistDirectAnswerMap(t *testing.T) {
 func TestOrganismLearnQARetrievesEpisodicAnswerWithoutQAMemory(t *testing.T) {
 	tempDir := t.TempDir()
 	rng := rand.New(rand.NewSource(42))
-	cfg := DefaultConfig()
+	cfg := organismTestConfig(t)
 	cfg.DataDir = tempDir
-	cfg.MaxGenWords = 0 // Disable Broca generation to test pure fallback
+	cfg.MaxGenWords = 0              // Disable Broca generation to test pure fallback
 	cfg.HippocampusRecallThresh = 50 // Lower threshold since test questions are short
 
 	org := NewOrganism(cfg, rng)
@@ -179,7 +179,7 @@ func TestOrganismLearnQARetrievesEpisodicAnswerWithoutQAMemory(t *testing.T) {
 func TestOrganismLoadIgnoresLegacyQAMemory(t *testing.T) {
 	tempDir := t.TempDir()
 	rng := rand.New(rand.NewSource(42))
-	cfg := DefaultConfig()
+	cfg := organismTestConfig(t)
 	cfg.DataDir = tempDir
 
 	org := NewOrganism(cfg, rng)
@@ -206,7 +206,7 @@ func TestOrganismLoadIgnoresLegacyQAMemory(t *testing.T) {
 func TestOrganismSuppressesLowConfidenceUnknownResponse(t *testing.T) {
 	tempDir := t.TempDir()
 	rng := rand.New(rand.NewSource(42))
-	cfg := DefaultConfig()
+	cfg := organismTestConfig(t)
 	cfg.DataDir = tempDir
 
 	org := NewOrganism(cfg, rng)
@@ -245,7 +245,7 @@ func TestOrganismSuppressesLowConfidenceUnknownResponse(t *testing.T) {
 func TestOrganismSDRCollisionDoesNotReturnWrongTopic(t *testing.T) {
 	tempDir := t.TempDir()
 	rng := rand.New(rand.NewSource(42))
-	cfg := DefaultConfig()
+	cfg := organismTestConfig(t)
 	cfg.DataDir = tempDir
 	cfg.NoSave = true
 
@@ -311,7 +311,7 @@ func TestOrganismSDRCollisionDoesNotReturnWrongTopic(t *testing.T) {
 func TestOrganismFastPathStillFiresForUniqueTopics(t *testing.T) {
 	tempDir := t.TempDir()
 	rng := rand.New(rand.NewSource(42))
-	cfg := DefaultConfig()
+	cfg := organismTestConfig(t)
 	cfg.DataDir = tempDir
 	cfg.NoSave = true
 
@@ -370,7 +370,7 @@ func TestOrganismWernickeReconsolidationCollapse(t *testing.T) {
 
 	tempDir := t.TempDir()
 	rng := rand.New(rand.NewSource(42))
-	cfg := DefaultConfig()
+	cfg := organismTestConfig(t)
 	cfg.DataDir = tempDir
 	cfg.NoSave = true
 

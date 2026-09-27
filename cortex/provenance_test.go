@@ -28,7 +28,7 @@ func (fakeProvenanceTool) Execute(input string) (string, bool) {
 // (the name ToolRegistry.Dispatch produces), not just "something matched".
 func TestProvenance_ToolSource(t *testing.T) {
 	rng := rand.New(rand.NewSource(1))
-	cfg := DefaultConfig()
+	cfg := organismTestConfig(t)
 	cfg.DataDir = t.TempDir()
 	org := NewOrganism(cfg, rng)
 	org.Reasoning.Tools.Register(fakeProvenanceTool{})
@@ -54,7 +54,7 @@ func TestProvenance_ToolSource(t *testing.T) {
 // Tool="".
 func TestProvenance_NoToolMatch(t *testing.T) {
 	rng := rand.New(rand.NewSource(2))
-	cfg := DefaultConfig()
+	cfg := organismTestConfig(t)
 	cfg.DataDir = t.TempDir()
 	org := NewOrganism(cfg, rng)
 	org.Reasoning.Tools.Register(fakeProvenanceTool{})

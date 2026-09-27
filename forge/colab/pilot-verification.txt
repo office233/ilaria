@@ -1,0 +1,29 @@
+VERIFIED: 50 steps; 210 LoRA modules; 420 finite tensors; checkpoint and exports saved
+Validation loss: {'en': 0.17342157745689296}
+Drive: /content/drive/MyDrive/ilaria/swypikos-en/runs/g4-tool-pilot-v1
+{
+  "checkpoint.pt": {
+    "bytes": 260013773,
+    "sha256": "06231ca28eb8763a0296a7ef4ed5cf7b43b55368600fbbc6935505f3b139b8a7"
+  },
+  "adapter-step50.json": {
+    "bytes": 653,
+    "sha256": "942c021af3df57bbfcbd59616886d0de48dbcebed6bed85139e1c5aa13313ccf"
+  },
+  "adapter-step50.safetensors": {
+    "bytes": 86547544,
+    "sha256": "7147a3e0413405f5fa9736ee0ccd55682c04a21d2e790160bda29e9de5ccffa5"
+  },
+  "environment.txt": {
+    "bytes": 14077,
+    "sha256": "1edfe8ccc4328cbea1bced9b798e150beb70b48880313e8ecd556286e5837648"
+  },
+  "source_manifest.json": {
+    "bytes": 982,
+    "sha256": "731a127b5af82110e69bd0da1d5944e9f066d048d41a334f9325ba05452f8c82"
+  },
+  "base_revision.txt": {
+    "bytes": 40,
+    "sha256": "4b87e7f0cad2c1eed136e266fc02f5fc1b6499b6eea085486c7fd86ff7b1fc70"
+  }
+}

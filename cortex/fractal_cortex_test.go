@@ -1,12 +1,12 @@
 package cortex
 
 import (
-	"testing"
 	"nexus-cortex/cortex/compute"
+	"testing"
 )
 
 func TestFractalCortexNeurogenesis(t *testing.T) {
-	cfg := DefaultConfig()
+	cfg := fractalTestConfig(t)
 	engine := compute.NewCPUEngine()
 	fc := NewFractalCortex(cfg, engine)
 
@@ -45,7 +45,7 @@ func TestFractalCortexQuantumRouterCreation(t *testing.T) {
 	engine := compute.NewCPUEngine()
 
 	// Disabled: no QRouter should be created
-	cfg := DefaultConfig()
+	cfg := fractalTestConfig(t)
 	cfg.EnableQuantumInspired = false
 	fc := NewFractalCortex(cfg, engine)
 	if fc.QRouter != nil {
@@ -73,7 +73,7 @@ func TestFractalCortexQuantumRouterCreation(t *testing.T) {
 }
 
 func TestFractalCortexQuantumRouting(t *testing.T) {
-	cfg := DefaultConfig()
+	cfg := fractalTestConfig(t)
 	cfg.EnableQuantumInspired = true
 	engine := compute.NewCPUEngine()
 	fc := NewFractalCortex(cfg, engine)
@@ -98,7 +98,7 @@ func TestFractalCortexQuantumRouting(t *testing.T) {
 }
 
 func TestFractalCortexBackwardCompatibility(t *testing.T) {
-	cfg := DefaultConfig()
+	cfg := fractalTestConfig(t)
 	cfg.EnableQuantumInspired = false
 	engine := compute.NewCPUEngine()
 	fc := NewFractalCortex(cfg, engine)
@@ -121,7 +121,7 @@ func TestFractalCortexBackwardCompatibility(t *testing.T) {
 }
 
 func TestFractalCortexMergeJournal(t *testing.T) {
-	cfg := DefaultConfig()
+	cfg := fractalTestConfig(t)
 	cfg.EnableQuantumInspired = true
 	engine := compute.NewCPUEngine()
 	fc := NewFractalCortex(cfg, engine)
@@ -171,7 +171,7 @@ func TestFractalCortexMergeJournal(t *testing.T) {
 }
 
 func TestFractalCortexMergeJournalNoJournal(t *testing.T) {
-	cfg := DefaultConfig()
+	cfg := fractalTestConfig(t)
 	cfg.EnableQuantumInspired = false
 	engine := compute.NewCPUEngine()
 	fc := NewFractalCortex(cfg, engine)

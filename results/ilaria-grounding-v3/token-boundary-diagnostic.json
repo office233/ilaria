@@ -1,0 +1,25 @@
+{
+  "generation_header": [
+    72803,
+    25,
+    220
+  ],
+  "merged_training_prefix_What": [
+    72803,
+    25,
+    3639,
+    5089,
+    374,
+    7554
+  ],
+  "split_prefix_What": [
+    72803,
+    25,
+    220,
+    3923,
+    5089,
+    374
+  ],
+  "encoding_version": "assistant-header-split-v2",
+  "description": "Actual local HF tokenizer encoding. Preserve Assistant: trailing space as a separate generation-prefix token; mask whole header."
+}

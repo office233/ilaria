@@ -1,0 +1,51 @@
+# Swyp Lang
+
+Version 0.5 adds counterexample refinement to **program synthesis without an LLM**. Given numeric
+input/output examples, `synth` searches arithmetic expressions and saves a new
+type-checked program. It matches examples; it does not prove general correctness.
+
+An optional `validation` array in the JSON specification checks each proposal on
+additional points. The first failing point feeds the next search round; all
+rounds share one candidate budget. See [the refinement example](examples/swyp/synthesis-refine.json).
+
+```powershell
+Set-Location 'D:\swyp lang'
+go build -o bin/swyp.exe ./cmd/swyp
+.\bin\swyp.exe synth -o bin/my-linear.swyp examples/swyp/synthesis-linear.json
+.\bin\swyp.exe run bin/my-linear.swyp 8
+```
+
+The output file must be new. [Implementation and verification report](docs/NON_LLM_STATUS.md).
+
+[Version 0.5 campaign and independent test results](docs/CAMPAIGN_100_AGENTS.md).
+
+`swyp worker` accepts one specification on stdin and returns JSON containing the
+candidate, its source hash and a bounded numerical operation DAG. The
+[Nexus adapter](bridge/nexus/README.md) implements the inspected Nexus deterministic
+tool interface and has been tested against the real worker. It is not yet
+registered in the Nexus application.
+
+Experimental language project, moved from SwypikOS to `D:\swyp lang`.
+
+```powershell
+Set-Location 'D:\swyp lang'
+go test ./...
+go build -o bin/swyp.exe ./cmd/swyp
+.\bin\swyp.exe run examples/swyp/hello.swyp
+```
+
+- [Language and commands](docs/SWYP_LANG.md)
+- [Latest speed comparisons](docs/SWYP_OPTIMIZATION_ASSESSMENT.md)
+- [AI workflow and current limits](docs/SWYP_AI_WORKFLOW.md)
+- [Research and vision](docs/SWYP_VISION.md)
+
+The compiler, interpreter, tests, examples, benchmarks, documentation and generated
+artifacts are located here. This module builds independently of SwypikOS.
+The optional legacy Ilaria transport was copied into `internal/ilaria`; its
+original implementation remains in the desktop application, which still uses it.
+No model service is required to compile or run ordinary Swyp programs.
+
+[Move manifest](docs/MOVE_MANIFEST.json) records SHA-256 hashes verified immediately
+after the move, before import paths were adjusted and the CLI was rebuilt.
+Historical reports and generated provenance files retain their original paths
+and hashes as records of the earlier runs.

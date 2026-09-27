@@ -1,0 +1,90 @@
+// All workloads use float64 arithmetic, sequential execution, no libraries.
+fn mandelbrot(width: number) -> number {
+    let height = width / 2;
+    let py = 0;
+    let checksum = 0;
+    while py < height {
+        let px = 0;
+        while px < width {
+            let cr = px * 3.5 / width - 2.5;
+            let ci = py * 2 / height - 1;
+            let zr = 0;
+            let zi = 0;
+            let count = 0;
+            while count < 80 && zr * zr + zi * zi <= 4 {
+                let next = zr * zr - zi * zi + cr;
+                zi = 2 * zr * zi + ci;
+                zr = next;
+                count = count + 1;
+            }
+            checksum = checksum + count;
+            px = px + 1;
+        }
+        py = py + 1;
+    }
+    return checksum;
+}
+
+fn prime(n: number) -> bool {
+    let divisor = 2;
+    while divisor * divisor <= n {
+        if n % divisor == 0 { return false; }
+        divisor = divisor + 1;
+    }
+    return true;
+}
+
+fn primes(limit: number) -> number {
+    let n = 2;
+    let count = 0;
+    while n <= limit {
+        if prime(n) { count = count + 1; }
+        n = n + 1;
+    }
+    return count;
+}
+
+// Real batch gradient descent for y = 2*x + 1: two learned parameters.
+fn train(epochs: number) -> number {
+    let weight = 0;
+    let bias = 0;
+    let epoch = 0;
+    while epoch < epochs {
+        let dw = 0;
+        let db = 0;
+        let i = 0;
+        while i < 256 {
+            let x = (i % 64) / 32 - 1;
+            let target = 2 * x + 1;
+            let error = weight * x + bias - target;
+            dw = dw + 2 * error * x;
+            db = db + 2 * error;
+            i = i + 1;
+        }
+        weight = weight - 0.1 * dw / 256;
+        bias = bias - 0.1 * db / 256;
+        epoch = epoch + 1;
+    }
+    let loss = 0;
+    let i = 0;
+    while i < 256 {
+        let x = (i % 64) / 32 - 1;
+        let error = weight * x + bias - (2 * x + 1);
+        loss = loss + error * error;
+        i = i + 1;
+    }
+    loss = loss / 256;
+    print("WEIGHTS", weight, bias, loss);
+    return loss;
+}
+
+fn main() {
+    let mode = arg(0);
+    let size = arg(1);
+    let start = clock();
+    let result = 0;
+    if mode == 0 { result = mandelbrot(size); }
+    else { if mode == 1 { result = primes(size); }
+    else { result = train(size); } }
+    print("RESULT", clock() - start, result);
+}

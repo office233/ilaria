@@ -1,0 +1,289 @@
+package swyplang
+
+import (
+	"fmt"
+	"strconv"
+	"strings"
+	"text/scanner"
+)
+
+// EmitC produces a checked C11 translation. The native subset supports scalar
+// numbers, booleans and immutable strings, but not string concatenation yet.
+func (p *Program) EmitC() (source string, err error) {
+	c, err := p.check()
+	if err != nil {
+		return "", err
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			if e, ok := r.(error); ok {
+				source = ""
+				err = e
+			} else {
+				panic(r)
+			}
+		}
+	}()
+	n := &native{checked: c, names: map[string]string{}}
+	n.WriteString(nativeRuntime)
+	for i, name := range c.order {
+		n.names[name] = fmt.Sprintf("swyp_fn_%d", i)
+	}
+	for _, name := range c.order {
+		n.line("%s;", n.signature(name))
+	}
+	for _, name := range c.order {
+		f := p.functions[name]
+		n.line("%s {", n.signature(name))
+		n.line("if (++swyp_depth > 128) swyp_fail(%s, \"call depth limit exceeded\");", location(f.pos))
+		n.tick(f.pos)
+		env := &nativeScope{vars: map[string]string{}}
+		for i, param := range f.params {
+			env.vars[param] = fmt.Sprintf("p%d", i)
+		}
+		n.block(f.body, env)
+		if c.signatures[name].result.root().mask == voidType {
+			n.line("--swyp_depth; return;")
+		} else {
+			n.line("swyp_fail(%s, \"missing return\");", location(f.pos))
+			n.line("return %s;", zeroC(c.signatures[name].result.root().mask))
+		}
+		n.line("}")
+	}
+	n.line("int main(int argc, char **argv) { swyp_argc=argc-1; swyp_argv=argv+1; %s(); if (fflush(stdout)!=0 || ferror(stdout)) return 1; return 0; }", n.names["main"])
+	return n.String(), nil
+}
+
+type native struct {
+	strings.Builder
+	checked *checked
+	names   map[string]string
+	counter int
+}
+type nativeScope struct {
+	vars   map[string]string
+	parent *nativeScope
+}
+
+func (s *nativeScope) find(name string) string {
+	for e := s; e != nil; e = e.parent {
+		if v, ok := e.vars[name]; ok {
+			return v
+		}
+	}
+	panic(fmt.Errorf("native unresolved variable %s", name))
+}
+func (n *native) line(f string, args ...any) { fmt.Fprintf(&n.Builder, f+"\n", args...) }
+func (n *native) fresh() string              { n.counter++; return fmt.Sprintf("v%d", n.counter) }
+func cType(t int) string {
+	switch t {
+	case numType:
+		return "double"
+	case boolType:
+		return "bool"
+	case strType:
+		return "swyp_string"
+	case voidType:
+		return "void"
+	}
+	panic(fmt.Errorf("unresolved native type"))
+}
+func zeroC(t int) string {
+	if t == strType {
+		return "(swyp_string){NULL,0}"
+	}
+	return "0"
+}
+func cQuote(s string) string {
+	var b strings.Builder
+	b.WriteByte('"')
+	for _, v := range []byte(s) {
+		fmt.Fprintf(&b, "\\%03o", v)
+	}
+	b.WriteByte('"')
+	return b.String()
+}
+func location(p scanner.Position) string  { return cQuote(p.String()) }
+func (n *native) tick(p scanner.Position) { n.line("swyp_tick(%s);", location(p)) }
+func (n *native) signature(name string) string {
+	sig := n.checked.signatures[name]
+	var parts []string
+	for i, t := range sig.params {
+		parts = append(parts, fmt.Sprintf("%s p%d", cType(t.root().mask), i))
+	}
+	args := "void"
+	if len(parts) > 0 {
+		args = strings.Join(parts, ",")
+	}
+	return fmt.Sprintf("static %s %s(%s)", cType(sig.result.root().mask), n.names[name], args)
+}
+func (n *native) block(body []*stmt, parent *nativeScope) {
+	env := &nativeScope{vars: map[string]string{}, parent: parent}
+	n.line("{")
+	for _, s := range body {
+		n.tick(s.pos)
+		switch s.kind {
+		case "let":
+			v := n.expression(s.value, env)
+			name := n.fresh()
+			n.line("%s %s = %s;", cType(n.checked.declarations[s].root().mask), name, v)
+			env.vars[s.name] = name
+		case "assign":
+			v := n.expression(s.value, env)
+			n.line("%s = %s;", env.find(s.name), v)
+		case "expr":
+			n.expression(s.value, env)
+		case "return":
+			v := n.expression(s.value, env)
+			n.line("--swyp_depth; return %s;", v)
+		case "if":
+			v := n.expression(s.value, env)
+			n.line("if (%s)", v)
+			n.block(s.body, env)
+			n.line("else")
+			n.block(s.other, env)
+		case "while":
+			n.line("for (;;) {")
+			v := n.expression(s.value, env)
+			n.line("if (!(%s)) break;", v)
+			n.block(s.body, env)
+			n.line("}")
+		}
+	}
+	n.line("}")
+}
+func (n *native) expression(e *expr, env *nativeScope) string {
+	n.tick(e.pos)
+	t := n.checked.expressions[e].root().mask
+	rhs := ""
+	switch e.kind {
+	case "literal":
+		switch v := e.value.(type) {
+		case float64:
+			rhs = strconv.FormatFloat(v, 'g', 17, 64)
+		case bool:
+			rhs = strconv.FormatBool(v)
+		case string:
+			rhs = fmt.Sprintf("(swyp_string){%s,%d}", cQuote(v), len(v))
+		}
+	case "variable":
+		rhs = env.find(e.name)
+	case "unary":
+		rhs = e.name + n.expression(e.args[0], env)
+	case "call":
+		args := make([]string, len(e.args))
+		for i, a := range e.args {
+			args[i] = n.expression(a, env)
+		}
+		if e.name == "print" {
+			n.tick(e.pos)
+			for i, a := range args {
+				if i > 0 {
+					n.line("fputc(' ',stdout);")
+				}
+				switch n.checked.expressions[e.args[i]].root().mask {
+				case numType:
+					n.line("printf(\"%%.17g\",%s);", a)
+				case boolType:
+					n.line("fputs(%s ? \"true\" : \"false\",stdout);", a)
+				case strType:
+					n.line("fwrite(%s.data,1,%s.len,stdout);", a, a)
+				}
+			}
+			n.line("fputc('\\n',stdout);")
+			return ""
+		}
+		if e.name == "clock" {
+			n.tick(e.pos)
+			rhs = "swyp_clock()"
+		} else if e.name == "arg" {
+			n.tick(e.pos)
+			rhs = fmt.Sprintf("swyp_arg(%s,%s)", args[0], location(e.pos))
+		} else {
+			rhs = fmt.Sprintf("%s(%s)", n.names[e.name], strings.Join(args, ","))
+		}
+		if t == voidType {
+			n.line("%s;", rhs)
+			return ""
+		}
+	case "binary":
+		a := n.expression(e.args[0], env)
+		if e.name == "&&" || e.name == "||" {
+			name := n.fresh()
+			n.line("bool %s = %s;", name, a)
+			condition := name
+			if e.name == "||" {
+				condition = "!" + name
+			}
+			n.line("if (%s) {", condition)
+			b := n.expression(e.args[1], env)
+			n.line("%s = %s; }", name, b)
+			return name
+		}
+		b := n.expression(e.args[1], env)
+		at, bt := n.checked.expressions[e.args[0]].root().mask, n.checked.expressions[e.args[1]].root().mask
+		if e.name == "==" || e.name == "!=" {
+			if at != bt {
+				rhs = strconv.FormatBool(e.name == "!=")
+			} else if at == strType {
+				rhs = fmt.Sprintf("swyp_equal(%s,%s)", a, b)
+				if e.name == "!=" {
+					rhs = "!" + rhs
+				}
+			} else {
+				rhs = a + e.name + b
+			}
+		} else if t == strType {
+			panic(failure(e.pos, "native backend does not yet support string concatenation; use run"))
+		} else if e.name == "/" || e.name == "%" {
+			helper := "swyp_div"
+			if e.name == "%" {
+				helper = "swyp_mod"
+			}
+			rhs = fmt.Sprintf("%s(%s,%s,%s)", helper, a, b, location(e.pos))
+		} else {
+			rhs = a + e.name + b
+		}
+		if t == numType {
+			rhs = fmt.Sprintf("swyp_finite(%s,%s)", rhs, location(e.pos))
+		}
+	}
+	name := n.fresh()
+	n.line("%s %s = %s;", cType(t), name, rhs)
+	return name
+}
+
+const nativeRuntime = `/* Generated by Swyp Lang 0.2; requires C11, no fast-math. */
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <math.h>
+#include <string.h>
+#include <time.h>
+#ifdef _WIN32
+#include <windows.h>
+#endif
+typedef struct {const char *data; size_t len;} swyp_string;
+static unsigned long long swyp_steps=1000000000ULL;
+static unsigned swyp_depth=0;
+static int swyp_argc;
+static char **swyp_argv;
+static void swyp_fail(const char *pos,const char *message) {fprintf(stderr,"%s: %s\n",pos,message);exit(1);}
+static void swyp_tick(const char *pos) {if (!swyp_steps) swyp_fail(pos,"execution step limit exceeded");--swyp_steps;}
+static double swyp_finite(double x,const char *pos) {if (!isfinite(x)) swyp_fail(pos,"non-finite numeric result");return x;}
+static double swyp_div(double x,double y,const char *pos) {if(y==0)swyp_fail(pos,"division by zero");return x/y;}
+static double swyp_mod(double x,double y,const char *pos) {if(y==0)swyp_fail(pos,"remainder by zero");return fmod(x,y);}
+static bool swyp_equal(swyp_string x,swyp_string y) {return x.len==y.len && memcmp(x.data,y.data,x.len)==0;}
+static double swyp_arg(double index,const char *pos) {
+ if(index<0 || index>=swyp_argc || trunc(index)!=index)swyp_fail(pos,"argument index out of range");
+ char *end; const char *input=swyp_argv[(int)index];double x=strtod(input,&end);
+ if(end==input || *end)swyp_fail(pos,"argument must be a number");return swyp_finite(x,pos);
+}
+static double swyp_clock(void) {
+#ifdef _WIN32
+ LARGE_INTEGER ticks,frequency;QueryPerformanceCounter(&ticks);QueryPerformanceFrequency(&frequency);return (double)ticks.QuadPart/(double)frequency.QuadPart;
+#else
+ struct timespec value;timespec_get(&value,TIME_UTC);return value.tv_sec+value.tv_nsec/1e9;
+#endif
+}
+`

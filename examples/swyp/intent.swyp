@@ -1,0 +1,10 @@
+// Handwritten code and Romanian/English intent in one source file.
+fn main() {
+    let count = 10;
+    #natural: "Calculate the sum of squares from 1 through count inclusive. Store it in a number variable named total.";
+    if total == 385 {
+        #limbaj_natural: "Afiseaza mesajul Calculation passed urmat de variabila total.";
+    } else {
+        print("Unexpected result", total);
+    }
+}

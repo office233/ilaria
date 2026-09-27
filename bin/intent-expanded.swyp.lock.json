@@ -1,0 +1,9 @@
+{
+  "version": "0.3",
+  "operation": "expand",
+  "backend": "OFFLINE FIXTURE REPLAY (not AI generation)",
+  "source_sha256": "cfc25f6162981cf3f3bfb7ff86d33dcf45e7084ed1163cf415f04699f4aa4bcf",
+  "output_sha256": "4f35053d8649b1365b9d82eb4f9a3a8b7a6088f6ca319f2883baa48cd885f0f8",
+  "static_checks_passed": true,
+  "behavior_verified": false
+}

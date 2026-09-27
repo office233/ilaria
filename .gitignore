@@ -1,0 +1,7 @@
+*.exe
+*.test
+coverage.out
+.env
+.env.local
+__pycache__/
+agent-lab/

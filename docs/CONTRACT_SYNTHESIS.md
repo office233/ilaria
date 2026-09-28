@@ -181,7 +181,7 @@ solver, model installation, package dependency or background service.
 
 ## Validation performed in this session
 
-Raw records are under `docs/research/20260928-contract-synth/`:
+Raw records are under `docs/research/20260928-contract-synth/` (archived outside the repository under `D:/swyp-lang-archive-20260928/docs/research/`):
 
 - Baseline: 132 top-level test functions passed in eight tested packages.
 - Final full suite: 152 top-level test functions passed, zero failures; twenty

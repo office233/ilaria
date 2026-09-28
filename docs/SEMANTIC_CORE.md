@@ -218,13 +218,13 @@ go test -v ./internal/coreir -count=1
 go test -v ./cmd/swyp -run '^TestCore' -count=1
 go vet ./...
 go build ./...
-go test -race -count=1 -timeout=180s ./internal/coreir ./internal/swyplang ./cmd/swyp ./experiments/ternaryvm
+go test -race -count=1 -timeout=180s ./internal/coreir ./internal/swyplang ./cmd/swyp ./internal/stv2
 go test ./internal/coreir -run '^$' -fuzz '^FuzzCoreIRDecode$' -fuzztime=10s -parallel=2
 go test ./internal/swyplang -run '^$' -fuzz '^FuzzCoreLower$' -fuzztime=10s -parallel=2
 go test ./internal/coreir -run '^$' -fuzz '^FuzzContractDecodeAndVerify$' -fuzztime=10s -parallel=2
 ```
 
-Executed evidence is under `docs/research/20260928-semantic-core/`:
+Executed evidence is under `docs/research/20260928-semantic-core/` (archived outside the repository under `D:/swyp-lang-archive-20260928/docs/research/`):
 
 - 100,845 i64 arithmetic cases compared with an independent `math/big` oracle,
   including boundary values, signed overflow, division and remainder.

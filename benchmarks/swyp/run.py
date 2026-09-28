@@ -16,7 +16,7 @@ import time
 ROOT = Path(__file__).resolve().parents[2]
 parser = argparse.ArgumentParser()
 parser.add_argument("--baseline", type=Path, help="Previous native compute executable, measured in the same run")
-parser.add_argument("--report", type=Path, default=Path("docs/SWYP_NATIVE_BENCHMARK.json"))
+parser.add_argument("--report", type=Path, default=Path("benchmarks/results/SWYP_NATIVE_BENCHMARK.json"))
 parser.add_argument("--skip-interpreter", action="store_true", help="Measure compiled Swyp and other languages only")
 options = parser.parse_args()
 HERE = Path(__file__).resolve().parent
@@ -120,6 +120,7 @@ report=dict(versions=versions,build_seconds=builds,summary=summary,measurements=
             sha256={str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in paths})
 if options.baseline:
     report["baseline"] = dict(path=str(options.baseline), sha256=hashlib.sha256(options.baseline.read_bytes()).hexdigest())
+(ROOT/options.report).parent.mkdir(parents=True,exist_ok=True)
 (ROOT/options.report).write_text(json.dumps(report,indent=2)+"\n",encoding="utf-8")
 for row in summary:
     print(f'{row["case"]:20} {row["language"]:18} {row["median_ms"]:10.4f} ms [{row["min_ms"]:.4f}, {row["max_ms"]:.4f}]')

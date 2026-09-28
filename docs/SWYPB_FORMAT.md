@@ -67,7 +67,7 @@ or 146 bytes in total (16 instructions). Earlier compilers emitted 157-byte,
 wire format and VM instruction semantics have not changed. Optimized code can
 consume less instruction fuel for the same source computation.
 These sizes exclude the executable, decoded instructions and runtime memory.
-See [the research campaign](AI_LANGUAGE_RESEARCH_20260928.md) for measured
+See [the research campaign](history/AI_LANGUAGE_RESEARCH_20260928.md) for measured
 variants, source hashes, limitations and cross-language comparisons.
 
 Unknown versions, targets, profiles and type tags, nonzero reserved fields,

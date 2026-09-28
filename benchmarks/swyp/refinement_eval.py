@@ -39,7 +39,8 @@ def main():
     report={"artifacts":str(directory),"results":rows,
             "total_backend_checks":sum(r["backend_checks"] for r in rows),
             "claim":"Only listed training, validation and held-out points tested; no universal proof."}
-    (ROOT/"docs/NON_LLM_REFINEMENT_EVALUATION.json").write_text(json.dumps(report,indent=2)+"\n",encoding="utf-8")
+    (ROOT/"benchmarks/results").mkdir(parents=True,exist_ok=True)
+    (ROOT/"benchmarks/results/NON_LLM_REFINEMENT_EVALUATION.json").write_text(json.dumps(report,indent=2)+"\n",encoding="utf-8")
     print(json.dumps(report,indent=2))
 
 if __name__=="__main__": main()

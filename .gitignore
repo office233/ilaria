@@ -7,3 +7,4 @@ __pycache__/
 agent-lab/
 bin/
 bridge/chatgpt-mcp/
+benchmarks/results/

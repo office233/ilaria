@@ -8,18 +8,18 @@ the same numeric input are rejected before search. Verification covers only the
 supplied points; it is not a universal proof.
 
 Version 0.4 adds `swyp synth -o new.swyp spec.json`: bounded deterministic
-arithmetic synthesis from examples with no LLM calls. See [the status report](NON_LLM_STATUS.md)
+arithmetic synthesis from examples with no LLM calls. See [the status report](history/NON_LLM_STATUS.md)
 for tested capabilities, restrictions and reproducible evaluation.
 
 The native backend now batches execution-budget checks while preserving error
-behavior. See [the optimization measurements](SWYP_OPTIMIZATION_ASSESSMENT.md)
+behavior. See [the optimization measurements](history/SWYP_OPTIMIZATION_ASSESSMENT.md)
 for the before/after comparison with C, C++, Go and Python.
 
 Swyp Lang is our experimental language, previously called Syra in the research proposal. Files use `.swyp`. Version 0.2 adds static checking, native compilation through C/GCC, numeric command-line inputs, interval timing, and an optional Ilaria draft-generation command.
 
-Version 0.3 adds inline natural-language statements, validated expansion with provenance, separate repair drafts, and an offline HTML/JavaScript target. See [the end-to-end walkthrough](SWYP_AI_WORKFLOW.md). These are implemented mechanisms, not a claim of general natural-language correctness.
+Version 0.3 adds inline natural-language statements, validated expansion with provenance, separate repair drafts, and an offline HTML/JavaScript target. See [the end-to-end walkthrough](history/SWYP_AI_WORKFLOW.md). These are implemented mechanisms, not a claim of general natural-language correctness.
 
-This is a scalar prototype, not a replacement for SwypikOS. See [0.2 measurements](SWYP_NATIVE_ASSESSMENT.md), [historical 0.1 measurements](SWYP_MIGRATION_ASSESSMENT.md), and [the requested AI-language vision](SWYP_VISION.md).
+This is a scalar prototype, not a replacement for SwypikOS. See [0.2 measurements](history/SWYP_NATIVE_ASSESSMENT.md), [historical 0.1 measurements](history/SWYP_MIGRATION_ASSESSMENT.md), and [the requested AI-language vision](history/SWYP_VISION.md).
 
 ## Run and build
 
@@ -92,7 +92,7 @@ go vet ./internal/swyplang ./cmd/swyp
 python benchmarks/swyp/run.py
 ```
 
-Native parity tests compile temporary programs with GCC, explicitly skipping if it is missing. Benchmark references cover C, C++, Go, Python, and Rust when rustc is available. Generated executables go under `bin/swyp-bench`; raw results and source hashes go into `docs/SWYP_NATIVE_BENCHMARK.json`.
+Native parity tests compile temporary programs with GCC, explicitly skipping if it is missing. Benchmark references cover C, C++, Go, Python, and Rust when rustc is available. Generated executables go under `bin/swyp-bench`; raw results and source hashes go into `benchmarks/results/SWYP_NATIVE_BENCHMARK.json`.
 
 The new `web -o new.html file.swyp` target produces a scalar runner, not a declarative UI framework. The generated program runs in a worker with Stop, a 10-second timeout and a 1,000-line output limit. The JavaScript core was tested under Node 24; visual browser testing was blocked by the in-app browser's file-URL policy. Browser rendering, worker behavior and controls are not yet end-to-end verified.
 

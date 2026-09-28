@@ -47,7 +47,8 @@ def main():
     report = {"method":"bounded non-LLM synthesis; exact equality on supplied examples",
               "limitation":"Held-out testing is not a proof for all float64 inputs.",
               "artifacts":str(directory),"results":rows}
-    target = ROOT / "docs/NON_LLM_EVALUATION.json"
+    (ROOT/"benchmarks/results").mkdir(parents=True,exist_ok=True)
+    target = ROOT / "benchmarks/results/NON_LLM_EVALUATION.json"
     target.write_text(json.dumps(report,indent=2)+"\n",encoding="utf-8")
     print(json.dumps(report,indent=2))
 

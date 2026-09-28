@@ -63,9 +63,17 @@ def system_prompt(tool_lines=None):
 
 
 def tool_line(fn):
-    """One prompt line for a JSON-schema function: '- name: {"arg": type, ...} — description'."""
-    params = (fn.get("parameters") or {}).get("properties") or {}
-    required = set((fn.get("parameters") or {}).get("required") or [])
+    """One prompt line for a JSON-schema function: '- name: {"arg": type, ...} — description'.
+
+    Malformed schemas raise ValueError; build() counts that example as invalid.
+    """
+    schema = fn.get("parameters") or {}
+    params = schema.get("properties") or {} if isinstance(schema, dict) else None
+    required = schema.get("required") or [] if isinstance(schema, dict) else None
+    if (not isinstance(fn.get("name"), str) or not isinstance(params, dict)
+            or not isinstance(required, list) or not all(isinstance(v, dict) for v in params.values())):
+        raise ValueError("malformed function schema")
+    required = set(map(str, required))
     args = ", ".join(f'"{k}": {v.get("type", "any")}{"" if k in required else "?"}' for k, v in params.items())
     desc = " ".join(str(fn.get("description", "")).split())
     return f"- {fn['name']}: {{{args}}} — {desc}"
@@ -278,12 +286,20 @@ def split_rows(rows, seed, val_fraction=0.02, val_cap=300):
     return train, val
 
 
+def safe_convert(convert, rec):
+    """A record the converter cannot parse is invalid data, not a reason to abort the build."""
+    try:
+        return convert(rec)
+    except (ValueError, TypeError, KeyError, AttributeError, IndexError):
+        return None
+
+
 def build(records_by_source, forbidden, seed=42):
     rows, stats = [], Counter()
     seen = set()
     for src, records in records_by_source.items():
         cap = SOURCES[src][3]
-        produced = oasst_threads(records) if src == "oasst2" else (CONVERTERS[src](r) for r in records)
+        produced = oasst_threads(records) if src == "oasst2" else (safe_convert(CONVERTERS[src], r) for r in records)
         kept = 0
         for r in produced:
             stats[f"{src}:seen"] += 1

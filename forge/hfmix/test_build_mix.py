@@ -79,6 +79,19 @@ class BuildMixTests(unittest.TestCase):
             loaded = load_trajectories(path, ("en",))
             self.assertEqual(len(loaded), len(train) + len(val))
 
+    def test_malformed_schema_is_invalid_not_fatal(self):
+        # Seen in glaive-function-calling-v2 on Colab: "required": true aborted the whole build.
+        good = fixture("glaiveai_glaive-function-calling-v2")[0]
+        bad = dict(good, system='SYSTEM: functions -\n{"name": "f", "description": "d", '
+                                '"parameters": {"type": "object", "properties": {}, "required": true}}')
+        with self.assertRaises(ValueError):
+            bm.tool_line({"name": "f", "parameters": {"properties": {}, "required": True}})
+        with self.assertRaises(ValueError):
+            bm.tool_line({"name": "f", "parameters": {"properties": {"x": "string"}}})
+        (train, val), stats = bm.build({"glaive": [bad, good]}, set())
+        self.assertEqual(stats["glaive:invalid"], 1)
+        self.assertEqual(stats["glaive:kept"], 1)
+
     def test_bench_prompts_are_forbidden(self):
         bench = HERE.parents[1] / "bench" / "swypik-v1" / "tasks.jsonl"
         keys = bm.forbidden_prompts([bench])

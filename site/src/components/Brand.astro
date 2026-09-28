@@ -1,0 +1,26 @@
+---
+interface Props {
+  compact?: boolean;
+}
+const { compact = false } = Astro.props;
+---
+<a class="brand" href="/" aria-label="Swypik home">
+  <img src="/favicon.svg" alt="" width="30" height="30" />
+  {!compact && <span>swypik</span>}
+</a>
+
+<style>
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: .65rem;
+    font-size: 1.02rem;
+    font-weight: 850;
+    letter-spacing: -.04em;
+  }
+  img {
+    width: 30px;
+    height: 30px;
+    filter: drop-shadow(0 5px 16px rgba(124,58,237,.34));
+  }
+</style>

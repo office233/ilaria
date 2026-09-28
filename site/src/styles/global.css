@@ -1,0 +1,217 @@
+@import "tailwindcss";
+
+:root {
+  --ink: #f7f5ff;
+  --muted: #aaa3bb;
+  --canvas: #050507;
+  --surface: rgba(255, 255, 255, 0.055);
+  --surface-strong: rgba(255, 255, 255, 0.09);
+  --line: rgba(255, 255, 255, 0.11);
+  --violet: #8b5cf6;
+  --violet-2: #a855f7;
+  --electric: #6d5dfc;
+  --green: #5ef0ac;
+  --max: 1180px;
+  color-scheme: dark;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: var(--canvas);
+  color: var(--ink);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  background: var(--canvas);
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  overflow-x: hidden;
+  background:
+    radial-gradient(circle at 70% -10%, rgba(124, 58, 237, 0.22), transparent 30rem),
+    radial-gradient(circle at 10% 30%, rgba(74, 56, 166, 0.12), transparent 28rem),
+    #050507;
+}
+
+body::before {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  content: "";
+  opacity: 0.14;
+  background-image:
+    linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: linear-gradient(to bottom, black, transparent 86%);
+}
+
+::selection {
+  background: rgba(139, 92, 246, .45);
+  color: white;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button, input {
+  font: inherit;
+}
+
+button, a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+:focus-visible {
+  outline: 2px solid #b794f6;
+  outline-offset: 4px;
+}
+
+.skip-link {
+  position: fixed;
+  top: .75rem;
+  left: .75rem;
+  z-index: 1000;
+  padding: .7rem .9rem;
+  border-radius: .7rem;
+  background: #fff;
+  color: #09070d;
+  font-size: .82rem;
+  font-weight: 800;
+  transform: translateY(-160%);
+  transition: transform .16s ease;
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+.shell {
+  width: min(calc(100% - 40px), var(--max));
+  margin-inline: auto;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: .55rem;
+  padding: .46rem .72rem;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 999px;
+  background: rgba(255,255,255,.045);
+  color: #d5cfe4;
+  font-size: .76rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  backdrop-filter: blur(18px);
+}
+
+.eyebrow::before {
+  width: .45rem;
+  height: .45rem;
+  border-radius: 999px;
+  content: "";
+  background: var(--green);
+  box-shadow: 0 0 18px rgba(94, 240, 172, .7);
+}
+
+.gradient-text {
+  background: linear-gradient(100deg, #fff 5%, #cfc3ff 42%, #9e6cff 78%, #f0d9ff);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+.section {
+  position: relative;
+  padding: clamp(5.5rem, 10vw, 9rem) 0;
+}
+
+.section-kicker {
+  margin: 0 0 1rem;
+  color: #9b83ff;
+  font-size: .78rem;
+  font-weight: 800;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.section-title {
+  max-width: 880px;
+  margin: 0;
+  font-size: clamp(2.35rem, 6vw, 5.4rem);
+  line-height: .96;
+  letter-spacing: -.058em;
+}
+
+.section-copy {
+  max-width: 690px;
+  margin: 1.5rem 0 0;
+  color: var(--muted);
+  font-size: clamp(1rem, 1.7vw, 1.2rem);
+  line-height: 1.72;
+}
+
+.glass {
+  border: 1px solid var(--line);
+  background:
+    linear-gradient(145deg, rgba(255,255,255,.075), rgba(255,255,255,.02)),
+    rgba(12, 10, 18, .7);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 28px 80px rgba(0,0,0,.24);
+  backdrop-filter: blur(24px);
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  min-height: 2.35rem;
+  padding: 0 .85rem;
+  border: 1px solid rgba(255,255,255,.11);
+  border-radius: 999px;
+  background: rgba(255,255,255,.035);
+  color: #bdb7ca;
+  font-size: .8rem;
+  font-weight: 650;
+}
+
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity .8s cubic-bezier(.2,.8,.2,1), transform .8s cubic-bezier(.2,.8,.2,1);
+}
+
+.reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+  .reveal {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .shell {
+    width: min(calc(100% - 28px), var(--max));
+  }
+}

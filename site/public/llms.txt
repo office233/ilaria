@@ -1,0 +1,31 @@
+# Swypik
+
+> Official product overview for the Swypik ecosystem.
+
+Swypik is building a connected product ecosystem spanning video-native social commerce, local-first AI and an agentic desktop shell.
+
+## Swypik
+
+Swypik is a video-native social-commerce product. The web product is already running. A native mobile release is being developed separately and is not currently advertised as available in app stores.
+
+## Ilaria
+
+Ilaria is a Romanian-first, English-capable AI research stack with its own Go inference engine. Its verified project work includes local inference, tool use and hippocampus-inspired one-shot memory research. Ilaria is not presented as a replacement for frontier cloud language models.
+
+## SwypikOS
+
+The currently verified SwypikOS implementation is a native Windows desktop shell connected to Ilaria. A broader agentic computing platform is a product direction and roadmap, not a claim that a general-purpose standalone operating system is already shipping.
+
+## Product principles
+
+- Local-first intelligence where practical.
+- Native software instead of a Chromium/Electron shell for SwypikOS.
+- Clear separation between released capabilities, active development and roadmap.
+- No public performance claims based only on architectural targets.
+
+## Canonical pages
+
+- https://swypik.com/
+- https://swypik.com/privacy/
+- https://swypik.com/terms/
+- https://swypik.com/contact/

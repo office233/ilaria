@@ -1,1 +1,0 @@
-fn predict(x: number) -> number { return x; } fn main(){print(predict(arg(0)));}

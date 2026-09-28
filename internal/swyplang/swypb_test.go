@@ -11,7 +11,7 @@ import (
 	"sync"
 	"testing"
 
-	vm "swyp-lang/experiments/ternaryvm"
+	vm "swyp-lang/internal/stv2"
 )
 
 func swypbTestModule(t testing.TB, source string) *STV2Module {

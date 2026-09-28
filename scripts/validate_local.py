@@ -26,9 +26,9 @@ PHASES = (
     "fuzz-assembly", "fuzz-compiler", "fuzz-module", "smoke", "bench",
 )
 FUZZ = {
-    "fuzz-stv1": ("./experiments/ternaryvm", "FuzzDecode"),
-    "fuzz-stv2": ("./experiments/ternaryvm", "FuzzSTV2DecodeAudit"),
-    "fuzz-assembly": ("./experiments/ternaryvm", "FuzzSTV2AssemblyAudit"),
+    "fuzz-stv1": ("./internal/stv2", "FuzzDecode"),
+    "fuzz-stv2": ("./internal/stv2", "FuzzSTV2DecodeAudit"),
+    "fuzz-assembly": ("./internal/stv2", "FuzzSTV2AssemblyAudit"),
     "fuzz-compiler": ("./internal/swyplang", "FuzzSTV2CompilerAudit"),
     "fuzz-module": ("./internal/swyplang", "FuzzSWYPBLoad"),
 }
@@ -174,7 +174,7 @@ class Validation:
         elif self.phase == "shuffle":
             self.command("shuffled-regression", [self.go, "test", "-json", "-shuffle=on", "-count=3", "-timeout=180s", "./..."], timeout=300)
         elif self.phase == "contracts":
-            self.command("contracts", [self.go, "test", "-v", "-count=1", "-timeout=180s", "-run", "^Test(STV2|V2|SWYPB)", "./experiments/ternaryvm", "./internal/swyplang", "./cmd/swyp"])
+            self.command("contracts", [self.go, "test", "-v", "-count=1", "-timeout=180s", "-run", "^Test(STV2|V2|SWYPB)", "./internal/stv2", "./internal/swyplang", "./cmd/swyp"])
         elif self.phase in FUZZ:
             package, name = FUZZ[self.phase]
             self.command(self.phase, [self.go, "test", package, "-run", "^$", "-fuzz", "^" + name + "$", "-fuzztime=" + str(self.fuzz_seconds) + "s", "-parallel=2", "-timeout=120s"], timeout=150)

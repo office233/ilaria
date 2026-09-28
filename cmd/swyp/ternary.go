@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"os"
 	"strconv"
-	"swyp-lang/experiments/ternaryvm"
+	"swyp-lang/internal/stv2"
 )
 
 func ternaryCommand(args []string) error {
 	flags := flag.NewFlagSet("ternary", flag.ContinueOnError)
-	steps := flags.Int("steps", ternaryvm.MaxFuel, "STV2 execution fuel")
+	steps := flags.Int("steps", stv2.MaxFuel, "STV2 execution fuel")
 	if err := flags.Parse(args); err != nil {
 		return err
 	}
@@ -25,15 +25,15 @@ func ternaryCommand(args []string) error {
 	if len(source) > 1<<20 {
 		return fmt.Errorf("source exceeds 1 MiB limit")
 	}
-	program, err := ternaryvm.AssembleV2(string(source))
+	program, err := stv2.AssembleV2(string(source))
 	if err != nil {
 		return err
 	}
-	packed, err := ternaryvm.EncodeV2(program)
+	packed, err := stv2.EncodeV2(program)
 	if err != nil {
 		return err
 	}
-	decoded, err := ternaryvm.DecodeV2(packed)
+	decoded, err := stv2.DecodeV2(packed)
 	if err != nil {
 		return err
 	}
@@ -44,7 +44,7 @@ func ternaryCommand(args []string) error {
 			return fmt.Errorf("invalid initial r0 %q", rest[1])
 		}
 	}
-	result, err := ternaryvm.RunV2(decoded, registers, *steps)
+	result, err := stv2.RunV2(decoded, registers, *steps)
 	if err != nil {
 		return err
 	}

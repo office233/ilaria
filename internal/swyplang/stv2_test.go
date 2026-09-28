@@ -11,7 +11,7 @@ import (
 	"testing"
 	"text/scanner"
 
-	vm "swyp-lang/experiments/ternaryvm"
+	vm "swyp-lang/internal/stv2"
 )
 
 const stv2SumSwyp = `fn main() -> number {

@@ -9,7 +9,7 @@ import (
 	"os"
 	"strconv"
 
-	vm "swyp-lang/experiments/ternaryvm"
+	vm "swyp-lang/internal/stv2"
 	"swyp-lang/internal/swyplang"
 )
 

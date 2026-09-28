@@ -6,7 +6,7 @@ import (
 	"encoding/binary"
 	"fmt"
 
-	vm "swyp-lang/experiments/ternaryvm"
+	vm "swyp-lang/internal/stv2"
 )
 
 const (

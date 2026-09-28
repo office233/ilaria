@@ -12,7 +12,7 @@ import (
 	"sync"
 	"testing"
 
-	vm "swyp-lang/experiments/ternaryvm"
+	vm "swyp-lang/internal/stv2"
 	"swyp-lang/internal/swyplang"
 )
 

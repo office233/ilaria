@@ -1,5 +1,5 @@
-// Package ternaryvm defines a deterministic, bounded ternary bytecode machine.
-package ternaryvm
+// Package stv2 defines a deterministic, bounded ternary bytecode machine.
+package stv2
 
 import (
 	"encoding/binary"

@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	vm "swyp-lang/experiments/ternaryvm"
+	vm "swyp-lang/internal/stv2"
 )
 
 func TestCLICompileRunAndExport(t *testing.T) {

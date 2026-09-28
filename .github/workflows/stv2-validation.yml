@@ -31,7 +31,7 @@ jobs:
       - name: Static analysis
         run: go vet ./...
       - name: Race detector
-        run: go test -race -count=1 -timeout=180s ./experiments/ternaryvm ./internal/swyplang ./cmd/swyp-stv2 ./cmd/swyp ./internal/coreir
+        run: go test -race -count=1 -timeout=180s ./internal/stv2 ./internal/swyplang ./cmd/swyp-stv2 ./cmd/swyp ./internal/coreir
       - name: Core IR fuzzing
         run: go test ./internal/coreir -run '^$' -fuzz '^FuzzCoreIRDecode$' -fuzztime=10s -parallel=2
       - name: Core source fuzzing
@@ -39,9 +39,9 @@ jobs:
       - name: Contract fuzzing
         run: go test ./internal/coreir -run '^$' -fuzz '^FuzzContractDecodeAndVerify$' -fuzztime=10s -parallel=2
       - name: Decoder fuzzing
-        run: go test ./experiments/ternaryvm -run '^$' -fuzz '^FuzzSTV2DecodeAudit$' -fuzztime=10s -parallel=2
+        run: go test ./internal/stv2 -run '^$' -fuzz '^FuzzSTV2DecodeAudit$' -fuzztime=10s -parallel=2
       - name: Assembler fuzzing
-        run: go test ./experiments/ternaryvm -run '^$' -fuzz '^FuzzSTV2AssemblyAudit$' -fuzztime=10s -parallel=2
+        run: go test ./internal/stv2 -run '^$' -fuzz '^FuzzSTV2AssemblyAudit$' -fuzztime=10s -parallel=2
       - name: Compiler fuzzing
         run: go test ./internal/swyplang -run '^$' -fuzz '^FuzzSTV2CompilerAudit$' -fuzztime=10s -parallel=2
       - name: Module contract tests

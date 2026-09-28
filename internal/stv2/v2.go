@@ -1,4 +1,4 @@
-package ternaryvm
+package stv2
 
 import (
 	"encoding/binary"

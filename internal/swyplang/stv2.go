@@ -5,7 +5,7 @@ import (
 	"math"
 	"text/scanner"
 
-	vm "swyp-lang/experiments/ternaryvm"
+	vm "swyp-lang/internal/stv2"
 )
 
 // STV2Module is an immutable compiled safe-integer subset of Swyp.

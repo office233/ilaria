@@ -5,3 +5,5 @@ coverage.out
 .env.local
 __pycache__/
 agent-lab/
+bin/
+bridge/chatgpt-mcp/

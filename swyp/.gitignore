@@ -1,0 +1,10 @@
+*.exe
+*.test
+coverage.out
+.env
+.env.local
+__pycache__/
+agent-lab/
+bin/
+bridge/chatgpt-mcp/
+benchmarks/results/

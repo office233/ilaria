@@ -1,0 +1,160 @@
+STV2 local validation evidence, 2026-09-27
+
+Scope: minimal buildable snapshot, not the full repository.
+Original source blobs were checked against GitHub.
+
+===== source-manifest (Git blob hashes) =====
+{
+  "base_commit": "8bb381756673c585c00833e6e9225768f772db9f",
+  "verified_source_commit": "843171a6787614ff3e05785b6dff829879104caf",
+  "local_scope": "Minimal buildable snapshot of original parser, checker, STV1 core, modified STV2 core, new lowering and standalone CLI, and new tests. Not the full repository or its original test suite.",
+  "original_git_blobs": {
+    "internal/swyplang/check.go": "04dc096079c7473a2830cbe902a2519675d7f317",
+    "internal/swyplang/swyp.go": "1be8dfe6c6f8bf2014e1d26ee5e8ae730738f02a",
+    "experiments/ternaryvm/vm.go": "f488dccfea2294ba5ce3111ddb9353e07d7218a5",
+    "experiments/ternaryvm/v2.go": "cc0f9662aa88904028974d4454cbd7b721ffcc23",
+    "go.mod": "7d1b6d611913ecce1c8562111b441f35a767871c"
+  },
+  "tested_git_blobs": {
+    "cmd/swyp-stv2/main.go": "90b19fb15e7a6309d4b9975316d9a581f0c7ed12",
+    "cmd/swyp-stv2/main_test.go": "2db2dfa967694384a9ac487e94a48613ea8003d6",
+    "examples/swyp/sum.stv2.swyp": "21f326cf9f7f2f09d70470efb73bf6a6353b5e96",
+    "experiments/ternaryvm/v2.go": "e9c1ee83461ce0d98f8f8c921b89b6d79ef610bb",
+    "experiments/ternaryvm/v2_audit_test.go": "f438ddcf4a58e7baddf6fbb564ad0a8ec1c5bc92",
+    "experiments/ternaryvm/vm.go": "f488dccfea2294ba5ce3111ddb9353e07d7218a5",
+    "go.mod": "7d1b6d611913ecce1c8562111b441f35a767871c",
+    "internal/swyplang/check.go": "04dc096079c7473a2830cbe902a2519675d7f317",
+    "internal/swyplang/stv2.go": "42bed7edfcdca2ceb7d2db48c326504c5d99c4f4",
+    "internal/swyplang/stv2_test.go": "f82ed3637b39f59b3a5f164a4889e9ec9d898214",
+    "internal/swyplang/swyp.go": "1be8dfe6c6f8bf2014e1d26ee5e8ae730738f02a"
+  }
+}
+
+===== environment.txt =====
+go version go1.23.2 linux/amd64
+gcc (Debian 14.2.0-19) 14.2.0
+Linux x86_64
+CPU(s):                                  5
+Model name:                              AMD EPYC 9V74 80-Core Processor
+linux
+amd64
+
+
+===== baseline.txt =====
+# swyp-lang/experiments/ternaryvm
+experiments/ternaryvm/v2.go:118:45: newline in string
+experiments/ternaryvm/v2.go:118:45: syntax error: unexpected newline in argument list; possibly missing comma or )
+experiments/ternaryvm/v2.go:119:5: newline in string
+experiments/ternaryvm/v2.go:120:59: syntax error: unexpected ), expected { after for clause
+FAIL	swyp-lang/experiments/ternaryvm [build failed]
+FAIL
+
+
+===== final-regression.txt =====
+ok  	swyp-lang/experiments/ternaryvm	0.215s
+ok  	swyp-lang/internal/swyplang	0.338s
+ok  	swyp-lang/cmd/swyp-stv2	0.015s
+
+
+===== race.txt =====
+ok  	swyp-lang/experiments/ternaryvm	2.208s
+ok  	swyp-lang/internal/swyplang	2.906s
+ok  	swyp-lang/cmd/swyp-stv2	1.027s
+
+
+===== vet.txt =====
+go vet exit=0
+
+
+===== fuzz-decoder.txt =====
+fuzz: elapsed: 0s, gathering baseline coverage: 0/4 completed
+fuzz: elapsed: 0s, gathering baseline coverage: 4/4 completed, now fuzzing with 2 workers
+fuzz: elapsed: 3s, execs: 189985 (63313/sec), new interesting: 10 (total: 14)
+fuzz: elapsed: 6s, execs: 372372 (60810/sec), new interesting: 21 (total: 25)
+fuzz: elapsed: 9s, execs: 548124 (58573/sec), new interesting: 25 (total: 29)
+fuzz: elapsed: 10s, execs: 609810 (57181/sec), new interesting: 25 (total: 29)
+PASS
+ok  	swyp-lang/experiments/ternaryvm	10.083s
+
+
+===== fuzz-assembler.txt =====
+fuzz: elapsed: 0s, gathering baseline coverage: 0/4 completed
+fuzz: elapsed: 0s, gathering baseline coverage: 4/4 completed, now fuzzing with 2 workers
+fuzz: elapsed: 3s, execs: 151384 (50458/sec), new interesting: 112 (total: 116)
+fuzz: elapsed: 6s, execs: 315008 (54529/sec), new interesting: 128 (total: 132)
+fuzz: elapsed: 9s, execs: 478368 (54458/sec), new interesting: 138 (total: 142)
+fuzz: elapsed: 10s, execs: 523800 (38331/sec), new interesting: 141 (total: 145)
+PASS
+ok  	swyp-lang/experiments/ternaryvm	10.190s
+
+
+===== fuzz-compiler.txt =====
+fuzz: elapsed: 0s, gathering baseline coverage: 0/5 completed
+fuzz: elapsed: 0s, gathering baseline coverage: 5/5 completed, now fuzzing with 2 workers
+fuzz: elapsed: 3s, execs: 29938 (9978/sec), new interesting: 62 (total: 67)
+fuzz: elapsed: 6s, execs: 29938 (0/sec), new interesting: 62 (total: 67)
+fuzz: elapsed: 9s, execs: 29938 (0/sec), new interesting: 62 (total: 67)
+fuzz: elapsed: 11s, execs: 29938 (0/sec), new interesting: 62 (total: 67)
+PASS
+ok  	swyp-lang/internal/swyplang	11.007s
+
+
+===== demo.json =====
+{"format":"STV2","profile":"swyp-safe-integer","result_type":"number","value":5050,"steps":1308,"instructions":18,"packed_bytes":109}
+
+
+===== benchmark.txt =====
+goos: linux
+goarch: amd64
+pkg: swyp-lang/internal/swyplang
+cpu: AMD EPYC 9V74 80-Core Processor                
+BenchmarkSTV2LoweredSum/SwypAST-5         	    1599	    147654 ns/op	   16024 B/op	    2002 allocs/op
+BenchmarkSTV2LoweredSum/SwypAST-5         	    1578	    153895 ns/op	   16024 B/op	    2002 allocs/op
+BenchmarkSTV2LoweredSum/SwypAST-5         	    1579	    149720 ns/op	   16024 B/op	    2002 allocs/op
+BenchmarkSTV2LoweredSum/SwypAST-5         	    1598	    151170 ns/op	   16024 B/op	    2002 allocs/op
+BenchmarkSTV2LoweredSum/SwypAST-5         	    1434	    153084 ns/op	   16024 B/op	    2002 allocs/op
+BenchmarkSTV2LoweredSum/STV2Exact-5       	    8844	     29859 ns/op	       8 B/op	       1 allocs/op
+BenchmarkSTV2LoweredSum/STV2Exact-5       	    6885	     29401 ns/op	       8 B/op	       1 allocs/op
+BenchmarkSTV2LoweredSum/STV2Exact-5       	    8216	     29385 ns/op	       8 B/op	       1 allocs/op
+BenchmarkSTV2LoweredSum/STV2Exact-5       	    7416	     32432 ns/op	       8 B/op	       1 allocs/op
+BenchmarkSTV2LoweredSum/STV2Exact-5       	    7964	     32761 ns/op	       8 B/op	       1 allocs/op
+BenchmarkSTV2LoweredSum/GoUncheckedReference-5         	  756106	       313.5 ns/op	       8 B/op	       1 allocs/op
+BenchmarkSTV2LoweredSum/GoUncheckedReference-5         	  682113	       325.5 ns/op	       8 B/op	       1 allocs/op
+BenchmarkSTV2LoweredSum/GoUncheckedReference-5         	  792153	       332.5 ns/op	       8 B/op	       1 allocs/op
+BenchmarkSTV2LoweredSum/GoUncheckedReference-5         	  674196	       336.9 ns/op	       8 B/op	       1 allocs/op
+BenchmarkSTV2LoweredSum/GoUncheckedReference-5         	  640428	       325.8 ns/op	       8 B/op	       1 allocs/op
+BenchmarkSTV2LoweredSum/CompileIncludingCodec-5        	   26997	      8451 ns/op	    3657 B/op	      47 allocs/op
+BenchmarkSTV2LoweredSum/CompileIncludingCodec-5        	   26272	      8604 ns/op	    3656 B/op	      47 allocs/op
+BenchmarkSTV2LoweredSum/CompileIncludingCodec-5        	   27602	      8696 ns/op	    3657 B/op	      47 allocs/op
+BenchmarkSTV2LoweredSum/CompileIncludingCodec-5        	   25771	      8375 ns/op	    3656 B/op	      47 allocs/op
+BenchmarkSTV2LoweredSum/CompileIncludingCodec-5        	   24678	      8459 ns/op	    3657 B/op	      47 allocs/op
+PASS
+ok  	swyp-lang/internal/swyplang	5.273s
+
+
+===== cross-compile.txt =====
+cross-compile linux/386 VM PASS
+cross-compile linux/386 compiler PASS
+cross-compile linux/386 CLI PASS
+cross-compile linux/arm64 VM PASS
+cross-compile linux/arm64 compiler PASS
+cross-compile windows/amd64 VM PASS
+cross-compile windows/amd64 CLI PASS
+
+
+===== linux-386.txt =====
+fork/exec /tmp/go-build1770026900/b070/ternaryvm.test: exec format error
+FAIL	swyp-lang/experiments/ternaryvm	0.000s
+fork/exec /tmp/go-build1770026900/b104/swyplang.test: exec format error
+FAIL	swyp-lang/internal/swyplang	0.000s
+fork/exec /tmp/go-build1770026900/b106/swyp-stv2.test: exec format error
+FAIL	swyp-lang/cmd/swyp-stv2	0.000s
+FAIL
+
+
+===== case counters extracted verbatim from verbose test logs =====
+    v2_audit_test.go:67: arithmetic oracle comparisons=1001125 seed=5802
+    v2_audit_test.go:110: comparison/move/min/max/bitwise checks=480000 seed=2702
+    v2_audit_test.go:310: single-byte transport mutations: accepted canonical=7536 rejected=92816
+    stv2_test.go:104: loop/scope comparisons=1369
+    stv2_test.go:165: generated programs=5000 differential executions=20000 seed=15802

@@ -1,0 +1,7 @@
+// Optional reference: measured only when rustc is installed.
+use std::{env,time::Instant};
+fn mandelbrot(width:f64)->f64{let height=width/2.0;let(mut py,mut checksum)=(0.0,0.0);while py<height{let mut px=0.0;while px<width{let cr=px*3.5/width-2.5;let ci=py*2.0/height-1.0;let(mut zr,mut zi,mut count)=(0.0,0.0,0.0);while count<80.0&&zr*zr+zi*zi<=4.0{let next=zr*zr-zi*zi+cr;zi=2.0*zr*zi+ci;zr=next;count+=1.0;}checksum+=count;px+=1.0;}py+=1.0;}checksum}
+fn prime(n:f64)->bool{let mut d=2.0;while d*d<=n{if n%d==0.0{return false;}d+=1.0;}true}
+fn primes(limit:f64)->f64{let(mut n,mut count)=(2.0,0.0);while n<=limit{if prime(n){count+=1.0;}n+=1.0;}count}
+fn train(epochs:f64)->f64{let(mut weight,mut bias,mut epoch)=(0.0,0.0,0.0);while epoch<epochs{let(mut dw,mut db,mut i)=(0.0,0.0,0.0);while i<256.0{let x=(i%64.0)/32.0-1.0;let target=2.0*x+1.0;let error=weight*x+bias-target;dw+=2.0*error*x;db+=2.0*error;i+=1.0;}weight-=0.1*dw/256.0;bias-=0.1*db/256.0;epoch+=1.0;}let(mut loss,mut i)=(0.0,0.0);while i<256.0{let x=(i%64.0)/32.0-1.0;let error=weight*x+bias-(2.0*x+1.0);loss+=error*error;i+=1.0;}loss/=256.0;println!("WEIGHTS {:.17e} {:.17e} {:.17e}",weight,bias,loss);loss}
+fn main(){let args:Vec<String>=env::args().collect();let mode:f64=args[1].parse().unwrap();let size:f64=args[2].parse().unwrap();let start=Instant::now();let result=if mode==0.0{mandelbrot(size)}else if mode==1.0{primes(size)}else{train(size)};println!("RESULT {:.17e} {:.17e}",start.elapsed().as_secs_f64(),result);}

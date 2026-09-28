@@ -1,0 +1,8 @@
+# r0 is the nonnegative input n. Return 1 + ... + n.
+const r1 0
+const r2 1
+jz r0 6
+add r1 r0
+sub r0 r2
+jmp 2
+halt r1

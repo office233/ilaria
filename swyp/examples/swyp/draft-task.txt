@@ -1,0 +1,1 @@
+Write a Swyp program that prints the sum of the squares of the numbers 1 through 10. Use a loop and print the final result once. Do not use external services.

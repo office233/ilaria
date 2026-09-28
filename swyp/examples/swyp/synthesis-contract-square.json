@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "examples": [
+    {"x": "0", "y": "0"},
+    {"x": "1", "y": "1"}
+  ],
+  "constants": ["-1", "0", "1", "2"],
+  "max_nodes": 7,
+  "max_candidates": 20000,
+  "max_evaluations": 1000000
+}

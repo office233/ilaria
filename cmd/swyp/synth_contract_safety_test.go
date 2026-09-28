@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"os"
@@ -50,6 +51,10 @@ func TestContractSynthFailureNeverCreatesOutput(t *testing.T) {
 				args = append(args, "-cases", "10001")
 			case "timeout":
 				args = append(args, "-timeout", "1ns")
+				contractSynthContext = func(parent context.Context, _ time.Duration) (context.Context, context.CancelFunc) {
+					return context.WithDeadline(parent, time.Unix(0, 0))
+				}
+				t.Cleanup(func() { contractSynthContext = context.WithTimeout })
 			case "duplicate":
 				changePath, data = spec, `{"version":1,"Version":1}`
 			case "null":

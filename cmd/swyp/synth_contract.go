@@ -32,6 +32,10 @@ func addContractSynthFlags(f *flag.FlagSet) *contractSynthFlags {
 	return c
 }
 
+// contractSynthContext is replaceable in tests: a 1ns CLI timeout is not a
+// reliable expiry on platforms whose monotonic clock advances in coarse ticks.
+var contractSynthContext = context.WithTimeout
+
 // The legacy synth path is unchanged. This opt-in path never calls a model and
 // publishes only accepted, type-checked core source via exclusive creation.
 func synthContractCommand(output, specPath string, timeout time.Duration, flags contractSynthFlags, out io.Writer) (err error) {
@@ -78,7 +82,7 @@ func synthContractCommand(output, specPath string, timeout time.Duration, flags 
 		return err
 	}
 	flags.options.SourceName = output
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	ctx, cancel := contractSynthContext(context.Background(), timeout)
 	defer cancel()
 	result, searchErr := synthesis.SynthesizeContract(ctx, contract, spec, flags.options)
 	// CLI evidence hashes exact input bytes rather than JSON reserialization.

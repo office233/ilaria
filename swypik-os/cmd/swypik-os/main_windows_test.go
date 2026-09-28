@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 )
 
@@ -123,6 +124,47 @@ func TestDesktopLogPersistsAndIsUnique(t *testing.T) {
 	content, err := os.ReadFile(name)
 	if err != nil || string(content) != "native startup evidence\n" {
 		t.Fatalf("missing persistent log: %q, %v", content, err)
+	}
+}
+
+// Windows clock ticks are coarse, so many opens can share one timestamp and
+// PID; every one of them must still get its own file.
+func TestDesktopLogNamesSurviveConcurrentOpens(t *testing.T) {
+	root := t.TempDir()
+	const opens = 64
+	names := make(chan string, opens)
+	errs := make(chan error, opens)
+	var wg sync.WaitGroup
+	for i := 0; i < opens; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			file, err := openDesktopLog(root)
+			if err != nil {
+				errs <- err
+				return
+			}
+			names <- file.Name()
+			errs <- file.Close()
+		}()
+	}
+	wg.Wait()
+	close(names)
+	close(errs)
+	for err := range errs {
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	seen := map[string]bool{}
+	for name := range names {
+		if seen[name] {
+			t.Fatalf("log collision: %s", name)
+		}
+		seen[name] = true
+	}
+	if len(seen) != opens {
+		t.Fatalf("opened %d logs, want %d", len(seen), opens)
 	}
 }
 

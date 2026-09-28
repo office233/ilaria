@@ -108,8 +108,11 @@ func openDesktopLog(dataDir string) (*os.File, error) {
 	if err := os.MkdirAll(dir, 0700); err != nil {
 		return nil, fmt.Errorf("create log directory: %w", err)
 	}
-	name := fmt.Sprintf("desktop-%s-%d.log", time.Now().Format("20060102-150405.000000000"), os.Getpid())
-	return os.OpenFile(filepath.Join(dir, name), os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600)
+	// The timestamp and PID keep logs sortable; CreateTemp's random suffix makes
+	// the name unique even when two calls read the same clock tick, and it
+	// creates the file exclusively with 0600 permissions.
+	pattern := fmt.Sprintf("desktop-%s-%d-*.log", time.Now().Format("20060102-150405.000000000"), os.Getpid())
+	return os.CreateTemp(dir, pattern)
 }
 
 // desktopLimits bound one agent run: enough steps for read-edit-test cycles,

@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from imc_data import MIX, Source, build, check_mix, collect  # noqa: E402
+from imc_data import MIX, Source, build, check_mix, collect, interleave, read_docs  # noqa: E402
 from train_ilaria import load_stream  # noqa: E402
 
 WORDS = "the cortex learns code math and language from verified data every day".split()
@@ -38,12 +38,31 @@ def test_check_mix_rejects_bad_shares():
         check_mix([Source("a", "x", None, 0.5)])
 
 
-def test_collect_keeps_whole_documents_and_detects_exhaustion():
+def test_collect_keeps_whole_documents_and_detects_exhaustion(tmp_path):
     src = Source("web", "x", None, 1.0)
-    docs = collect(src, 500, fake_stream)
-    assert sum(map(len, docs)) >= 500 and sum(map(len, docs[:-1])) < 500
+    stats = collect(src, 500, fake_stream, tmp_path / "web.jsonl")
+    docs = list(read_docs(tmp_path / "web.jsonl"))
+    assert len(docs) == stats["documents"] and sum(map(len, docs)) == stats["characters"]
+    assert stats["characters"] >= 500 and sum(map(len, docs[:-1])) < 500
     with pytest.raises(ValueError):
-        collect(src, 10**9, lambda s: iter(["short"]))
+        collect(src, 10**9, lambda s: iter(["short"]), tmp_path / "x.jsonl")
+
+
+def test_line_separators_inside_documents_survive(tmp_path):
+    text = "first line\u2028still the same document\nand a newline"
+    collect(Source("web", "x", None, 1.0), 1, lambda s: iter([text]), tmp_path / "w.jsonl")
+    assert list(read_docs(tmp_path / "w.jsonl")) == [text]
+
+
+def test_interleave_yields_every_document_once(tmp_path):
+    raw, counts = {}, {}
+    for name, n in (("a", 30), ("b", 5)):
+        raw[name] = tmp_path / f"{name}.jsonl"
+        raw[name].write_text("".join(json.dumps(f"{name}{i}") + "\n" for i in range(n)), encoding="utf-8")
+        counts[name] = n
+    got = [text for _, text in interleave(raw, counts, seed=1)]
+    assert sorted(got) == sorted([f"a{i}" for i in range(30)] + [f"b{i}" for i in range(5)])
+    assert got != sorted(got)
 
 
 def test_stream_is_loadable_and_consistent(tmp_path):
@@ -70,3 +89,4 @@ def test_build_is_deterministic_and_refuses_a_used_directory(tmp_path):
     with pytest.raises(FileExistsError):
         run(tmp_path, "a")
     assert json.loads((tmp_path / "a" / "stream.json").read_text())["mix"]["web"]["share"] == 0.75
+    assert not (tmp_path / "a" / "raw").exists()

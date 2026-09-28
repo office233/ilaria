@@ -1,15 +1,16 @@
 """imc_data.py — build the English token stream for from-scratch IMC training.
 
-    python -m forge.imc_data --out /content/imc-data --tokens 1200000000
+    python -m forge.imc_data --out /content/imc-data --tokens 10000000000
 
-Steps, all deterministic for a given --seed:
-  1. stream each source from Hugging Face until its share of the character
-     budget is collected (documents are kept whole);
-  2. train a byte-level BPE tokenizer (default 65,536 tokens) on a sample of
-     the collected documents, in proportion to the mix;
-  3. shuffle documents across sources, tokenize, append EOS after each one,
-     and write <out>/stream.bin (uint16) + stream.json, the format
-     forge/train_ilaria.py --data <out>/stream reads.
+Steps, all deterministic for a given --seed, with memory independent of size:
+  1. stream each source from Hugging Face into <out>/raw/<name>.jsonl until its
+     share of the character budget is collected (documents are kept whole);
+  2. train a byte-level BPE tokenizer (default 65,536 tokens) on a sample taken
+     from the start of each raw file, in proportion to the mix;
+  3. interleave documents from all sources at random (weighted by what is left
+     in each), tokenize, append EOS after each one and write <out>/stream.bin
+     (uint16) + stream.json, the format forge/train_ilaria.py --data <out>/stream
+     reads. Interleaving keeps the trainer's tail validation split mixed.
 
 Gated sources read the Hugging Face token from the HF_TOKEN environment
 variable (on Colab: google.colab.userdata), never from arguments or files.
@@ -40,11 +41,12 @@ class Source:
     field: str = "text"
 
 
-# English stage-1 style mix (SmolLM3 stage 1 is 85% web / 12% code / 3% math;
-# math is raised here because small models learn it late).
+# English stage-1 style mix from the 2026-09-28 data research (SmolLM3 stage 1
+# is 85% web / 12% code / 3% math; math is raised because small models learn
+# it late). Nemotron-CC web joins when NVIDIA approves access.
 MIX = (
-    Source("fineweb-edu", "HuggingFaceFW/fineweb-edu", "sample-100BT", 0.40),
     Source("dclm", "mlfoundations/dclm-baseline-1.0", None, 0.40),
+    Source("fineweb-edu", "HuggingFaceFW/fineweb-edu", "sample-100BT", 0.40),
     Source("code-algorithmic", "OpenCoder-LLM/opc-annealing-corpus", "algorithmic_corpus", 0.06, 3.2),
     Source("code-snippets", "OpenCoder-LLM/opc-annealing-corpus", "synthetic_code_snippet", 0.03, 3.2),
     Source("code-web", "OpenCoder-LLM/opc-fineweb-code-corpus", None, 0.03, 3.6),
@@ -75,35 +77,42 @@ def hf_stream(src: Source) -> Iterator[str]:
             yield text
 
 
-def collect(src: Source, char_budget: int, stream: Callable[[Source], Iterable[str]]) -> list[str]:
-    """Whole documents from the start of the stream until char_budget is reached."""
-    docs, chars = [], 0
-    for text in stream(src):
-        if chars >= char_budget:
-            break
-        docs.append(text)
-        chars += len(text)
+def collect(src: Source, char_budget: int, stream: Callable[[Source], Iterable[str]], path: Path) -> dict:
+    """Write whole documents from the start of the stream to path (JSONL) until
+    char_budget is reached."""
+    docs, chars = 0, 0
+    with open(path, "w", encoding="utf-8") as f:
+        for text in stream(src):
+            if chars >= char_budget:
+                break
+            f.write(json.dumps(text, ensure_ascii=False) + "\n")
+            docs += 1
+            chars += len(text)
     if chars < char_budget:
         raise ValueError(f"{src.name}: source exhausted at {chars:,} of {char_budget:,} characters")
-    return docs
+    return {"documents": docs, "characters": chars}
 
 
-def train_tokenizer(corpus: dict[str, list[str]], mix: Iterable[Source], vocab_size: int,
-                    sample_chars: int, seed: int):
+def read_docs(path: Path) -> Iterator[str]:
+    # JSONL split on "\n" only: json.dumps escapes every line separator inside strings.
+    with open(path, encoding="utf-8", newline="\n") as f:
+        for line in f:
+            if line.strip():
+                yield json.loads(line)
+
+
+def train_tokenizer(raw: dict[str, Path], mix: Iterable[Source], vocab_size: int, sample_chars: int):
     from tokenizers import Tokenizer, decoders, models, pre_tokenizers, processors, trainers
 
-    rng = random.Random(seed)
-    sample: list[str] = []
-    for src in mix:
-        docs = list(corpus[src.name])
-        rng.shuffle(docs)
-        budget, used = int(sample_chars * src.share), 0
-        for d in docs:
-            if used >= budget:
-                break
-            sample.append(d)
-            used += len(d)
-    rng.shuffle(sample)
+    def sample() -> Iterator[str]:
+        for src in mix:
+            budget, used = int(sample_chars * src.share), 0
+            for d in read_docs(raw[src.name]):
+                if used >= budget:
+                    break
+                used += len(d)
+                yield d
+
     tok = Tokenizer(models.BPE(byte_fallback=False))
     tok.pre_tokenizer = pre_tokenizers.ByteLevel(add_prefix_space=False)
     tok.decoder = decoders.ByteLevel()
@@ -111,56 +120,85 @@ def train_tokenizer(corpus: dict[str, list[str]], mix: Iterable[Source], vocab_s
     trainer = trainers.BpeTrainer(vocab_size=vocab_size, special_tokens=SPECIAL_TOKENS,
                                   initial_alphabet=pre_tokenizers.ByteLevel.alphabet(),
                                   show_progress=False)
-    tok.train_from_iterator(sample, trainer=trainer)
+    tok.train_from_iterator(sample(), trainer=trainer)
     return tok
 
 
-def write_stream(corpus: dict[str, list[str]], tok, out: Path, seed: int, batch: int = 4096) -> dict:
-    """Shuffle documents across sources and write uint16 tokens with EOS after each."""
+def interleave(raw: dict[str, Path], counts: dict[str, int], seed: int) -> Iterator[tuple[str, str]]:
+    """Every document exactly once; at each step a source is drawn with
+    probability proportional to its remaining documents."""
+    rng = random.Random(seed)
+    iters = {name: read_docs(path) for name, path in raw.items()}
+    left = dict(counts)
+    while True:
+        names = [n for n, k in left.items() if k > 0]
+        if not names:
+            return
+        name = rng.choices(names, weights=[left[n] for n in names])[0]
+        left[name] -= 1
+        yield name, next(iters[name])
+
+
+def write_stream(raw: dict[str, Path], counts: dict[str, int], tok, out: Path, seed: int,
+                 batch: int = 8192) -> dict:
     vocab = tok.get_vocab_size()
     if vocab > 65536:
         raise ValueError("uint16 stream needs a vocabulary of at most 65,536 tokens")
     eos = tok.token_to_id("<|endoftext|>")
-    order = [(name, i) for name, docs in corpus.items() for i in range(len(docs))]
-    random.Random(seed).shuffle(order)
-    counts = {name: 0 for name in corpus}
-    total = 0
+    by_source = {name: 0 for name in raw}
+    total, documents = 0, 0
     digest = hashlib.sha256()
+    pending: list[tuple[str, str]] = []
+
+    def flush(f) -> None:
+        nonlocal total, documents
+        for (name, _), enc in zip(pending, tok.encode_batch([t for _, t in pending])):
+            data = np.asarray(enc.ids + [eos], dtype="<u2").tobytes()
+            f.write(data)
+            digest.update(data)
+            by_source[name] += len(data) // 2
+            total += len(data) // 2
+            documents += 1
+        pending.clear()
+
     with open(out / "stream.bin", "wb") as f:
-        for start in range(0, len(order), batch):
-            chunk = order[start:start + batch]
-            encoded = tok.encode_batch([corpus[n][i] for n, i in chunk])
-            for (name, _), enc in zip(chunk, encoded):
-                ids = np.asarray(enc.ids + [eos], dtype="<u2")
-                data = ids.tobytes()
-                f.write(data)
-                digest.update(data)
-                counts[name] += len(ids)
-                total += len(ids)
-    meta = {"dtype": "uint16", "vocab_size": vocab, "eos_id": eos, "tokens": total,
+        for item in interleave(raw, counts, seed):
+            pending.append(item)
+            if len(pending) == batch:
+                flush(f)
+                if documents % (batch * 50) == 0:
+                    print(f"[imc-data] tokenized {documents:,} documents, {total:,} tokens", flush=True)
+        flush(f)
+    return {"dtype": "uint16", "vocab_size": vocab, "eos_id": eos, "tokens": total,
             "tokenizer": str(out / "tokenizer.json"), "sha256": digest.hexdigest(),
-            "tokens_by_source": counts, "documents": len(order), "seed": seed}
-    (out / "stream.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
-    return meta
+            "tokens_by_source": by_source, "documents": documents, "seed": seed}
 
 
 def build(out: Path, tokens: int, vocab_size: int, tokenizer_sample_chars: int, seed: int,
-          mix: Iterable[Source] = MIX, stream: Callable[[Source], Iterable[str]] = hf_stream) -> dict:
+          mix: Iterable[Source] = MIX, stream: Callable[[Source], Iterable[str]] = hf_stream,
+          keep_raw: bool = False) -> dict:
     mix = list(mix)
     check_mix(mix)
     out.mkdir(parents=True, exist_ok=True)
     if any(out.iterdir()):
         raise FileExistsError(f"{out} is not empty")
-    corpus = {}
+    (out / "raw").mkdir()
+    raw, counts = {}, {}
     for src in mix:
-        budget = int(tokens * src.share * src.chars_per_token)
-        corpus[src.name] = collect(src, budget, stream)
-        print(f"[imc-data] {src.name}: {len(corpus[src.name]):,} documents, {budget:,} characters", flush=True)
-    tok = train_tokenizer(corpus, mix, vocab_size, tokenizer_sample_chars, seed)
+        raw[src.name] = out / "raw" / f"{src.name}.jsonl"
+        stats = collect(src, int(tokens * src.share * src.chars_per_token), stream, raw[src.name])
+        counts[src.name] = stats["documents"]
+        print(f"[imc-data] {src.name}: {stats['documents']:,} documents, {stats['characters']:,} characters", flush=True)
+    tok = train_tokenizer(raw, mix, vocab_size, tokenizer_sample_chars)
     tok.save(str(out / "tokenizer.json"))
-    meta = write_stream(corpus, tok, out, seed)
+    print(f"[imc-data] tokenizer: {tok.get_vocab_size():,} tokens", flush=True)
+    meta = write_stream(raw, counts, tok, out, seed)
     meta["mix"] = {s.name: {"dataset": s.dataset, "config": s.config, "share": s.share} for s in mix}
     (out / "stream.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
+    if not keep_raw:
+        for path in raw.values():
+            path.unlink()
+        (out / "raw").rmdir()
     print(f"[imc-data] {meta['tokens']:,} tokens -> {out / 'stream.bin'}", flush=True)
     return meta
 
@@ -170,10 +208,11 @@ def main() -> None:
     ap.add_argument("--out", required=True)
     ap.add_argument("--tokens", type=int, required=True, help="approximate total token budget")
     ap.add_argument("--vocab-size", type=int, default=65536)
-    ap.add_argument("--tokenizer-sample-chars", type=int, default=1_000_000_000)
+    ap.add_argument("--tokenizer-sample-chars", type=int, default=2_000_000_000)
     ap.add_argument("--seed", type=int, default=42)
+    ap.add_argument("--keep-raw", action="store_true", help="keep the downloaded JSONL documents")
     a = ap.parse_args()
-    build(Path(a.out), a.tokens, a.vocab_size, a.tokenizer_sample_chars, a.seed)
+    build(Path(a.out), a.tokens, a.vocab_size, a.tokenizer_sample_chars, a.seed, keep_raw=a.keep_raw)
 
 
 if __name__ == "__main__":

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/rand"
 	"nexus-cortex/cortex/compute"
+	"nexus-cortex/internal/runtimeguard"
 	"os"
 	"path/filepath"
 	"strings"
@@ -1165,10 +1166,7 @@ func sameText(a, b string) bool {
 // truncation actually occurred. Used by the optional recall-debug log
 // (gated on CORTEX_DEBUG_RECALL) to keep stderr lines readable.
 func truncStr(s string, n int) string {
-	if len(s) <= n {
-		return s
-	}
-	return s[:n] + "…"
+	return runtimeguard.TruncateRunes(s, n)
 }
 
 // recallDebugEnabled is read once per process; CORTEX_DEBUG_RECALL has

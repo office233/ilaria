@@ -19,6 +19,10 @@ func main() {
 	gapsPerCycle := flag.Int("gaps", 3, "Max knowledge gaps to address per cycle")
 	seed := flag.Int64("seed", 42, "Random seed")
 	flag.Parse()
+	if *interval < 1 || int64(*interval) > int64((1<<63-1)/time.Second) || *gapsPerCycle < 1 {
+		fmt.Fprintln(os.Stderr, "interval and gaps must be positive; interval must fit time.Duration")
+		os.Exit(1)
+	}
 
 	fmt.Println()
 	fmt.Println("╔══════════════════════════════════════════════════════════════════╗")
@@ -38,19 +42,10 @@ func main() {
 	rng := rand.New(rand.NewSource(cfg.Seed))
 
 	// Load or create organism
-	var org *cortex.Organism
-	var err error
-	org, err = cortex.LoadOrganism(cfg, rng)
-	if org == nil {
-		if err != nil {
-			fmt.Printf("⚠️  Load failed (%v), creating fresh organism...\n", err)
-		} else {
-			fmt.Println("🌱 Starting fresh organism...")
-		}
-		org = cortex.NewOrganism(cfg, rng)
-	} else {
-		fmt.Printf("✅ Loaded organism (Vocab: %d, Hippocampus: %d memories)\n",
-			org.Vocab.Size(), org.Hippocampus.Size())
+	org, err := cortex.OpenOrganism(cfg, rng)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Cannot open organism: %v\n", err)
+		os.Exit(1)
 	}
 
 	// Create autonomous learner
@@ -81,7 +76,8 @@ func main() {
 
 	// Final save
 	if err := org.Save(cfg.DataDir); err != nil {
-		fmt.Printf("⚠️  Final save failed: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Final save failed: %v\n", err)
+		os.Exit(1)
 	} else {
 		fmt.Println("💾 Final save complete. Goodbye! 🧠")
 	}

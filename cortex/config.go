@@ -223,7 +223,8 @@ type Config struct {
 	AutoLearnInterval   int      `json:"auto_learn_interval_secs"`     // Seconds between learn cycles
 	AutoMaxGapsPerCycle int      `json:"auto_max_gaps_per_cycle"`      // Max gaps to address per cycle
 
-	// Web server configuration
+	// Deprecated dashboard settings retained for JSON compatibility only.
+	// SwypikOS owns the UI; ilaria-serve has its own headless service flags.
 	WebPort     string `json:"web_port,omitempty"`      // Dashboard port (default "8080")
 	WebBindAddr string `json:"web_bind_addr,omitempty"` // Bind address (default "127.0.0.1")
 

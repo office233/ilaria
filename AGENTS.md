@@ -6,11 +6,10 @@ It combines Sparse Distributed Representations (SDRs), associative memory, onlin
 and sparse routing into a biologically-inspired, local-first cognitive prototype.
 
 ## 2. Stack & Layout
-- Stack: Go 1.26 (Go 1.21+ compatible), optional CUDA/WebGPU compute, vanilla HTML/CSS/JS web dashboard.
-- `cmd/`: CLI applications, trainers, evaluators, benchmarks, and dashboard server (`cortex-web`).
+- Stack: Go 1.26.2 (see go.mod), optional CUDA/WebGPU compute; headless service for SwypikOS.
+- `cmd/`: CLI applications, trainers, evaluators, benchmarks, and headless API server (`ilaria-serve`).
 - `cortex/`: Core cognitive engine implementing brain regions (Wernicke, Broca, Hippocampus), SDRs, and compute.
 - `cortex/compute/`: Hardware compute abstractions for CPU, optional CUDA, and WebGPU bindings.
-- `web/`: Vanilla HTML/CSS/JS frontend assets for the neural dashboard embedded via `web.go`.
 - `docs/`: Architecture designs, limitations disclosures, and capability scoreboard metrics.
 - `scripts/`: Data ingestion, tokenization, training watchers, and build helper scripts.
 - `data/`: Training corpora, evaluation suites (`.jsonl`), and organism persistence state.
@@ -26,7 +25,8 @@ and sparse routing into a biologically-inspired, local-first cognitive prototype
   - `go test -run=^$ -fuzz=FuzzUnmarshalTernaryLayer -fuzztime=15s ./cortex`
   - `go test -run=^$ -fuzz=FuzzLoadSemanticMemory -fuzztime=15s ./cortex`
   - `go test -run=^$ -fuzz=FuzzFractalCortexLoadMetadata -fuzztime=15s ./cortex`
-- Run local dashboard: `go run ./cmd/cortex-web -port 8080 -data-dir ./data/cortex -open`
+- Run headless API: `go run ./cmd/ilaria-serve -model <bitnet.nxtf> -tokenizer <tokenizer.json>`
+- SwypikOS owns the UI in its own repository. Do not recreate a dashboard here.
 - Run evaluation: `go run ./cmd/cortex-eval -data-dir ./data/cortex`
 
 ## 4. Conventions Found

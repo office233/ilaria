@@ -45,6 +45,7 @@ import (
 	"time"
 
 	"nexus-cortex/cortex/swe"
+	"nexus-cortex/internal/runtimeguard"
 )
 
 // ─────────────────────────────────────────────────────────────────────
@@ -135,43 +136,47 @@ func (*BiomedChatTool) Name() string { return "biomed" }
 func (*BiomedChatTool) Describe() string {
 	return "biomed: <drug name and question> — live biomedical lookups (RxNorm/openFDA/etc.), needs network"
 }
-func (t *BiomedChatTool) Call(_ context.Context, args string) (string, error) {
-	out, ok := t.inner.Execute(args)
-	if !ok {
-		return "", fmt.Errorf("no biomedical answer for %q", args)
-	}
-	return out, nil
+func (t *BiomedChatTool) Call(ctx context.Context, args string) (string, error) {
+	return t.inner.ExecuteContext(ctx, args)
 }
 
-// GoRunChatTool compiles and runs a Go program through swe.RunGo
-// (cortex/swe/sandbox_executor.go), a real go vet/test sandbox with a
-// deadline. swe.RunGo deliberately never does a bare `go run` — it only
-// vets and tests — so GoRunChatTool recovers real printed output by
+// GoRunChatTool is disabled by default. An operator may explicitly allow
+// unsafe host execution; this is NOT an OS sandbox. RunTrustedGo uses
+// bounded input/output and process-group cancellation, not OS isolation.
+// The tool recovers real printed output by
 // pairing the model's package-main source with a tiny generated test file
 // that calls main() from inside a Test function: any fmt.Print* the
 // program does writes straight to the test binary's real os.Stdout, which
 // swe.RunGo captures verbatim regardless of pass/fail, so "what does it
 // print" comes back honestly through the same toolchain that reports
 // vet/build/test diagnostics.
-type GoRunChatTool struct{}
+type GoRunChatTool struct {
+	AllowUnsafeHostExecution bool // operator configuration, never model-controlled
+}
 
 func (GoRunChatTool) Name() string { return "go_run" }
 func (GoRunChatTool) Describe() string {
-	return "go_run: <a complete package main Go source file, func main() included> — compiles and runs it in a sandbox, returns what it prints"
+	return "go_run: <a complete package main Go source file, func main() included> — runs with host permissions only when explicitly enabled; returns what it prints"
 }
 
 const goRunTestWrapper = "package main\n\nimport \"testing\"\n\nfunc TestGoRunMain(t *testing.T) {\n\tmain()\n}\n"
 
 const goRunTimeout = 20 * time.Second
 
-func (GoRunChatTool) Call(ctx context.Context, args string) (string, error) {
+func (t GoRunChatTool) Call(ctx context.Context, args string) (string, error) {
+	if err := ctx.Err(); err != nil {
+		return "", err
+	}
+	if !t.AllowUnsafeHostExecution {
+		return "", swe.ErrIsolationRequired
+	}
 	src := strings.TrimSpace(args)
 	if src == "" {
 		return "", fmt.Errorf("empty Go source")
 	}
 	cctx, cancel := context.WithTimeout(ctx, goRunTimeout)
 	defer cancel()
-	res, err := swe.RunGo(cctx, map[string]string{
+	res, err := swe.RunTrustedGo(cctx, map[string]string{
 		"main.go":      src,
 		"main_test.go": goRunTestWrapper,
 	})
@@ -297,10 +302,7 @@ func safeJoin(root, rel string) (string, error) {
 }
 
 func truncateForTool(s string, n int) string {
-	if len(s) <= n {
-		return s
-	}
-	return s[:n] + "…(truncated)"
+	return runtimeguard.TruncateBytes(s, n)
 }
 
 // ─────────────────────────────────────────────────────────────────────

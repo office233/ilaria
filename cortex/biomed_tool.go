@@ -147,17 +147,33 @@ func (t *BiomedTool) Match(lower string) bool {
 
 // Execute implements Tool: runs a consult and renders it with sources.
 func (t *BiomedTool) Execute(input string) (string, bool) {
+	out, err := t.ExecuteContext(context.Background(), input)
+	return out, err == nil
+}
+
+// ExecuteContext propagates cancellation to Consult and its HTTP clients.
+// The legacy Tool interface remains supported by Execute above.
+func (t *BiomedTool) ExecuteContext(parent context.Context, input string) (string, error) {
+	if err := parent.Err(); err != nil {
+		return "", err
+	}
 	b, err := t.getBridge()
 	if err != nil {
-		return "", false
+		return "", err
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), biomedExecuteTimeout)
+	ctx, cancel := context.WithTimeout(parent, biomedExecuteTimeout)
 	defer cancel()
 	res, err := b.Consult(ctx, biomed.ConsultRequest{Query: input})
 	if err != nil {
-		return "", false
+		return "", err
 	}
-	return RenderConsult(res, looksRomanian(input)), true
+	if err := ctx.Err(); err != nil {
+		return "", err
+	}
+	if res == nil {
+		return "", fmt.Errorf("biomedical consult returned no result")
+	}
+	return RenderConsult(res, looksRomanian(input)), nil
 }
 
 // looksRomanian is a cheap language guess: Romanian diacritics or frequent

@@ -60,6 +60,9 @@ func main() {
 	if *modelPath == "" || *tokenizerPath == "" {
 		fail("flags", fmt.Errorf("-model and -tokenizer are required"))
 	}
+	if *maxTokens < 1 || *maxTokens > 4096 || *maxCalls < 0 || *maxCalls > 32 {
+		fail("flags", fmt.Errorf("-max-tokens must be 1..4096 and -max-calls 0..32"))
+	}
 
 	loadStart := time.Now()
 	model, err := cortex.LoadBitNetModel(*modelPath)
@@ -100,7 +103,8 @@ func main() {
 
 	tools := buildTools(*workdir, *biomedCache)
 	if *unsafeGo {
-		tools = append(tools, cortex.GoRunChatTool{})
+		fmt.Fprintln(os.Stderr, "WARNING: model-generated Go will run with host permissions; not an OS sandbox")
+		tools = append(tools, cortex.GoRunChatTool{AllowUnsafeHostExecution: true})
 	}
 	if *swypExe != "" {
 		swyp, err := cortex.NewSwypJudgeChatTool(*swypExe)

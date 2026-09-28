@@ -16,6 +16,14 @@ new product, price or policy the moment it appears, without retraining.
 
 (Formerly *NexusCortex*; Go module and command names still carry the old prefix.)
 
+**SwypikOS lives in [`swypik-os/`](swypik-os/README.md)** (its own Go module): the native desktop, the
+approval-gated agent and the own search engine that Ilaria powers. Start both together, on the GPU when one
+is available:
+
+```powershell
+powershell -File swypik-os\scripts\start-with-ilaria.ps1
+```
+
 This is not a replacement for frontier LLMs. It is not an AGI claim. The goal is to understand and implement low-level AI system primitives from scratch.
 
 <p align="center">

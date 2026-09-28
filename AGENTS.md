@@ -15,6 +15,8 @@ and sparse routing into a biologically-inspired, local-first cognitive prototype
 - `scripts/`: Data ingestion, tokenization, training watchers, and build helper scripts.
 - `data/`: Training corpora, evaluation suites (`.jsonl`), and organism persistence state.
 - `cuda/`: Standalone CUDA kernel implementations for GPU acceleration.
+- `swypik-os/`: SwypikOS (separate Go module `swypik-os`, imported with history). Build and test it from that
+  directory: `cd swypik-os && go vet ./... && go test ./...`. It talks to `cmd/ilaria-serve` over `POST /v1/chat`.
 
 ## 3. How to Build / Test / Lint
 - Build all commands: `go build ./cmd/...`

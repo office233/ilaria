@@ -46,6 +46,25 @@ checks Win32 ownership and responsiveness, sends a harmless local search command
 checks for browser children/TCP listeners, and verifies clean shutdown plus logs.
 It never closes other running SwypikOS sessions.
 
+## Run with Ilaria
+
+SwypikOS now lives inside the Nexus repository, next to Ilaria. From the Nexus root:
+
+```powershell
+powershell -File swypik-os\scripts\start-with-ilaria.ps1        # CUDA when nvidia-smi is present
+powershell -File swypik-os\scripts\start-with-ilaria.ps1 -Cpu   # CPU only (much slower)
+```
+
+The script builds `cmd/ilaria-serve` and the desktop, loads the BitNet model from
+`data/forge/bitnet-2b4t/` with its tokenizer from `data/pretrained/bitnet-b1.58-2B-4T/`, waits for
+`GET /health`, opens SwypikOS connected to `http://127.0.0.1:8091`, and stops the service when the
+window closes. Measured on a GTX 1660 Ti: first reply ~10 s (GPU warm-up), then ~1 s; 3.3 GB VRAM.
+On CPU a reply can exceed the service's 2-minute limit.
+
+Current model limits (BitNet 2B, not yet trained on SwypikOS trajectories): good English chat,
+weak Romanian, and in agent mode it can claim a task is done without calling a tool. The agent
+still shows every step and runs nothing without approval.
+
 ## Windows desktop: what works
 
 Six tabs (Ctrl+1…6), a native input field with paste, history (↑/↓) and IME, and

@@ -73,8 +73,9 @@ func (c *Client) Request(ctx context.Context, path string, body interface{}, tar
 }
 
 type key struct {
-	code  uint16
-	shift bool
+	code   uint16
+	shift  bool
+	repeat bool // kernel auto-repeat; never accepted as consent
 }
 
 func readKeys(ctx context.Context, out chan<- key) {
@@ -104,7 +105,7 @@ func readKeys(ctx context.Context, out chan<- key) {
 					continue
 				}
 				select {
-				case out <- key{code, shift}:
+				case out <- key{code, shift, value == 2}:
 				case <-ctx.Done():
 					return
 				}
@@ -185,9 +186,19 @@ func Run(ctx context.Context, socket, fbPath string) error {
 	}
 	poll()
 	page, input, output, pending := "HOME", "", "", ""
+	// pendingValue freezes exactly what the confirmation text displayed. Later
+	// edits to input can never change what F8 sends.
+	pendingValue := ""
 	var state Status
 	busy := false
 	resumeID := ""
+	// An approval must be rendered for a minimum time before F8 can accept it,
+	// so a key pressed for a previous prompt cannot approve an unseen tool.
+	shownApproval, shownAt := "", time.Time{}
+	const approvalDwell = 500 * time.Millisecond
+	clearPending := func() {
+		pending, pendingValue, resumeID = "", "", ""
+	}
 	request := func(path string, body interface{}) {
 		busy = true
 		go func() {
@@ -260,6 +271,13 @@ func Run(ctx context.Context, socket, fbPath string) error {
 				body += "\n" + output
 			}
 		}
+		if page == "AGENT" && state.Run != nil && state.Run.Approval != nil {
+			if shownApproval != state.Run.Approval.ID {
+				shownApproval, shownAt = state.Run.Approval.ID, time.Now()
+			}
+		} else {
+			shownApproval = ""
+		}
 		paragraph(im, x, y, width, lines, body, muted)
 		if pending != "" {
 			rect(im, x, h-206, width, 114, panel)
@@ -301,8 +319,7 @@ func Run(ctx context.Context, socket, fbPath string) error {
 				page = []string{"HOME", "SEARCH", "AGENT", "NETWORK", "FILES"}[k.code-59]
 				input = ""
 				output = ""
-				pending = ""
-				resumeID = ""
+				clearPending()
 				if page == "FILES" && !busy {
 					request("/v1/files", nil)
 				}
@@ -311,11 +328,10 @@ func Run(ctx context.Context, socket, fbPath string) error {
 			}
 			switch k.code {
 			case 1:
-				pending = ""
-				resumeID = ""
+				clearPending()
 				input = ""
 			case 14:
-				if len(input) > 0 {
+				if pending == "" && len(input) > 0 {
 					input = input[:len(input)-1]
 				}
 			case 28:
@@ -324,14 +340,16 @@ func Run(ctx context.Context, socket, fbPath string) error {
 				}
 				if page == "SEARCH" {
 					if strings.HasPrefix(input, "crawl ") {
-						pending = "CRAWL VISITS THE SITE, UP TO 8 PAGES: " + strings.TrimSpace(input[6:])
+						pendingValue = strings.TrimSpace(input[len("crawl "):])
+						pending = "CRAWL VISITS THE SITE, UP TO 8 PAGES: " + pendingValue
 					} else {
 						request("/v1/search?q="+url.QueryEscape(input), nil)
 						input = ""
 					}
 				}
 				if page == "AGENT" {
-					pending = "SEND GOAL AND APPROVED METADATA TO CONFIGURED NEXUS: " + input
+					pendingValue = input
+					pending = "SEND GOAL AND APPROVED METADATA TO CONFIGURED NEXUS: " + pendingValue
 				}
 			case 64:
 				if !busy && page == "AGENT" && state.Run != nil && state.Run.Status == "interrupted" && state.Run.Recovery == "replan" {
@@ -339,30 +357,32 @@ func Run(ctx context.Context, socket, fbPath string) error {
 					pending = "RESUME SENDS RECORDED GOAL AND EVIDENCE TO NEXUS; NEW TOOL APPROVALS REQUIRED."
 				}
 			case 66:
-				if busy {
+				if busy || k.repeat {
 					break
 				}
 				if pending != "" {
 					if page == "SEARCH" {
-						request("/v1/crawl", map[string]interface{}{"url": strings.TrimSpace(input[6:]), "pages": 8, "consent": true})
+						request("/v1/crawl", map[string]interface{}{"url": pendingValue, "pages": 8, "consent": true})
 					}
 					if page == "AGENT" {
 						if resumeID != "" {
 							request("/v1/resume", map[string]interface{}{"run_id": resumeID, "consent": true})
 						} else {
-							request("/v1/run", map[string]interface{}{"goal": input, "consent": true})
+							request("/v1/run", map[string]interface{}{"goal": pendingValue, "consent": true})
 						}
 					}
-					pending = ""
-					resumeID = ""
+					clearPending()
 					input = ""
-				} else if page == "AGENT" && state.Run != nil && state.Run.Approval != nil {
+				} else if page == "AGENT" && state.Run != nil && state.Run.Approval != nil &&
+					state.Run.Approval.ID == shownApproval && time.Since(shownAt) >= approvalDwell {
 					request("/v1/decision", map[string]interface{}{"run_id": state.Run.ID, "approval_id": state.Run.Approval.ID, "approve": true})
 				}
 			case 67:
+				if k.repeat {
+					break
+				}
 				if pending != "" {
-					pending = ""
-					resumeID = ""
+					clearPending()
 					input = ""
 				} else if page == "AGENT" && state.Run != nil && !busy {
 					request("/v1/cancel", map[string]string{"run_id": state.Run.ID})

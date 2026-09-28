@@ -24,7 +24,7 @@ import (
 func main() {
 	socket := flag.String("socket", "/run/swypik/control.sock", "Private Unix socket")
 	root := flag.String("workspace", "/home/swypik/Workspace", "Explicit workspace")
-	index := flag.String("index", "/var/lib/swypik/index.json", "Search index path")
+	index := flag.String("index", "/var/lib/swypik/index.jsonl", "Search index path (append-only log)")
 	state := flag.String("state-dir", "/var/lib/swypik/agent", "Private directory for last-run checkpoints")
 	endpoint := flag.String("ilaria-url", "http://127.0.0.1:8091", "Nexus loopback HTTP or authenticated HTTPS endpoint")
 	flag.Parse()
@@ -52,6 +52,15 @@ func run(socket, root, index, state, endpoint string) error {
 	e, err := search.Open(index)
 	if err != nil {
 		return err
+	}
+	defer e.Close()
+	for _, w := range e.Warnings() {
+		fmt.Fprintln(os.Stderr, w)
+	}
+	if n, err := e.ImportLegacy(filepath.Join(filepath.Dir(index), "index.json")); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+	} else if n > 0 {
+		fmt.Println("migrated", n, "documents from the legacy index")
 	}
 	backend := ilaria.NewCloudBackend(endpoint, os.Getenv("ILARIA_API_TOKEN"))
 	planner := agent.JSONPlanner{Complete: func(ctx context.Context, p string) (string, error) { return backend.Chat(ctx, p, nil) }}

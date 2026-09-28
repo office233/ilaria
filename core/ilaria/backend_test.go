@@ -41,12 +41,12 @@ func TestLocalInferenceAndFailure(t *testing.T) {
 	e := NewEngine()
 	e.SetBackend(NewLocalBackend(s.URL))
 	for i := 0; i < 2; i++ {
-		reply, _, err := e.ProcessPromptContext(context.Background(), "hello")
+		reply, err := e.ProcessPromptContext(context.Background(), "hello")
 		if err != nil || reply != "A real backend response" {
 			t.Fatalf("%s %v", reply, err)
 		}
 	}
-	if _, _, err := e.ProcessPromptContext(context.Background(), "again"); err == nil {
+	if _, err := e.ProcessPromptContext(context.Background(), "again"); err == nil {
 		t.Fatal("error hidden")
 	}
 	if len(e.GetHistory()) != 4 {

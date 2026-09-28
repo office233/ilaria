@@ -1,5 +1,6 @@
-// Package agent provides a bounded, approval-gated read-only agent runtime.
-// It is not a process sandbox. Only registered, validated tools can execute.
+// Package agent provides a bounded, approval-gated agent runtime. Every tool
+// call is shown to the user and runs only after an explicit approval. It is not
+// a process sandbox: approved tools run with the user's permissions.
 package agent
 
 import (
@@ -12,12 +13,44 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode/utf8"
 )
 
 var ErrConflict = errors.New("run or approval is no longer current")
+
+// MaxArgumentBytes bounds one tool call's JSON arguments (for example a file
+// edit). Saved checkpoints must hold MaxSteps of them plus outputs.
+const MaxArgumentBytes = 16 * 1024
+
 var ErrClosed = errors.New("agent is stopped")
 var ErrUncertain = errors.New("tool outcome is uncertain; automatic replay and resume are blocked")
 var ErrPolicyChanged = errors.New("run limits changed; this run cannot be resumed")
+
+// ErrInvalidCheckpoint marks a readable checkpoint whose content is corrupt or
+// outside the supported envelope. Stores wrap it so startup can quarantine the
+// file instead of refusing to start (a restart loop never repairs bad data).
+var ErrInvalidCheckpoint = errors.New("invalid checkpoint")
+
+// Quarantiner is implemented by stores that can set an invalid checkpoint aside
+// for inspection. The file is renamed, never deleted.
+type Quarantiner interface {
+	Quarantine() (string, error)
+}
+
+// boundedText returns valid UTF-8 of at most limit bytes. Cutting a multi-byte
+// rune would be re-encoded as U+FFFD by encoding/json and could grow the saved
+// value past the limit that validateRun enforces on the next start.
+func boundedText(s string, limit int) string {
+	s = strings.ToValidUTF8(s, "�")
+	if len(s) <= limit {
+		return s
+	}
+	cut := limit
+	for cut > 0 && !utf8.RuneStart(s[cut]) {
+		cut--
+	}
+	return s[:cut]
+}
 
 type Spec struct {
 	Name        string `json:"name"`
@@ -161,14 +194,23 @@ func NewPersistent(planner Planner, tools []Tool, limits Limits, store Checkpoin
 	}
 	m.store = store
 	saved, err := store.Load()
+	if err == nil && saved != nil {
+		if verr := validateRun(*saved); verr != nil {
+			err = fmt.Errorf("%w: %v", ErrInvalidCheckpoint, verr)
+		}
+	}
 	if err != nil {
-		return nil, err
+		q, ok := store.(Quarantiner)
+		if !errors.Is(err, ErrInvalidCheckpoint) || !ok {
+			return nil, err
+		}
+		if _, qerr := q.Quarantine(); qerr != nil {
+			return nil, fmt.Errorf("%v; quarantine failed: %w", err, qerr)
+		}
+		return m, nil
 	}
 	if saved == nil {
 		return m, nil
-	}
-	if err := validateRun(*saved); err != nil {
-		return nil, fmt.Errorf("invalid saved run: %w", err)
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
@@ -207,7 +249,7 @@ func (m *Manager) availableLocked() error {
 	return nil
 }
 func (m *Manager) Start(goal string) (Run, error) {
-	goal = strings.TrimSpace(goal)
+	goal = strings.TrimSpace(strings.ToValidUTF8(goal, "�"))
 	if goal == "" || len(goal) > 4096 {
 		return Run{}, fmt.Errorf("goal must contain 1-4096 bytes")
 	}
@@ -229,7 +271,7 @@ func (m *Manager) Start(goal string) (Run, error) {
 	e := &execution{ctx: ctx, cancel: cancel, run: Run{ID: id, Goal: goal, Status: "planning", StartedAt: now, Deadline: deadline, Policy: m.limits, Events: []Event{}, Observations: []Observation{}}}
 	m.current = e
 	next := copyRun(e.run)
-	addEvent(&next, "started", "Read-only run started; every tool requires approval.")
+	addEvent(&next, "started", "Run started; every tool call requires approval.")
 	if err := m.commitLocked(e, next); err != nil {
 		cancel()
 		return Run{}, err
@@ -399,7 +441,7 @@ func (m *Manager) Close() {
 	m.closed = true
 }
 func addEvent(r *Run, kind, message string) {
-	r.Events = append(r.Events, Event{Sequence: len(r.Events) + 1, Kind: kind, Message: message, At: time.Now().UTC()})
+	r.Events = append(r.Events, Event{Sequence: len(r.Events) + 1, Kind: kind, Message: boundedText(message, 2048), At: time.Now().UTC()})
 }
 
 // Caller holds m.mu. A save error latches the manager closed to further work;
@@ -435,10 +477,7 @@ func (m *Manager) fail(e *execution, err error) {
 	if errors.Is(err, context.Canceled) {
 		next.Status = "cancelled"
 	}
-	message := err.Error()
-	if len(message) > 2048 {
-		message = message[:2048]
-	}
+	message := boundedText(err.Error(), 2048)
 	next.Error = message
 	next.Approval = nil
 	addEvent(&next, next.Status, message)
@@ -477,6 +516,7 @@ func (m *Manager) execute(e *execution) {
 			return
 		}
 		if decision.Action == "finish" {
+			decision.Summary = strings.ToValidUTF8(decision.Summary, "�")
 			if strings.TrimSpace(decision.Summary) == "" || len(decision.Summary) > 8192 || decision.Tool != "" || len(decision.Arguments) != 0 {
 				m.fail(e, fmt.Errorf("invalid final decision"))
 				return
@@ -502,7 +542,11 @@ func (m *Manager) execute(e *execution) {
 			return
 		}
 		args := append(json.RawMessage(nil), decision.Arguments...)
-		if len(args) > 4096 || !json.Valid(args) {
+		if len(args) == 0 || string(args) == "null" {
+			// Models commonly omit arguments for zero-argument tools.
+			args = json.RawMessage("{}")
+		}
+		if len(args) > MaxArgumentBytes || !json.Valid(args) {
 			m.fail(e, fmt.Errorf("invalid tool arguments"))
 			return
 		}
@@ -619,13 +663,13 @@ func validateRun(r Run) error {
 	if r.Approval != nil {
 		a := r.Approval
 		id, err := hex.DecodeString(a.ID)
-		if err != nil || len(id) != 24 || a.Tool == "" || len(a.Tool) > 128 || len(a.Arguments) > 4096 || !json.Valid(a.Arguments) {
+		if err != nil || len(id) != 24 || a.Tool == "" || len(a.Tool) > 128 || len(a.Arguments) > MaxArgumentBytes || !json.Valid(a.Arguments) {
 			return fmt.Errorf("invalid saved approval")
 		}
 	}
 	used := 0
 	for _, o := range r.Observations {
-		if o.Tool == "" || len(o.Tool) > 128 || len(o.Arguments) > 4096 || !json.Valid(o.Arguments) || len(o.Output) > 12*1024 || !json.Valid(o.Output) {
+		if o.Tool == "" || len(o.Tool) > 128 || len(o.Arguments) > MaxArgumentBytes || !json.Valid(o.Arguments) || len(o.Output) > 12*1024 || !json.Valid(o.Output) {
 			return fmt.Errorf("invalid saved observation")
 		}
 		used += len(o.Output)

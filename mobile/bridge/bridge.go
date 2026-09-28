@@ -1,8 +1,8 @@
 package bridge
 
 import (
+	"context"
 	"encoding/json"
-	"swypik-os/core/coder"
 	"swypik-os/core/docs"
 	"swypik-os/core/ilaria"
 	"swypik-os/core/notifications"
@@ -17,7 +17,6 @@ type MobileBridge struct {
 	Swarm  *swarm.Daemon
 	Search *search.Engine
 	Notifs *notifications.Broker
-	Coder  *coder.Engine
 	Sheet  *sheets.Sheet
 	DocMgr *docs.Manager
 }
@@ -29,7 +28,6 @@ func NewMobileBridge() *MobileBridge {
 		Swarm:  swarm.NewDaemon(),
 		Search: search.NewEngine(),
 		Notifs: notifications.NewBroker(),
-		Coder:  coder.NewEngine(),
 		Sheet:  sheets.NewSheet("Mobile AI Sheet", 20, 10),
 		DocMgr: docs.NewManager(),
 	}
@@ -37,7 +35,10 @@ func NewMobileBridge() *MobileBridge {
 
 // DispatchOmnibar processes user chat or voice transcripts from the bottom omnibar.
 func (b *MobileBridge) DispatchOmnibar(input string) string {
-	reply, _ := b.Ilaria.ProcessPrompt(input)
+	reply, err := b.Ilaria.ProcessPromptContext(context.Background(), input)
+	if err != nil {
+		reply = "Ilaria is unavailable: " + err.Error()
+	}
 	return reply
 }
 

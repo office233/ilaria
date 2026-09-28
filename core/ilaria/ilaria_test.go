@@ -1,49 +1,38 @@
 package ilaria
 
 import (
+	"context"
 	"testing"
 )
 
-func TestClassifyIntent(t *testing.T) {
+func TestUnconfiguredEngineFailsExplicitly(t *testing.T) {
 	e := NewEngine()
-
-	cases := []struct {
-		input    string
-		expected IntentType
-	}{
-		{"search quantum computing", IntentSearch},
-		{"cauta cele mai rapide masini", IntentSearch},
-		{"open video studio", IntentStudio},
-		{"check wallet balance", IntentWallet},
-		{"calculate monthly budget", IntentTasks},
-		{"call Andrei", IntentConnect},
-		{"check shield privacy settings", IntentSettings},
-		{"hello there", IntentChat},
+	if _, err := e.ProcessPromptContext(context.Background(), "salut"); err == nil {
+		t.Fatal("an engine without a backend must not answer")
 	}
-
-	for _, c := range cases {
-		got := e.ClassifyIntent(c.input)
-		if got != c.expected {
-			t.Errorf("For input '%s', expected %s, got %s", c.input, c.expected, got)
-		}
+	if len(e.GetHistory()) != 0 {
+		t.Fatal("failed turn stored")
 	}
 }
 
-func TestProcessPrompt(t *testing.T) {
+func TestProcessPromptRecordsExchange(t *testing.T) {
 	e := NewEngine()
 	e.SetBackend(testBackend{})
-
-	reply, intent := e.ProcessPrompt("search golang 1.26 performance")
-	if intent != IntentSearch {
-		t.Fatalf("Expected IntentSearch, got %s", intent)
+	reply, err := e.ProcessPromptContext(context.Background(), "search golang performance")
+	if err != nil || reply == "" {
+		t.Fatalf("reply=%q err=%v", reply, err)
 	}
-
-	if reply == "" {
-		t.Fatalf("Expected non-empty response")
+	if h := e.GetHistory(); len(h) != 2 || h[0].Sender != "user" || h[1].Sender != "ilaria" {
+		t.Fatalf("history=%+v", h)
 	}
-
-	history := e.GetHistory()
-	if len(history) != 2 {
-		t.Fatalf("Expected 2 messages in history, got %d", len(history))
+	if _, err := e.Complete(context.Background(), "plan"); err != nil {
+		t.Fatal(err)
+	}
+	if len(e.GetHistory()) != 2 {
+		t.Fatal("Complete must not change chat history")
+	}
+	e.ClearHistory()
+	if len(e.GetHistory()) != 0 {
+		t.Fatal("history not cleared")
 	}
 }

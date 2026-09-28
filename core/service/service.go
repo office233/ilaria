@@ -10,6 +10,8 @@ import (
 	"net/http"
 	"os"
 	"runtime"
+	"strings"
+
 	"swypik-os/core/agent"
 	"swypik-os/core/network"
 	"swypik-os/core/search"
@@ -46,6 +48,15 @@ func SearchTool(e *search.Engine) agent.Tool {
 		r, err := e.Search(a.Query)
 		if err != nil {
 			return nil, err
+		}
+		// Agent observations are capped at 12 KiB; keep the top results.
+		if len(r.Sources) > 5 {
+			r.Sources = r.Sources[:5]
+		}
+		for i := range r.Sources {
+			if len(r.Sources[i].Snippet) > 400 {
+				r.Sources[i].Snippet = strings.ToValidUTF8(r.Sources[i].Snippet[:400], "")
+			}
 		}
 		return json.Marshal(r)
 	}}

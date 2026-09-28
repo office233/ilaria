@@ -43,7 +43,9 @@ func (b *LocalBackend) Chat(ctx context.Context, prompt string, history []Messag
 	if err != nil || u.User != nil || u.RawQuery != "" || u.Fragment != "" || u.Path != "" || u.Hostname() == "" {
 		return "", fmt.Errorf("invalid Ilaria endpoint")
 	}
-	local := u.Scheme == "http" && u.Hostname() == "127.0.0.1" && b.token == ""
+	// The token is only ever sent over HTTPS. A token configured for a remote
+	// deployment does not break a local loopback service, and is not sent to it.
+	local := u.Scheme == "http" && u.Hostname() == "127.0.0.1"
 	cloud := u.Scheme == "https" && len(b.token) >= 32 && strings.TrimSpace(b.token) == b.token
 	if !local && !cloud {
 		return "", fmt.Errorf("Ilaria requires loopback HTTP or authenticated HTTPS")
@@ -114,6 +116,9 @@ func (b *LocalBackend) Chat(ctx context.Context, prompt string, history []Messag
 		return "", fmt.Errorf("Ilaria response exceeds 128 KiB limit")
 	}
 	if err = json.Unmarshal(response, &payload); err != nil {
+		if res.StatusCode != http.StatusOK {
+			return "", fmt.Errorf("Ilaria HTTP %d (non-JSON body)", res.StatusCode)
+		}
 		return "", fmt.Errorf("invalid Ilaria response: %w", err)
 	}
 	if res.StatusCode != http.StatusOK {
@@ -124,3 +129,32 @@ func (b *LocalBackend) Chat(ctx context.Context, prompt string, history []Messag
 	}
 	return payload.Reply, nil
 }
+
+// Health performs GET /health. It sends no prompt or user data; callers use it
+// to show whether the configured service is reachable before a request.
+func (b *LocalBackend) Health(ctx context.Context) error {
+	u, err := url.Parse(b.endpoint)
+	if err != nil || u.Hostname() == "" {
+		return fmt.Errorf("invalid Ilaria endpoint")
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, b.endpoint+"/health", nil)
+	if err != nil {
+		return err
+	}
+	if u.Scheme == "https" && b.token != "" {
+		req.Header.Set("Authorization", "Bearer "+b.token)
+	}
+	res, err := b.client.Do(req)
+	if err != nil {
+		return fmt.Errorf("cannot reach Ilaria service: %w", err)
+	}
+	defer res.Body.Close()
+	_, _ = io.Copy(io.Discard, io.LimitReader(res.Body, 4096))
+	if res.StatusCode != http.StatusOK {
+		return fmt.Errorf("Ilaria health HTTP %d", res.StatusCode)
+	}
+	return nil
+}
+
+// Endpoint returns the configured origin for display. It never includes tokens.
+func (b *LocalBackend) Endpoint() string { return b.endpoint }

@@ -25,12 +25,12 @@ func TestCanceledQueuedTurnReturnsWithoutWaitingForInference(t *testing.T) {
 		return "answer", nil
 	}))
 	first := make(chan error, 1)
-	go func() { _, _, err := e.ProcessPromptContext(context.Background(), "first"); first <- err }()
+	go func() { _, err := e.ProcessPromptContext(context.Background(), "first"); first <- err }()
 	<-entered
 	defer func() { close(release); <-first }()
 	ctx, cancel := context.WithCancel(context.Background())
 	second := make(chan error, 1)
-	go func() { _, _, err := e.ProcessPromptContext(ctx, "second"); second <- err }()
+	go func() { _, err := e.ProcessPromptContext(ctx, "second"); second <- err }()
 	cancel()
 	select {
 	case err := <-second:
@@ -52,14 +52,14 @@ func TestCanceledResultIsNotSavedAndQueueRecovers(t *testing.T) {
 		cancel()
 		return "late answer", nil
 	}))
-	if _, _, err := e.ProcessPromptContext(ctx, "cancel me"); !errors.Is(err, context.Canceled) {
+	if _, err := e.ProcessPromptContext(ctx, "cancel me"); !errors.Is(err, context.Canceled) {
 		t.Fatalf("got %v", err)
 	}
 	if len(e.GetHistory()) != 0 {
 		t.Fatal("canceled answer saved")
 	}
 	e.SetBackend(testBackend{})
-	if _, _, err := e.ProcessPromptContext(context.Background(), "next"); err != nil {
+	if _, err := e.ProcessPromptContext(context.Background(), "next"); err != nil {
 		t.Fatal(err)
 	}
 	if len(e.GetHistory()) != 2 {

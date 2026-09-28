@@ -13,7 +13,7 @@ import (
 	"syscall"
 )
 
-const checkpointLimit = 256 * 1024
+const checkpointLimit = 1 << 20
 const checkpointName = "current-run.json"
 
 type diskCheckpoint struct {
@@ -104,7 +104,7 @@ func (s *fileStore) Load() (*Run, error) {
 		return nil, err
 	}
 	if info.Size() > checkpointLimit {
-		return nil, fmt.Errorf("checkpoint exceeds size limit")
+		return nil, fmt.Errorf("%w: checkpoint exceeds size limit", ErrInvalidCheckpoint)
 	}
 	raw, err := io.ReadAll(io.LimitReader(f, checkpointLimit+1))
 	if err != nil {
@@ -112,13 +112,13 @@ func (s *fileStore) Load() (*Run, error) {
 	}
 	var state diskCheckpoint
 	if err := DecodeObject(raw, &state, checkpointLimit); err != nil {
-		return nil, fmt.Errorf("invalid checkpoint JSON: %w", err)
+		return nil, fmt.Errorf("%w: JSON: %v", ErrInvalidCheckpoint, err)
 	}
 	if state.Version != 1 {
-		return nil, fmt.Errorf("unsupported checkpoint version: %d", state.Version)
+		return nil, fmt.Errorf("%w: unsupported version %d", ErrInvalidCheckpoint, state.Version)
 	}
 	if err := validateRun(state.Run); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w: %v", ErrInvalidCheckpoint, err)
 	}
 	r := copyRun(state.Run)
 	return &r, nil
@@ -172,6 +172,26 @@ func (s *fileStore) Save(r Run) error {
 	}
 	return s.dir.Sync()
 }
+
+// Quarantine renames an invalid checkpoint to a unique name in the same private
+// directory so it remains available for inspection. It never deletes data.
+func (s *fileStore) Quarantine() (string, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.closed {
+		return "", ErrClosed
+	}
+	id, err := randomID()
+	if err != nil {
+		return "", err
+	}
+	name := "invalid-run-" + id[:16] + ".json"
+	if err := syscall.Renameat(int(s.dir.Fd()), checkpointName, int(s.dir.Fd()), name); err != nil {
+		return "", err
+	}
+	return name, s.dir.Sync()
+}
+
 func (s *fileStore) Close() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()

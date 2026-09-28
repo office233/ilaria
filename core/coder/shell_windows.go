@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"sync"
 	"syscall"
 	"unsafe"
@@ -177,4 +178,22 @@ func runShell(ctx context.Context, command, directory string, output io.Writer) 
 		return fmt.Errorf("command exited with code %d", exitCode)
 	}
 	return nil
+}
+
+var multiByteToWideChar = kernel32.NewProc("MultiByteToWideChar")
+
+// decodeConsole converts output written in the console's OEM code page (for
+// example 852 on Romanian systems) to UTF-8.
+func decodeConsole(b []byte) string {
+	if len(b) == 0 {
+		return ""
+	}
+	const cpOEM = 1
+	n, _, _ := multiByteToWideChar.Call(cpOEM, 0, uintptr(unsafe.Pointer(&b[0])), uintptr(len(b)), 0, 0)
+	if n == 0 {
+		return strings.ToValidUTF8(string(b), "�")
+	}
+	wide := make([]uint16, n)
+	multiByteToWideChar.Call(cpOEM, 0, uintptr(unsafe.Pointer(&b[0])), uintptr(len(b)), uintptr(unsafe.Pointer(&wide[0])), n)
+	return syscall.UTF16ToString(wide)
 }

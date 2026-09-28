@@ -7,7 +7,7 @@ import tempfile
 from forge.tool_data import load_trajectories, validate_splits
 
 ROOT = Path(__file__).resolve().parents[2]
-SWYP = Path('D:/swyp lang')
+SWYP = ROOT/'swyp'
 OUT = ROOT / 'forge/colab/project-examples-v6'
 EVAL = ROOT / 'results/ilaria-project-v6'
 OUT.mkdir(exist_ok=False)

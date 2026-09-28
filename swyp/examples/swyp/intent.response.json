@@ -1,0 +1,12 @@
+{
+  "replacements": [
+    {
+      "id": 0,
+      "code": "let total = 0; let i = 1; while i <= count { total = total + i * i; i = i + 1; }"
+    },
+    {
+      "id": 1,
+      "code": "print(\"Calculation passed\", total);"
+    }
+  ]
+}

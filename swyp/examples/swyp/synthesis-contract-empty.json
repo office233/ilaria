@@ -1,0 +1,6 @@
+{
+  "version": 1,
+  "max_nodes": 7,
+  "max_candidates": 20000,
+  "max_evaluations": 1000000
+}

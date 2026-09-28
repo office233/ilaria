@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "entry": "max2",
+  "inputs": [
+    {"name": "a", "type": "i64", "min": "-7", "max": "7"},
+    {"name": "b", "type": "i64", "min": "-7", "max": "7"}
+  ],
+  "ensures": [
+    {"op": "ge", "args": [{"var": "result"}, {"var": "a"}]},
+    {"op": "ge", "args": [{"var": "result"}, {"var": "b"}]},
+    {"op": "or", "args": [
+      {"op": "eq", "args": [{"var": "result"}, {"var": "a"}]},
+      {"op": "eq", "args": [{"var": "result"}, {"var": "b"}]}
+    ]}
+  ],
+  "max_steps": 100
+}

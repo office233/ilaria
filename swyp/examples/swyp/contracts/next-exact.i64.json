@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "entry": "next",
+  "inputs": [{"name": "x", "type": "i64", "min": "9007199254740993", "max": "9007199254741000"}],
+  "ensures": [
+    {"op": "eq", "args": [
+      {"var": "result"},
+      {"op": "add", "args": [{"var": "x"}, {"const": {"type": "i64", "value": "1"}}]}
+    ]}
+  ],
+  "max_steps": 100
+}

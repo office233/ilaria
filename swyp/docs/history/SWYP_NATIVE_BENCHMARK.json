@@ -1,0 +1,1160 @@
+{
+  "versions": {
+    "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "cpu": "Intel64 Family 6 Model 158 Stepping 13, GenuineIntel",
+    "go": "go version go1.26.2 windows/amd64",
+    "gcc": "gcc (MinGW-W64 x86_64-ucrt-posix-seh, built by Brecht Sanders, r7) 15.2.0",
+    "g++": "g++ (MinGW-W64 x86_64-ucrt-posix-seh, built by Brecht Sanders, r7) 15.2.0",
+    "Rust": "Not measured: rustc unavailable on PATH"
+  },
+  "build_seconds": {
+    "Swyp tool": 1.3499487999997655,
+    "Swyp native": 2.086179799999627,
+    "C": 1.2556746000000203,
+    "C++": 1.847752099999525,
+    "Go": 0.649159999999938
+  },
+  "summary": [
+    {
+      "case": "Mandelbrot160",
+      "language": "Swyp native",
+      "median_ms": 4.592399999637564,
+      "min_ms": 4.3111999993925565,
+      "max_ms": 4.979499999535619,
+      "wall_median_ms": 11.538300000211166
+    },
+    {
+      "case": "Mandelbrot160",
+      "language": "Swyp interpreter",
+      "median_ms": 299.4216,
+      "min_ms": 295.0073,
+      "max_ms": 300.8621,
+      "wall_median_ms": 312.6220000003741
+    },
+    {
+      "case": "Mandelbrot160",
+      "language": "C",
+      "median_ms": 0.8298000002469053,
+      "min_ms": 0.8006999996723607,
+      "max_ms": 0.9657000000515836,
+      "wall_median_ms": 7.521200000155659
+    },
+    {
+      "case": "Mandelbrot160",
+      "language": "C++",
+      "median_ms": 0.8431999995082151,
+      "min_ms": 0.8218000002671033,
+      "max_ms": 0.8491999997204402,
+      "wall_median_ms": 7.631599999513128
+    },
+    {
+      "case": "Mandelbrot160",
+      "language": "Go",
+      "median_ms": 1.0896000000000001,
+      "min_ms": 1.0649,
+      "max_ms": 1.1519,
+      "wall_median_ms": 9.81950000004872
+    },
+    {
+      "case": "Mandelbrot160",
+      "language": "Python",
+      "median_ms": 51.17999999947642,
+      "min_ms": 50.88849999992817,
+      "max_ms": 57.07489999986137,
+      "wall_median_ms": 96.30070000002888
+    },
+    {
+      "case": "PrimeCount10000",
+      "language": "Swyp native",
+      "median_ms": 1.428200000191282,
+      "min_ms": 1.4261999995142105,
+      "max_ms": 1.6553999994357582,
+      "wall_median_ms": 8.07509999958711
+    },
+    {
+      "case": "PrimeCount10000",
+      "language": "Swyp interpreter",
+      "median_ms": 51.9694,
+      "min_ms": 51.2753,
+      "max_ms": 54.1676,
+      "wall_median_ms": 65.89380000059464
+    },
+    {
+      "case": "PrimeCount10000",
+      "language": "C",
+      "median_ms": 0.6628999999520602,
+      "min_ms": 0.6622999999308377,
+      "max_ms": 0.7299999997485429,
+      "wall_median_ms": 7.2571000000607455
+    },
+    {
+      "case": "PrimeCount10000",
+      "language": "C++",
+      "median_ms": 0.6438999998863437,
+      "min_ms": 0.6353999997372739,
+      "max_ms": 0.7562999999208841,
+      "wall_median_ms": 6.950400000278023
+    },
+    {
+      "case": "PrimeCount10000",
+      "language": "Go",
+      "median_ms": 6.4073,
+      "min_ms": 6.1472999999999995,
+      "max_ms": 6.492,
+      "wall_median_ms": 14.706200000546232
+    },
+    {
+      "case": "PrimeCount10000",
+      "language": "Python",
+      "median_ms": 14.308400000118127,
+      "min_ms": 13.386999999966065,
+      "max_ms": 15.436399999998685,
+      "wall_median_ms": 58.538100000077975
+    },
+    {
+      "case": "PrimeCount10000",
+      "language": "Go integer primes",
+      "median_ms": 1.0878,
+      "min_ms": 0.5599999999999999,
+      "max_ms": 1.2048,
+      "wall_median_ms": 9.06959999974788
+    },
+    {
+      "case": "Train256x200",
+      "language": "Swyp native",
+      "median_ms": 1.609199999620614,
+      "min_ms": 1.3780999997834442,
+      "max_ms": 1.8043999998553772,
+      "wall_median_ms": 9.358100000099512
+    },
+    {
+      "case": "Train256x200",
+      "language": "Swyp interpreter",
+      "median_ms": 55.3901,
+      "min_ms": 52.450900000000004,
+      "max_ms": 58.545100000000005,
+      "wall_median_ms": 70.88720000047033
+    },
+    {
+      "case": "Train256x200",
+      "language": "C",
+      "median_ms": 0.3821000000243657,
+      "min_ms": 0.3357999994477723,
+      "max_ms": 0.4496000001381617,
+      "wall_median_ms": 7.100800000443996
+    },
+    {
+      "case": "Train256x200",
+      "language": "C++",
+      "median_ms": 0.40239999998448184,
+      "min_ms": 0.3384000001460663,
+      "max_ms": 0.7322999999814783,
+      "wall_median_ms": 6.983799999943585
+    },
+    {
+      "case": "Train256x200",
+      "language": "Go",
+      "median_ms": 1.0645,
+      "min_ms": 0.5963,
+      "max_ms": 1.1543,
+      "wall_median_ms": 9.360500000184402
+    },
+    {
+      "case": "Train256x200",
+      "language": "Python",
+      "median_ms": 17.31110000037006,
+      "min_ms": 16.822599999613885,
+      "max_ms": 17.383200000040233,
+      "wall_median_ms": 64.25219999982801
+    }
+  ],
+  "measurements": [
+    {
+      "language": "Python",
+      "case": "Mandelbrot160",
+      "repetition": 0,
+      "seconds": 0.05117999999947642,
+      "wall_seconds": 0.09630070000002888,
+      "result": 279217.0,
+      "weights": null
+    },
+    {
+      "language": "Go",
+      "case": "Mandelbrot160",
+      "repetition": 0,
+      "seconds": 0.0010749,
+      "wall_seconds": 0.00981950000004872,
+      "result": 279217.0,
+      "weights": null
+    },
+    {
+      "language": "Swyp native",
+      "case": "Mandelbrot160",
+      "repetition": 0,
+      "seconds": 0.004739000000881788,
+      "wall_seconds": 0.012759600000208593,
+      "result": 279217.0,
+      "weights": null
+    },
+    {
+      "language": "C",
+      "case": "Mandelbrot160",
+      "repetition": 0,
+      "seconds": 0.0009657000000515836,
+      "wall_seconds": 0.0077949999995325925,
+      "result": 279217.0,
+      "weights": null
+    },
+    {
+      "language": "C++",
+      "case": "Mandelbrot160",
+      "repetition": 0,
+      "seconds": 0.0008218000002671033,
+      "wall_seconds": 0.007767900000544614,
+      "result": 279217.0,
+      "weights": null
+    },
+    {
+      "language": "Swyp interpreter",
+      "case": "Mandelbrot160",
+      "repetition": 0,
+      "seconds": 0.3008621,
+      "wall_seconds": 0.3129756999996971,
+      "result": 279217.0,
+      "weights": null
+    },
+    {
+      "language": "C",
+      "case": "Mandelbrot160",
+      "repetition": 1,
+      "seconds": 0.0008298000002469053,
+      "wall_seconds": 0.00766380000004574,
+      "result": 279217.0,
+      "weights": null
+    },
+    {
+      "language": "Python",
+      "case": "Mandelbrot160",
+      "repetition": 1,
+      "seconds": 0.05110510000031354,
+      "wall_seconds": 0.09545969999999215,
+      "result": 279217.0,
+      "weights": null
+    },
+    {
+      "language": "Swyp interpreter",
+      "case": "Mandelbrot160",
+      "repetition": 1,
+      "seconds": 0.2994216,
+      "wall_seconds": 0.3123828000007052,
+      "result": 279217.0,
+      "weights": null
+    },
+    {
+      "language": "Go",
+      "case": "Mandelbrot160",
+      "repetition": 1,
+      "seconds": 0.0010649,
+      "wall_seconds": 0.009704099999908067,
+      "result": 279217.0,
+      "weights": null
+    },
+    {
+      "language": "C++",
+      "case": "Mandelbrot160",
+      "repetition": 1,
+      "seconds": 0.0008446000001640641,
+      "wall_seconds": 0.007631599999513128,
+      "result": 279217.0,
+      "weights": null
+    },
+    {
+      "language": "Swyp native",
+      "case": "Mandelbrot160",
+      "repetition": 1,
+      "seconds": 0.0043111999993925565,
+      "wall_seconds": 0.010398000000350294,
+      "result": 279217.0,
+      "weights": null
+    },
+    {
+      "language": "Go",
+      "case": "Mandelbrot160",
+      "repetition": 2,
+      "seconds": 0.0011519,
+      "wall_seconds": 0.01068810000015219,
+      "result": 279217.0,
+      "weights": null
+    },
+    {
+      "language": "C++",
+      "case": "Mandelbrot160",
+      "repetition": 2,
+      "seconds": 0.0008222999995268765,
+      "wall_seconds": 0.00701039999967179,
+      "result": 279217.0,
+      "weights": null
+    },
+    {
+      "language": "Python",
+      "case": "Mandelbrot160",
+      "repetition": 2,
+      "seconds": 0.05088849999992817,
+      "wall_seconds": 0.09506909999981872,
+      "result": 279217.0,
+      "weights": null
+    },
+    {
+      "language": "Swyp interpreter",
+      "case": "Mandelbrot160",
+      "repetition": 2,
+      "seconds": 0.2950073,
+      "wall_seconds": 0.3126220000003741,
+      "result": 279217.0,
+      "weights": null
+    },
+    {
+      "language": "Swyp native",
+      "case": "Mandelbrot160",
+      "repetition": 2,
+      "seconds": 0.004514900000685884,
+      "wall_seconds": 0.011272500000814034,
+      "result": 279217.0,
+      "weights": null
+    },
+    {
+      "language": "C",
+      "case": "Mandelbrot160",
+      "repetition": 2,
+      "seconds": 0.0008081999994828948,
+      "wall_seconds": 0.007521200000155659,
+      "result": 279217.0,
+      "weights": null
+    },
+    {
+      "language": "Go",
+      "case": "Mandelbrot160",
+      "repetition": 3,
+      "seconds": 0.0010967,
+      "wall_seconds": 0.010032700000010664,
+      "result": 279217.0,
+      "weights": null
+    },
+    {
+      "language": "Swyp interpreter",
+      "case": "Mandelbrot160",
+      "repetition": 3,
+      "seconds": 0.2998265,
+      "wall_seconds": 0.311877000000095,
+      "result": 279217.0,
+      "weights": null
+    },
+    {
+      "language": "C++",
+      "case": "Mandelbrot160",
+      "repetition": 3,
+      "seconds": 0.0008491999997204402,
+      "wall_seconds": 0.00768900000002759,
+      "result": 279217.0,
+      "weights": null
+    },
+    {
+      "language": "Swyp native",
+      "case": "Mandelbrot160",
+      "repetition": 3,
+      "seconds": 0.004592399999637564,
+      "wall_seconds": 0.011538300000211166,
+      "result": 279217.0,
+      "weights": null
+    },
+    {
+      "language": "Python",
+      "case": "Mandelbrot160",
+      "repetition": 3,
+      "seconds": 0.05707489999986137,
+      "wall_seconds": 0.10087550000025658,
+      "result": 279217.0,
+      "weights": null
+    },
+    {
+      "language": "C",
+      "case": "Mandelbrot160",
+      "repetition": 3,
+      "seconds": 0.0008006999996723607,
+      "wall_seconds": 0.00702129999990575,
+      "result": 279217.0,
+      "weights": null
+    },
+    {
+      "language": "C++",
+      "case": "Mandelbrot160",
+      "repetition": 4,
+      "seconds": 0.0008431999995082151,
+      "wall_seconds": 0.007031499999357038,
+      "result": 279217.0,
+      "weights": null
+    },
+    {
+      "language": "Swyp native",
+      "case": "Mandelbrot160",
+      "repetition": 4,
+      "seconds": 0.004979499999535619,
+      "wall_seconds": 0.012070699999640055,
+      "result": 279217.0,
+      "weights": null
+    },
+    {
+      "language": "C",
+      "case": "Mandelbrot160",
+      "repetition": 4,
+      "seconds": 0.0009205999995174352,
+      "wall_seconds": 0.007416200000079698,
+      "result": 279217.0,
+      "weights": null
+    },
+    {
+      "language": "Swyp interpreter",
+      "case": "Mandelbrot160",
+      "repetition": 4,
+      "seconds": 0.2985195,
+      "wall_seconds": 0.31382880000001023,
+      "result": 279217.0,
+      "weights": null
+    },
+    {
+      "language": "Python",
+      "case": "Mandelbrot160",
+      "repetition": 4,
+      "seconds": 0.052190699999300705,
+      "wall_seconds": 0.1006985000003624,
+      "result": 279217.0,
+      "weights": null
+    },
+    {
+      "language": "Go",
+      "case": "Mandelbrot160",
+      "repetition": 4,
+      "seconds": 0.0010896,
+      "wall_seconds": 0.009635299999899871,
+      "result": 279217.0,
+      "weights": null
+    },
+    {
+      "language": "C",
+      "case": "PrimeCount10000",
+      "repetition": 0,
+      "seconds": 0.0006622999999308377,
+      "wall_seconds": 0.0072571000000607455,
+      "result": 1229.0,
+      "weights": null
+    },
+    {
+      "language": "C++",
+      "case": "PrimeCount10000",
+      "repetition": 0,
+      "seconds": 0.0007562999999208841,
+      "wall_seconds": 0.006950400000278023,
+      "result": 1229.0,
+      "weights": null
+    },
+    {
+      "language": "Python",
+      "case": "PrimeCount10000",
+      "repetition": 0,
+      "seconds": 0.013386999999966065,
+      "wall_seconds": 0.058538100000077975,
+      "result": 1229.0,
+      "weights": null
+    },
+    {
+      "language": "Swyp native",
+      "case": "PrimeCount10000",
+      "repetition": 0,
+      "seconds": 0.001428200000191282,
+      "wall_seconds": 0.00816190000023198,
+      "result": 1229.0,
+      "weights": null
+    },
+    {
+      "language": "Go integer primes",
+      "case": "PrimeCount10000",
+      "repetition": 0,
+      "seconds": 0.0010878,
+      "wall_seconds": 0.00906959999974788,
+      "result": 1229.0,
+      "weights": null
+    },
+    {
+      "language": "Swyp interpreter",
+      "case": "PrimeCount10000",
+      "repetition": 0,
+      "seconds": 0.0514082,
+      "wall_seconds": 0.06589380000059464,
+      "result": 1229.0,
+      "weights": null
+    },
+    {
+      "language": "Go",
+      "case": "PrimeCount10000",
+      "repetition": 0,
+      "seconds": 0.0061638,
+      "wall_seconds": 0.014706200000546232,
+      "result": 1229.0,
+      "weights": null
+    },
+    {
+      "language": "Swyp interpreter",
+      "case": "PrimeCount10000",
+      "repetition": 1,
+      "seconds": 0.0541676,
+      "wall_seconds": 0.06604109999989305,
+      "result": 1229.0,
+      "weights": null
+    },
+    {
+      "language": "C",
+      "case": "PrimeCount10000",
+      "repetition": 1,
+      "seconds": 0.0007299999997485429,
+      "wall_seconds": 0.007182500000453729,
+      "result": 1229.0,
+      "weights": null
+    },
+    {
+      "language": "Go integer primes",
+      "case": "PrimeCount10000",
+      "repetition": 1,
+      "seconds": 0.0011553,
+      "wall_seconds": 0.009695200000351178,
+      "result": 1229.0,
+      "weights": null
+    },
+    {
+      "language": "Python",
+      "case": "PrimeCount10000",
+      "repetition": 1,
+      "seconds": 0.013910300000134157,
+      "wall_seconds": 0.058375799999339506,
+      "result": 1229.0,
+      "weights": null
+    },
+    {
+      "language": "Swyp native",
+      "case": "PrimeCount10000",
+      "repetition": 1,
+      "seconds": 0.0014873999998599174,
+      "wall_seconds": 0.00807509999958711,
+      "result": 1229.0,
+      "weights": null
+    },
+    {
+      "language": "C++",
+      "case": "PrimeCount10000",
+      "repetition": 1,
+      "seconds": 0.0006986999997025123,
+      "wall_seconds": 0.00806780000038998,
+      "result": 1229.0,
+      "weights": null
+    },
+    {
+      "language": "Go",
+      "case": "PrimeCount10000",
+      "repetition": 1,
+      "seconds": 0.0064073,
+      "wall_seconds": 0.014787499999329157,
+      "result": 1229.0,
+      "weights": null
+    },
+    {
+      "language": "C",
+      "case": "PrimeCount10000",
+      "repetition": 2,
+      "seconds": 0.0006627000002481509,
+      "wall_seconds": 0.006863999999950465,
+      "result": 1229.0,
+      "weights": null
+    },
+    {
+      "language": "Swyp interpreter",
+      "case": "PrimeCount10000",
+      "repetition": 2,
+      "seconds": 0.0519694,
+      "wall_seconds": 0.06537660000049073,
+      "result": 1229.0,
+      "weights": null
+    },
+    {
+      "language": "Go integer primes",
+      "case": "PrimeCount10000",
+      "repetition": 2,
+      "seconds": 0.00056,
+      "wall_seconds": 0.009013599999889266,
+      "result": 1229.0,
+      "weights": null
+    },
+    {
+      "language": "Python",
+      "case": "PrimeCount10000",
+      "repetition": 2,
+      "seconds": 0.014308400000118127,
+      "wall_seconds": 0.06257600000026287,
+      "result": 1229.0,
+      "weights": null
+    },
+    {
+      "language": "C++",
+      "case": "PrimeCount10000",
+      "repetition": 2,
+      "seconds": 0.0006368999993355828,
+      "wall_seconds": 0.007379600000604114,
+      "result": 1229.0,
+      "weights": null
+    },
+    {
+      "language": "Swyp native",
+      "case": "PrimeCount10000",
+      "repetition": 2,
+      "seconds": 0.0014273999995566555,
+      "wall_seconds": 0.00800249999974767,
+      "result": 1229.0,
+      "weights": null
+    },
+    {
+      "language": "Go",
+      "case": "PrimeCount10000",
+      "repetition": 2,
+      "seconds": 0.0061473,
+      "wall_seconds": 0.014242600000216044,
+      "result": 1229.0,
+      "weights": null
+    },
+    {
+      "language": "Python",
+      "case": "PrimeCount10000",
+      "repetition": 3,
+      "seconds": 0.015436399999998685,
+      "wall_seconds": 0.06274260000009235,
+      "result": 1229.0,
+      "weights": null
+    },
+    {
+      "language": "Go integer primes",
+      "case": "PrimeCount10000",
+      "repetition": 3,
+      "seconds": 0.0012048,
+      "wall_seconds": 0.009057000000211701,
+      "result": 1229.0,
+      "weights": null
+    },
+    {
+      "language": "C++",
+      "case": "PrimeCount10000",
+      "repetition": 3,
+      "seconds": 0.0006353999997372739,
+      "wall_seconds": 0.0068673000005219365,
+      "result": 1229.0,
+      "weights": null
+    },
+    {
+      "language": "Swyp interpreter",
+      "case": "PrimeCount10000",
+      "repetition": 3,
+      "seconds": 0.0538501,
+      "wall_seconds": 0.0666203000000678,
+      "result": 1229.0,
+      "weights": null
+    },
+    {
+      "language": "Swyp native",
+      "case": "PrimeCount10000",
+      "repetition": 3,
+      "seconds": 0.0014261999995142105,
+      "wall_seconds": 0.0077470999995057355,
+      "result": 1229.0,
+      "weights": null
+    },
+    {
+      "language": "C",
+      "case": "PrimeCount10000",
+      "repetition": 3,
+      "seconds": 0.0006769999999960419,
+      "wall_seconds": 0.007277100000464998,
+      "result": 1229.0,
+      "weights": null
+    },
+    {
+      "language": "Go",
+      "case": "PrimeCount10000",
+      "repetition": 3,
+      "seconds": 0.0064692,
+      "wall_seconds": 0.014650399999482033,
+      "result": 1229.0,
+      "weights": null
+    },
+    {
+      "language": "Go integer primes",
+      "case": "PrimeCount10000",
+      "repetition": 4,
+      "seconds": 0.0006175,
+      "wall_seconds": 0.009901299999910407,
+      "result": 1229.0,
+      "weights": null
+    },
+    {
+      "language": "C",
+      "case": "PrimeCount10000",
+      "repetition": 4,
+      "seconds": 0.0006628999999520602,
+      "wall_seconds": 0.00822509999943577,
+      "result": 1229.0,
+      "weights": null
+    },
+    {
+      "language": "C++",
+      "case": "PrimeCount10000",
+      "repetition": 4,
+      "seconds": 0.0006438999998863437,
+      "wall_seconds": 0.006395200000042678,
+      "result": 1229.0,
+      "weights": null
+    },
+    {
+      "language": "Swyp native",
+      "case": "PrimeCount10000",
+      "repetition": 4,
+      "seconds": 0.0016553999994357582,
+      "wall_seconds": 0.008751200000006065,
+      "result": 1229.0,
+      "weights": null
+    },
+    {
+      "language": "Python",
+      "case": "PrimeCount10000",
+      "repetition": 4,
+      "seconds": 0.014578199999959907,
+      "wall_seconds": 0.058270900000024994,
+      "result": 1229.0,
+      "weights": null
+    },
+    {
+      "language": "Swyp interpreter",
+      "case": "PrimeCount10000",
+      "repetition": 4,
+      "seconds": 0.0512753,
+      "wall_seconds": 0.06464309999955731,
+      "result": 1229.0,
+      "weights": null
+    },
+    {
+      "language": "Go",
+      "case": "PrimeCount10000",
+      "repetition": 4,
+      "seconds": 0.006492,
+      "wall_seconds": 0.015697300000283576,
+      "result": 1229.0,
+      "weights": null
+    },
+    {
+      "language": "C",
+      "case": "Train256x200",
+      "repetition": 0,
+      "seconds": 0.0003363999994689948,
+      "wall_seconds": 0.006613800000195624,
+      "result": 1.434933341284814e-12,
+      "weights": [
+        1.9999979251351307,
+        0.9999999513851825,
+        1.434933341284814e-12
+      ]
+    },
+    {
+      "language": "Go",
+      "case": "Train256x200",
+      "repetition": 0,
+      "seconds": 0.0011543,
+      "wall_seconds": 0.008738699999412347,
+      "result": 1.434933341284814e-12,
+      "weights": [
+        1.9999979251351307,
+        0.9999999513851825,
+        1.434933341284814e-12
+      ]
+    },
+    {
+      "language": "C++",
+      "case": "Train256x200",
+      "repetition": 0,
+      "seconds": 0.00040239999998448184,
+      "wall_seconds": 0.006658999999672233,
+      "result": 1.434933341284814e-12,
+      "weights": [
+        1.9999979251351307,
+        0.9999999513851825,
+        1.434933341284814e-12
+      ]
+    },
+    {
+      "language": "Python",
+      "case": "Train256x200",
+      "repetition": 0,
+      "seconds": 0.017006200000651006,
+      "wall_seconds": 0.06343769999966753,
+      "result": 1.434933341284814e-12,
+      "weights": [
+        1.9999979251351307,
+        0.9999999513851825,
+        1.434933341284814e-12
+      ]
+    },
+    {
+      "language": "Swyp interpreter",
+      "case": "Train256x200",
+      "repetition": 0,
+      "seconds": 0.0524509,
+      "wall_seconds": 0.06806849999975384,
+      "result": 1.434933341284814e-12,
+      "weights": [
+        1.9999979251351307,
+        0.9999999513851825,
+        1.434933341284814e-12
+      ]
+    },
+    {
+      "language": "Swyp native",
+      "case": "Train256x200",
+      "repetition": 0,
+      "seconds": 0.0013780999997834442,
+      "wall_seconds": 0.007213399999272951,
+      "result": 1.434933341284814e-12,
+      "weights": [
+        1.9999979251351307,
+        0.9999999513851825,
+        1.434933341284814e-12
+      ]
+    },
+    {
+      "language": "Go",
+      "case": "Train256x200",
+      "repetition": 1,
+      "seconds": 0.0006282,
+      "wall_seconds": 0.010270600000694685,
+      "result": 1.434933341284814e-12,
+      "weights": [
+        1.9999979251351307,
+        0.9999999513851825,
+        1.434933341284814e-12
+      ]
+    },
+    {
+      "language": "Swyp interpreter",
+      "case": "Train256x200",
+      "repetition": 1,
+      "seconds": 0.0585451,
+      "wall_seconds": 0.07107360000009066,
+      "result": 1.434933341284814e-12,
+      "weights": [
+        1.9999979251351307,
+        0.9999999513851825,
+        1.434933341284814e-12
+      ]
+    },
+    {
+      "language": "C",
+      "case": "Train256x200",
+      "repetition": 1,
+      "seconds": 0.00038270000004558824,
+      "wall_seconds": 0.00746419999995851,
+      "result": 1.434933341284814e-12,
+      "weights": [
+        1.9999979251351307,
+        0.9999999513851825,
+        1.434933341284814e-12
+      ]
+    },
+    {
+      "language": "Python",
+      "case": "Train256x200",
+      "repetition": 1,
+      "seconds": 0.01731110000037006,
+      "wall_seconds": 0.065335999999661,
+      "result": 1.434933341284814e-12,
+      "weights": [
+        1.9999979251351307,
+        0.9999999513851825,
+        1.434933341284814e-12
+      ]
+    },
+    {
+      "language": "C++",
+      "case": "Train256x200",
+      "repetition": 1,
+      "seconds": 0.0007322999999814783,
+      "wall_seconds": 0.007404500000120606,
+      "result": 1.434933341284814e-12,
+      "weights": [
+        1.9999979251351307,
+        0.9999999513851825,
+        1.434933341284814e-12
+      ]
+    },
+    {
+      "language": "Swyp native",
+      "case": "Train256x200",
+      "repetition": 1,
+      "seconds": 0.0016267999999399763,
+      "wall_seconds": 0.008535400000255322,
+      "result": 1.434933341284814e-12,
+      "weights": [
+        1.9999979251351307,
+        0.9999999513851825,
+        1.434933341284814e-12
+      ]
+    },
+    {
+      "language": "Go",
+      "case": "Train256x200",
+      "repetition": 2,
+      "seconds": 0.00108,
+      "wall_seconds": 0.009360500000184402,
+      "result": 1.434933341284814e-12,
+      "weights": [
+        1.9999979251351307,
+        0.9999999513851825,
+        1.434933341284814e-12
+      ]
+    },
+    {
+      "language": "Python",
+      "case": "Train256x200",
+      "repetition": 2,
+      "seconds": 0.016822599999613885,
+      "wall_seconds": 0.06559110000034707,
+      "result": 1.434933341284814e-12,
+      "weights": [
+        1.9999979251351307,
+        0.9999999513851825,
+        1.434933341284814e-12
+      ]
+    },
+    {
+      "language": "C",
+      "case": "Train256x200",
+      "repetition": 2,
+      "seconds": 0.0004496000001381617,
+      "wall_seconds": 0.009078000000044995,
+      "result": 1.434933341284814e-12,
+      "weights": [
+        1.9999979251351307,
+        0.9999999513851825,
+        1.434933341284814e-12
+      ]
+    },
+    {
+      "language": "C++",
+      "case": "Train256x200",
+      "repetition": 2,
+      "seconds": 0.0003384000001460663,
+      "wall_seconds": 0.0071121999999377294,
+      "result": 1.434933341284814e-12,
+      "weights": [
+        1.9999979251351307,
+        0.9999999513851825,
+        1.434933341284814e-12
+      ]
+    },
+    {
+      "language": "Swyp interpreter",
+      "case": "Train256x200",
+      "repetition": 2,
+      "seconds": 0.0553901,
+      "wall_seconds": 0.07004520000009506,
+      "result": 1.434933341284814e-12,
+      "weights": [
+        1.9999979251351307,
+        0.9999999513851825,
+        1.434933341284814e-12
+      ]
+    },
+    {
+      "language": "Swyp native",
+      "case": "Train256x200",
+      "repetition": 2,
+      "seconds": 0.0014726999997947132,
+      "wall_seconds": 0.00967690000015864,
+      "result": 1.434933341284814e-12,
+      "weights": [
+        1.9999979251351307,
+        0.9999999513851825,
+        1.434933341284814e-12
+      ]
+    },
+    {
+      "language": "C",
+      "case": "Train256x200",
+      "repetition": 3,
+      "seconds": 0.0003357999994477723,
+      "wall_seconds": 0.006471099999544094,
+      "result": 1.434933341284814e-12,
+      "weights": [
+        1.9999979251351307,
+        0.9999999513851825,
+        1.434933341284814e-12
+      ]
+    },
+    {
+      "language": "C++",
+      "case": "Train256x200",
+      "repetition": 3,
+      "seconds": 0.000413299999308947,
+      "wall_seconds": 0.006983799999943585,
+      "result": 1.434933341284814e-12,
+      "weights": [
+        1.9999979251351307,
+        0.9999999513851825,
+        1.434933341284814e-12
+      ]
+    },
+    {
+      "language": "Python",
+      "case": "Train256x200",
+      "repetition": 3,
+      "seconds": 0.017383200000040233,
+      "wall_seconds": 0.06425219999982801,
+      "result": 1.434933341284814e-12,
+      "weights": [
+        1.9999979251351307,
+        0.9999999513851825,
+        1.434933341284814e-12
+      ]
+    },
+    {
+      "language": "Swyp interpreter",
+      "case": "Train256x200",
+      "repetition": 3,
+      "seconds": 0.054822,
+      "wall_seconds": 0.07088720000047033,
+      "result": 1.434933341284814e-12,
+      "weights": [
+        1.9999979251351307,
+        0.9999999513851825,
+        1.434933341284814e-12
+      ]
+    },
+    {
+      "language": "Go",
+      "case": "Train256x200",
+      "repetition": 3,
+      "seconds": 0.0005963,
+      "wall_seconds": 0.008684299999913492,
+      "result": 1.434933341284814e-12,
+      "weights": [
+        1.9999979251351307,
+        0.9999999513851825,
+        1.434933341284814e-12
+      ]
+    },
+    {
+      "language": "Swyp native",
+      "case": "Train256x200",
+      "repetition": 3,
+      "seconds": 0.001609199999620614,
+      "wall_seconds": 0.009358100000099512,
+      "result": 1.434933341284814e-12,
+      "weights": [
+        1.9999979251351307,
+        0.9999999513851825,
+        1.434933341284814e-12
+      ]
+    },
+    {
+      "language": "Swyp interpreter",
+      "case": "Train256x200",
+      "repetition": 4,
+      "seconds": 0.0582161,
+      "wall_seconds": 0.07172019999961776,
+      "result": 1.434933341284814e-12,
+      "weights": [
+        1.9999979251351307,
+        0.9999999513851825,
+        1.434933341284814e-12
+      ]
+    },
+    {
+      "language": "Swyp native",
+      "case": "Train256x200",
+      "repetition": 4,
+      "seconds": 0.0018043999998553772,
+      "wall_seconds": 0.011113700000350946,
+      "result": 1.434933341284814e-12,
+      "weights": [
+        1.9999979251351307,
+        0.9999999513851825,
+        1.434933341284814e-12
+      ]
+    },
+    {
+      "language": "Go",
+      "case": "Train256x200",
+      "repetition": 4,
+      "seconds": 0.0010645,
+      "wall_seconds": 0.009911299999657786,
+      "result": 1.434933341284814e-12,
+      "weights": [
+        1.9999979251351307,
+        0.9999999513851825,
+        1.434933341284814e-12
+      ]
+    },
+    {
+      "language": "C",
+      "case": "Train256x200",
+      "repetition": 4,
+      "seconds": 0.0003821000000243657,
+      "wall_seconds": 0.007100800000443996,
+      "result": 1.434933341284814e-12,
+      "weights": [
+        1.9999979251351307,
+        0.9999999513851825,
+        1.434933341284814e-12
+      ]
+    },
+    {
+      "language": "C++",
+      "case": "Train256x200",
+      "repetition": 4,
+      "seconds": 0.00033849999999802094,
+      "wall_seconds": 0.0066469000003053225,
+      "result": 1.434933341284814e-12,
+      "weights": [
+        1.9999979251351307,
+        0.9999999513851825,
+        1.434933341284814e-12
+      ]
+    },
+    {
+      "language": "Python",
+      "case": "Train256x200",
+      "repetition": 4,
+      "seconds": 0.01734139999916806,
+      "wall_seconds": 0.06231599999955506,
+      "result": 1.434933341284814e-12,
+      "weights": [
+        1.9999979251351307,
+        0.9999999513851825,
+        1.434933341284814e-12
+      ]
+    }
+  ],
+  "sha256": {
+    "examples\\swyp\\compute.swyp": "9ab2f6b73032484ccdb5832f78b4a7f76d92ddc421feb55650b1881f85027d35",
+    "benchmarks\\swyp\\reference.c": "5d699be24a764d48d2c3b6edc7b7ad1fc69ebb02fe14e252abe847bad3f13e97",
+    "benchmarks\\swyp\\reference.go": "b5a267f2d2439c84723abf65e0bb64437a0e1ba211c5c4768c0e2646b79cd82a",
+    "benchmarks\\swyp\\reference.py": "619d4d769ec00d19a4c334752786568f9c8a9e2a28dd851f8120cbfa2ba72f1c",
+    "benchmarks\\swyp\\reference.rs": "b45bd8933fd5ed4f201964f2924034ec57af10b35509683f0b70030acb500213",
+    "benchmarks\\swyp\\run.py": "c6b1acbe15ee920b040c212cfbf250c71486762736e009c49c5ca62ac4394b8e",
+    "internal\\swyplang\\swyp.go": "982bd3859c7a9f5bd8c5d091574df65ece6e92812a6535a677997e13ed0616e8",
+    "internal\\swyplang\\check.go": "72bd7c58955e7f67a7907ca7e04c5fae420ded8dbad9fff9b5d5ebbe01e02367",
+    "internal\\swyplang\\native.go": "39504d37a576be8e117d15a43a3241827c54da6b5bc11a49f2666d9b1d8879d4"
+  }
+}

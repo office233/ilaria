@@ -1,0 +1,5 @@
+// Deliberately broken fixture for the repair command.
+fn main() {
+    let total = 385;
+    print(totla);
+}

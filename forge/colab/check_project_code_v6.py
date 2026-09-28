@@ -6,7 +6,7 @@ import subprocess
 import tempfile
 
 root=Path(__file__).resolve().parents[2]/'results/ilaria-project-v6'
-swyp=Path('D:/swyp lang')
+swyp=Path(__file__).resolve().parents[2]/'swyp'
 gold={'swyp-affine':lambda x:31*x-8,'swyp-square':lambda x:x*x,
       'swyp-negative':lambda x:-x,'swyp-constant':lambda x:42}
 checks=[]

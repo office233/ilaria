@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "entry": "absolute",
+  "inputs": [{"name": "x", "type": "i64", "min": "-50", "max": "50"}],
+  "ensures": [
+    {"op": "ge", "args": [{"var": "result"}, {"const": {"type": "i64", "value": "0"}}]},
+    {"op": "or", "args": [
+      {"op": "eq", "args": [{"var": "result"}, {"var": "x"}]},
+      {"op": "eq", "args": [{"var": "result"}, {"op": "neg", "args": [{"var": "x"}]}]}
+    ]}
+  ],
+  "max_steps": 100
+}

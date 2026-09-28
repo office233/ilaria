@@ -1,0 +1,8 @@
+[Unit]
+Description=Swypik reclassify taxonomy_node_slug (closes worker gap)
+After=postgresql.service docker.service
+
+[Service]
+Type=oneshot
+User=root
+ExecStart=/opt/swypik/app/scripts/reclassify-taxonomy-cron.sh

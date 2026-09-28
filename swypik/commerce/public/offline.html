@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#7C3AED" />
+  <title>Ești offline — Swypik</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body {
+      margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      background: #fafafa; color: #18181b; text-align: center; padding: 24px;
+    }
+    @media (prefers-color-scheme: dark) { body { background: #0a0a0a; color: #fafafa; } }
+    .card { max-width: 340px; }
+    .emoji { font-size: 56px; margin-bottom: 12px; }
+    h1 { font-size: 20px; margin: 0 0 8px; }
+    p { font-size: 14px; color: #71717a; margin: 0 0 20px; line-height: 1.5; }
+    button {
+      background: #7C3AED; color: #fff; border: 0; border-radius: 9999px;
+      padding: 12px 28px; font-size: 15px; font-weight: 600; cursor: pointer;
+    }
+    button:active { opacity: .85; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="emoji">📡</div>
+    <h1>Ești offline</h1>
+    <p>Nu am găsit o conexiune la internet. Comenzile și cursele tale te așteaptă imediat ce revii online.</p>
+    <button onclick="location.reload()">Reîncearcă</button>
+  </div>
+  <script>
+    addEventListener("online", () => location.reload());
+  </script>
+</body>
+</html>

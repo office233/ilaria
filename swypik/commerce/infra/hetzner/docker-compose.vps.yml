@@ -1,0 +1,13 @@
+# VPS override: Meister nginx owns 80/443 and meister-postgres owns 127.0.0.1:5432
+services:
+  caddy:
+    profiles: [disabled]
+  postgres:
+    ports: !override
+      - "127.0.0.1:5433:5432"
+  web-next:
+    ports:
+      - "127.0.0.1:3005:3000"
+  platform-api:
+    ports:
+      - "127.0.0.1:8090:8080"

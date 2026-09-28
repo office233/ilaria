@@ -1,0 +1,28 @@
+# Swypik media Worker — media privată/plătită servită direct din R2 pe domeniul CDN.
+# Deploy și configurare: docs/infra/r2.md („Worker de media privată”).
+#
+#   cd infra/cloudflare/media-worker
+#   npx wrangler login
+#   npx wrangler secret put MEDIA_SIGNING_SECRET   # aceeași valoare ca în app
+#   npx wrangler deploy
+name = "swypik-media"
+main = "src/index.ts"
+compatibility_date = "2026-09-01"
+# Fără URL *.workers.dev: Worker-ul răspunde doar pe domeniul de media.
+workers_dev = false
+
+# Doar căile semnate și prefixul privat trec prin Worker; restul domeniului e
+# servit de domeniul custom R2 (public, Cache Rules). Înlocuiește domeniul/zona
+# dacă MEDIA_PUBLIC_BASE_URL folosește alt host.
+routes = [
+  { pattern = "media.swypik.com/s/*", zone_name = "swypik.com" },
+  { pattern = "media.swypik.com/private/*", zone_name = "swypik.com" },
+]
+
+[[r2_buckets]]
+binding = "MEDIA_BUCKET"
+bucket_name = "swypik-media"
+
+[vars]
+PRIVATE_PREFIX = "private/"
+ALLOWED_ORIGINS = "https://swypik.com,https://www.swypik.com"

@@ -1,0 +1,11 @@
+[Unit]
+Description=Run Swypik PostgreSQL backup nightly
+
+[Timer]
+OnCalendar=*-*-* 03:15:00
+RandomizedDelaySec=30m
+Persistent=true
+Unit=swypik-db-backup.service
+
+[Install]
+WantedBy=timers.target

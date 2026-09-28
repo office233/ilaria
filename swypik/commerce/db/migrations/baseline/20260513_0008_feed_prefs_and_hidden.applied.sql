@@ -1,0 +1,5 @@
+-- baseline stub for migration version: 20260513_0008_feed_prefs_and_hidden
+-- This migration was applied to production before the source file was retained
+-- in the repo. Restored here as an explicit no-op so that the migration drift
+-- check (tools/check-migration-drift.sh) treats this version as known.
+-- DO NOT execute this file; it is intentionally inert.

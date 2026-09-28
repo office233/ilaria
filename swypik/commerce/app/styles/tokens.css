@@ -1,0 +1,146 @@
+/*
+ * Swypik design tokens — SINGURA sursă de culori, tipografie, spațiere,
+ * raze, umbre și mișcare. Culorile sunt canale RGB („R G B") ca Tailwind 3 să
+ * poată aplica opacitate: `bg-surface/80`, `text-fg/60`.
+ *
+ * Tema se aplică prin `data-theme` pe <html> (next-themes: light implicit,
+ * dark după preferința sistemului sau comutatorul utilizatorului). Suprafețele
+ * imersive (feed video, player, movies, music, live) forțează dark local prin
+ * <ImmersiveSurface> (setează `data-theme="dark"` pe wrapper).
+ *
+ * NU adăuga culori hex în app/ sau components/ — adaugă un token aici și
+ * mapează-l în tailwind.config.ts. `npm run lint:colors` blochează creșterea.
+ */
+
+:root,
+[data-theme="light"] {
+  color-scheme: light;
+
+  /* ── Suprafețe ── */
+  --canvas: 247 247 248;       /* fundalul paginii */
+  --surface: 255 255 255;      /* carduri, liste, header */
+  --surface-2: 240 240 242;    /* zone secundare, input-uri, skeleton */
+  --elevated: 255 255 255;     /* sheet-uri, dialoguri, meniuri */
+  --overlay: 9 9 11;           /* fundalul din spatele modalelor (cu opacitate) */
+
+  /* ── Text ── */
+  --fg: 13 13 13;              /* text principal (18:1 pe alb) */
+  --fg-muted: 82 82 91;        /* text secundar (7.2:1) */
+  --fg-subtle: 113 113 122;    /* etichete, meta (4.8:1) */
+  --fg-inverse: 255 255 255;
+
+  /* ── Borduri ── */
+  --border: 228 228 231;
+  --border-strong: 212 212 216;
+
+  /* ── Brand ── */
+  --brand: 124 58 237;         /* violet — acțiunea principală */
+  --brand-hover: 109 40 217;
+  --brand-fg: 255 255 255;
+  --brand-soft: 237 233 254;   /* fundal nuanțat pentru chip-uri/iconițe */
+  --brand-soft-fg: 91 33 182;
+  --accent: 236 72 153;        /* roz — doar accente (gradient brand) */
+
+  /* ── Stări ── */
+  --success: 21 128 61;
+  --success-soft: 220 252 231;
+  --warning: 180 83 9;
+  --warning-soft: 254 243 199;
+  --danger: 220 38 38;
+  --danger-soft: 254 226 226;
+  --info: 37 99 235;
+  --info-soft: 219 234 254;
+
+  --focus-ring: 124 58 237;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --canvas: 10 10 12;
+  --surface: 20 20 23;
+  --surface-2: 30 30 34;
+  --elevated: 28 28 32;
+  --overlay: 0 0 0;
+
+  --fg: 244 244 245;
+  --fg-muted: 170 170 180;
+  --fg-subtle: 140 140 150;
+  --fg-inverse: 13 13 13;
+
+  --border: 44 44 50;
+  --border-strong: 63 63 70;
+
+  --brand: 139 92 246;
+  --brand-hover: 167 139 250;
+  --brand-fg: 255 255 255;
+  --brand-soft: 46 16 101;
+  --brand-soft-fg: 221 214 254;
+  --accent: 244 114 182;
+
+  --success: 74 222 128;
+  --success-soft: 20 83 45;
+  --warning: 251 191 36;
+  --warning-soft: 120 53 15;
+  --danger: 248 113 113;
+  --danger-soft: 127 29 29;
+  --info: 96 165 250;
+  --info-soft: 30 58 138;
+
+  --focus-ring: 167 139 250;
+}
+
+:root {
+  /* ── Tipografie (minim 12px) ── */
+  --font-sans-fallback: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --text-xs: 0.75rem;    /* 12 */
+  --text-sm: 0.875rem;   /* 14 */
+  --text-base: 1rem;     /* 16 */
+  --text-lg: 1.125rem;   /* 18 */
+  --text-xl: 1.375rem;   /* 22 */
+  --text-2xl: 1.75rem;   /* 28 */
+  --text-3xl: 2.125rem;  /* 34 */
+
+  /* ── Spațiere (grilă de 4px) ── */
+  --space-gutter: 1rem;
+  --header-h: 56px;
+  --nav-h: 56px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  /* Spațiul ocupat jos de BottomNav; 0 când nav-ul nu e randat (vezi globals.css). */
+  --bottom-inset: var(--safe-bottom);
+
+  /* ── Raze: controale md, carduri lg, sheet-uri xl ── */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+
+  /* ── Umbre ── */
+  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.06), 0 1px 3px rgb(0 0 0 / 0.08);
+  --shadow-2: 0 4px 12px rgb(0 0 0 / 0.08), 0 2px 4px rgb(0 0 0 / 0.06);
+  --shadow-3: 0 16px 40px rgb(0 0 0 / 0.16), 0 4px 12px rgb(0 0 0 / 0.08);
+
+  /* ── Mișcare ── */
+  --dur-fast: 120ms;
+  --dur-base: 200ms;
+  --dur-slow: 320ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* ── Straturi (z-index) ── */
+  --z-nav: 30;
+  --z-header: 40;
+  --z-overlay: 50;
+  --z-toast: 70;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-fast: 0ms;
+    --dur-base: 0ms;
+    --dur-slow: 0ms;
+  }
+}

@@ -1,0 +1,20 @@
+[
+  {
+    "step": "cerere OTP seller",
+    "status": "PASS",
+    "note": "Sări la conținut|Swypik Sellers|Dashboard|Produsele mele|Comenzi|Payouts|Retururi|Setări||Cont Vânzător||Status: Activ||S|swypik|V",
+    "shot": ""
+  },
+  {
+    "step": "login seller",
+    "status": "PASS",
+    "note": "http://127.0.0.1:3005/seller",
+    "shot": ""
+  },
+  {
+    "step": "pagina seller/products",
+    "status": "INFO",
+    "note": "Sări la conținut|Swypik Sellers|Dashboard|Produsele mele|Comenzi|Payouts|Retururi|Setări||Cont Vânzător||Status: Activ||Produsele mele||Gestionează ca",
+    "shot": ""
+  }
+]

@@ -1,0 +1,20 @@
+[
+  {
+    "step": "dashboard vs DB",
+    "status": "INFO",
+    "note": "DB: users=22 videos=26 commerce_orders=3; dashboard_text=Sări la conținut|Swypik Admin|Storefront|📊|OVERVIEW|Dashboard|Aplicații parteneri|Health|Cron Jobs|🛒|COMERȚ|Comenzi|Risc fraudă|Strikes|Returns|Refunds|Disputes|Marketplace|Reviews|👥|UTILIZATORI|Users|Creators|Selleri|Creatori — cereri|Gazde Stays|Flotă (șoferi/curieri)|Tarife Go/Food|🎬|CONȚINUT|Videos|Moderare|💰|FINANȚE|Payouts creatori|Payouts curieri|Commissions|AI|Swypik Admin||Dashboard • Liv",
+    "shot": ""
+  },
+  {
+    "step": "pagina moderare",
+    "status": "INFO",
+    "note": "Sări la conținut|Swypik Admin|Storefront|📊|OVERVIEW|Dashboard|Aplicații parteneri|Health|Cron Jobs|🛒|COMERȚ|Comenzi|Risc fraudă|Strikes|Returns|Refunds|Disputes|Marketplace|Reviews|👥|UTILIZATORI|Users",
+    "shot": ""
+  },
+  {
+    "step": "clip QA in lista de moderare",
+    "status": "FAIL",
+    "note": "nu apare in /admin/moderation",
+    "shot": ""
+  }
+]

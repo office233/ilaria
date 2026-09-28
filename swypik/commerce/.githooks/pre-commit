@@ -1,0 +1,8 @@
+#!/bin/sh
+# Gardian i18n — blochează commit dacă traducerile sunt incomplete sau JSON corupt.
+# Rulează doar dacă s-au modificat fișiere relevante (messages/ sau cod UI).
+changed=$(git diff --cached --name-only)
+if echo "$changed" | grep -qE '^(messages/|app/|components/|src/)'; then
+  node scripts/i18n-guard.mjs || exit 1
+fi
+exit 0

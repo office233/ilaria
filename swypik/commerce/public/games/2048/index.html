@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>2048 - Swypik Arcade</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
+    body {
+      background: #0f172a;
+      color: #f8fafc;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+      touch-action: none;
+    }
+    .header {
+      width: 90vw;
+      max-width: 380px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .title { font-size: 32px; font-weight: 800; color: #38bdf8; }
+    .scores { display: flex; gap: 8px; }
+    .score-box {
+      background: #1e293b;
+      padding: 6px 14px;
+      border-radius: 8px;
+      text-align: center;
+      border: 1px solid #334155;
+    }
+    .score-title { font-size: 10px; text-transform: uppercase; color: #94a3b8; font-weight: 700; }
+    .score-val { font-size: 18px; font-weight: 800; color: #f1f5f9; }
+    .grid-container {
+      width: 90vw;
+      height: 90vw;
+      max-width: 380px;
+      max-height: 380px;
+      background: #1e293b;
+      border-radius: 12px;
+      padding: 10px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      grid-gap: 10px;
+      position: relative;
+      border: 2px solid #334155;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+    }
+    .cell {
+      background: #334155;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: 800;
+      transition: all 0.12s ease-in-out;
+    }
+    .val-2 { background: #e2e8f0; color: #1e293b; }
+    .val-4 { background: #cbd5e1; color: #1e293b; }
+    .val-8 { background: #f59e0b; color: #ffffff; }
+    .val-16 { background: #f97316; color: #ffffff; }
+    .val-32 { background: #ef4444; color: #ffffff; }
+    .val-64 { background: #dc2626; color: #ffffff; }
+    .val-128 { background: #eab308; color: #ffffff; font-size: 20px; box-shadow: 0 0 10px #eab308; }
+    .val-256 { background: #10b981; color: #ffffff; font-size: 20px; box-shadow: 0 0 12px #10b981; }
+    .val-512 { background: #06b6d4; color: #ffffff; font-size: 20px; box-shadow: 0 0 15px #06b6d4; }
+    .val-1024 { background: #6366f1; color: #ffffff; font-size: 18px; box-shadow: 0 0 18px #6366f1; }
+    .val-2048 { background: #ec4899; color: #ffffff; font-size: 18px; box-shadow: 0 0 25px #ec4899; }
+    .controls {
+      margin-top: 14px;
+      width: 90vw;
+      max-width: 380px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .btn {
+      background: #38bdf8;
+      color: #0f172a;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .btn:active { transform: scale(0.96); }
+    .game-over-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.9);
+      border-radius: 12px;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+    }
+    .game-over-title { font-size: 28px; font-weight: 800; color: #ef4444; margin-bottom: 8px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="title">2048</div>
+    <div class="scores">
+      <div class="score-box">
+        <div class="score-title" data-str="score">Score</div>
+        <div class="score-val" id="score">0</div>
+      </div>
+      <div class="score-box">
+        <div class="score-title" data-str="best">Best</div>
+        <div class="score-val" id="best">0</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-container" id="grid">
+    <div class="game-over-overlay" id="overlay">
+      <div class="game-over-title" data-str="gameOver">Game over</div>
+      <button class="btn" onclick="initGame()" data-str="playAgain">Play again</button>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="btn" onclick="initGame()" data-str="restart">Restart</button>
+    <div style="font-size: 12px; color: #94a3b8; align-self: center;" data-str="controls">Swipe or arrow keys</div>
+  </div>
+
+  <script>
+    // Swypik bridge: textele vin de la pagina-părinte (SWYPIK_GAME_STRINGS, traduse),
+    // iar fiecare (re)start anunță SWYPIK_GAME_START ca să primească o sesiune nouă de scor.
+    const GAME_ID = 'game_2048';
+    function post(msg) {
+      if (window.parent && window.parent !== window) window.parent.postMessage(msg, window.location.origin);
+    }
+    window.addEventListener("message", e => {
+      if (e.origin !== window.location.origin) return;
+      const d = e.data;
+      if (!d || d.type !== 'SWYPIK_GAME_STRINGS' || !d.strings || typeof d.strings !== 'object') return;
+      document.querySelectorAll('[data-str]').forEach(el => {
+        const v = d.strings[el.getAttribute('data-str')];
+        if (typeof v === 'string') el.textContent = v;
+      });
+    });
+
+    let board = [];
+    let score = 0;
+    let best = localStorage.getItem("swypik_2048_best") || 0;
+    let startTime = Date.now();
+    document.getElementById("best").innerText = best;
+
+    function initGame() {
+      board = Array(4).fill(null).map(() => Array(4).fill(0));
+      score = 0;
+      startTime = Date.now();
+      document.getElementById("score").innerText = "0";
+      document.getElementById("overlay").style.display = "none";
+      spawnRandom();
+      spawnRandom();
+      render();
+      post({ type: 'SWYPIK_GAME_START', gameId: GAME_ID });
+    }
+
+    function spawnRandom() {
+      let empty = [];
+      for(let r=0; r<4; r++) {
+        for(let c=0; c<4; c++) {
+          if(board[r][c] === 0) empty.push({r, c});
+        }
+      }
+      if(empty.length === 0) return;
+      let spot = empty[Math.floor(Math.random() * empty.length)];
+      board[spot.r][spot.c] = Math.random() < 0.9 ? 2 : 4;
+    }
+
+    function render() {
+      const grid = document.getElementById("grid");
+      const overlay = document.getElementById("overlay");
+      grid.innerHTML = "";
+      grid.appendChild(overlay);
+
+      for(let r=0; r<4; r++) {
+        for(let c=0; c<4; c++) {
+          let cell = document.createElement("div");
+          cell.className = "cell";
+          let val = board[r][c];
+          if(val > 0) {
+            cell.innerText = val;
+            cell.classList.add("val-" + (val <= 2048 ? val : 2048));
+          }
+          grid.appendChild(cell);
+        }
+      }
+    }
+
+    function slide(row) {
+      let arr = row.filter(val => val !== 0);
+      for(let i=0; i<arr.length-1; i++) {
+        if(arr[i] === arr[i+1]) {
+          arr[i] *= 2;
+          score += arr[i];
+          arr[i+1] = 0;
+        }
+      }
+      arr = arr.filter(val => val !== 0);
+      while(arr.length < 4) arr.push(0);
+      return arr;
+    }
+
+    function moveLeft() {
+      let changed = false;
+      for(let r=0; r<4; r++) {
+        let oldRow = [...board[r]];
+        board[r] = slide(board[r]);
+        if(JSON.stringify(oldRow) !== JSON.stringify(board[r])) changed = true;
+      }
+      return changed;
+    }
+
+    function rotate() {
+      let newB = Array(4).fill(null).map(() => Array(4).fill(0));
+      for(let r=0; r<4; r++) {
+        for(let c=0; c<4; c++) {
+          newB[c][3-r] = board[r][c];
+        }
+      }
+      board = newB;
+    }
+
+    function move(dir) {
+      let changed = false;
+      if(dir === "left") changed = moveLeft();
+      if(dir === "down") { rotate(); changed = moveLeft(); rotate(); rotate(); rotate(); }
+      if(dir === "right") { rotate(); rotate(); changed = moveLeft(); rotate(); rotate(); }
+      if(dir === "up") { rotate(); rotate(); rotate(); changed = moveLeft(); rotate(); }
+
+      if(changed) {
+        spawnRandom();
+        document.getElementById("score").innerText = score;
+        if(score > best) {
+          best = score;
+          localStorage.setItem("swypik_2048_best", best);
+          document.getElementById("best").innerText = best;
+        }
+        render();
+
+        // Notificare live către containerul părinte Swypik
+        post({ type: 'SWYPIK_SCORE_UPDATE', gameId: GAME_ID, score });
+
+        if(checkGameOver()) {
+          document.getElementById("overlay").style.display = "flex";
+          const durationMs = Date.now() - startTime;
+          post({ type: 'SWYPIK_GAME_OVER', gameId: GAME_ID, score, durationMs });
+        }
+      }
+    }
+
+    function checkGameOver() {
+      for(let r=0; r<4; r++) {
+        for(let c=0; c<4; c++) {
+          if(board[r][c] === 0) return false;
+          if(r < 3 && board[r][c] === board[r+1][c]) return false;
+          if(c < 3 && board[r][c] === board[r][c+1]) return false;
+        }
+      }
+      return true;
+    }
+
+    // Keyboard controls
+    window.addEventListener("keydown", e => {
+      if(e.key === "ArrowLeft") move("left");
+      if(e.key === "ArrowRight") move("right");
+      if(e.key === "ArrowUp") move("up");
+      if(e.key === "ArrowDown") move("down");
+    });
+
+    // Touch controls
+    let startX = 0, startY = 0;
+    window.addEventListener("touchstart", e => {
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+    }, {passive: false});
+
+    window.addEventListener("touchend", e => {
+      let dx = e.changedTouches[0].clientX - startX;
+      let dy = e.changedTouches[0].clientY - startY;
+      if(Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 30) {
+        move(dx > 0 ? "right" : "left");
+      } else if(Math.abs(dy) > 30) {
+        move(dy > 0 ? "down" : "up");
+      }
+    }, {passive: false});
+
+    initGame();
+  </script>
+</body>
+</html>

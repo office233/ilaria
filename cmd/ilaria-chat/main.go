@@ -48,6 +48,7 @@ func main() {
 	maxCalls := flag.Int("max-calls", 3, "Max tool calls allowed per user turn before a final answer is forced")
 	workdir := flag.String("workdir", "", "Root directory for the read_file tool (unset disables read_file entirely)")
 	biomedCache := flag.String("biomed-cache", "", "Cache/knowledge-graph directory for the biomed tool (unset disables it entirely — needs network)")
+	swypExe := flag.String("swyp", "", "Absolute path to a Swyp CLI; enables the swyp tool, which verifies model-written Swyp functions against a contract via `swyp judge` (unset disables it)")
 	showTranscript := flag.Bool("show-transcript", false, "Print the full rendered transcript (system+turns) to stderr after each turn")
 	evalPath := flag.String("eval", "", "Run the tool-selection evaluation from this JSONL file instead of one-shot/REPL mode (see cmd/ilaria-chat/testdata/tools_eval.jsonl)")
 	flag.Parse()
@@ -100,6 +101,13 @@ func main() {
 	tools := buildTools(*workdir, *biomedCache)
 	if *unsafeGo {
 		tools = append(tools, cortex.GoRunChatTool{})
+	}
+	if *swypExe != "" {
+		swyp, err := cortex.NewSwypJudgeChatTool(*swypExe)
+		if err != nil {
+			fail("swyp", err)
+		}
+		tools = append(tools, swyp)
 	}
 	fmt.Fprintf(os.Stderr, "[ilaria-chat] tools: %s\n", strings.Join(toolNames(tools), ", "))
 

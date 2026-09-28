@@ -3,7 +3,9 @@ package universal
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -47,7 +49,8 @@ type AdaptationPlan struct {
 	EstimatedDeploySec  int      `json:"estimated_deploy_sec"`
 }
 
-// InstallerEngine handles the universal deployment and zero-loss adaptation across any machine.
+// InstallerEngine probes a target and writes deployment metadata. It does not
+// install an operating system.
 type InstallerEngine struct {
 	mu     sync.RWMutex
 	halMgr *hal.Manager
@@ -102,7 +105,7 @@ func (i *InstallerEngine) ProbeTarget(ctx context.Context) (*TargetEnvironment, 
 		peripherals = append(peripherals, fmt.Sprintf("%s (%s on %s)", d.Name, d.Class, d.Bus))
 	}
 
-	// Identify user data directories that must be protected (Zero Data Loss)
+	// User folders a future migration would have to preserve.
 	userProfile := os.Getenv("USERPROFILE")
 	if userProfile == "" {
 		userProfile = os.Getenv("HOME")
@@ -175,34 +178,50 @@ func (i *InstallerEngine) GenerateAdaptationPlan(env *TargetEnvironment) *Adapta
 	return plan
 }
 
-// Deploy executes the installation and driver autogenesis onto the host target.
+// Deploy writes deployment metadata for the target: driver candidates for
+// devices that need one, descriptor files for the user folders and a manifest.
+// It installs nothing. No disk is partitioned, no bootloader, kernel or
+// service is installed, and the manifest says exactly that.
 func (i *InstallerEngine) Deploy(ctx context.Context, targetDir string, env *TargetEnvironment, plan *AdaptationPlan) error {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	if err := os.MkdirAll(targetDir, 0755); err != nil {
 		return fmt.Errorf("failed to create target install dir: %w", err)
 	}
 
-	// 1. Synthesize drivers for any devices discovered
-	profile := i.halMgr.GetProfile()
-	if profile != nil {
+	candidates := map[string]string{}
+	if profile := i.halMgr.GetProfile(); profile != nil {
 		for _, dev := range profile.Devices {
-			if dev.DriverStatus == hal.DriverNeedsAutogenesis || dev.DriverStatus == "" {
-				_, _ = i.synth.SynthesizeDriver(dev)
+			if dev.DriverStatus != hal.DriverNeedsAutogenesis && dev.DriverStatus != "" {
+				continue
 			}
+			driver, err := i.synth.SynthesizeDriver(dev)
+			if err != nil {
+				candidates[dev.ID] = "FAILED: " + err.Error()
+				continue
+			}
+			candidates[dev.ID] = string(driver.State) + "/" + string(driver.Evidence)
 		}
 	}
 
-	// 2. Map existing host document directories (C:\Users\Pos5 Desktop, Documents, Downloads)
-	_, _ = i.mapUserDataPartitionsInternal(env.PreservedUserData, targetDir)
+	mapping, err := i.mapUserDataPartitionsInternal(env.PreservedUserData, targetDir)
+	if err != nil {
+		return fmt.Errorf("failed to describe user folders: %w", err)
+	}
 
-	// 3. Persist deployment manifest
 	manifest := map[string]interface{}{
-		"installed_at":    time.Now().Format(time.RFC3339),
-		"environment":     env,
-		"adaptation_plan": plan,
-		"status":          "OPERATIONAL",
+		"written_at":        time.Now().Format(time.RFC3339),
+		"environment":       env,
+		"adaptation_plan":   plan,
+		"driver_candidates": candidates,
+		"user_folders":      mapping,
+		"status":            "METADATA_ONLY",
+		"os_installed":      false,
+		"not_performed":     []string{"disk partitioning", "filesystem creation", "EFI bootloader", "Secure Boot", "kernel install", "system services", "recovery partition", "boot validation"},
 	}
 
 	manifestBytes, err := json.MarshalIndent(manifest, "", "  ")
@@ -218,18 +237,24 @@ func (i *InstallerEngine) Deploy(ctx context.Context, targetDir string, env *Tar
 	return nil
 }
 
-// UserDataPartitionMapping defines the mapped user storage spaces mounted into SwypikOS without data loss.
+// UserDataPartitionMapping describes host user folders. It is an inventory,
+// not a migration: nothing is copied, hashed or mounted, so it proves nothing
+// about data loss. Counts cover top-level entries only.
 type UserDataPartitionMapping struct {
-	UserProfilePath         string            `json:"user_profile_path"`
-	MappedPartitions        map[string]string `json:"mapped_partitions"` // e.g. "Desktop" -> "C:\Users\Pos5\Desktop"
-	TotalFilesPreserved     int               `json:"total_files_preserved"`
-	TotalStoragePreservedMB float64           `json:"total_storage_preserved_mb"`
-	ZeroLossVerified        bool              `json:"zero_loss_verified"`
-	MappedAt                time.Time         `json:"mapped_at"`
+	UserProfilePath    string            `json:"user_profile_path"`
+	MappedPartitions   map[string]string `json:"mapped_partitions"` // folder name -> host path
+	TopLevelEntries    int               `json:"top_level_entries"`
+	TopLevelFileBytes  int64             `json:"top_level_file_bytes"`
+	DataLossProtection string            `json:"data_loss_protection"`
+	MappedAt           time.Time         `json:"mapped_at"`
 }
 
-// MapUserDataPartitions seamlessly maps host document directories into SwypikOS
-// without moving or modifying existing files, preserving 100% of user data.
+// dataLossUnverified is the only honest protection level until a migration
+// exists that inventories, hashes, backs up and restore-verifies user data.
+const dataLossUnverified = "NOT_VERIFIED: descriptors only; no inventory hashes, backup or restore check"
+
+// MapUserDataPartitions writes descriptors for the host user folders without
+// reading or changing their contents beyond a top-level listing.
 func (i *InstallerEngine) MapUserDataPartitions(userProfilePath string, targetWorkspaceDir string) (*UserDataPartitionMapping, error) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
@@ -268,48 +293,56 @@ func (i *InstallerEngine) mapUserDataPartitionsInternal(folders []string, target
 		return nil, fmt.Errorf("failed to create mounts directory: %w", err)
 	}
 
-	mapped := make(map[string]string)
-	totalFiles := 0
-	var totalBytes int64 = 0
-	userProfilePath := ""
+	mapping := &UserDataPartitionMapping{
+		MappedPartitions:   make(map[string]string),
+		DataLossProtection: dataLossUnverified,
+		MappedAt:           time.Now(),
+	}
 
 	for _, srcPath := range folders {
 		folderName := filepath.Base(srcPath)
-		if userProfilePath == "" {
-			userProfilePath = filepath.Dir(srcPath)
+		if mapping.UserProfilePath == "" {
+			mapping.UserProfilePath = filepath.Dir(srcPath)
 		}
 
-		if fi, err := os.Stat(srcPath); err == nil && fi.IsDir() {
-			mapped[folderName] = srcPath
+		fi, err := os.Stat(srcPath)
+		if errors.Is(err, fs.ErrNotExist) {
+			continue
+		}
+		if err != nil {
+			return nil, fmt.Errorf("stat %s: %w", srcPath, err)
+		}
+		if !fi.IsDir() {
+			continue
+		}
 
-			entries, _ := os.ReadDir(srcPath)
-			totalFiles += len(entries)
-			for _, e := range entries {
-				if info, err := e.Info(); err == nil {
-					totalBytes += info.Size()
-				}
+		entries, err := os.ReadDir(srcPath)
+		if err != nil {
+			return nil, fmt.Errorf("list %s: %w", srcPath, err)
+		}
+		mapping.MappedPartitions[folderName] = srcPath
+		mapping.TopLevelEntries += len(entries)
+		for _, e := range entries {
+			if !e.Type().IsRegular() {
+				continue
 			}
-
-			// Create virtual mount point / symbolic marker inside SwypikOS mnt/
-			vMountFile := filepath.Join(mountsDir, folderName+".mount")
-			mountDescriptor := fmt.Sprintf("TYPE=VIRTUAL_USER_PARTITION\nSRC=%s\nMOUNT_MODE=DIRECT_READ_WRITE\nZERO_LOSS=GUARANTEED\n", srcPath)
-			_ = os.WriteFile(vMountFile, []byte(mountDescriptor), 0644)
+			if info, err := e.Info(); err == nil {
+				mapping.TopLevelFileBytes += info.Size()
+			}
 		}
-	}
 
-	mapping := &UserDataPartitionMapping{
-		UserProfilePath:         userProfilePath,
-		MappedPartitions:        mapped,
-		TotalFilesPreserved:     totalFiles,
-		TotalStoragePreservedMB: float64(totalBytes) / (1024.0 * 1024.0),
-		ZeroLossVerified:        true,
-		MappedAt:                time.Now(),
+		descriptor := fmt.Sprintf("TYPE=DESCRIPTOR_ONLY\nSRC=%s\nMOUNTED=false\nDATA_LOSS_PROTECTION=%s\n", srcPath, dataLossUnverified)
+		if err := os.WriteFile(filepath.Join(mountsDir, folderName+".mount"), []byte(descriptor), 0644); err != nil {
+			return nil, fmt.Errorf("write descriptor for %s: %w", srcPath, err)
+		}
 	}
 
 	manifestData, err := json.MarshalIndent(mapping, "", "  ")
-	if err == nil {
-		manifestPath := filepath.Join(targetWorkspaceDir, "swypik_user_mounts.json")
-		_ = os.WriteFile(manifestPath, manifestData, 0644)
+	if err != nil {
+		return nil, fmt.Errorf("marshal user folder manifest: %w", err)
+	}
+	if err := os.WriteFile(filepath.Join(targetWorkspaceDir, "swypik_user_mounts.json"), manifestData, 0644); err != nil {
+		return nil, fmt.Errorf("write user folder manifest: %w", err)
 	}
 
 	return mapping, nil

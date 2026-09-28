@@ -8,7 +8,8 @@ import (
 	"unsafe"
 )
 
-// SwypikInstaller handles 1-Click Zero-Loss deployment on Windows.
+// SwypikInstaller writes the 1-click launcher. It never reads, moves or
+// modifies user folders, which is its only data-safety property.
 type SwypikInstaller struct {
 	InstallDir   string
 	UserProfile  string
@@ -45,13 +46,13 @@ func NewInstaller() *SwypikInstaller {
 	}
 }
 
-// VerifyUserDataSafety confirms that existing user files and documents are preserved without touching them.
-func (i *SwypikInstaller) VerifyUserDataSafety() bool {
-	fmt.Printf("[SAFETY CHECK] Preserving User Profile: %s\n", i.UserProfile)
-	fmt.Printf("               - Desktop:   %s (Preserved)\n", i.DesktopDir)
-	fmt.Printf("               - Documents: %s (Preserved)\n", i.DocumentsDir)
-	fmt.Printf("               - Downloads: %s (Preserved)\n", i.DownloadsDir)
-	return true
+// DescribeUserDataScope states which user folders the installer leaves alone.
+// It checks nothing: the guarantee comes from never touching these paths.
+func (i *SwypikInstaller) DescribeUserDataScope() {
+	fmt.Printf("[SCOPE] The installer does not read, move or modify: %s\n", i.UserProfile)
+	fmt.Printf("        - Desktop:   %s\n", i.DesktopDir)
+	fmt.Printf("        - Documents: %s\n", i.DocumentsDir)
+	fmt.Printf("        - Downloads: %s\n", i.DownloadsDir)
 }
 
 // CreateLauncherShortcut creates a 1-click batch launcher and desktop shortcut.
@@ -85,19 +86,19 @@ func ShowSuccessDialog(msg, title string) {
 
 func main() {
 	fmt.Println("==========================================================")
-	fmt.Println("      SWYPIKOS 1-CLICK ZERO-LOSS INSTALLER (WINDOWS)      ")
+	fmt.Println("        SWYPIKOS 1-CLICK LAUNCHER INSTALLER (WINDOWS)     ")
 	fmt.Println("==========================================================")
 
 	installer := NewInstaller()
-	installer.VerifyUserDataSafety()
+	installer.DescribeUserDataScope()
 
 	if err := installer.CreateLauncherShortcut(); err != nil {
 		fmt.Printf("[ERROR] Installation failed: %v\n", err)
 		os.Exit(1)
 	}
 
-	fmt.Println("[SUCCESS] SwypikOS installed cleanly!")
-	fmt.Println("          - 100% Native binary ready (Zero Electron)")
-	fmt.Println("          - All Windows data and files preserved intact")
+	fmt.Println("[SUCCESS] SwypikOS launcher created.")
+	fmt.Println("          - Native binary, no Electron")
+	fmt.Println("          - User folders were not touched")
 	fmt.Println("==========================================================")
 }

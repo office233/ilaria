@@ -10,7 +10,7 @@ The session build is `bin/swyp-semantic-core-20260928.exe`. It is separate from
 `bin/swyp.exe`; the existing executable was not replaced. To build another copy:
 
 ```powershell
-Set-Location 'D:\swyp lang'
+Set-Location 'D:\nexus\swyp'
 go build -o bin/swyp-core.exe ./cmd/swyp
 .\bin\swyp-core.exe core-run -entry next examples/swyp/semantic-core.swyp 9007199254740993
 .\bin\swyp-core.exe core-run -entry sum_to examples/swyp/semantic-core.swyp 100

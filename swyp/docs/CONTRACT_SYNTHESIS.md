@@ -11,7 +11,7 @@ The separate session build is `bin/swyp-contract-synth-20260928.exe`.
 `bin/swyp.exe` was not replaced. Building a new copy is a developer step:
 
 ```powershell
-Set-Location 'D:\swyp lang'
+Set-Location 'D:\nexus\swyp'
 go build -o bin/swyp-contract.exe ./cmd/swyp
 $swyp = '.\bin\swyp-contract.exe'
 & $swyp synth -contract examples/swyp/contracts/square.i64.json -o bin/square-generated.swyp examples/swyp/synthesis-contract-square.json

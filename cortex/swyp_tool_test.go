@@ -90,7 +90,7 @@ func TestSwypJudgeChatToolConfiguration(t *testing.T) {
 }
 
 // TestSwypJudgeChatToolRealSwyp runs against a real Swyp build when
-// SWYP_EXE points to one (e.g. D:/swyp lang/bin/swyp.exe).
+// SWYP_EXE points to one (e.g. <repo>/swyp/bin/swyp.exe).
 func TestSwypJudgeChatToolRealSwyp(t *testing.T) {
 	exe := os.Getenv("SWYP_EXE")
 	if exe == "" {

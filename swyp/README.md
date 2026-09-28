@@ -12,7 +12,7 @@ intent → contract → candidate → verification → pinned source → determi
 ## Quick start
 
 ```powershell
-Set-Location 'D:\swyp lang'
+Set-Location 'D:\nexus\swyp'
 go test ./...
 go build -o bin/swyp.exe ./cmd/swyp        # or: scripts\build-local.ps1, then swyp.cmd
 
@@ -51,7 +51,7 @@ ERROR candidate.swyp:1:39: expected identifier, got ";"
 ```
 
 Nexus exposes it to the model as the `swyp` tool
-(`go run ./cmd/ilaria-chat -swyp "D:\swyp lang\bin\swyp.exe" ...`). The model
+(from the Nexus root: `go run ./cmd/ilaria-chat -swyp "D:\nexus\swyp\bin\swyp.exe" ...`). The model
 writes `CALL swyp: {"source":"fn square(x: i64) -> i64 { return x * x; }","contract":{...}}`,
 reads the verdict and repairs on FAIL. The candidate never runs natively; it runs
 only in the fuel-bounded core interpreter.
@@ -76,6 +76,7 @@ benchmarks/swyp   cross-language reference programs and evaluation scripts
 examples/swyp     sample programs, contracts and synthesis specs
 ```
 
-Swyp builds independently of SwypikOS and Nexus. Raw evidence from the
+Swyp lives in the Nexus repository under `swyp/` but is its own Go module
+(`swyp-lang`): it builds and tests independently of Nexus and SwypikOS. Raw evidence from the
 2026-09-27/28 campaigns, old binaries and the ChatGPT MCP bridge were moved out
 of the repository to `D:\swyp-lang-archive-20260928`.

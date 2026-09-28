@@ -12,7 +12,7 @@ is written, no service is started, and no running code is replaced.
 Integration at Nexus's tool-registry construction point can use:
 
 ```go
-tool, err := nexusbridge.NewTool(`D:\swyp lang\bin\swyp.exe`)
+tool, err := nexusbridge.NewTool(`D:\nexus\swyp\bin\swyp.exe`)
 if err != nil { return err }
 registry.Register(tool) // registry is a *cortex.ToolRegistry
 ```

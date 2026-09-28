@@ -14,7 +14,7 @@ import (
 )
 
 // SwypJudgeChatTool lets the model check a Swyp function against a contract
-// by running `swyp judge` (D:/swyp lang, cmd/swyp/judge.go) as a child
+// by running `swyp judge` (swyp/cmd/swyp/judge.go in this repository) as a child
 // process. The executable path is fixed at construction and the only argument
 // is the literal "judge": model input reaches the process solely as bounded
 // JSON on stdin, never as a command line, path or shell text. The verifier

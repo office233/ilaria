@@ -1,6 +1,6 @@
 # Dezvoltare locala Swyp pe Windows
 
-Folderul de lucru folosit prin Antigravity este `D:\swyp lang`.
+Folderul de lucru folosit prin Antigravity este `D:\nexus\swyp`.
 Sursele programelor raman `.swyp`; `.swypb` este modulul compilat,
 nu un alt limbaj. Codul Go din proiect implementeaza compilatorul si VM-ul.
 

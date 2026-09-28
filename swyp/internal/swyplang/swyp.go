@@ -223,7 +223,12 @@ func (p *parser) statement() *stmt {
 	case p.take("return"):
 		s.kind = "return"
 		s.value = p.expression(0)
-		p.expect(";")
+		// Core mode: a return that closes its block may omit ';' ("return x }").
+		// Models write this Rust form constantly and nothing else can follow
+		// the expression there, so no valid program changes meaning.
+		if !(p.core && p.peek() == "}") {
+			p.expect(";")
+		}
 	case p.take("if"):
 		s.kind = "if"
 		s.value = p.expression(0)
@@ -235,7 +240,16 @@ func (p *parser) statement() *stmt {
 		}
 		s.body = p.block()
 		if p.take("else") {
-			s.other = p.block()
+			if p.core && p.peek() == "if" {
+				// Core mode: "else if" is "else { if ... }". The nested if is
+				// parsed one level deeper, exactly as inside a block, so a
+				// final else-if chain may still end in bare result expressions.
+				p.enter()
+				s.other = []*stmt{p.statement()}
+				p.depth--
+			} else {
+				s.other = p.block()
+			}
 		}
 		p.tailDepth = saved
 		if p.tailUsed != used && (s.other == nil || p.peek() != "}") {

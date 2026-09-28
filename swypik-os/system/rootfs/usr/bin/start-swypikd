@@ -1,0 +1,6 @@
+#!/bin/sh
+# PID 1 serializes restarts; only a stale socket in our private runtime
+# directory is removed. No model-controlled path is used here.
+[ -S /run/swypik/control.sock ] && rm -f /run/swypik/control.sock
+export GOMEMLIMIT=128MiB
+exec /usr/bin/swypikd

@@ -1,0 +1,23 @@
+#!/bin/sh
+ulimit -c 0
+mkdir -p /home/swypik/Workspace /var/lib/swypik /run/swypik
+chown -R 1000:1000 /home/swypik /var/lib/swypik /run/swypik
+chmod 0700 /home/swypik /var/lib/swypik /run/swypik
+# Linux kernel modules; not application-level driver simulators.
+for module in virtio_pci virtio_net virtio_blk bochs evdev atkbd usbhid e1000 e1000e; do
+ /sbin/modprobe "$module" 2>/dev/null || true
+done
+# Single-user diagnostic session only. Production needs seat management,
+# authentication, device permissions and a complete compositor.
+for device in /dev/fb0 /dev/tty0 /dev/tty1 /dev/input/event*; do
+ [ -e "$device" ] && chown 1000:1000 "$device" && chmod 0600 "$device"
+done
+ip link set lo up
+for path in /sys/class/net/*; do
+ iface=${path##*/}
+ [ "$iface" = lo ] && continue
+ ip link set "$iface" up
+ /bin/udhcpc -i "$iface" -s /etc/udhcpc.script -b -t 3 -T 2 -p "/run/udhcpc-$iface.pid" &
+done
+printf '\nSWYPIK_INIT_READY kernel=%s mode=live-ram\n' "$(uname -r)"
+printf 'No disks are mounted or formatted. No browser runtime is installed.\n'

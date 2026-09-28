@@ -1,0 +1,19 @@
+.env
+.env.local
+*.exe
+*.test
+coverage.out
+*.vault
+*.vault.tmp
+data/
+swarm_state.json
+swarm_azure_cache.json
+**/swarm_state.json
+**/swarm_azure_cache.json
+out/
+__pycache__/
+*.pyc
+
+# Never reintroduce host dependencies or old generated launchers.
+**/node_modules/
+bin/

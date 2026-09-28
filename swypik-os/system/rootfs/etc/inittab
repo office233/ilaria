@@ -1,0 +1,5 @@
+::sysinit:/etc/init.d/rcS
+::respawn:/bin/su -p -s /bin/sh -c /usr/bin/start-swypikd swypik
+::respawn:/bin/su -p -s /bin/sh -c /usr/bin/swypik-session swypik
+::ctrlaltdel:/bin/poweroff
+::shutdown:/bin/sync

@@ -1,0 +1,14 @@
+#!/bin/busybox sh
+export PATH=/bin:/usr/bin:/sbin
+/bin/busybox --install -s /bin
+mount -t proc proc /proc
+mount -t sysfs sysfs /sys
+mount -t devtmpfs devtmpfs /dev
+mkdir -p /dev/pts /run /tmp /home /var
+mount -t devpts devpts /dev/pts
+mount -t tmpfs -o mode=0755,nosuid,nodev,size=32m tmpfs /run
+mount -t tmpfs -o mode=1777,nosuid,nodev,size=64m tmpfs /tmp
+mount -t tmpfs -o mode=0755,nosuid,nodev,size=128m tmpfs /home
+mount -t tmpfs -o mode=0755,nosuid,nodev,size=192m tmpfs /var
+hostname swypik
+exec /bin/busybox init

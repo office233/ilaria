@@ -1,0 +1,5 @@
+NAME="SwypikOS"
+ID=swypik
+ID_LIKE=debian
+PRETTY_NAME="SwypikOS 0.1 Native Boot Prototype"
+VERSION_ID=0.1

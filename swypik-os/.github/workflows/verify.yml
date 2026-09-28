@@ -1,0 +1,66 @@
+name: Verify native SwypikOS
+on:
+  push:
+    branches: [main, improvement/agentic-network-audit]
+  pull_request:
+permissions:
+  contents: read
+concurrency:
+  group: native-${{ github.ref }}
+  cancel-in-progress: true
+defaults:
+  run:
+    shell: bash
+jobs:
+  native-os:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff
+        with:
+          go-version: stable
+          cache: false
+      - name: Test and inspect native code
+        run: |
+          mkdir -p out
+          go test -race -count=1 -timeout=5m -json ./... | tee out/go-tests.jsonl
+          go vet ./...
+          bash -n scripts/build-os.sh scripts/build-wsl.sh
+          python3 -m py_compile scripts/smoke-os.py
+      - name: Install isolated image build tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends linux-image-virtual busybox-static kmod grub-pc-bin grub-efi-amd64-bin xorriso mtools qemu-system-x86 ovmf
+      - name: Build RAM-only live ISO
+        id: image
+        run: |
+          kernel=$(find /boot -maxdepth 1 -name "vmlinuz-*-generic" -printf "%f\n" | sed "s/^vmlinuz-//" | sort -V | tail -1)
+          test -n "$kernel"
+          sudo env PATH="$PATH" KERNEL_VERSION="$kernel" bash scripts/build-os.sh
+          sudo chown -R "$(id -u):$(id -g)" out
+          git archive --format=zip HEAD -o out/source.zip
+      - name: BIOS boot and native UI verification
+        if: ${{ !cancelled() && steps.image.outcome == 'success' }}
+        run: python3 scripts/smoke-os.py
+      - name: UEFI boot and native UI verification
+        if: ${{ !cancelled() && steps.image.outcome == 'success' }}
+        run: python3 scripts/smoke-os.py --uefi --out out/smoke-uefi
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: ${{ !cancelled() }}
+        with:
+          name: native-os-${{ github.sha }}
+          path: |
+            out/*.iso
+            out/*.gz
+            out/vmlinuz
+            out/*.txt
+            out/SHA256SUMS
+            out/source.zip
+            out/go-tests.jsonl
+            out/smoke-*/*.json
+            out/smoke-*/*.log
+            out/smoke-*/*.ppm
+          retention-days: 7

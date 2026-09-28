@@ -33,7 +33,7 @@ type ComputeSettings struct {
 	CoordinatorURL string `json:"coordinator_url,omitempty"`
 }
 
-// DefaultIlariaURL is the local development service (Nexus ilaria-serve).
+// DefaultIlariaURL is the local development service (Ilaria ilaria-serve).
 const DefaultIlariaURL = "http://127.0.0.1:8091"
 
 // LoadSettings reads path strictly. A missing file yields defaults.

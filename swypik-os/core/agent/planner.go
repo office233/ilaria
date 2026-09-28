@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-// JSONPlanner adapts the existing Nexus text endpoint. It does not claim native
+// JSONPlanner adapts the existing Ilaria text endpoint. It does not claim native
 // function calling. Malformed model output fails closed.
 type JSONPlanner struct {
 	Complete func(context.Context, string) (string, error)

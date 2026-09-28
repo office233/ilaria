@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
-const baseDir = 'D:/nexus/scratch_video';
+const baseDir = 'D:/ilaria/scratch_video';
 const appData = 'C:/Users/Pos5/.gemini/antigravity/brain/aee49e07-d4dc-4fb6-a58c-bcf6044c32dd/.system_generated/steps';
 
 const slides = [

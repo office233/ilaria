@@ -10,7 +10,7 @@ import (
 //
 // THE PROBLEM THIS SOLVES
 //
-// Nexus has two generation engines that never touched each other:
+// Ilaria has two generation engines that never touched each other:
 //
 //   1. The cognitive path (Encoder → SDR → Hippocampus → Brain.Generate)
 //      learns a fact from ONE exposure and survives a restart, but

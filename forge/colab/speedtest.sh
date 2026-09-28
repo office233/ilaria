@@ -5,7 +5,7 @@
 set -u
 D=/content/drive/MyDrive/ilaria
 L=/content/ilaria
-cd /content/nexus || exit 1
+cd /content/ilaria || exit 1
 mkdir -p "$L"
 nvidia-smi --query-gpu=name,memory.total --format=csv
 echo "cpus=$(nproc)"; free -g | head -2

@@ -7,12 +7,12 @@ import (
 )
 
 // TestContinualLearning_FactSurvivesRestart is the end-to-end proof of the
-// capability Nexus actually has and a frozen LLM does not:
+// capability Ilaria actually has and a frozen LLM does not:
 //
-//   1. Teach the system a fact ONCE (single exposure, no gradient step).
-//   2. Persist to disk and DESTROY the in-memory state.
-//   3. Reload from disk in a fresh object graph.
-//   4. Show the fact still steers generation.
+//  1. Teach the system a fact ONCE (single exposure, no gradient step).
+//  2. Persist to disk and DESTROY the in-memory state.
+//  3. Reload from disk in a fresh object graph.
+//  4. Show the fact still steers generation.
 //
 // No transformer weight is trained anywhere in this test. If it passes,
 // the knowledge demonstrably travelled through episodic memory alone.

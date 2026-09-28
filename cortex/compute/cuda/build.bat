@@ -1,5 +1,5 @@
 @echo off
-REM Build script for CUDA nexus DLL using MSVC toolchain.
+REM Build script for CUDA ilaria DLL using MSVC toolchain.
 REM
 REM Portabilitate: detectează automat CUDA și Visual Studio.
 REM   - CUDA: caută %CUDA_PATH% (setat de installer), apoi versiunile
@@ -8,9 +8,9 @@ REM   - MSVC: caută vswhere.exe (livrat cu VS Installer), apoi versiunile
 REM           cunoscute. Acceptă BuildTools, Community, Professional.
 REM
 REM Produces three artefacts in this directory:
-REM   cuda_nexus.dll  — runtime library (BitNet sparse + cuBLAS dense matmul)
-REM   cuda_nexus.lib  — MSVC import library
-REM   libcuda_nexus.a — MinGW/GCC import library for CGO
+REM   cuda_ilaria.dll  — runtime library (BitNet sparse + cuBLAS dense matmul)
+REM   cuda_ilaria.lib  — MSVC import library
+REM   libcuda_ilaria.a — MinGW/GCC import library for CGO
 
 setlocal enabledelayedexpansion
 
@@ -88,37 +88,37 @@ if errorlevel 1 (
 
 REM ─── Compile CUDA source files ─────────────────────────────────────
 REM -arch=sm_75 covers Turing (GTX 1660 Ti), Volta, and newer.
-REM -DCUDA_NEXUS_EXPORTS triggers __declspec(dllexport).
+REM -DCUDA_ILARIA_EXPORTS triggers __declspec(dllexport).
 REM -Xcompiler "/EHsc" makes MSVC happy about C++ exception handling.
-nvcc -c -o forward_sparse.obj   forward_sparse.cu   -arch=sm_75 -DCUDA_NEXUS_EXPORTS -Xcompiler "/EHsc"
+nvcc -c -o forward_sparse.obj   forward_sparse.cu   -arch=sm_75 -DCUDA_ILARIA_EXPORTS -Xcompiler "/EHsc"
 if errorlevel 1 goto :error
-nvcc -c -o cublas_matmul.obj    cublas_matmul.cu    -arch=sm_75 -DCUDA_NEXUS_EXPORTS -Xcompiler "/EHsc"
+nvcc -c -o cublas_matmul.obj    cublas_matmul.cu    -arch=sm_75 -DCUDA_ILARIA_EXPORTS -Xcompiler "/EHsc"
 if errorlevel 1 goto :error
 
 REM ─── Link DLL ──────────────────────────────────────────────────────
 REM cudart.lib + cublas.lib resolve runtime/library symbols.
-link /DLL /OUT:cuda_nexus.dll forward_sparse.obj cublas_matmul.obj ^
+link /DLL /OUT:cuda_ilaria.dll forward_sparse.obj cublas_matmul.obj ^
     cudart.lib cublas.lib ^
     /LIBPATH:"%CUDA_PATH_LOCAL%\lib\x64" /NOLOGO
 if errorlevel 1 goto :error
 
 REM ─── Regenerate MinGW import library for cgo ──────────────────────
-dumpbin /EXPORTS cuda_nexus.dll > exports.txt
+dumpbin /EXPORTS cuda_ilaria.dll > exports.txt
 
-echo LIBRARY cuda_nexus > cuda_nexus.def
-echo EXPORTS >> cuda_nexus.def
-for /f "tokens=4" %%a in ('findstr /r "nexus_cuda_ nexus_cublas_" exports.txt') do (
-    echo     %%a >> cuda_nexus.def
+echo LIBRARY cuda_ilaria > cuda_ilaria.def
+echo EXPORTS >> cuda_ilaria.def
+for /f "tokens=4" %%a in ('findstr /r "ilaria_cuda_ ilaria_cublas_" exports.txt') do (
+    echo     %%a >> cuda_ilaria.def
 )
 
-dlltool -d cuda_nexus.def -l libcuda_nexus.a
+dlltool -d cuda_ilaria.def -l libcuda_ilaria.a
 if errorlevel 1 goto :error
 
 echo.
 echo === Build successful ===
-echo   cuda_nexus.dll  - runtime library
-echo   cuda_nexus.lib  - MSVC import library
-echo   libcuda_nexus.a - MinGW import library for CGO
+echo   cuda_ilaria.dll  - runtime library
+echo   cuda_ilaria.lib  - MSVC import library
+echo   libcuda_ilaria.a - MinGW import library for CGO
 goto :eof
 
 :error

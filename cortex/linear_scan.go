@@ -423,7 +423,7 @@ func (b *CortexBlock) MemoryBytes() int {
 // CortexStack — The Full Cortex Transformer
 // ---------------------------------------------------------------------------
 
-// CortexStack is the complete Nexus Cortex "transformer" — a stack of
+// CortexStack is the complete Ilaria "transformer" — a stack of
 // CortexBlocks that processes tokens through multiple layers of
 // ternary computation, SDR attention, and linear scanning.
 type CortexStack struct {

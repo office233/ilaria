@@ -5,7 +5,7 @@
 // record saying where it came from. Nothing is hardcoded; when a source has
 // no data the function returns an error or a nil field, never a default.
 //
-// The package must not import nexus-cortex/cortex (the organism adapter
+// The package must not import ilaria/cortex (the organism adapter
 // lives in package cortex to avoid an import cycle).
 package biomed
 

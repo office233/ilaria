@@ -12,14 +12,14 @@ package cortex
 //
 //	go test ./cortex -run=^$ -bench=BenchmarkBitLinearForwardBatch -benchtime=5x
 //
-// TestBitNetRealTiming is gated on NEXUS_BITNET_DIR (same env var as
+// TestBitNetRealTiming is gated on ILARIA_BITNET_DIR (same env var as
 // TestBitNetEquivalence in bitnet_equivalence_test.go) and reports prefill
 // seconds/token and decode tokens/sec on the real checkpoint for a
 // 16-token synthetic prompt (raw token ids, no tokenizer needed — argmax
 // stability isn't the point here, timing is) followed by 16 generated
 // tokens via BitNetDecoder.Step:
 //
-//	NEXUS_BITNET_DIR=D:/nexus/data/forge/bitnet-2b4t go test ./cortex -run TestBitNetRealTiming -v -timeout 10m
+//	ILARIA_BITNET_DIR=D:/ilaria/data/forge/bitnet-2b4t go test ./cortex -run TestBitNetRealTiming -v -timeout 10m
 
 import (
 	"math/rand"
@@ -122,16 +122,16 @@ func itoa(n int) string {
 }
 
 // TestBitNetRealTiming loads the real 2.4B-param microsoft/bitnet-b1.58-2B-4T
-// checkpoint from NEXUS_BITNET_DIR/bitnet.nxtf and reports Prefill
+// checkpoint from ILARIA_BITNET_DIR/bitnet.nxtf and reports Prefill
 // seconds/token (16-token synthetic prompt) and decode tokens/sec (16
-// Step calls following Prefill). Skipped when NEXUS_BITNET_DIR is unset.
+// Step calls following Prefill). Skipped when ILARIA_BITNET_DIR is unset.
 // Token ids are synthetic (deterministic, spread across the vocab) rather
 // than tokenizer output — this test measures wall-clock arithmetic cost,
 // not generation quality (see bitnet_equivalence_test.go for correctness).
 func TestBitNetRealTiming(t *testing.T) {
-	dir := os.Getenv("NEXUS_BITNET_DIR")
+	dir := os.Getenv("ILARIA_BITNET_DIR")
 	if dir == "" {
-		t.Skip("NEXUS_BITNET_DIR not set — skipping real-checkpoint timing test")
+		t.Skip("ILARIA_BITNET_DIR not set — skipping real-checkpoint timing test")
 	}
 	nxtfPath := filepath.Join(dir, "bitnet.nxtf")
 

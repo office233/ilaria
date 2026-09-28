@@ -17,7 +17,7 @@ import (
 	"strings"
 	"time"
 
-	"nexus-cortex/cortex"
+	"ilaria/cortex"
 )
 
 type chatRequest struct {

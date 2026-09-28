@@ -14,7 +14,7 @@ OUT.mkdir(exist_ok=False)
 EVAL.mkdir(exist_ok=False)
 splits = {s: load_trajectories(ROOT / f'forge/colab/drafting-examples-v5/{s}.jsonl') for s in ('train', 'validation')}
 system = splits['train'][0]['messages'][0]['content']
-sources = [SWYP/'docs/SWYP_LANG.md', SWYP/'cmd/swyp/worker.go', SWYP/'bridge/nexus/tool.go', Path('D:/swypik-os/README.md'), ROOT/'cmd/ilaria-serve/main.go']
+sources = [SWYP/'docs/SWYP_LANG.md', SWYP/'cmd/swyp/worker.go', SWYP/'bridge/ilaria/tool.go', Path('D:/swypik-os/README.md'), ROOT/'cmd/ilaria-serve/main.go']
 manifest = {'sources': {str(p): hashlib.sha256(p.read_bytes()).hexdigest() for p in sources}, 'compiler_checks': []}
 
 def add(split, ident, prompt, answer, kind):
@@ -27,7 +27,7 @@ facts = [
  ('Swyp numbers are finite float64 values. There is no separate integer type.', 'Are all large integers represented exactly?', 'No. Float64 can round large integers; there is no separate integer type in this version.'),
  ('Swyp has scalar number, bool and string values. Arrays and modules are not implemented.', 'Can I import a module and build an array?', 'Those features are unavailable in the described version. Do not invent array or import syntax.'),
  ('The worker returns candidate source, a SHA256 hash and a numerical operation graph. It does not install the candidate.', 'Has the generated program been deployed?', 'No. Returning a candidate and its hash does not deploy or approve it.'),
- ('The old Nexus adapter has Name/Match/Execute. The chat server requires Name/Describe/Call.', 'Is the old adapter sufficient to enable the chat tool?', 'No. It needs a ChatTool adapter and explicit registration in the chat server.'),
+ ('The old Ilaria adapter has Name/Match/Execute. The chat server requires Name/Describe/Call.', 'Is the old adapter sufficient to enable the chat tool?', 'No. It needs a ChatTool adapter and explicit registration in the chat server.'),
  ('The Swyp draft command parses and type-checks model output before saving a new file. It does not execute the draft.', 'Does successful draft creation prove its behavior?', 'No. Parsing and type checking establish static validity; behavior still needs tests.'),
  ('Counterexample refinement adds failing validation points and shares one candidate budget across rounds.', 'Does every refinement round get a fresh budget?', 'No. All rounds share the total candidate budget.'),
  ('Exhausting the bounded synthesis search means no candidate was found within the allocated search.', 'Does exhaustion prove that the task is mathematically impossible?', 'No. It only reports failure within that search budget.'),

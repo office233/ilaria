@@ -82,7 +82,7 @@ No company affiliation is established by this code.
 lifecycle tests are Windows-only. QEMU smoke tests attempt BIOS and UEFI boot,
 assert UID 1000, obtain a virtual NIC DHCP lease and capture actual pixels.
 Actual workflow logs determine which attempts passed. These tests contain no
-model weights and do not validate real Nexus inference, physical Wi-Fi or disk installation.
+model weights and do not validate real Ilaria inference, physical Wi-Fi or disk installation.
 
 ## Primary references
 

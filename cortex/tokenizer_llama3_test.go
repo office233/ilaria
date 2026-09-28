@@ -377,7 +377,7 @@ func buildLlama3Corpus() []string {
 	c = append(c,
 		"Hello, world!",
 		"The quick brown fox jumps over the lazy dog.",
-		"NexusCortex is an experimental sparse cognitive architecture written in Go.",
+		"Ilaria is an experimental sparse cognitive architecture written in Go.",
 		"Byte-pair encoding operates directly on UTF-8 bytes, so no input is out of vocabulary.",
 		"A sparse distributed representation activates a small fraction of a large bit array.",
 		"How much wood would a woodchuck chuck if a woodchuck could chuck wood?",

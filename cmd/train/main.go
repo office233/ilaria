@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"ilaria/cortex"
 	"math/rand"
-	"nexus-cortex/cortex"
 	"os"
 	"path/filepath"
 	"strings"
@@ -66,7 +66,7 @@ func main() {
 	flag.Parse()
 
 	fmt.Println("╔══════════════════════════════════════════════════════════════╗")
-	fmt.Println("║  🧠 NEXUS CORTEX — Training Session                        ║")
+	fmt.Println("║  🧠 ILARIA — Training Session                        ║")
 	fmt.Println("║  External Data · CUDA GPU · Configurable Neurons            ║")
 	fmt.Println("╚══════════════════════════════════════════════════════════════╝")
 	fmt.Println()
@@ -319,7 +319,7 @@ func main() {
 		{"what color is the sky", "blue"},
 		{"how many legs does a dog have", "four"},
 		{"hello", "hello"},
-		{"what is your name", "nexus"},
+		{"what is your name", "ilaria"},
 		{"is fire hot or cold", "hot"},
 		{"ce este soarele", "stea"},
 	}

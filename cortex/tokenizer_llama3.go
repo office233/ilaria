@@ -8,7 +8,7 @@ package cortex
 // microsoft/bitnet-b1.58-2B-4T ships Meta's Llama-3 tokenizer verbatim: a
 // tiktoken-style byte-level BPE with a 128,256-entry vocabulary (128,000
 // merge-built tokens + 256 named special tokens) exported in Hugging
-// Face's tokenizer.json format. Loading that checkpoint into Nexus is
+// Face's tokenizer.json format. Loading that checkpoint into Ilaria is
 // only useful if this engine tokenizes EXACTLY the way it was trained —
 // same byte alphabet (shared with GPT-2, see tokenizer_gpt2.go), same
 // pre-tokenization splits, same merge behaviour, same special tokens.

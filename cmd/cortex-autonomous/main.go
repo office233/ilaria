@@ -10,7 +10,7 @@ import (
 	"syscall"
 	"time"
 
-	"nexus-cortex/cortex"
+	"ilaria/cortex"
 )
 
 func main() {
@@ -23,7 +23,7 @@ func main() {
 	fmt.Println()
 	fmt.Println("╔══════════════════════════════════════════════════════════════════╗")
 	fmt.Println("║                                                                  ║")
-	fmt.Println("║  🧠  NEXUS CORTEX AUTONOMOUS SELF-LEARNING ENGINE               ║")
+	fmt.Println("║  🧠  ILARIA AUTONOMOUS SELF-LEARNING ENGINE               ║")
 	fmt.Println("║                                                                  ║")
 	fmt.Println("║  The AI that teaches ITSELF. No LLM can do this.                ║")
 	fmt.Println("║                                                                  ║")

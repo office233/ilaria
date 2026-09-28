@@ -3,7 +3,7 @@ package cortex
 // sdr_attention.go — SDR-Based Attention Mechanism
 //
 // Replaces Softmax attention with popcount-based SDR similarity.
-// This is the core innovation that makes Nexus Cortex fundamentally
+// This is the core innovation that makes Ilaria fundamentally
 // different from Transformers.
 //
 // Transformer Attention:
@@ -134,9 +134,9 @@ func (s *QueryScratch) ensure(valueSize, topK int) {
 // and returns a blended value SDR.
 //
 // This is the equivalent of Softmax attention but using integer popcount:
-//   1. For each key: score = popcount(query AND key)
-//   2. Select top-K highest scores
-//   3. Return union of corresponding values (weighted by overlap)
+//  1. For each key: score = popcount(query AND key)
+//  2. Select top-K highest scores
+//  3. Return union of corresponding values (weighted by overlap)
 //
 // Allocates internal scratch on every call. For repeated calls in a hot
 // loop, use QueryWithScratch with a caller-owned QueryScratch instead.

@@ -12,13 +12,13 @@
 
 ## Global Constraints
 
-- `cortex/biomed` must not import `nexus-cortex/cortex` (import cycle).
+- `cortex/biomed` must not import `ilaria/cortex` (import cycle).
 - No hardcoded drug/disease/PK tables anywhere. Missing data returns an error or `nil`, never a default value.
 - Every numeric/textual claim in a `ConsultResponse` carries `Evidence{Source, ID, URL, Retrieved, Quote}`.
 - Allowed hosts: `rxnav.nlm.nih.gov`, `www.ebi.ac.uk`, `api.fda.gov`, `api.platform.opentargets.org`, `eutils.ncbi.nlm.nih.gov`. Anything else is rejected before the request is made.
 - Throttle: at least 250 ms between requests per host, 350 ms for PubMed. Timeout 20 s. 429/503: exponential backoff, max 3 attempts.
 - Cache: `<cacheDir>/<source>/<sha256(method+url+body)>.json`, TTL default 30 days.
-- Unit tests are offline (fixtures under `cortex/biomed/testdata/`). Live tests run only with `NEXUS_BIOMED_LIVE=1`.
+- Unit tests are offline (fixtures under `cortex/biomed/testdata/`). Live tests run only with `ILARIA_BIOMED_LIVE=1`.
 - Gate before every commit: `gofmt -l` empty on touched files, `go vet ./...`, `go test -count=1 -timeout 180s ./...`.
 
 ## Review Focus
@@ -36,11 +36,11 @@
 **Files:**
 - Delete: `cortex/thalamus_router.go`, `cortex/thalamus_router_test.go`, `cortex/moe_drive_loader.go`, `cortex/moe_drive_loader_test.go`
 - Delete: `forge/colab_moe_brain.py`, `forge/colab_deep_train_top.py`, `forge/colab_master_brain_v2.py`, `forge/self_evolving_loop.py`, `forge/moe_1bit.py`
-- Delete: `cortex/biomed/*.go` (all), `cortex/swe/formal_verifier.go`, `cortex/swe/living_codebase.go`, `cortex/swe/mcts_reasoner.go`, `cortex/swe/swe_test.go`, `cmd/nexus-biomed/main.go`
+- Delete: `cortex/biomed/*.go` (all), `cortex/swe/formal_verifier.go`, `cortex/swe/living_codebase.go`, `cortex/swe/mcts_reasoner.go`, `cortex/swe/swe_test.go`, `cmd/ilaria-biomed/main.go`
 - Modify: `forge/COLAB_GUIDE.md` (tokenizer path `./data/tokenizer.json`; drop the 150M `--grad-checkpoint` only if VRAM allows: keep it)
 
 - [ ] Delete the files listed above (they are untracked; plain `rm`).
-- [ ] Run `go build ./...` — expected: fails only because `cmd/nexus-biomed` and `cortex/swe` are now empty/inconsistent; delete `cmd/nexus-biomed/` entirely for now and keep `cortex/swe/{codegraph,types}.go`.
+- [ ] Run `go build ./...` — expected: fails only because `cmd/ilaria-biomed` and `cortex/swe` are now empty/inconsistent; delete `cmd/ilaria-biomed/` entirely for now and keep `cortex/swe/{codegraph,types}.go`.
 - [ ] `gofmt -w cortex/swe/*.go`; `go build ./... && go vet ./cortex/swe/` pass.
 - [ ] Commit: `chore: remove simulated biomed/swe/MoE modules and Colab notebooks (theatre, see spec)`.
 
@@ -237,7 +237,7 @@ Model: `k = ln2/t½`, single IV-bolus-like oral absorption ignored (documented),
 
 **Files:**
 - Create: `cortex/biomed/consult.go`, `cortex/biomed/fhir.go`
-- Test: `cortex/biomed/consult_test.go` (offline via fixture fetcher; live test gated by `NEXUS_BIOMED_LIVE=1`), `cortex/biomed/fhir_test.go`
+- Test: `cortex/biomed/consult_test.go` (offline via fixture fetcher; live test gated by `ILARIA_BIOMED_LIVE=1`), `cortex/biomed/fhir_test.go`
 
 **Interfaces (Produces):**
 ```go
@@ -285,10 +285,10 @@ func (t *BiomedTool) Execute(input string) (string, bool)   // Consult with 20 s
 ### Task 12: CLI, guide, gate
 
 **Files:**
-- Create: `cmd/nexus-biomed/main.go` (flags `-query`, `-drug` (repeatable), `-patient file.json` (FHIR bundle or native `Patient` JSON, detected by `resourceType`), `-dose`, `-interval`, `-cache-dir` default `data/knowledge/biomed`, `-json`, `-refresh`)
+- Create: `cmd/ilaria-biomed/main.go` (flags `-query`, `-drug` (repeatable), `-patient file.json` (FHIR bundle or native `Patient` JSON, detected by `resourceType`), `-dose`, `-interval`, `-cache-dir` default `data/knowledge/biomed`, `-json`, `-refresh`)
 - Modify: `forge/COLAB_GUIDE.md` (tokenizer path), `README.md` (short section "Organ biomedical cu surse reale" with the CLI example)
 
 - [ ] Implement CLI: text output in the language of the query (RO if query contains Romanian diacritics or words from the organism's existing RO detection), JSON with `-json`.
-- [ ] Live smoke (only if `NEXUS_BIOMED_LIVE=1`): `go run ./cmd/nexus-biomed -query "gefitinib și warfarină la pacient cu EGFR T790M"` prints sources.
+- [ ] Live smoke (only if `ILARIA_BIOMED_LIVE=1`): `go run ./cmd/ilaria-biomed -query "gefitinib și warfarină la pacient cu EGFR T790M"` prints sources.
 - [ ] Gate: `gofmt -l cortex cmd | grep .` empty; `go vet ./...`; `go test -count=1 -timeout 180s ./...`.
-- [ ] Commit: `feat(nexus-biomed): CLI over the real-source bridge; docs`.
+- [ ] Commit: `feat(ilaria-biomed): CLI over the real-source bridge; docs`.

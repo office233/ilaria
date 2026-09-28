@@ -35,7 +35,7 @@ const selfTrainBatchSize = 8
 //   → Better responses → Better memories → Better training → ...
 //
 // This is the core differentiator: LLMs are frozen after training.
-// Nexus Cortex evolves continuously from its own experience.
+// Ilaria evolves continuously from its own experience.
 
 // TrainTransformerFromCorpus trains the Broca 2.0 transformer on
 // text from JSONL corpus files (Wikipedia, Alpaca, etc.).
@@ -379,12 +379,12 @@ func extractCorpusText(line string) string {
 
 // TrainingStats tracks the evolution of the transformer over time.
 type TrainingStats struct {
-	TotalSteps      int     `json:"total_steps"`
-	TotalMemories   int     `json:"total_memories"`
-	TotalCorpus     int     `json:"total_corpus"`
-	LastLoss        float32 `json:"last_loss"`
-	BestLoss        float32 `json:"best_loss"`
-	SleepCycles     int     `json:"sleep_cycles"`
+	TotalSteps    int     `json:"total_steps"`
+	TotalMemories int     `json:"total_memories"`
+	TotalCorpus   int     `json:"total_corpus"`
+	LastLoss      float32 `json:"last_loss"`
+	BestLoss      float32 `json:"best_loss"`
+	SleepCycles   int     `json:"sleep_cycles"`
 }
 
 // NewTrainingStats creates an empty stats tracker.

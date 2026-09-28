@@ -2,8 +2,8 @@
 
 Document pentru agentul care mută antrenarea de pe Google Colab pe o mașină Azure.
 Spune ce există deja, unde se află fiecare fișier și ce rămâne de făcut.
-Proiectul se numește **Ilaria** în orice text public. Directorul `D:\nexus` și modulul Go
-`nexus-cortex` au rămas cu numele vechi, dar nu se mai folosește „Nexus” în exterior.
+Proiectul se numește **Ilaria** în orice text public. Directorul `D:\ilaria` și modulul Go
+`ilaria` au rămas cu numele vechi, dar nu se mai folosește „Ilaria” în exterior.
 Ilaria va fi motorul AI al platformei Swypik.
 
 ## 1. Ce este Ilaria, pe scurt
@@ -95,7 +95,7 @@ browser fără confirmare manuală.
    rulează doar pe CPU până la un port cu `dlopen` pe `libnvrtc.so`, `libcuda.so` și
    `libcublas.so`. Forja Python rulează pe Linux fără modificări, fiindcă și Colab e Linux.
 7. **`go test` rulează din directorul pachetului.** Testele pe modele reale primesc căi
-   absolute prin variabile de mediu: `NEXUS_BITNET_DIR`, `NEXUS_EARS_DIR`, `NEXUS_BRAIN_DIR`.
+   absolute prin variabile de mediu: `ILARIA_BITNET_DIR`, `ILARIA_EARS_DIR`, `ILARIA_BRAIN_DIR`.
 8. **Evaluarea cu `lm_eval` pe `bitnet2b` e lentă.** A durat peste 80 de minute pe un GPU de
    96 GB, mai ales IFEval și GSM8K, care sunt generative.
 

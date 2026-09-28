@@ -2,8 +2,8 @@
 
 **Data:** 27 Septembrie 2026  
 **Status:** Design & Specificație Tehnică  
-**Autor:** Echipa Ilaria / NexusCortex  
-**Document Corelat:** [2026-09-24-ilaria-1.58-multimodal-studiu.md](file:///d:/nexus/docs/research/2026-09-24-ilaria-1.58-multimodal-studiu.md), [cognitive_bridge.go](file:///d:/nexus/cortex/cognitive_bridge.go)
+**Autor:** Echipa Ilaria / Ilaria  
+**Document Corelat:** [2026-09-24-ilaria-1.58-multimodal-studiu.md](file:///d:/ilaria/docs/research/2026-09-24-ilaria-1.58-multimodal-studiu.md), [cognitive_bridge.go](file:///d:/ilaria/cortex/cognitive_bridge.go)
 
 ---
 
@@ -11,7 +11,7 @@
 
 Generația actuală de sisteme bazate pe LLM depinde în totalitate de **prompting** (system prompts masive, few-shot examples, scheme de unelte JSON în context). Această abordare este o consecință a faptului că LLM-urile clasice sunt **stateless** (amnezice la fiecare rulare).
 
-În biologie și în arhitectura neuronală **Ilaria (NexusCortex)**, nu există „prompt”. Creierul uman comunică între regiuni (Wernicke, Broca, Hippocampus) prin **stare continuă, reprezentări distribuite rare (SDR - Sparse Distributed Representations) și atractori sinaptici**.
+În biologie și în arhitectura neuronală **Ilaria (Ilaria)**, nu există „prompt”. Creierul uman comunică între regiuni (Wernicke, Broca, Hippocampus) prin **stare continuă, reprezentări distribuite rare (SDR - Sparse Distributed Representations) și atractori sinaptici**.
 
 Inspirat de apariția recentă a modelelor decizionale de tip **„Sistem 1” (cum este Jev AI dezvoltat de TypeSafe AI)** și de cercetările de top discutate în comunitate, acest document definește trecerea Ilariei către o **arhitectură cognitivă autonomă fără prompturi (Prompt-less Cognition)**.
 

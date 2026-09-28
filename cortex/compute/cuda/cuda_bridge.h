@@ -1,4 +1,4 @@
-// cuda_bridge.h — C API for Nexus Cortex CUDA compute kernels.
+// cuda_bridge.h — C API for Ilaria CUDA compute kernels.
 // Called from Go via CGO. All functions return 0 on success, non-zero on error.
 
 #ifndef CUDA_BRIDGE_H
@@ -11,23 +11,23 @@ extern "C" {
 #endif
 
 #ifdef _WIN32
-  #ifdef CUDA_NEXUS_EXPORTS
-    #define NEXUS_API __declspec(dllexport)
+  #ifdef CUDA_ILARIA_EXPORTS
+    #define ILARIA_API __declspec(dllexport)
   #else
-    #define NEXUS_API __declspec(dllimport)
+    #define ILARIA_API __declspec(dllimport)
   #endif
 #else
-  #define NEXUS_API
+  #define ILARIA_API
 #endif
 
 // Initialize CUDA device. Returns 0 on success.
-NEXUS_API int nexus_cuda_init(int device_id);
+ILARIA_API int ilaria_cuda_init(int device_id);
 
 // Release CUDA resources.
-NEXUS_API void nexus_cuda_close(void);
+ILARIA_API void ilaria_cuda_close(void);
 
 // ForwardSparse: ternary neural layer forward pass.
-NEXUS_API int nexus_cuda_forward_sparse(
+ILARIA_API int ilaria_cuda_forward_sparse(
     const uint32_t* activeIndices,
     const int32_t*  activeValues,
     uint32_t        activeCount,
@@ -39,7 +39,7 @@ NEXUS_API int nexus_cuda_forward_sparse(
 );
 
 // BatchSDRSimilarity: compute popcount(query & memory[i]) for each memory SDR.
-NEXUS_API int nexus_cuda_batch_sdr_similarity(
+ILARIA_API int ilaria_cuda_batch_sdr_similarity(
     const uint32_t* querySDR,
     const uint32_t* memorySDRs,
     uint8_t*        results,
@@ -52,26 +52,26 @@ NEXUS_API int nexus_cuda_batch_sdr_similarity(
 // All matrices are ROW-MAJOR (the way Go stores them). The bridge handles
 // the row<->column-major flip when calling cuBLAS internally.
 //
-// Lifecycle: call nexus_cublas_init() once at startup, nexus_cublas_close()
+// Lifecycle: call ilaria_cublas_init() once at startup, ilaria_cublas_close()
 // at shutdown. The handle is process-global; concurrent sgemm calls from
 // Go must be serialised by the caller (cuBLAS handles are NOT thread-safe).
 
 // Initialise the cuBLAS handle. Returns 0 on success.
-NEXUS_API int nexus_cublas_init(int device_id);
+ILARIA_API int ilaria_cublas_init(int device_id);
 
 // Release the cuBLAS handle.
-NEXUS_API void nexus_cublas_close(void);
+ILARIA_API void ilaria_cublas_close(void);
 
 // C[M,N] = A[M,K] * B[K,N]    (all row-major)
 // Returns 0 on success, non-zero on any CUDA/cuBLAS error.
-NEXUS_API int nexus_cublas_sgemm(
+ILARIA_API int ilaria_cublas_sgemm(
     const float* A, const float* B, float* C,
     int M, int N, int K
 );
 
 // C[M,N] = A[M,K] * B[N,K]^T  (all row-major; B is logically [N,K])
 // Equivalent to Tensor.MatMulTransposed.
-NEXUS_API int nexus_cublas_sgemm_nt(
+ILARIA_API int ilaria_cublas_sgemm_nt(
     const float* A, const float* B, float* C,
     int M, int N, int K
 );
@@ -87,19 +87,19 @@ NEXUS_API int nexus_cublas_sgemm_nt(
 // Upload `count` floats of weight data to the device. Returns a handle
 // >= 0 on success, negative on failure. The data is copied; the host
 // buffer may be freed afterwards.
-NEXUS_API int nexus_cublas_upload_weight(const float* data, int64_t count);
+ILARIA_API int ilaria_cublas_upload_weight(const float* data, int64_t count);
 
 // Release one uploaded weight. Invalid handles are ignored.
-NEXUS_API void nexus_cublas_free_weight(int handle);
+ILARIA_API void ilaria_cublas_free_weight(int handle);
 
 // Overwrite a resident weight in place (same element count). Returns 0
 // on success. The refresh primitive for resident TRAINING weights.
-NEXUS_API int nexus_cublas_update_weight(int handle, const float* data, int64_t count);
+ILARIA_API int ilaria_cublas_update_weight(int handle, const float* data, int64_t count);
 
 // Y[M,N] = X[M,K] * W       (transW == 0; W is resident, row-major [K,N])
 // Y[M,N] = X[M,K] * W^T     (transW != 0; W is resident, row-major [N,K])
 // X and Y are host row-major; only they cross PCIe.
-NEXUS_API int nexus_cublas_sgemm_resident(
+ILARIA_API int ilaria_cublas_sgemm_resident(
     int weightHandle, const float* X, float* Y,
     int M, int N, int K, int transW
 );

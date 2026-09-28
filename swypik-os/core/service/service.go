@@ -138,7 +138,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if !a.Consent {
-			http.Error(w, "consent to send goal and approved metadata to Nexus is required", 400)
+			http.Error(w, "consent to send goal and approved metadata to Ilaria is required", 400)
 			return
 		}
 		v, err := s.Agent.Start(a.Goal)
@@ -152,7 +152,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if !a.Consent {
-			http.Error(w, "explicit consent to resume and send recorded observations to Nexus is required", 400)
+			http.Error(w, "explicit consent to resume and send recorded observations to Ilaria is required", 400)
 			return
 		}
 		v, err := s.Agent.Resume(a.RunID)

@@ -40,9 +40,9 @@ import (
 	"strings"
 	"time"
 
-	"nexus-cortex/cortex"
-	"nexus-cortex/cortex/compute"
-	"nexus-cortex/cortex/evalsuite"
+	"ilaria/cortex"
+	"ilaria/cortex/compute"
+	"ilaria/cortex/evalsuite"
 )
 
 // gpuEnabled is set from --gpu in main(); when false, runSingle skips
@@ -51,22 +51,22 @@ var gpuEnabled bool
 
 // runReport is the top-level JSON document one eval run emits.
 type runReport struct {
-	Timestamp     string          `json:"timestamp"`
-	ModelPath     string          `json:"model_path"`
-	Params        int             `json:"params"`
-	VocabSize     int             `json:"vocab_size"`
-	Temperature   float64         `json:"temperature"`
-	TopK          int             `json:"top_k"`
-	MaxTokens     int             `json:"max_tokens"`
-	MinTokens     int             `json:"min_tokens,omitempty"`
-	Seed          int64           `json:"seed"`
-	CoTEnabled    bool            `json:"cot_enabled"`
-	CoTSamples    int             `json:"cot_samples,omitempty"`
-	SuiteSize     int             `json:"suite_size"`
+	Timestamp     string                    `json:"timestamp"`
+	ModelPath     string                    `json:"model_path"`
+	Params        int                       `json:"params"`
+	VocabSize     int                       `json:"vocab_size"`
+	Temperature   float64                   `json:"temperature"`
+	TopK          int                       `json:"top_k"`
+	MaxTokens     int                       `json:"max_tokens"`
+	MinTokens     int                       `json:"min_tokens,omitempty"`
+	Seed          int64                     `json:"seed"`
+	CoTEnabled    bool                      `json:"cot_enabled"`
+	CoTSamples    int                       `json:"cot_samples,omitempty"`
+	SuiteSize     int                       `json:"suite_size"`
 	Results       []evalsuite.ScoreResult   `json:"results"`
 	PerCategory   []evalsuite.CategoryStats `json:"per_category"`
 	Overall       evalsuite.CategoryStats   `json:"overall"`
-	TotalWallSecs float64         `json:"total_wall_secs"`
+	TotalWallSecs float64                   `json:"total_wall_secs"`
 }
 
 func main() {

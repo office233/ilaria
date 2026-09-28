@@ -48,7 +48,7 @@ It never closes other running SwypikOS sessions.
 
 ## Run with Ilaria
 
-SwypikOS now lives inside the Nexus repository, next to Ilaria. From the Nexus root:
+SwypikOS now lives inside the Ilaria repository, next to Ilaria. From the Ilaria root:
 
 ```powershell
 powershell -File swypik-os\scripts\start-with-ilaria.ps1        # CUDA when nvidia-smi is present
@@ -93,8 +93,8 @@ the Windows EXE or its keyboard shortcuts.
 
 **Maturity: pre-alpha, RAM-only VM prototype.** This is not a finished Windows or
 macOS replacement. No custom kernel, disk installer, Secure Boot chain, persistent
-user partition or production Wayland compositor is claimed. No Ilaria/Nexus model
-weights are bundled. AI calls fail explicitly until a real Nexus service is configured.
+user partition or production Wayland compositor is claimed. No Ilaria/Ilaria model
+weights are bundled. AI calls fail explicitly until a real Ilaria service is configured.
 
 ## Linux: build a live ISO
 
@@ -139,12 +139,12 @@ F8 confirms contacting that website, and F9 cancels. The UI crawl visits up to
 No DuckDuckGo, Google, Bing or other search-provider API supplies these results.
 
 In Agent, type a goal. F8 explicitly consents to sending that goal and approved
-metadata to the configured Nexus service. Every proposed tool then needs a
+metadata to the configured Ilaria service. Every proposed tool then needs a
 separate, one-time F8 approval; F9 cancels. Tools currently inspect network
 adapters, list workspace entries and query the local search index. There is no
 shell, root tool, autonomous installation, arbitrary file write or payment tool.
 
-Nexus still owns the model. `swypikd --ilaria-url` accepts the existing loopback
+Ilaria still owns the model. `swypikd --ilaria-url` accepts the existing loopback
 HTTP or authenticated HTTPS contract; remote HTTPS requires `ILARIA_API_TOKEN`.
 Provision tokens at runtime, never in the ISO. The default loopback service is
 not included, and absent inference is reported as an error rather than simulated.
@@ -166,7 +166,7 @@ and test logs are copied into a unique `out/linux-*` directory.
 The last run is checkpointed in the owner-only directory selected by
 `swypikd --state-dir` (default `/var/lib/swypik/agent`). Service restart does not
 replay any tool. Pending approvals become invalid. For a safe interrupted run,
-F6 requests resume and F8 confirms sending the saved goal/evidence to Nexus.
+F6 requests resume and F8 confirms sending the saved goal/evidence to Ilaria.
 Every tool then needs a fresh approval. Original deadlines and budgets remain.
 An interrupted tool with an unrecorded outcome cannot be resumed automatically.
 This stores only the last run, not a multi-run history; starting a new run replaces

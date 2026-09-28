@@ -1,6 +1,6 @@
 package cortex
 
-// self_evaluator.go — Self-testing system for Nexus Cortex.
+// self_evaluator.go — Self-testing system for Ilaria.
 //
 // The SelfEvaluator generates test cases from learned material,
 // tests the organism, and tracks improvement over time.
@@ -13,8 +13,8 @@ import (
 
 // Default limits for SelfEvaluator — extracted as named constants.
 const (
-	DefaultSelfEvaluatorMaxTests         = 500 // Maximum test bank size
-	DefaultSelfEvaluatorMaxEvalPerCycle  = 50  // Max tests evaluated per cycle
+	DefaultSelfEvaluatorMaxTests        = 500 // Maximum test bank size
+	DefaultSelfEvaluatorMaxEvalPerCycle = 50  // Max tests evaluated per cycle
 )
 
 // SelfEvaluator tests the organism's knowledge and tracks progress.
@@ -26,11 +26,11 @@ type SelfEvaluator struct {
 
 // SelfTest is a single self-generated test case.
 type SelfTest struct {
-	Question string
-	Expected string
-	Source   string    // Where we learned this
-	Created  time.Time
-	LastScore float64  // Last evaluation score (0-1)
+	Question  string
+	Expected  string
+	Source    string // Where we learned this
+	Created   time.Time
+	LastScore float64 // Last evaluation score (0-1)
 }
 
 // ScorePoint records a score at a point in time.

@@ -1,5 +1,5 @@
 /* =====================================================================
-   Nexus Cortex — Neural Dashboard Javascript
+   Ilaria — Neural Dashboard Javascript
    ===================================================================== */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -51,7 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let pollingInterval = null;
     let isSleeping = false;
-    let nexusToken = '';
+    let ilariaToken = '';
 
     // Helper: Escapes HTML tags to prevent XSS
     function escapeHTML(str) {
@@ -171,7 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const res = await fetch('/api/stats', {
                 headers: {
-                    'X-Nexus-Token': nexusToken
+                    'X-Ilaria-Token': ilariaToken
                 }
             });
             if (res.ok) {
@@ -179,7 +179,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateDashboard(stats);
             } else if (res.status === 401) {
                 if (pollingInterval) clearInterval(pollingInterval);
-                sessionStorage.removeItem('nexusToken');
+                sessionStorage.removeItem('ilariaToken');
                 showTokenModal("Session expired or token is invalid. Please re-authenticate.");
             }
         } catch (err) {
@@ -212,7 +212,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const res = await fetch('/api/stats', {
                 headers: {
-                    'X-Nexus-Token': nexusToken
+                    'X-Ilaria-Token': ilariaToken
                 }
             });
             if (res.ok) {
@@ -262,7 +262,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     method: 'POST',
                     headers: { 
                         'Content-Type': 'application/json',
-                        'X-Nexus-Token': nexusToken
+                        'X-Ilaria-Token': ilariaToken
                     },
                     body: JSON.stringify({ message: text })
                 });
@@ -289,7 +289,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     method: 'POST',
                     headers: { 
                         'Content-Type': 'application/json',
-                        'X-Nexus-Token': nexusToken
+                        'X-Ilaria-Token': ilariaToken
                     },
                     body: JSON.stringify({ message: text })
                 });
@@ -374,7 +374,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Trigger Go sleep API endpoint
             const res = await fetch('/api/sleep', { 
                 method: 'POST',
-                headers: { 'X-Nexus-Token': nexusToken }
+                headers: { 'X-Ilaria-Token': ilariaToken }
             });
             if (!res.ok) {
                 handleApiError(res, "Consolidation routine crashed");
@@ -594,7 +594,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
-                    'X-Nexus-Token': nexusToken
+                    'X-Ilaria-Token': ilariaToken
                 },
                 body: JSON.stringify({
                     topic: topic,
@@ -669,7 +669,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const res = await fetch('/api/selftrain', { 
                 method: 'POST',
-                headers: { 'X-Nexus-Token': nexusToken }
+                headers: { 'X-Ilaria-Token': ilariaToken }
             });
             if (!res.ok) {
                 handleApiError(res, "Autonomous reflection process faulted");
@@ -779,7 +779,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function handleApiError(res, defaultErrorMsg) {
         if (res.status === 401) {
             if (pollingInterval) clearInterval(pollingInterval);
-            sessionStorage.removeItem('nexusToken');
+            sessionStorage.removeItem('ilariaToken');
             showTokenModal("Session expired or token is invalid. Please re-authenticate.");
             throw new Error("Unauthorized");
         }
@@ -793,8 +793,8 @@ document.addEventListener('DOMContentLoaded', () => {
             showTokenModal("Token cannot be empty.");
             return;
         }
-        nexusToken = enteredToken;
-        sessionStorage.setItem('nexusToken', enteredToken);
+        ilariaToken = enteredToken;
+        sessionStorage.setItem('ilariaToken', enteredToken);
         
         const success = await verifyToken();
         if (success) {
@@ -817,20 +817,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const hashParams = new URLSearchParams(window.location.hash.slice(1));
         const tokenParam = hashParams.get('token');
         if (tokenParam) {
-            nexusToken = tokenParam;
-            sessionStorage.setItem('nexusToken', tokenParam);
+            ilariaToken = tokenParam;
+            sessionStorage.setItem('ilariaToken', tokenParam);
             // Clean up URL fragment to avoid leaking in history or screen share
             window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
         } else {
-            nexusToken = sessionStorage.getItem('nexusToken') || '';
+            ilariaToken = sessionStorage.getItem('ilariaToken') || '';
         }
 
-        if (nexusToken) {
+        if (ilariaToken) {
             const success = await verifyToken();
             if (success) {
                 startPolling();
             } else {
-                sessionStorage.removeItem('nexusToken');
+                sessionStorage.removeItem('ilariaToken');
                 showTokenModal("Invalid cached token. Please re-authenticate.");
             }
         } else {

@@ -14,7 +14,7 @@ extern "C" {
 #endif
 
 // ═══════════════════════════════════════════════════════════════
-// NEXUS CORTEX — RadioCortex CUDA Acceleration
+// ILARIA — RadioCortex CUDA Acceleration
 // ═══════════════════════════════════════════════════════════════
 
 RADIO_API int radio_cuda_init(int num_neurons);

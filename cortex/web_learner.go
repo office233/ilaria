@@ -1,6 +1,6 @@
 package cortex
 
-// web_learner.go — Autonomous web knowledge acquisition for Nexus Cortex.
+// web_learner.go — Autonomous web knowledge acquisition for Ilaria.
 //
 // Uses free, no-API-key-required sources:
 //   - Wikipedia REST API (summary + full text)

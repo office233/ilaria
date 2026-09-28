@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Nexus Cortex â€” Hugging Face Corpus Downloader & Converter
+Ilaria â€” Hugging Face Corpus Downloader & Converter
 
 Downloads datasets from Hugging Face and converts them to JSONL format
 compatible with cortex-train.
@@ -336,7 +336,7 @@ def print_summary():
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Download HuggingFace datasets for Nexus Cortex")
+    parser = argparse.ArgumentParser(description="Download HuggingFace datasets for Ilaria")
     parser.add_argument("--all", action="store_true", help="Download all datasets")
     parser.add_argument("--wiki-ro", action="store_true", help="Romanian Wikipedia")
     parser.add_argument("--wiki-en", action="store_true", help="English Wikipedia (100K articles)")
@@ -361,7 +361,7 @@ def main():
         return
     
     print("â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—")
-    print("â•‘  đź§  NEXUS CORTEX â€” HUGGING FACE CORPUS DOWNLOADER  â•‘")
+    print("â•‘  đź§  ILARIA â€” HUGGING FACE CORPUS DOWNLOADER  â•‘")
     print("â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•ť")
     
     start = time.time()

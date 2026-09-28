@@ -14,8 +14,6 @@ Central-Eastern Europe, and its companion Romanian ERP. There Ilaria's job is co
 shopping assistant, captions and translation, and product-quality scoring, and its one-shot memory lets it learn a
 new product, price or policy the moment it appears, without retraining.
 
-(Formerly *NexusCortex*; Go module and command names still carry the old prefix.)
-
 **SwypikOS lives in [`swypik-os/`](swypik-os/README.md)** (its own Go module): the native desktop, the
 approval-gated agent and the own search engine that Ilaria powers. Start both together, on the GPU when one
 is available:
@@ -193,7 +191,7 @@ extracted from the label text with their quoted sentence and feed a one-compartm
 model; if the label states no half-life, the simulation is refused instead of guessed.
 
 ```bash
-go run ./cmd/nexus-biomed -query "gefitinib și warfarină la pacient cu EGFR T790M" -patient patient.json -dose 250
+go run ./cmd/ilaria-biomed -query "gefitinib și warfarină la pacient cu EGFR T790M" -patient patient.json -dose 250
 ```
 
 `patient.json` is either a FHIR Bundle or `{"active_medications":["warfarin"],"variants":[{"gene":"EGFR","change":"T790M"}],"labs":{"eGFR":{"value":38,"unit":"mL/min/1.73m2"}}}`.
@@ -228,7 +226,7 @@ cortex into an assistant. Every answer of `cmd/cortex` now carries a provenance 
 go run -tags gpu ./cmd/nxtf-run -data-dir data/forge/brain-a -gpu -prompt "Ștefan cel Mare a fost" -max-tokens 60 -rep-penalty 1.2
 # Go ≡ PyTorch on the real weights
 python forge/dump_logits.py --brain data/forge/brain-a --out data/forge/brain-a/logits_ref.json
-NEXUS_BRAIN_DIR=$PWD/data/forge/brain-a go test ./cortex -run TestForgeBrainEquivalence -count=1 -v
+ILARIA_BRAIN_DIR=$PWD/data/forge/brain-a go test ./cortex -run TestForgeBrainEquivalence -count=1 -v
 # perplexity on any UTF-8 text, both engines
 python forge/ppl.py --brain data/forge/brain-a --text forge/eval/heldout_wiki_2025.txt
 go run ./cmd/nxtf-ppl -data-dir data/forge/brain-a -text forge/eval/heldout_wiki_2025.txt
@@ -249,7 +247,7 @@ same integer arithmetic bitnet.cpp uses (ternary weights × int8 per-token activ
   greedy and top-k/top-p sampling; `cortex/tokenizer_llama3.go`: Llama-3 byte-level BPE with a hand-written
   cl100k pre-tokenizer (309/309 test lines identical to HF `tokenizers`) and the BitNet chat template.
 - Verification: a tiny BitNet built with HF code matches to 5·10⁻⁷; the real 2.4B checkpoint is compared
-  statistically (`TestBitNetEquivalence`, `NEXUS_BITNET_DIR`), because int8 activation quantization in 210
+  statistically (`TestBitNetEquivalence`, `ILARIA_BITNET_DIR`), because int8 activation quantization in 210
   layers makes per-logit tolerances meaningless — PyTorch itself differs by 0.37 between 1 and 4 BLAS threads:
   KL(PyTorch ‖ Go) 0.0002–0.016 nats, argmax agreement 45/46, greedy prefixes identical.
 - Speed: `cmd/bitnet-run -cuda` runs the whole decode step on the GPU with kernels compiled at run time by
@@ -410,9 +408,9 @@ The system prompt is prefilled once and reused across prompts (`Runner.ResetToSy
 ## Test Results
 
 ```
-ok   nexus-cortex/cmd/cortex       1.3s    ✅
-ok   nexus-cortex/cmd/cortex-web   9.5s    ✅
-ok   nexus-cortex/cortex          86.3s    ✅  (137 tests + 3 fuzz tests)
+ok   ilaria/cmd/cortex       1.3s    ✅
+ok   ilaria/cmd/cortex-web   9.5s    ✅
+ok   ilaria/cortex          86.3s    ✅  (137 tests + 3 fuzz tests)
 ```
 
 ---

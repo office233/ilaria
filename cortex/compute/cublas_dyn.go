@@ -5,7 +5,7 @@
 // WHY THIS EXISTS
 //
 // The static bridge (cublas_matmul.go, tag `cuda`) links against
-// cuda_nexus.dll, which must be compiled with nvcc — and nvcc on
+// cuda_ilaria.dll, which must be compiled with nvcc — and nvcc on
 // Windows refuses to work without the MSVC toolchain. This machine has
 // the CUDA *runtime* (installed with the toolkit/driver) but no MSVC.
 //

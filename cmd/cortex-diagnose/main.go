@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"math/rand"
 
-	"nexus-cortex/cortex"
+	"ilaria/cortex"
 )
 
 // cortex-diagnose: Traces a query through the ENTIRE pipeline
@@ -28,7 +28,7 @@ func main() {
 	}
 
 	fmt.Println("╔══════════════════════════════════════════════════════════════╗")
-	fmt.Println("║  🔬 NEXUS CORTEX PIPELINE DIAGNOSTIC                       ║")
+	fmt.Println("║  🔬 ILARIA PIPELINE DIAGNOSTIC                       ║")
 	fmt.Println("╚══════════════════════════════════════════════════════════════╝")
 	fmt.Println()
 	fmt.Printf("📝 Query: %q\n", *query)

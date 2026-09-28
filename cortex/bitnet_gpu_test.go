@@ -6,7 +6,7 @@ import (
 	"math/rand"
 	"testing"
 
-	"nexus-cortex/cortex/compute"
+	"ilaria/cortex/compute"
 )
 
 // TestBitLinearGPUMatchesCPU builds a small random BitLinear, computes

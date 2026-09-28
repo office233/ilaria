@@ -36,7 +36,7 @@ def build():
            "o sesiune întreruptă se reia de unde a rămas. Celulele lungi folosesc `%%shell`, deci afișează progresul în timp real."),
         code("from google.colab import drive\ndrive.mount('/content/drive')"),
         code("import os\n"
-             "os.makedirs('/content/nexus/forge', exist_ok=True)\n"
+             "os.makedirs('/content/ilaria/forge', exist_ok=True)\n"
              f"os.makedirs('{DRIVE}/corpus', exist_ok=True); os.makedirs('{DRIVE}/brain-a', exist_ok=True)\n"
              "%pip -q install datasets tokenizers\n"
              "print('ok')"),
@@ -54,13 +54,13 @@ def build():
     payload = base64.b64encode(buf.getvalue()).decode("ascii")
     cells.append(code("import base64, io, zipfile\n"
                       f"SRC = \"{payload}\"\n"
-                      "zipfile.ZipFile(io.BytesIO(base64.b64decode(SRC))).extractall('/content/nexus/forge')\n"
-                      "import os; print(sorted(os.listdir('/content/nexus/forge')))"))
+                      "zipfile.ZipFile(io.BytesIO(base64.b64decode(SRC))).extractall('/content/ilaria/forge')\n"
+                      "import os; print(sorted(os.listdir('/content/ilaria/forge')))"))
     cells += [
         md("## Tokenizer (5–10 min): eșantion RO/EN de 220 MB din HuggingFace → BPE byte-level 32k\n\n"
            "Sare dacă `tokenizer.json` există deja în Drive."),
         code("%%shell\n"
-             "cd /content/nexus\n"
+             "cd /content/ilaria\n"
              f"if [ -s {DRIVE}/tokenizer.json ]; then echo 'tokenizer exists'; exit 0; fi\n"
              "python -u forge/prepare_corpus.py --tokenizer-sample /content/tokenizer_sample.txt --sample-bytes 220000000 \\\n"
              "  --sources wiki_ro,fineweb2_ro,tinystories,fineweb_edu --max wiki_ro=100000 --max tinystories=80000 2>&1 | grep --line-buffered -v Warning\n"
@@ -69,14 +69,14 @@ def build():
         md("## Corpus pe Drive (1–3 ore, reluabil)\n\n"
            "FineWeb-2 românesc (3 M documente), FineWeb-Edu (2 M), Wikipedia RO (300 k) și EN (500 k) ≈ 4 miliarde de tokeni."),
         code("%%shell\n"
-             "cd /content/nexus\n"
+             "cd /content/ilaria\n"
              f"python -u forge/prepare_corpus.py --out-dir {DRIVE}/corpus \\\n"
              "  --sources wiki_ro,wiki_en,fineweb2_ro,fineweb_edu \\\n"
              "  --max wiki_ro=300000 --max wiki_en=500000 --max fineweb2_ro=3000000 --max fineweb_edu=2000000 2>&1 | grep --line-buffered -v Warning\n"
              f"ls {DRIVE}/corpus | head -60; du -sh {DRIVE}/corpus"),
         md("## Tokenizare (8 procese) + stream unic\n\nSare peste shard-urile care au deja meta `.json` (scris la final, deci un `.bin` parțial se reface)."),
         code("%%shell\n"
-             "cd /content/nexus\n"
+             "cd /content/ilaria\n"
              f"for f in {DRIVE}/corpus/*.jsonl; do p=\"${{f%.jsonl}}\"; [ -s \"$p.json\" ] || echo \"$p\"; done \\\n"
              f"  | xargs -P \"$(nproc)\" -I{{}} python forge/hf_tokenizer.py encode --tokenizer {DRIVE}/tokenizer.json --in {{}}.jsonl --out {{}}\n"
              f"python forge/concat_streams.py --out {DRIVE}/train_stream \\\n"
@@ -85,13 +85,13 @@ def build():
              f"cat {DRIVE}/train_stream.json"),
         md("## (H100) Viteza: 100 de pași cu rețeta A\n\nRuntime → H100, apoi rulează din nou celulele de sus (montare, instalare, `%%writefile`), apoi aceasta."),
         code("%%shell\n"
-             "cd /content/nexus\n"
+             "cd /content/ilaria\n"
              f"python -u forge/train_ilaria.py --data {DRIVE}/train_stream --out /content/speedtest \\\n"
              "  --embed-dim 768 --heads 12 --layers 12 --ffn-dim 2688 --ctx 1024 --max-seq-len 1024 --rope --swiglu --dropout 0 \\\n"
              "  --batch 64 --accum 4 --steps 100 --warmup 20 --lr 6e-4 --min-lr 6e-5 --wd 0.1 --precision bf16 --compile --eval-every 100 2>&1"),
         md("## (H100) Rețeta A — Ilaria-130M, până la 3 G tokeni\n\nCheckpoint pe Drive la fiecare 500 de pași; dacă sesiunea cade, rulează din nou celula: reia din `checkpoint.pt`."),
         code("%%shell\n"
-             "cd /content/nexus\n"
+             "cd /content/ilaria\n"
              f"TOK=$(python -c \"import json;print(json.load(open('{DRIVE}/train_stream.json'))['tokens'])\")\n"
              "STEPS=$(( TOK / 262144 )); [ $STEPS -gt 11500 ] && STEPS=11500\n"
              "echo \"tokens=$TOK steps=$STEPS\"\n"

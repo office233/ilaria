@@ -22,7 +22,7 @@ package compute
 
 /*
 #cgo CFLAGS: -I${SRCDIR}/cuda
-#cgo LDFLAGS: -L${SRCDIR}/cuda -lcuda_nexus
+#cgo LDFLAGS: -L${SRCDIR}/cuda -lcuda_ilaria
 #include "cuda_bridge.h"
 */
 import "C"
@@ -46,9 +46,9 @@ var (
 // repeated calls return the result of the first attempt.
 func InitCuBLAS() error {
 	cublasInitOnce.Do(func() {
-		ret := C.nexus_cublas_init(C.int(0))
+		ret := C.ilaria_cublas_init(C.int(0))
 		if ret != 0 {
-			cublasInitError = fmt.Errorf("nexus_cublas_init returned %d", int(ret))
+			cublasInitError = fmt.Errorf("ilaria_cublas_init returned %d", int(ret))
 			return
 		}
 		cublasReady.Store(true)
@@ -64,7 +64,7 @@ func CloseCuBLAS() {
 	if !cublasReady.Load() {
 		return
 	}
-	C.nexus_cublas_close()
+	C.ilaria_cublas_close()
 	cublasReady.Store(false)
 }
 
@@ -91,7 +91,7 @@ func MatMulGPU(A, B []float32, M, N, K int) ([]float32, error) {
 	C_ := make([]float32, M*N)
 
 	cublasMu.Lock()
-	ret := C.nexus_cublas_sgemm(
+	ret := C.ilaria_cublas_sgemm(
 		(*C.float)(unsafe.Pointer(&A[0])),
 		(*C.float)(unsafe.Pointer(&B[0])),
 		(*C.float)(unsafe.Pointer(&C_[0])),
@@ -100,7 +100,7 @@ func MatMulGPU(A, B []float32, M, N, K int) ([]float32, error) {
 	cublasMu.Unlock()
 
 	if ret != 0 {
-		return nil, fmt.Errorf("nexus_cublas_sgemm returned %d", int(ret))
+		return nil, fmt.Errorf("ilaria_cublas_sgemm returned %d", int(ret))
 	}
 	return C_, nil
 }
@@ -115,13 +115,13 @@ func UploadWeight(data []float32) (int, error) {
 		return -1, errors.New("empty weight")
 	}
 	cublasMu.Lock()
-	h := C.nexus_cublas_upload_weight(
+	h := C.ilaria_cublas_upload_weight(
 		(*C.float)(unsafe.Pointer(&data[0])),
 		C.int64_t(len(data)),
 	)
 	cublasMu.Unlock()
 	if h < 0 {
-		return -1, fmt.Errorf("nexus_cublas_upload_weight returned %d", int(h))
+		return -1, fmt.Errorf("ilaria_cublas_upload_weight returned %d", int(h))
 	}
 	return int(h), nil
 }
@@ -132,7 +132,7 @@ func FreeWeight(handle int) {
 		return
 	}
 	cublasMu.Lock()
-	C.nexus_cublas_free_weight(C.int(handle))
+	C.ilaria_cublas_free_weight(C.int(handle))
 	cublasMu.Unlock()
 }
 
@@ -147,11 +147,11 @@ func UpdateWeight(handle int, data []float32) error {
 		return errors.New("empty weight")
 	}
 	cublasMu.Lock()
-	ret := C.nexus_cublas_update_weight(C.int(handle),
+	ret := C.ilaria_cublas_update_weight(C.int(handle),
 		(*C.float)(unsafe.Pointer(&data[0])), C.int64_t(len(data)))
 	cublasMu.Unlock()
 	if ret != 0 {
-		return fmt.Errorf("nexus_cublas_update_weight returned %d", int(ret))
+		return fmt.Errorf("ilaria_cublas_update_weight returned %d", int(ret))
 	}
 	return nil
 }
@@ -178,7 +178,7 @@ func MatMulResident(handle int, X []float32, M, N, K int, transW bool, out []flo
 		t = 1
 	}
 	cublasMu.Lock()
-	ret := C.nexus_cublas_sgemm_resident(
+	ret := C.ilaria_cublas_sgemm_resident(
 		C.int(handle),
 		(*C.float)(unsafe.Pointer(&X[0])),
 		(*C.float)(unsafe.Pointer(&out[0])),
@@ -186,7 +186,7 @@ func MatMulResident(handle int, X []float32, M, N, K int, transW bool, out []flo
 	)
 	cublasMu.Unlock()
 	if ret != 0 {
-		return fmt.Errorf("nexus_cublas_sgemm_resident returned %d", int(ret))
+		return fmt.Errorf("ilaria_cublas_sgemm_resident returned %d", int(ret))
 	}
 	return nil
 }
@@ -209,7 +209,7 @@ func MatMulNTGPU(A, B []float32, M, N, K int) ([]float32, error) {
 	C_ := make([]float32, M*N)
 
 	cublasMu.Lock()
-	ret := C.nexus_cublas_sgemm_nt(
+	ret := C.ilaria_cublas_sgemm_nt(
 		(*C.float)(unsafe.Pointer(&A[0])),
 		(*C.float)(unsafe.Pointer(&B[0])),
 		(*C.float)(unsafe.Pointer(&C_[0])),
@@ -218,7 +218,7 @@ func MatMulNTGPU(A, B []float32, M, N, K int) ([]float32, error) {
 	cublasMu.Unlock()
 
 	if ret != 0 {
-		return nil, fmt.Errorf("nexus_cublas_sgemm_nt returned %d", int(ret))
+		return nil, fmt.Errorf("ilaria_cublas_sgemm_nt returned %d", int(ret))
 	}
 	return C_, nil
 }

@@ -13,7 +13,7 @@ import (
 )
 
 // ─────────────────────────────────────────────────────────────────────
-// BPE Tokenizer — Byte-Pair Encoding for Nexus Cortex
+// BPE Tokenizer — Byte-Pair Encoding for Ilaria
 // ─────────────────────────────────────────────────────────────────────
 //
 // A character-level BPE tokenizer that learns subword units from text.

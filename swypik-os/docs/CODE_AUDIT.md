@@ -3,7 +3,7 @@
 ## Corecții
 
 - **Server web:** paginile externe rulează într-un sandbox fără acces la originea aplicației; proxy-ul validează adresele la conectare, inclusiv la redirectare. Conectarea folosește IP-ul verificat. Răspunsurile au limită de dimensiune și păstrează statusul HTTP al sursei.
-- **API local:** verificare Host/Origin, tratare OPTIONS, metode HTTP limitate și corp limitat pentru omnibar. Listarea directoarelor verifică limitele reale ale căilor și rezolvă symlinkurile. Au fost eliminate excepțiile pentru `D:\swypik-os` și `D:\nexus`.
+- **API local:** verificare Host/Origin, tratare OPTIONS, metode HTTP limitate și corp limitat pentru omnibar. Listarea directoarelor verifică limitele reale ale căilor și rezolvă symlinkurile. Au fost eliminate excepțiile pentru `D:\swypik-os` și `D:\ilaria`.
 - **Fișiere publice:** numai HTML/CSS/JS ale interfeței sunt servite. Sursele Go, fișierele `.env` și starea swarm nu sunt expuse. Resursele sunt incluse în executabil.
 - **Configurare:** inițializare sincronizată, prioritate pentru fișierele `.env` explicite, respectarea variabilelor de mediu deja definite, eliminarea configurărilor fără consumatori din structura globală. Portul, browserul și workspace-ul sunt utilizate efectiv. Launcherele folosesc propriul director.
 - **Portofel:** fișierele corupte sunt păstrate; cheile și adresa sunt validate; NaN/Inf și valorile negative sunt respinse. Erorile de salvare sunt propagate. Salvarea folosește înlocuire prin fișier temporar.

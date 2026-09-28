@@ -1,4 +1,4 @@
-"""nxtf.py — write/read the Nexus NXTF2BIN checkpoint format from Python.
+"""nxtf.py — write/read the Ilaria NXTF2BIN checkpoint format from Python.
 
 Mirrors cortex/transformer_persist_binary.go exactly:
 

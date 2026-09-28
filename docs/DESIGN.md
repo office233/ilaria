@@ -1,8 +1,8 @@
-# Design Document — NexusCortex Sparse Cognitive Architecture
+# Design Document — Ilaria Sparse Cognitive Architecture
 
 ## Architecture Philosophy
 
-NexusCortex is an experimental research prototype exploring biological, neuroscience-inspired alternatives to standard dense deep learning (e.g., Transformers, MLP-based systems). Rather than relying on massive floating-point matrix multiplications to generate the "next token," NexusCortex models the interactions of **10 distinct anatomical brain regions** utilizing high-sparsity Sparse Distributed Representations (SDRs), active dendrites, ternary weights, and cyclic sleep consolidation.
+Ilaria is an experimental research prototype exploring biological, neuroscience-inspired alternatives to standard dense deep learning (e.g., Transformers, MLP-based systems). Rather than relying on massive floating-point matrix multiplications to generate the "next token," Ilaria models the interactions of **10 distinct anatomical brain regions** utilizing high-sparsity Sparse Distributed Representations (SDRs), active dendrites, ternary weights, and cyclic sleep consolidation.
 
 Our core goal is to demonstrate that sparse, localized cognitive networks can run extremely fast on commodity CPU hardware with zero runtime memory allocations, while retaining long-term associative memory.
 
@@ -10,7 +10,7 @@ Our core goal is to demonstrate that sparse, localized cognitive networks can ru
 
 ## 1. The 10 Cognitive Subsystems
 
-NexusCortex partitions cognitive processing into dedicated modules mimicking human brain anatomy. Each region is implemented inside the `cortex/` package and communicates via sparse state vectors:
+Ilaria partitions cognitive processing into dedicated modules mimicking human brain anatomy. Each region is implemented inside the `cortex/` package and communicates via sparse state vectors:
 
 ```
                           ┌────────────────────────┐
@@ -73,7 +73,7 @@ Periodically halts real-time sensory inputs to perform weight replay. It fetches
 
 ## 2. Sparse Distributed Representations (SDR) & Sparsity
 
-SDRs are the canonical language of NexusCortex. Unlike dense vectors (where every index has a floating-point value), an SDR is a large vector (e.g., 2048 or 4096 dimensions) where only a tiny fraction (typically 1.5% to 2.0%) of indices are active (`1`), and the rest are inactive (`0`):
+SDRs are the canonical language of Ilaria. Unlike dense vectors (where every index has a floating-point value), an SDR is a large vector (e.g., 2048 or 4096 dimensions) where only a tiny fraction (typically 1.5% to 2.0%) of indices are active (`1`), and the rest are inactive (`0`):
 
 1.  **High Overlap Robustness**: Because representations are sparse, multiple concepts can be superimposed on the same vector with near-zero collision probability.
 2.  **Ternary Synaptic Weights**: Synaptic links use ternary values `{-1, 0, +1}`:
@@ -86,7 +86,7 @@ SDRs are the canonical language of NexusCortex. Unlike dense vectors (where ever
 
 ## 3. Thousand Brains Theory Implementation
 
-Inspired by Jeff Hawkins and Numenta's research, NexusCortex organizes cortical layers into parallel **sensory-motor columns** (`thousand_brains.go`). 
+Inspired by Jeff Hawkins and Numenta's research, Ilaria organizes cortical layers into parallel **sensory-motor columns** (`thousand_brains.go`). 
 
 Each column receives:
 1.  **Sensory Input**: The active features of the object.
@@ -115,6 +115,6 @@ We chose **Go** for the primary runtime over Python/C++ due to:
 *   **Concurrency**: Go's goroutines make simulating parallel brain regions and sensory columns highly straightforward and readable.
 
 ### 5.2 CPU Sparse vs. Dense GPU Compute
-Standard dense matrix compute performs massive operations continuously. NexusCortex uses a sparse, pointer-chasing approach:
+Standard dense matrix compute performs massive operations continuously. Ilaria uses a sparse, pointer-chasing approach:
 *   **Advantage**: Runs at low power on standard laptops. Takes up very little storage due to 1-bit/ternary weights.
 *   **Trade-off**: Harder to scale using off-the-shelf deep learning hardware (like Tensor Cores), which is why we built custom, dedicated CUDA kernels.

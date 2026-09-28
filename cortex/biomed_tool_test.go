@@ -12,7 +12,7 @@ import (
 	"strings"
 	"testing"
 
-	"nexus-cortex/cortex/biomed"
+	"ilaria/cortex/biomed"
 )
 
 // biomedFixtures serves the recorded responses under cortex/biomed/testdata

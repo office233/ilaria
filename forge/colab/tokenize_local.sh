@@ -6,7 +6,7 @@
 set -u
 D=/content/drive/MyDrive/ilaria
 L=/content/ilaria
-cd /content/nexus || exit 1
+cd /content/ilaria || exit 1
 mkdir -p "$L/corpus"
 N=$(nproc); echo "cpus=$N"; df -h /content | tail -1
 # 1. tokenizer + JSONL shards -> local disk (sequential copies are gentle on Drive)

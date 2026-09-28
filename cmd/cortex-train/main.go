@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"nexus-cortex/cortex"
+	"ilaria/cortex"
 )
 
 func main() {
@@ -26,7 +26,7 @@ func main() {
 	fmt.Println()
 	fmt.Println("╔══════════════════════════════════════════════════════════════════╗")
 	fmt.Println("║                                                                  ║")
-	fmt.Println("║  🧠  NEXUS CORTEX COGNITIVE TRAINER & CURRICULUM SCHEDULER       ║")
+	fmt.Println("║  🧠  ILARIA COGNITIVE TRAINER & CURRICULUM SCHEDULER       ║")
 	fmt.Println("║                                                                  ║")
 	fmt.Println("╚══════════════════════════════════════════════════════════════════╝")
 	fmt.Println()

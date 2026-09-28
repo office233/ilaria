@@ -21,7 +21,7 @@ package cortex
 import (
 	"fmt"
 
-	"nexus-cortex/cortex/compute"
+	"ilaria/cortex/compute"
 )
 
 // bitLinearGPUImpl implements bitLinearGPU with a resident cuBLAS int8

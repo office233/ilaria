@@ -20,11 +20,11 @@ Serviciul Ilaria folosit de E2E este o fixture explicită, nu modelul real. Nici
 
 ## Test separat cu model real
 
-După ce agentul Nexus pornește serviciul cu un checkpoint declarat:
+După ce agentul Ilaria pornește serviciul cu un checkpoint declarat:
 
 ```powershell
 $env:SWYPIK_ILARIA_TEST_URL = 'http://127.0.0.1:8091'
-go test ./core/ilaria -run TestLiveNexusBackend -v -count=1
+go test ./core/ilaria -run TestLiveIlariaBackend -v -count=1
 Remove-Item Env:SWYPIK_ILARIA_TEST_URL
 ```
 

@@ -8,7 +8,7 @@ import (
 	"math/rand"
 	"testing"
 
-	"nexus-cortex/cortex/compute"
+	"ilaria/cortex/compute"
 )
 
 // TestMatMulGPUMatchesCPU runs the same matmul on CPU and on GPU

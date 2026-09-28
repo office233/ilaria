@@ -11,7 +11,7 @@ import (
 	"testing"
 )
 
-func TestRequestFitsNexusLimitByDroppingOldestCompleteTurns(t *testing.T) {
+func TestRequestFitsIlariaLimitByDroppingOldestCompleteTurns(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body, _ := io.ReadAll(r.Body)
 		if len(body) > 64*1024 {
@@ -41,7 +41,7 @@ func TestRequestFitsNexusLimitByDroppingOldestCompleteTurns(t *testing.T) {
 	}
 }
 
-func TestInvalidRequestNeverReachesNexus(t *testing.T) {
+func TestInvalidRequestNeverReachesIlaria(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { t.Error("invalid request reached server") }))
 	defer server.Close()
 	backend := NewLocalBackend(server.URL)

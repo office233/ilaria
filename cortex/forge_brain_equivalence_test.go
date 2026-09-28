@@ -31,16 +31,16 @@ type brainLogitsRef struct {
 // pipeline (transformer.nxtf + tokenizer.json), against a reference
 // dump produced by `python forge/dump_logits.py`.
 //
-// Skipped unless NEXUS_BRAIN_DIR points at a directory containing
+// Skipped unless ILARIA_BRAIN_DIR points at a directory containing
 // transformer.nxtf, tokenizer.json and logits_ref.json — so CI without
 // a real trained brain (or without Python) still passes.
 //
 //	python forge/dump_logits.py --brain data/forge/brain-a --out data/forge/brain-a/logits_ref.json
-//	NEXUS_BRAIN_DIR=data/forge/brain-a go test ./cortex -run TestForgeBrainEquivalence -v
+//	ILARIA_BRAIN_DIR=data/forge/brain-a go test ./cortex -run TestForgeBrainEquivalence -v
 func TestForgeBrainEquivalence(t *testing.T) {
-	dir := os.Getenv("NEXUS_BRAIN_DIR")
+	dir := os.Getenv("ILARIA_BRAIN_DIR")
 	if dir == "" {
-		t.Skip("NEXUS_BRAIN_DIR not set — skipping real-brain equivalence check")
+		t.Skip("ILARIA_BRAIN_DIR not set — skipping real-brain equivalence check")
 	}
 
 	nxtfPath := filepath.Join(dir, "transformer.nxtf")
@@ -48,7 +48,7 @@ func TestForgeBrainEquivalence(t *testing.T) {
 	refPath := filepath.Join(dir, "logits_ref.json")
 	for _, p := range []string{nxtfPath, tokPath, refPath} {
 		if _, err := os.Stat(p); err != nil {
-			t.Skipf("NEXUS_BRAIN_DIR=%s missing %s (%v) — run: python forge/dump_logits.py --brain %s --out %s",
+			t.Skipf("ILARIA_BRAIN_DIR=%s missing %s (%v) — run: python forge/dump_logits.py --brain %s --out %s",
 				dir, filepath.Base(p), err, dir, refPath)
 		}
 	}

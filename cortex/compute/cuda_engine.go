@@ -5,7 +5,7 @@ package compute
 
 /*
 #cgo CFLAGS: -I${SRCDIR}/cuda
-#cgo LDFLAGS: -L${SRCDIR}/cuda -lcuda_nexus
+#cgo LDFLAGS: -L${SRCDIR}/cuda -lcuda_ilaria
 #include "cuda_bridge.h"
 #include <stdlib.h>
 */
@@ -34,7 +34,7 @@ func NewCUDAEngine() *CUDAEngine {
 
 // Init initializes the CUDA device and context.
 func (e *CUDAEngine) Init() error {
-	ret := C.nexus_cuda_init(C.int(e.deviceID))
+	ret := C.ilaria_cuda_init(C.int(e.deviceID))
 	if ret != 0 {
 		return fmt.Errorf("CUDA initialization failed (device %d)", e.deviceID)
 	}
@@ -43,7 +43,7 @@ func (e *CUDAEngine) Init() error {
 
 // Close releases CUDA resources.
 func (e *CUDAEngine) Close() {
-	C.nexus_cuda_close()
+	C.ilaria_cuda_close()
 }
 
 // ForwardSparse performs a GPU-accelerated ternary neural layer forward pass.
@@ -81,7 +81,7 @@ func (e *CUDAEngine) ForwardSparse(
 	}
 	output32 := make([]int32, outputSize)
 
-	ret := C.nexus_cuda_forward_sparse(
+	ret := C.ilaria_cuda_forward_sparse(
 		(*C.uint32_t)(unsafe.Pointer(&activeIndices[0])),
 		(*C.int32_t)(unsafe.Pointer(&activeValues32[0])),
 		C.uint32_t(len(activeIndices)),
@@ -127,7 +127,7 @@ func (e *CUDAEngine) BatchSDRSimilarity(querySDR []uint32, memorySDRs [][]uint32
 
 	results := make([]uint8, numMemories)
 
-	ret := C.nexus_cuda_batch_sdr_similarity(
+	ret := C.ilaria_cuda_batch_sdr_similarity(
 		(*C.uint32_t)(unsafe.Pointer(&querySDR[0])),
 		(*C.uint32_t)(unsafe.Pointer(&flat[0])),
 		(*C.uint8_t)(unsafe.Pointer(&results[0])),

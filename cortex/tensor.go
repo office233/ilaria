@@ -5,7 +5,7 @@ import (
 	"math"
 	"math/rand"
 
-	"nexus-cortex/cortex/compute"
+	"ilaria/cortex/compute"
 )
 
 // gpuMatmulMinFlops is the lower flop threshold (M*N*K) at which a
@@ -19,7 +19,7 @@ import (
 const gpuMatmulMinFlops = 1 << 16 // 65536
 
 // ─────────────────────────────────────────────────────────────────────
-// Tensor — Minimal Tensor Library for Nexus Cortex
+// Tensor — Minimal Tensor Library for Ilaria
 // ─────────────────────────────────────────────────────────────────────
 //
 // A lightweight tensor implementation providing the operations needed

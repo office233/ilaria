@@ -11,8 +11,8 @@ mkdir -p "$D/arena"
 cd /content || exit 1
 nvidia-smi --query-gpu=name,memory.total --format=csv
 
-[ -d /content/nexus ] || { echo "cloning repo ($(date +%H:%M:%S))"; git clone --depth 1 https://github.com/office233/ilaria /content/nexus || exit 1; }
-cd /content/nexus || exit 1
+[ -d /content/ilaria ] || { echo "cloning repo ($(date +%H:%M:%S))"; git clone --depth 1 https://github.com/office233/ilaria /content/ilaria || exit 1; }
+cd /content/ilaria || exit 1
 
 pip install -q -U lm_eval "huggingface_hub[cli]>=1.5,<2"  # hub 2.x breaks the preinstalled transformers (requires <2.0)
 

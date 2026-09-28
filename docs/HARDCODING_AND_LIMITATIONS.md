@@ -1,6 +1,6 @@
-# Hardcodări, Euristici și Limitări în Nexus Cortex
+# Hardcodări, Euristici și Limitări în Ilaria
 
-> **Scop**: Acest document declară toate valorile implicite de operare, pragurile euristice, datele de seed (inițializare) și limitările structurale cunoscute din codebase-ul **Nexus Cortex**. Nimic nu este ascuns — acesta este inventarul onest și complet al sistemului.
+> **Scop**: Acest document declară toate valorile implicite de operare, pragurile euristice, datele de seed (inițializare) și limitările structurale cunoscute din codebase-ul **Ilaria**. Nimic nu este ascuns — acesta este inventarul onest și complet al sistemului.
 
 ---
 
@@ -57,7 +57,7 @@ Motorul de raționament utilizează reguli stricte și potriviri de tip pattern-
 | **Timeout HTTP Web** | `10s` | `Config.WebLearnerTimeoutSecs` | Limita de timp pentru interogările externe efectuate. |
 | **Rată Limită HTTP** | `2s` | `Config.WebLearnerRateLimitMs` | Pauza obligatorie între request-urile către Wikipedia. |
 | **Limită Corp Request** | `5 MB` | `Config.WebLearnerBodyLimitMB` | Dimensiunea maximă a răspunsurilor HTTP descărcate. |
-| **User-Agent HTTP** | `NexusCortex/1.0 (autonomous learner)` | `Config.WebLearnerUserAgent` | Identificatorul HTTP trimis în headerele de request. |
+| **User-Agent HTTP** | `Ilaria/1.0 (autonomous learner)` | `Config.WebLearnerUserAgent` | Identificatorul HTTP trimis în headerele de request. |
 | **Timeout WebGPU** | `5s` | `Config.WebGPUTimeoutSecs` | Timpul maxim de așteptare pentru alocările WebGPU. |
 | **Adam β1** | `0.9` | `Config.AdamBeta1` | 1st-moment decay pentru optimizer-ul transformer. |
 | **Adam β2** | `0.999` | `Config.AdamBeta2` | 2nd-moment decay pentru optimizer-ul transformer. |
@@ -69,13 +69,13 @@ Motorul de raționament utilizează reguli stricte și potriviri de tip pattern-
 Toate aceste câmpuri pot fi modificate fără recompilare prin editarea unui fișier de configurare JSON. Loader-ul este implementat în [config_loader.go](../cortex/config_loader.go) cu următorul model de precedență:
 
 1. Flag CLI `-config <path>` (orice binar `cmd/*`).
-2. Variabilă de mediu `NEXUS_CORTEX_CONFIG=<path>`.
-3. Auto-discovery: `./nexus-cortex.json`, apoi `./config.json`.
+2. Variabilă de mediu `ILARIA_CONFIG=<path>`.
+3. Auto-discovery: `./ilaria.json`, apoi `./config.json`.
 4. Dacă niciuna nu există, `DefaultConfig()` rămâne sursa unică.
 
 Modelul de merge: orice câmp absent din JSON păstrează valoarea din `DefaultConfig()`. Operatorul poate suprascrie selectiv doar parametrii care îl interesează. La final, `Validate()` rulează automat și respinge configurațiile incoerente.
 
-Exemplu minim (`nexus-cortex.json`):
+Exemplu minim (`ilaria.json`):
 
 ```json
 {
@@ -253,7 +253,7 @@ Adăugat în Mai 2026 după ce cursa D a eșuat silent la prima lansare cu exit 
 
 ### Problema
 
-Binarele compilate cu `go build -tags cuda ./cmd/...` au o dependență CGO de `cuda_nexus.dll` (wrapper-ul local din `cortex/compute/cuda/cuda_nexus.dll`). La runtime, Windows caută acest DLL în ordinea standard de DLL Search:
+Binarele compilate cu `go build -tags cuda ./cmd/...` au o dependență CGO de `cuda_ilaria.dll` (wrapper-ul local din `cortex/compute/cuda/cuda_ilaria.dll`). La runtime, Windows caută acest DLL în ordinea standard de DLL Search:
 
 1. Directorul executabilului
 2. `C:\Windows\System32`
@@ -269,11 +269,11 @@ Cursa C a fost lansată cu binarul **co-localizat în rădăcina proiectului** (
 
 ### Workaround actual (Mai 2026)
 
-Manual: copiază `cuda_nexus.dll` lângă orice binar care folosește CUDA:
+Manual: copiază `cuda_ilaria.dll` lângă orice binar care folosește CUDA:
 
 ```powershell
-Copy-Item "D:\Nexus cortex\cortex\compute\cuda\cuda_nexus.dll" `
-          "D:\Nexus cortex\bin-cursa-D\"
+Copy-Item "D:\Ilaria cortex\cortex\compute\cuda\cuda_ilaria.dll" `
+          "D:\Ilaria cortex\bin-cursa-D\"
 ```
 
 Verificare rapidă: `& binar.exe --help` întoarce `exit 0` cu output, NU `exit -1073741515` silent.
@@ -284,10 +284,10 @@ Două opțiuni curate, neimplementate încă:
 
 1. **Build script `scripts/build-cuda-cmd.ps1`** care:
    - Rulează `go build -tags cuda -o <out>`
-   - Copiază automat `cortex/compute/cuda/cuda_nexus.dll` lângă executabil
+   - Copiază automat `cortex/compute/cuda/cuda_ilaria.dll` lângă executabil
    - Refuză să producă binarul dacă DLL-ul nu există (forțează `build.bat` întâi)
 
-2. **Embed DLL în binar** prin Go 1.16+ `embed` + extract-on-first-run în `os.TempDir()/nexus-cortex/` + `LoadLibrary` explicit. Mai complex, dar elimină toată gestionarea manuală.
+2. **Embed DLL în binar** prin Go 1.16+ `embed` + extract-on-first-run în `os.TempDir()/ilaria/` + `LoadLibrary` explicit. Mai complex, dar elimină toată gestionarea manuală.
 
 ### De ce e o hardcodare ascunsă
 
@@ -336,10 +336,10 @@ Generation `"9. In the average of 1513 square- 24 million for 94. In the two thr
 
 ---
 
-## 12. Ce NU Este Hardcodat în Nexus Cortex
+## 12. Ce NU Este Hardcodat în Ilaria
 
 * **Fără Secrete sau Token-uri de API**: Codebase-ul nu conține chei private, parole sau token-uri de autentificare expuse în cod.
-* **Fără Căi Absolute de Sistem în Codul Go**: Nu există dependențe de structuri absolute de directoare de pe mașina de producție în codul Go; toate rutele de stocare implicite sunt relative (`./data/cortex`). Singura excepție istorică (`cortex/compute/cuda/build.bat`) a fost convertită la auto-detecție prin `%CUDA_PATH%` și `vswhere.exe`. **Caveat runtime**: binarele compilate cu `-tags cuda` au dependență implicită de `cuda_nexus.dll` — vezi §10.
+* **Fără Căi Absolute de Sistem în Codul Go**: Nu există dependențe de structuri absolute de directoare de pe mașina de producție în codul Go; toate rutele de stocare implicite sunt relative (`./data/cortex`). Singura excepție istorică (`cortex/compute/cuda/build.bat`) a fost convertită la auto-detecție prin `%CUDA_PATH%` și `vswhere.exe`. **Caveat runtime**: binarele compilate cu `-tags cuda` au dependență implicită de `cuda_ilaria.dll` — vezi §10.
 * **Ponderi Ne-Hardcodate**: Nu există coeficienți neurali statici definiți în cod; toate ponderile sunt fie generate stochastic la inițializare, fie ajustate dinamic prin reguli de plasticitate.
 * **Reproductibilitate**: RNG-urile principale (`cmd/train`, `cmd/cortex`, `cortex/ternary_train`) sunt seed-uite din `cfg.Seed` (default `42`), nu din `time.Now()`. `TernaryLayer` are câmp `PRNGState` persistat între apeluri pentru STDP determinist. Modificat după auditul intern din 2026.
 * **Hyperparametri Adam Configurabili**: `Beta1`, `Beta2`, `Epsilon`, `MaxGradNorm` sunt expuse ca câmpuri `Config` (`AdamBeta1`, etc.) — pot fi suprascrise prin JSON config fără recompilare. `DefaultAdamConfig()` derivă din `DefaultConfig()`, sursă unică de adevăr.

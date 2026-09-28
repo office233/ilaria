@@ -13,7 +13,7 @@ package cortex
 // Go forward — without the 2.4B checkpoint, so it runs in CI with no
 // Python and no GPU.
 //
-// TestBitNetEquivalence is skipped unless NEXUS_BITNET_DIR (an absolute
+// TestBitNetEquivalence is skipped unless ILARIA_BITNET_DIR (an absolute
 // path) is set to a directory containing bitnet.nxtf + logits_ref.json —
 // produced by:
 //
@@ -145,14 +145,14 @@ func TestBitNetTinyEquivalence(t *testing.T) {
 }
 
 // TestBitNetEquivalence checks the real 2.4B microsoft/bitnet-b1.58-2B-4T
-// checkpoint. Skipped unless NEXUS_BITNET_DIR points at a directory with
+// checkpoint. Skipped unless ILARIA_BITNET_DIR points at a directory with
 // bitnet.nxtf + logits_ref.json (see file doc comment for how to produce
 // them) — this test never touches the network and never builds the NXTF
 // file itself, so it stays fast and deterministic once the fixtures exist.
 func TestBitNetEquivalence(t *testing.T) {
-	dir := os.Getenv("NEXUS_BITNET_DIR")
+	dir := os.Getenv("ILARIA_BITNET_DIR")
 	if dir == "" {
-		t.Skip("NEXUS_BITNET_DIR not set — skipping real-checkpoint equivalence test")
+		t.Skip("ILARIA_BITNET_DIR not set — skipping real-checkpoint equivalence test")
 	}
 	nxtfPath := filepath.Join(dir, "bitnet.nxtf")
 	jsonPath := filepath.Join(dir, "logits_ref.json")

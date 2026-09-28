@@ -1,6 +1,6 @@
 # Tehnologii alese după testarea OS-ului
 
-27 septembrie 2026. Cercetare în documentația oficială. Nu există o tehnologie universal „cea mai bună”; alegem după defectele și cerințele măsurate. Ilaria/Nexus rămâne singurul model.
+27 septembrie 2026. Cercetare în documentația oficială. Nu există o tehnologie universal „cea mai bună”; alegem după defectele și cerințele măsurate. Ilaria/Ilaria rămâne singurul model.
 
 | Tehnologie | Problema rezolvată | Decizie |
 | --- | --- | --- |

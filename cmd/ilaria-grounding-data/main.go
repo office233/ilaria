@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"nexus-cortex/cortex"
+	"ilaria/cortex"
 )
 
 type message struct {

@@ -23,7 +23,7 @@ import (
 	"math"
 	"math/rand"
 
-	"nexus-cortex/cortex/compute"
+	"ilaria/cortex/compute"
 )
 
 // KVCache stores accumulated keys and values for one MultiHeadAttention

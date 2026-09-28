@@ -23,7 +23,7 @@ import (
 	"math/rand"
 	"strings"
 
-	"nexus-cortex/cortex"
+	"ilaria/cortex"
 )
 
 func main() {

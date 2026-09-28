@@ -49,6 +49,6 @@ Weights are copied to `/content/ilaria-project-v6.json` and `.safetensors` for d
 - Standalone notebook: `forge/colab/Ilaria_Project_V6.ipynb` (requires v5 parent in Drive).
 - Evaluation extraction: `forge/colab/extract_project_v6.py`.
 - Executable code scoring: `forge/colab/check_project_code_v6.py`.
-- `go vet ./...` and `go test -count=1 -timeout 180s ./...` passed in Nexus during preparation. Colab cell syntax was validated locally.
+- `go vet ./...` and `go test -count=1 -timeout 180s ./...` passed in Ilaria during preparation. Colab cell syntax was validated locally.
 
 This adapter is experimental. Scientific knowledge, broad repository competence, live OS actions, and general coding ability are not established by this pilot.

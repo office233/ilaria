@@ -41,7 +41,7 @@ const (
 	defaultBackoff   = 500 * time.Millisecond
 	defaultTimeout   = 20 * time.Second
 	maxAttempts      = 3
-	defaultUserAgent = "NexusCortex-Ilaria-biomed/1.0 (+https://github.com/office233/Nexuscortex)"
+	defaultUserAgent = "Ilaria-Ilaria-biomed/1.0 (+https://github.com/office233/Ilariacortex)"
 )
 
 // Client is the single gateway to the outside world: allow-list, per-host

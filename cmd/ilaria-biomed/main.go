@@ -1,12 +1,12 @@
-// nexus-biomed — command-line front end for Ilaria's biomedical organ.
+// ilaria-biomed — command-line front end for Ilaria's biomedical organ.
 //
 // Every answer is assembled from live public sources (RxNorm, ChEMBL,
 // openFDA, Open Targets, PubMed), cached under -cache-dir, and printed with
 // the evidence that produced it. Nothing is hardcoded; what the sources do
 // not know is listed under "Could not determine".
 //
-//	go run ./cmd/nexus-biomed -query "gefitinib și warfarină la pacient cu EGFR T790M"
-//	go run ./cmd/nexus-biomed -drug gefitinib -patient patient.json -dose 250 -interval 24 -json
+//	go run ./cmd/ilaria-biomed -query "gefitinib și warfarină la pacient cu EGFR T790M"
+//	go run ./cmd/ilaria-biomed -drug gefitinib -patient patient.json -dose 250 -interval 24 -json
 package main
 
 import (
@@ -19,8 +19,8 @@ import (
 	"strings"
 	"time"
 
-	"nexus-cortex/cortex"
-	"nexus-cortex/cortex/biomed"
+	"ilaria/cortex"
+	"ilaria/cortex/biomed"
 )
 
 type multiFlag []string
@@ -44,7 +44,7 @@ func main() {
 	flag.Parse()
 
 	if *query == "" && len(drugs) == 0 {
-		fmt.Fprintln(os.Stderr, "nexus-biomed: give -query or at least one -drug")
+		fmt.Fprintln(os.Stderr, "ilaria-biomed: give -query or at least one -drug")
 		flag.Usage()
 		os.Exit(2)
 	}
@@ -76,11 +76,11 @@ func main() {
 	if err != nil {
 		switch {
 		case errors.Is(err, biomed.ErrOffline):
-			fmt.Fprintln(os.Stderr, "nexus-biomed: a source is unreachable and not cached:", err)
+			fmt.Fprintln(os.Stderr, "ilaria-biomed: a source is unreachable and not cached:", err)
 		case errors.Is(err, biomed.ErrNotFound):
-			fmt.Fprintln(os.Stderr, "nexus-biomed: no drug could be identified:", err)
+			fmt.Fprintln(os.Stderr, "ilaria-biomed: no drug could be identified:", err)
 		default:
-			fmt.Fprintln(os.Stderr, "nexus-biomed:", err)
+			fmt.Fprintln(os.Stderr, "ilaria-biomed:", err)
 		}
 		os.Exit(1)
 	}
@@ -119,6 +119,6 @@ func loadPatient(path string) (*biomed.Patient, error) {
 }
 
 func fail(err error) {
-	fmt.Fprintln(os.Stderr, "nexus-biomed:", err)
+	fmt.Fprintln(os.Stderr, "ilaria-biomed:", err)
 	os.Exit(1)
 }

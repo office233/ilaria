@@ -1,6 +1,6 @@
 package main
 
-// gpt2-import — load pretrained GPT-2-family weights into a Nexus
+// gpt2-import — load pretrained GPT-2-family weights into a Ilaria
 // MiniTransformer checkpoint, skipping local pre-training entirely.
 //
 // WHY THIS IS POSSIBLE
@@ -39,7 +39,7 @@ import (
 	"sort"
 	"time"
 
-	cortex "nexus-cortex/cortex"
+	cortex "ilaria/cortex"
 )
 
 // ─────────────────────────────────────────────────────────────────────

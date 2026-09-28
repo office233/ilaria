@@ -26,13 +26,13 @@ import (
 // prima cale existentă câștigă.
 //
 // Convenția: fișierul de config trăiește în directorul curent de lucru
-// (lângă binarul / scriptul lansat) și se numește "nexus-cortex.json"
+// (lângă binarul / scriptul lansat) și se numește "ilaria.json"
 // sau, ca alternativă, "config.json". Această convenție este suficient
 // de strictă pentru reproducibilitate și suficient de permisivă pentru
 // experimente locale.
 func DefaultConfigPaths() []string {
 	return []string{
-		"nexus-cortex.json",
+		"ilaria.json",
 		"config.json",
 	}
 }
@@ -40,12 +40,12 @@ func DefaultConfigPaths() []string {
 // ConfigEnvVar este numele variabilei de mediu care poate înlocui căile
 // implicite. Setarea ei la calea unui fișier JSON forțează LoadConfig să
 // folosească acel fișier (echivalent cu -config <path>).
-const ConfigEnvVar = "NEXUS_CORTEX_CONFIG"
+const ConfigEnvVar = "ILARIA_CONFIG"
 
 // ResolveConfigPath decide ce path de config se folosește. Precedența:
 //
 //  1. explicitPath, dacă e nevid (flag -config de la CLI);
-//  2. $NEXUS_CORTEX_CONFIG, dacă e setată și nevidă;
+//  2. $ILARIA_CONFIG, dacă e setată și nevidă;
 //  3. prima cale din DefaultConfigPaths() care există pe disk;
 //  4. "" (string gol) — indicând că nu există config extern și se va
 //     folosi DefaultConfig() neschimbat.
@@ -142,4 +142,3 @@ func SaveConfig(path string, cfg Config) error {
 	}
 	return nil
 }
-

@@ -2,10 +2,10 @@
 
 ## Verified scope
 
-Nexus contains an actual local BitNet inference engine, Python LoRA training code,
+Ilaria contains an actual local BitNet inference engine, Python LoRA training code,
 multimodal projectors and an executable tool loop. SwypikOS is a Windows desktop
 shell. Its previous canned chat responses have been replaced by a local HTTP
-client for Nexus. The separate code-generation helper still uses templates.
+client for Ilaria. The separate code-generation helper still uses templates.
 The E: Swypik application and MultiERP integrations have not been changed.
 
 This change adds Go CPU and CUDA LoRA application, a loopback inference service,
@@ -20,10 +20,10 @@ to actual model training is still outstanding.
 
 ## Start local inference
 
-From `D:\nexus`, in PowerShell:
+From `D:\ilaria`, in PowerShell:
 
 ```powershell
-go run -tags gpu ./cmd/ilaria-serve -cuda -model D:/nexus/data/forge/bitnet-2b4t/bitnet.nxtf -tokenizer D:/nexus/data/pretrained/bitnet-b1.58-2B-4T/tokenizer.json -port 8091 -max-tokens 128
+go run -tags gpu ./cmd/ilaria-serve -cuda -model D:/ilaria/data/forge/bitnet-2b4t/bitnet.nxtf -tokenizer D:/ilaria/data/pretrained/bitnet-b1.58-2B-4T/tokenizer.json -port 8091 -max-tokens 128
 ```
 
 For CPU, omit both `-tags gpu` and `-cuda`. From `D:\swypik-os`, in another terminal:
@@ -66,7 +66,7 @@ Existing model artifacts were only read for verification. No production model
 training was started and no model artifacts were modified.
 
 Final verification: `go vet ./...` and the full uncached Go test suite passed
-in both projects. Nexus cortex tests completed in 40.482 seconds. All 21 Python
+in both projects. Ilaria cortex tests completed in 40.482 seconds. All 21 Python
 holdout, tool-data, trainer, distributed, LoRA and Stage 2 tests passed. The
 temporary model service was stopped after live verification to release VRAM.
 The symlink-escape test was skipped because this Windows account lacks symlink
@@ -131,8 +131,8 @@ All model files must already be local. The paths below are placeholders for
 curated datasets and a new run directory; these datasets have not been created.
 
 ```powershell
-python -m forge.train_tools --train TRAIN.jsonl --validation VALIDATION.jsonl --llm-dir D:/nexus/data/pretrained/bitnet-b1.58-2B-4T --out RUN_DIR --validate-only
-python -m forge.train_tools --train TRAIN.jsonl --validation VALIDATION.jsonl --llm-dir D:/nexus/data/pretrained/bitnet-b1.58-2B-4T --out RUN_DIR --languages en --steps 1000 --rank 16 --alpha 32 --batch 1 --accum 8
+python -m forge.train_tools --train TRAIN.jsonl --validation VALIDATION.jsonl --llm-dir D:/ilaria/data/pretrained/bitnet-b1.58-2B-4T --out RUN_DIR --validate-only
+python -m forge.train_tools --train TRAIN.jsonl --validation VALIDATION.jsonl --llm-dir D:/ilaria/data/pretrained/bitnet-b1.58-2B-4T --out RUN_DIR --languages en --steps 1000 --rank 16 --alpha 32 --batch 1 --accum 8
 ```
 
 Choose resources after measuring memory on a short real-model pilot; the local
@@ -179,6 +179,6 @@ python -m unittest forge.test_holdout forge.test_tool_data forge.test_train_tool
 
 Run Go vet and tests separately in SwypikOS as well. With the service running,
 set `SWYPIK_ILARIA_TEST_URL=http://127.0.0.1:8091` and run
-`go test ./core/ilaria -run TestLiveNexusBackend -count=1 -v` there. Ordinary test
+`go test ./core/ilaria -run TestLiveIlariaBackend -count=1 -v` there. Ordinary test
 runs skip this live-model check. Lightweight organism tests disable the unrelated
 large fractal subsystem; fractal-specific tests still exercise it at a small size.

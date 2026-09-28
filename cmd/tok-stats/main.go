@@ -1,4 +1,4 @@
-// tok-stats — measure a Nexus tokenizer on held-out text: tokens per
+// tok-stats — measure a Ilaria tokenizer on held-out text: tokens per
 // character (per language file), <UNK> rate, and diacritics round-trip.
 //
 //	go run ./cmd/tok-stats -tokenizer data/tokenizer-ro-en-32k.json -ro file.txt -en file.txt
@@ -12,7 +12,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"nexus-cortex/cortex"
+	"ilaria/cortex"
 )
 
 func main() {

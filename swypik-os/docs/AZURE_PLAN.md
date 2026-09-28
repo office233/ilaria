@@ -7,7 +7,7 @@
 Utilizatorul a confirmat: Colab inițial, apoi 8 NVIDIA H200 prin brev.nvidia.com. Azure găzduiește serviciile OS. Nu solicităm GPU H200 Azure pentru această configurație.
 
 ```text
-SwypikOS Windows ── loopback ── Ilaria/Nexus local
+SwypikOS Windows ── loopback ── Ilaria/Ilaria local
        │
        └── HTTPS autentificat ── Azure: dispozitive/sarcini/versiuni
                                       │
@@ -42,11 +42,11 @@ Inventarul nu este test de sănătate/capacitate. Producția existentă rămâne
 
 VM-ul necesită patching și mentenanță; estimarea include discuri, stocare și trafic. Quota și capacitatea sunt distincte. [Microsoft: Azure VMs](https://learn.microsoft.com/en-us/azure/virtual-machines/overview).
 
-Nu copiem executabilul Windows pe Ubuntu ca soluție de migrare. Coordonatorul cloud este un livrabil nou. Backendul dinamic GPU Go Nexus are build tags `gpu && windows`; compatibilitatea Linux trebuie demonstrată de Nexus înaintea servirii GPU în Brev.
+Nu copiem executabilul Windows pe Ubuntu ca soluție de migrare. Coordonatorul cloud este un livrabil nou. Backendul dinamic GPU Go Ilaria are build tags `gpu && windows`; compatibilitatea Linux trebuie demonstrată de Ilaria înaintea servirii GPU în Brev.
 
 ## Colab → Brev
 
-Nexus deține rețeta de training: dependențe fixate, dataset manifest, checkpoint/hash, tokenizer, configurație, optimizer/scheduler și RNG pentru resume. OS consumă starea joburilor și rezultatele.
+Ilaria deține rețeta de training: dependențe fixate, dataset manifest, checkpoint/hash, tokenizer, configurație, optimizer/scheduler și RNG pentru resume. OS consumă starea joburilor și rezultatele.
 
 Verificare pe instanța reală: 8 H200, VRAM, driver/CUDA, topologie interconectare și test distribuit cu resume. Rezervarea, regiunea și capacitatea nu sunt încă verificate în cont. [NVIDIA Brev Quickstart](https://docs.nvidia.com/brev/getting-started/quickstart).
 
@@ -55,7 +55,7 @@ Checkpointurile au copie independentă și restaurare testată. Workspace-ul Bre
 ## Ordinea migrării
 
 1. Închidem integrarea locală și testele OS.
-2. Implementăm coordonatorul minim și protocolul worker, cu contract Nexus.
+2. Implementăm coordonatorul minim și protocolul worker, cu contract Ilaria.
 3. Confirmăm regiunea Brev, costul Azure, transferurile și retenția checkpointurilor. Sunt costuri de infrastructură, nu bugete de tokenuri.
 4. Pregătim infrastructură declarativă pentru VM, rețea, identitate, stocare, monitorizare și backup.
 5. Deployment în grupul nou; test un dispozitiv, reboot, retry, revocare, backup/restore.

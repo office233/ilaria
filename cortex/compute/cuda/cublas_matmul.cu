@@ -1,8 +1,8 @@
 // cublas_matmul.cu — float32 dense matmul bridge backed by cuBLAS sgemm.
 //
 // We expose two entry points to Go:
-//   nexus_cublas_sgemm   : C = A * B
-//   nexus_cublas_sgemm_nt: C = A * B^T  (B is given as row-major [N,K])
+//   ilaria_cublas_sgemm   : C = A * B
+//   ilaria_cublas_sgemm_nt: C = A * B^T  (B is given as row-major [N,K])
 //
 // Row-major vs column-major trick
 // --------------------------------
@@ -31,7 +31,7 @@ cublasHandle_t g_handle = nullptr;
 bool           g_inited = false;
 
 // ─── Resident weight registry ────────────────────────────────────────
-// Weights uploaded once via nexus_cublas_upload_weight live here for
+// Weights uploaded once via ilaria_cublas_upload_weight live here for
 // the process lifetime (or until freed). Handles are indices; freed
 // slots are reused. Access is serialised by the Go-side mutex, same as
 // every other cuBLAS entry point.
@@ -83,7 +83,7 @@ inline int check(cublasStatus_t s) {
 
 extern "C" {
 
-NEXUS_API int nexus_cublas_init(int device_id) {
+ILARIA_API int ilaria_cublas_init(int device_id) {
     if (g_inited) return 0;
     if (check(cudaSetDevice(device_id)) != 0) return 1;
     if (check(cublasCreate(&g_handle)) != 0) return 2;
@@ -91,7 +91,7 @@ NEXUS_API int nexus_cublas_init(int device_id) {
     return 0;
 }
 
-NEXUS_API void nexus_cublas_close(void) {
+ILARIA_API void ilaria_cublas_close(void) {
     freeBuf(g_bufA);
     freeBuf(g_bufB);
     freeBuf(g_bufC);
@@ -108,7 +108,7 @@ NEXUS_API void nexus_cublas_close(void) {
     g_inited = false;
 }
 
-NEXUS_API int nexus_cublas_upload_weight(const float* data, int64_t count) {
+ILARIA_API int ilaria_cublas_upload_weight(const float* data, int64_t count) {
     if (!g_inited) return -1;
     if (data == nullptr || count <= 0) return -2;
 
@@ -132,13 +132,13 @@ NEXUS_API int nexus_cublas_upload_weight(const float* data, int64_t count) {
     return static_cast<int>(g_weights.size() - 1);
 }
 
-NEXUS_API void nexus_cublas_free_weight(int handle) {
+ILARIA_API void ilaria_cublas_free_weight(int handle) {
     if (handle < 0 || static_cast<size_t>(handle) >= g_weights.size()) return;
     if (g_weights[handle].ptr) cudaFree(g_weights[handle].ptr);
     g_weights[handle] = {nullptr, 0};
 }
 
-NEXUS_API int nexus_cublas_update_weight(int handle, const float* data, int64_t count) {
+ILARIA_API int ilaria_cublas_update_weight(int handle, const float* data, int64_t count) {
     if (!g_inited) return -1;
     if (handle < 0 || static_cast<size_t>(handle) >= g_weights.size()) return -5;
     ResidentWeight& w = g_weights[handle];
@@ -151,10 +151,10 @@ NEXUS_API int nexus_cublas_update_weight(int handle, const float* data, int64_t 
 }
 
 // Y[M,N] = X[M,K] * W (or * W^T). Same column-major reformulations as
-// nexus_cublas_sgemm / _nt above — the only difference is that W is
+// ilaria_cublas_sgemm / _nt above — the only difference is that W is
 // already on the device, so per call only X (M*K floats) goes up and Y
 // (M*N floats) comes down.
-NEXUS_API int nexus_cublas_sgemm_resident(
+ILARIA_API int ilaria_cublas_sgemm_resident(
     int weightHandle, const float* X, float* Y,
     int M, int N, int K, int transW)
 {
@@ -201,7 +201,7 @@ NEXUS_API int nexus_cublas_sgemm_resident(
 // Trick: ask cuBLAS to compute C_col[N,M] = B_col[N,K] * A_col[K,M] using
 // no transpositions. Since column-major(X[r,c]) = row-major(X^T[c,r]),
 // the bytes we write back are exactly the row-major C[M,N] we want.
-NEXUS_API int nexus_cublas_sgemm(
+ILARIA_API int ilaria_cublas_sgemm(
     const float* A, const float* B, float* C,
     int M, int N, int K)
 {
@@ -255,7 +255,7 @@ NEXUS_API int nexus_cublas_sgemm(
 //
 //   sgemm(opA=T on B, opB=N on A, m=N, n=M, k=K,
 //         A=B (ld=K), B=A (ld=K), C (ld=N))
-NEXUS_API int nexus_cublas_sgemm_nt(
+ILARIA_API int ilaria_cublas_sgemm_nt(
     const float* A, const float* B, float* C,
     int M, int N, int K)
 {

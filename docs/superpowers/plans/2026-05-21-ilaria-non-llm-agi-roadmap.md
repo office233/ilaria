@@ -1,12 +1,12 @@
-# Nexus Cortex Non-LLM AGI Roadmap Implementation Plan
+# Ilaria Non-LLM AGI Roadmap Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Turn Nexus Cortex from a hardcoded neural demo into a measurable non-LLM cognitive engine that can improve through data, memory, feedback, and benchmarks.
+**Goal:** Turn Ilaria from a hardcoded neural demo into a measurable non-LLM cognitive engine that can improve through data, memory, feedback, and benchmarks.
 
 **Architecture:** Keep the project non-LLM, but stop treating architecture names as proof of intelligence. Build a testable core: deterministic config, clean data pipeline, native sequence prediction, semantic memory, feedback learning, evaluation harness, and scaling path.
 
-**Tech Stack:** Go 1.26, existing `nexus-cortex/cortex` package, binary persistence, CLI tools, JSON/JSONL corpora, Go tests, `go vet`, `staticcheck`.
+**Tech Stack:** Go 1.26, existing `ilaria/cortex` package, binary persistence, CLI tools, JSON/JSONL corpora, Go tests, `go vet`, `staticcheck`.
 
 ---
 
@@ -14,11 +14,11 @@
 
 The target is not "declare AGI"; the target is "prove capability". Each phase must add a measurable behavior that was not present before. A phase is complete only when it has tests, metrics, and a before/after score.
 
-First win condition: Nexus must stop echoing the prompt and must answer from learned memory with confidence scores that match reality.
+First win condition: Ilaria must stop echoing the prompt and must answer from learned memory with confidence scores that match reality.
 
-Second win condition: Nexus must learn from a held-out corpus and improve next-token/next-concept prediction without code changes.
+Second win condition: Ilaria must learn from a held-out corpus and improve next-token/next-concept prediction without code changes.
 
-Third win condition: Nexus must beat small non-LLM baselines first: n-gram, Markov, TF-IDF retrieval, and simple RNN-style sequence memory if added later.
+Third win condition: Ilaria must beat small non-LLM baselines first: n-gram, Markov, TF-IDF retrieval, and simple RNN-style sequence memory if added later.
 
 Only after those wins should it be compared to a classical LLM.
 
@@ -261,7 +261,7 @@ Only after those wins should it be compared to a classical LLM.
 
 ## Phase 8: AGI Gate
 
-Nexus can be called "AGI candidate" only when it passes all gates below without changing code between tasks:
+Ilaria can be called "AGI candidate" only when it passes all gates below without changing code between tasks:
 
 - No prompt echo on unknown questions.
 - Learns new facts from text and recalls them later.

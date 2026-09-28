@@ -41,8 +41,8 @@ import (
 	"syscall"
 	"time"
 
-	"nexus-cortex/cortex"
-	"nexus-cortex/cortex/compute"
+	"ilaria/cortex"
+	"ilaria/cortex/compute"
 )
 
 type trainConfig struct {
@@ -471,8 +471,8 @@ func appendEvalHistory(path string, rec autoEvalRecord) error {
 }
 
 func run(cfg trainConfig) error {
-	// Architecture config: -org-config flag > NEXUS_CORTEX_CONFIG env >
-	// ./nexus-cortex.json auto-discovery > defaults. Until 2026-09 this
+	// Architecture config: -org-config flag > ILARIA_CONFIG env >
+	// ./ilaria.json auto-discovery > defaults. Until 2026-09 this
 	// was hardwired to DefaultConfig(), which silently ignored any
 	// architecture JSON — cursa E′'s RoPE/SwiGLU flags never arrived.
 	orgCfgPath, orgCfgSource := cortex.ResolveConfigPath(cfg.orgConfigPath)

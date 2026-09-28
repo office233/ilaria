@@ -3,8 +3,8 @@ package cortex
 import (
 	"encoding/json"
 	"fmt"
+	"ilaria/cortex/compute"
 	"math/rand"
-	"nexus-cortex/cortex/compute"
 	"os"
 	"path/filepath"
 	"strings"

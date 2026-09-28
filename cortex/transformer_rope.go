@@ -6,7 +6,7 @@ package cortex
 // WHY CONFIG-GATED AND OFF BY DEFAULT: the imported GPT-2-family
 // checkpoints were trained with learned absolute positions — enabling
 // RoPE under them would scramble their attention. RoPE is for models
-// trained from scratch in Nexus (cursa E′+), where it removes the
+// trained from scratch in Ilaria (cursa E′+), where it removes the
 // learned position table and the hard MaxSeqLen extrapolation wall.
 //
 // MECHANICS: each head's Q and K rows are rotated pairwise by a

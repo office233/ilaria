@@ -9,7 +9,7 @@ package cortex
 // is only useful if we tokenize EXACTLY the way GPT-2 was trained:
 // same byte→unicode alphabet, same pre-tokenization splits, same merge
 // ranks. This file adds that mode without disturbing the existing
-// char-level tokenizer that Nexus trains from scratch.
+// char-level tokenizer that Ilaria trains from scratch.
 //
 // The merge machinery (applyBPEMerges + mergeRank) is shared: GPT-2's
 // merges.txt is just a ranked merge list, which is the same structure

@@ -2,7 +2,7 @@ package main
 
 // tinystories-convert — turn the TinyStories plain-text dumps
 // (stories separated by <|endoftext|> lines) into the {"text": ...}
-// JSONL the Nexus corpus loaders read.
+// JSONL the Ilaria corpus loaders read.
 //
 // WHY A CAP: cortex-broca-train tokenizes the whole corpus into RAM.
 // The full train split holds ~2.1M stories; a 40k-step run with batch 8

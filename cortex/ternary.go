@@ -358,8 +358,6 @@ func (l *TernaryLayer) ForwardSparse(activeIndices []int, activeValues []int16) 
 	return output, nil
 }
 
-
-
 // MemoryBytes returns the total memory used by this layer in bytes.
 func (l *TernaryLayer) MemoryBytes() int {
 	return len(l.Tiles)*4 + len(l.Bias)*2
@@ -402,7 +400,7 @@ func (l *TernaryLayer) MarshalRGBA32() []byte {
 	totalSize := headerSize + len(l.Tiles)*4
 	buf := make([]byte, totalSize)
 
-	// Magic: "NXT1" (Nexus Ternary v1)
+	// Magic: "NXT1" (Ilaria Ternary v1)
 	copy(buf[0:4], []byte("NXT1"))
 	binary.LittleEndian.PutUint32(buf[4:8], uint32(l.InputSize))
 	binary.LittleEndian.PutUint32(buf[8:12], uint32(l.OutputSize))

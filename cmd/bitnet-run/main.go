@@ -51,8 +51,8 @@ import (
 	"strings"
 	"time"
 
-	cortex "nexus-cortex/cortex"
-	"nexus-cortex/cortex/compute"
+	cortex "ilaria/cortex"
+	"ilaria/cortex/compute"
 )
 
 // stepDecoder is the common Prefill/Step/Len surface *cortex.BitNetDecoder

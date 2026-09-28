@@ -1,10 +1,10 @@
 # Design: organe de cunoaștere reală pentru Ilaria (biomed + sandbox) și curățarea codului Antigravity
 
-Data: 2026-09-21. Branch: `agent/nexusbio-biomed-cortex`. Stare: aprobat verbal de utilizator („merg pe mâna ta, dar vreau surse reale și totul funcțional").
+Data: 2026-09-21. Branch: `agent/ilariabio-biomed-cortex`. Stare: aprobat verbal de utilizator („merg pe mâna ta, dar vreau surse reale și totul funcțional").
 
 ## 1. Scop
 
-Ilaria (NexusCortex) nu concurează ca LLM clasic. Câștigă pe axele unde un creier cu memorie
+Ilaria (Ilaria) nu concurează ca LLM clasic. Câștigă pe axele unde un creier cu memorie
 și organe de verificare bate structural un model înghețat:
 
 1. învață permanent dintr-o singură expunere (hipocamp + punte cognitivă, există);
@@ -43,7 +43,7 @@ Verificat 2026-09-21: toate răspund de pe mașina utilizatorului. API-ul de int
 ### 3.2 Straturi
 
 ```
-cmd/nexus-biomed (CLI)        cortex/biomed_tool.go (Tool în organism)
+cmd/ilaria-biomed (CLI)        cortex/biomed_tool.go (Tool în organism)
             \                        /
              cortex/biomed.Bridge.Consult(request)
                  |  entități (index RxNorm + Open Targets search)
@@ -91,7 +91,7 @@ cmd/nexus-biomed (CLI)        cortex/biomed_tool.go (Tool în organism)
 
 ### 3.5 CLI
 
-`cmd/nexus-biomed`: `-query`, `-patient patient.json` (FHIR sau format nativ), `-cache-dir` (implicit `data/knowledge/biomed`), `-json`. Fără `-demo-all` cu date inventate.
+`cmd/ilaria-biomed`: `-query`, `-patient patient.json` (FHIR sau format nativ), `-cache-dir` (implicit `data/knowledge/biomed`), `-json`. Fără `-demo-all` cu date inventate.
 
 ## 4. Sandbox real (`cortex/swe`)
 
@@ -108,7 +108,7 @@ cmd/nexus-biomed (CLI)        cortex/biomed_tool.go (Tool în organism)
 ## 6. Testare
 
 - Unit: fixture-uri înregistrate din API-urile reale (`testdata/<sursă>/*.json`) prin `Fetcher` fals; teste pentru extracția PK (fragmente reale de prospect), PK/PD (soluție analitică), graf (persistență), detecție de mențiuni.
-- Live (opțional, `NEXUS_BIOMED_LIVE=1`): un consult real pentru gefitinib + pacient cu T790M, verifică prezența surselor.
+- Live (opțional, `ILARIA_BIOMED_LIVE=1`): un consult real pentru gefitinib + pacient cu T790M, verifică prezența surselor.
 - Sandbox: compilează un program mic, un test care pică, o eroare de sintaxă.
 - Gate: `gofmt -l` gol, `go vet ./...`, `go test -count=1 -timeout 180s ./...`.
 

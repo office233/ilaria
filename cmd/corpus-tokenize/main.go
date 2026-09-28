@@ -26,11 +26,11 @@ import (
 	"strings"
 	"time"
 
-	cortex "nexus-cortex/cortex"
+	cortex "ilaria/cortex"
 )
 
 func main() {
-	tokPath := flag.String("tokenizer", "", "Nexus tokenizer.json (required)")
+	tokPath := flag.String("tokenizer", "", "Ilaria tokenizer.json (required)")
 	in := flag.String("in", "", "Input JSONL with {\"text\": ...} lines (required)")
 	out := flag.String("out", "", "Output path prefix (writes <out>.bin and <out>.json)")
 	maxDocs := flag.Int("max", 0, "Max documents (0 = all)")

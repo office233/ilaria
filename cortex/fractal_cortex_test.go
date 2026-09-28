@@ -1,7 +1,7 @@
 package cortex
 
 import (
-	"nexus-cortex/cortex/compute"
+	"ilaria/cortex/compute"
 	"testing"
 )
 

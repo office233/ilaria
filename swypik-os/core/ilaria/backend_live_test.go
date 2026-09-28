@@ -8,7 +8,7 @@ import (
 )
 
 // Opt-in integration check; the caller must start the local model service.
-func TestLiveNexusBackend(t *testing.T) {
+func TestLiveIlariaBackend(t *testing.T) {
 	endpoint := os.Getenv("SWYPIK_ILARIA_TEST_URL")
 	if endpoint == "" {
 		t.Skip("set SWYPIK_ILARIA_TEST_URL to verify a running local model")

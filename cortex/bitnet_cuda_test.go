@@ -8,7 +8,7 @@
 //  2. The whole Prefill/Step pipeline vs. BitNetModel.Forward on the
 //     synthetic bitnet_tiny.nxtf fixture (see bitnet_equivalence_test.go).
 //  3. The whole pipeline vs. the CPU decoder on the real 2.4B checkpoint,
-//     gated on NEXUS_BITNET_DIR (same env var bitnet_equivalence_test.go
+//     gated on ILARIA_BITNET_DIR (same env var bitnet_equivalence_test.go
 //     uses), reporting tok/s.
 //
 // Every test here skips (not fails) when no CUDA device/driver is
@@ -26,7 +26,7 @@ import (
 	"time"
 	"unsafe"
 
-	"nexus-cortex/cortex/compute"
+	"ilaria/cortex/compute"
 )
 
 // compiledCUDAModule compiles bitnetCUDASource once per test binary run
@@ -537,15 +537,15 @@ func TestCUDAPrefillEmbedsTinyEquivalence(t *testing.T) {
 }
 
 // ─────────────────────────────────────────────────────────────────────
-// (c) real checkpoint, gated on NEXUS_BITNET_DIR.
+// (c) real checkpoint, gated on ILARIA_BITNET_DIR.
 // ─────────────────────────────────────────────────────────────────────
 
 func TestCUDARealModelEquivalence(t *testing.T) {
 	compiledCUDAModule(t)
 
-	dir := os.Getenv("NEXUS_BITNET_DIR")
+	dir := os.Getenv("ILARIA_BITNET_DIR")
 	if dir == "" {
-		t.Skip("NEXUS_BITNET_DIR not set — skipping real-checkpoint CUDA equivalence test")
+		t.Skip("ILARIA_BITNET_DIR not set — skipping real-checkpoint CUDA equivalence test")
 	}
 	nxtfPath := filepath.Join(dir, "bitnet.nxtf")
 	jsonPath := filepath.Join(dir, "logits_ref.json")
@@ -650,14 +650,14 @@ func TestCUDARealModelEquivalence(t *testing.T) {
 // by the CPU decoder's own greedy token, so a later step's comparison
 // reflects that step's arithmetic rather than an already-diverged
 // trajectory — and checks argmax agreement. Skipped unless
-// NEXUS_BITNET_DIR is set (same convention as
+// ILARIA_BITNET_DIR is set (same convention as
 // TestCUDARealModelEquivalence).
 func TestCUDARealModelPrefillEmbedsEquivalence(t *testing.T) {
 	compiledCUDAModule(t)
 
-	dir := os.Getenv("NEXUS_BITNET_DIR")
+	dir := os.Getenv("ILARIA_BITNET_DIR")
 	if dir == "" {
-		t.Skip("NEXUS_BITNET_DIR not set — skipping real-checkpoint CUDA PrefillEmbeds equivalence test")
+		t.Skip("ILARIA_BITNET_DIR not set — skipping real-checkpoint CUDA PrefillEmbeds equivalence test")
 	}
 	nxtfPath := filepath.Join(dir, "bitnet.nxtf")
 	jsonPath := filepath.Join(dir, "logits_ref.json")
@@ -762,13 +762,13 @@ func TestCUDARealModelPrefillEmbedsEquivalence(t *testing.T) {
 // tok/s], profile with cuEvent timings per kernel and report where the
 // time goes" (no cuEvent bindings were built; stream Synchronize
 // boundaries give the same per-category attribution at negligible extra
-// code cost). Gated on NEXUS_BITNET_DIR like the other real-checkpoint
+// code cost). Gated on ILARIA_BITNET_DIR like the other real-checkpoint
 // test.
 func TestCUDAProfileStep(t *testing.T) {
 	compiledCUDAModule(t)
-	dir := os.Getenv("NEXUS_BITNET_DIR")
+	dir := os.Getenv("ILARIA_BITNET_DIR")
 	if dir == "" {
-		t.Skip("NEXUS_BITNET_DIR not set — skipping CUDA profiling")
+		t.Skip("ILARIA_BITNET_DIR not set — skipping CUDA profiling")
 	}
 	m, err := LoadBitNetModel(filepath.Join(dir, "bitnet.nxtf"))
 	if err != nil {

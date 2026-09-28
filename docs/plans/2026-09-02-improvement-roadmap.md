@@ -67,7 +67,7 @@ Schimbări:
 
 ---
 
-## 4. Strategia: unde POATE câștiga Nexus (și unde nu)
+## 4. Strategia: unde POATE câștiga Ilaria (și unde nu)
 
 **Nu se poate** (spus direct): a bate GPT-4/Claude/Gemini la benchmark-uri generale
 pe 6GB VRAM. Frontier models = mii de GPU-uri; nicio arhitectură nu compensează
@@ -76,11 +76,11 @@ un raport de capacitate de 10^5.
 **Se poate câștiga — trei ținte concrete, în ordinea fezabilității**:
 
 **Ținta A — Bate orice LLM înghețat la învățare continuă (realizabil ACUM)**
-Un LLM frozen nu poate învăța un fapt nou fără fine-tuning. Nexus, prin
+Un LLM frozen nu poate învăța un fapt nou fără fine-tuning. Ilaria, prin
 hippocampus + cognitive bridge, învață dintr-o expunere, persistă pe disc, zero
 gradient. Construiește benchmark-ul "learn-once, answer-forever": N fapte noi
 predate o singură dată → întrebate după restart → comparat cu un LLM local frozen
-de aceeași mărime. Aici Nexus bate prin design, iar rezultatul e publicabil.
+de aceeași mărime. Aici Ilaria bate prin design, iar rezultatul e publicabil.
 
 **Ținta B — Bate GPT-2 124M la calitate/parametru pe hardware-ul tău (luni)**
 GPT-2 124M e o țintă publică, măsurabilă, apropiată de bugetul de VRAM. Drumul:
@@ -102,7 +102,7 @@ egală. Doar DUPĂ ce există un model coerent de comprimat.
 1. Repară `evalsuite/score.go`: word-boundary la `ModeContainsAny`, extragere
    answer-aware la `ModeNumeric`; `scorer_version: 2` în JSON; rescore istoric
    offline pe `auto-step*.json` (planul există în HARDCODING §11).
-2. Script build CUDA care copiază `cuda_nexus.dll` lângă binar (HARDCODING §10).
+2. Script build CUDA care copiază `cuda_ilaria.dll` lângă binar (HARDCODING §10).
 3. Commit lucrarea necomisă (bridge + distill + fix predictor) după review.
 
 ### Faza 1 — Ținta A: benchmark-ul de continual learning (1 săptămână)
@@ -165,7 +165,7 @@ Livrat și testat:
   `SaveBinary` + sniffing automat în `LoadMiniTransformer`. La 82M parametri: secunde
   în loc de zeci de minute cât ar fi durat JSON-ul gzip.
 - `cmd/gpt2-import` — cititor safetensors pur Go (F32/F16/BF16) + maparea numelor
-  GPT-2 → structuri Nexus + probă de generare + verificare reload.
+  GPT-2 → structuri Ilaria + probă de generare + verificare reload.
 
 Rezultat cu DistilGPT-2 82M (descărcat de pe HuggingFace, licență MIT):
 - „Albert Einstein developed the theory of" → „...theory of relativity in 1876. The

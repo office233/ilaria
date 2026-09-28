@@ -1,4 +1,4 @@
-// tok-encode — encode stdin lines with a Nexus tokenizer and print one JSON
+// tok-encode — encode stdin lines with a Ilaria tokenizer and print one JSON
 // array of ids per line. Used to verify that another implementation (the
 // HuggingFace `tokenizers` byte-level BPE used in Colab) produces exactly the
 // ids the Go engine will see.
@@ -13,7 +13,7 @@ import (
 	"fmt"
 	"os"
 
-	"nexus-cortex/cortex"
+	"ilaria/cortex"
 )
 
 func main() {

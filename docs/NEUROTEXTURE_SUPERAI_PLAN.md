@@ -1,20 +1,20 @@
-# Nexus Cortex NeuroTexture Super-AI Plan
+# Ilaria NeuroTexture Super-AI Plan
 
 > Status: architecture and research roadmap.  
-> Goal: turn Nexus Cortex from a brain-inspired local cognitive engine into a fast, sparse, memory-rich language-and-reasoning system.
+> Goal: turn Ilaria from a brain-inspired local cognitive engine into a fast, sparse, memory-rich language-and-reasoning system.
 
-This document is intentionally ambitious, but it must remain honest: the goal is not to claim that Nexus Cortex already beats frontier LLMs. The goal is to define a path where it can become faster, more adaptive, and more memory-efficient than classical dense LLMs in targeted domains, then expand from there.
+This document is intentionally ambitious, but it must remain honest: the goal is not to claim that Ilaria already beats frontier LLMs. The goal is to define a path where it can become faster, more adaptive, and more memory-efficient than classical dense LLMs in targeted domains, then expand from there.
 
 ---
 
 ## 1. Core Thesis
 
-Nexus Cortex should not copy a dense transformer LLM.
+Ilaria should not copy a dense transformer LLM.
 
 The winning direction is:
 
 ```text
-Nexus Cortex Super-AI
+Ilaria Super-AI
 = persistent memory
 + sparse ternary NeuroTexture weights
 + expert routing
@@ -27,7 +27,7 @@ Nexus Cortex Super-AI
 
 A dense LLM keeps most of its knowledge inside weights and must run a large matrix-heavy model for every generated token.
 
-Nexus Cortex should use:
+Ilaria should use:
 
 ```text
 RAM    = active context, hot cache, active experts, routing index
@@ -55,7 +55,7 @@ Key lesson:
 Ternary weights {-1, 0, +1} can drastically reduce memory and arithmetic cost.
 ```
 
-Nexus already has the foundation:
+Ilaria already has the foundation:
 
 ```text
 TernaryTile = RGBA32 uint32
@@ -80,7 +80,7 @@ Key lesson:
 A model can have many stored parameters but activate only a small fraction per token/query.
 ```
 
-For Nexus:
+For Ilaria:
 
 ```text
 Do not run all experts.
@@ -99,7 +99,7 @@ Key lesson:
 Some neural computation can be replaced with lookup, bit operations, popcount, cache hits, and logic.
 ```
 
-For Nexus:
+For Ilaria:
 
 ```text
 RGBA32 tile read
@@ -120,7 +120,7 @@ Not all knowledge needs to live inside model weights.
 Large memory stores plus similarity retrieval can reduce parameter pressure.
 ```
 
-For Nexus:
+For Ilaria:
 
 ```text
 EpisodicMemory + SemanticMemory + SDR retrieval are strategic assets.
@@ -136,7 +136,7 @@ Key lesson:
 Continuous plasticity without replay/consolidation destroys old knowledge.
 ```
 
-For Nexus:
+For Ilaria:
 
 ```text
 Sleep() must become a real consolidation phase:
@@ -149,7 +149,7 @@ Sleep() must become a real consolidation phase:
 
 ---
 
-## 3. What Nexus Cortex Has Now
+## 3. What Ilaria Has Now
 
 Current strengths:
 
@@ -484,7 +484,7 @@ archive old checkpoint
 
 ## 11. Continuous Plasticity Rules
 
-Nexus needs a real plasticity engine.
+Ilaria needs a real plasticity engine.
 
 Implement:
 
@@ -926,7 +926,7 @@ expert specialization
 
 ## 19. Non-Negotiable Rules
 
-1. Do not claim Nexus beats LLMs without benchmark evidence.
+1. Do not claim Ilaria beats LLMs without benchmark evidence.
 2. Do not scale parameters before routing and benchmark are stable.
 3. Do not keep all experts active.
 4. Do not store trainable weights mainly as PNG.
@@ -964,7 +964,7 @@ expert specialization
 The target architecture is:
 
 ```text
-Nexus Cortex
+Ilaria
   -> Wernicke / SDR encoder
   -> episodic + semantic retrieval
   -> ExpertRouter top-k
@@ -985,7 +985,7 @@ RGBA32 ternary weights
 + local hardware constraints
 ```
 
-If Nexus Cortex becomes powerful, it will not be because it imitates a dense LLM. It will be because it uses a different computational contract:
+If Ilaria becomes powerful, it will not be because it imitates a dense LLM. It will be because it uses a different computational contract:
 
 ```text
 less dense math

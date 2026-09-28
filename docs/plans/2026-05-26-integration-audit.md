@@ -1,4 +1,4 @@
-# Integration Audit — Nexus Cortex (cursa D state)
+# Integration Audit — Ilaria (cursa D state)
 
 **Date**: 2026-05-26
 **Goal**: Map exact ce componente sunt CONECTATE și ce sunt SCHELE.

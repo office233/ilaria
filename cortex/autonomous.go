@@ -1,8 +1,8 @@
 package cortex
 
-// autonomous.go — Self-Learning Autonomous Loop for Nexus Cortex.
+// autonomous.go — Self-Learning Autonomous Loop for Ilaria.
 //
-// This is what makes Nexus Cortex fundamentally different from ANY frozen LLM:
+// This is what makes Ilaria fundamentally different from ANY frozen LLM:
 // it learns CONTINUOUSLY, AUTONOMOUSLY, and FOREVER.
 //
 // The loop:
@@ -32,9 +32,9 @@ type KnowledgeGap struct {
 
 // AutonomousLearner is the self-learning engine.
 type AutonomousLearner struct {
-	Organism   *Organism
-	Web        *WebLearner
-	Evaluator  *SelfEvaluator
+	Organism  *Organism
+	Web       *WebLearner
+	Evaluator *SelfEvaluator
 
 	// Knowledge gaps — what we need to learn
 	Gaps    []KnowledgeGap
@@ -179,7 +179,7 @@ func (al *AutonomousLearner) Run(ctx context.Context, logFn func(string)) {
 			return
 		default:
 			al.LearnCycle(logFn)
-			
+
 			// Save organism periodically
 			if al.CycleCount%5 == 0 {
 				if err := al.Organism.Save(al.Organism.Config.DataDir); err != nil {
@@ -204,7 +204,7 @@ func (al *AutonomousLearner) LearnCycle(logFn func(string)) {
 	al.mu.Lock()
 	cycle := al.CycleCount
 	al.CycleCount++
-	
+
 	// Pick top gaps (lowest confidence first)
 	gaps := al.topGaps(al.MaxGapsPerCycle)
 	al.mu.Unlock()
@@ -216,7 +216,7 @@ func (al *AutonomousLearner) LearnCycle(logFn func(string)) {
 		// If no gaps, evaluate to find weak spots
 		score := al.Evaluator.Evaluate(al.Organism)
 		logFn(fmt.Sprintf("  📊 Self-test: %d/%d correct (%.1f%%)", score.Correct, score.TestCount, score.Score*100))
-		
+
 		weak := al.Evaluator.WeakTests(0.3)
 		for _, w := range weak {
 			al.AddGap(w.Question, 0)

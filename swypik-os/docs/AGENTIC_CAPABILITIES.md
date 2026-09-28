@@ -121,7 +121,7 @@ Optimize the entire task, not just the renderer:
 - Stream model output and tool progress without blocking the UI thread.
 - Separate model latency, broker overhead, disk/CPU work, test time and user approval time in traces.
 - Parallelize independent work only; serialize conflicting writes and cap costly verification.
-- Record model identity, provider, configuration and backend availability. Ilaria/Nexus remains a real inference dependency, not a label that guarantees a strong model.
+- Record model identity, provider, configuration and backend availability. Ilaria/Ilaria remains a real inference dependency, not a label that guarantees a strong model.
 
 No latency, RAM, token saving or superiority number is claimed before measurement.
 

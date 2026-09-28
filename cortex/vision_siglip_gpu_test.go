@@ -4,7 +4,7 @@ package cortex
 
 // vision_siglip_gpu_test.go — GPU-vs-CPU equivalence for the resident
 // fp32 cuBLAS tower backend (vision_siglip_gpu.go). Uses the same
-// NEXUS_EYES_DIR fixture and shared helpers (flatten, maxAbsAndRelL2,
+// ILARIA_EYES_DIR fixture and shared helpers (flatten, maxAbsAndRelL2,
 // readFloat32Bin, visionRefFile) as TestSigLIPEquivalence
 // (vision_siglip_test.go) — both files are package cortex, so the test
 // binary sees them together whenever this file's `gpu` tag is set.
@@ -24,7 +24,7 @@ import (
 	"testing"
 	"time"
 
-	"nexus-cortex/cortex/compute"
+	"ilaria/cortex/compute"
 )
 
 // TestSiglipGPUTowerMatchesCPU runs the tower once on the CPU and once
@@ -36,11 +36,11 @@ import (
 // PixelShuffle + the projector on the GPU tower's output and checks it
 // stays within the same 2e-3 abs tolerance TestSigLIPEquivalence uses
 // for the CPU path, per the task's numerics requirement. Skipped unless
-// NEXUS_EYES_DIR is set and a CUDA device/driver is present.
+// ILARIA_EYES_DIR is set and a CUDA device/driver is present.
 func TestSiglipGPUTowerMatchesCPU(t *testing.T) {
-	dir := os.Getenv("NEXUS_EYES_DIR")
+	dir := os.Getenv("ILARIA_EYES_DIR")
 	if dir == "" {
-		t.Skip("NEXUS_EYES_DIR not set — skipping GPU tower equivalence test")
+		t.Skip("ILARIA_EYES_DIR not set — skipping GPU tower equivalence test")
 	}
 	if err := compute.InitCuBLAS(); err != nil {
 		t.Skipf("cuda not available: %v", err)

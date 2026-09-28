@@ -25,7 +25,7 @@ import (
 	"fmt"
 	"sync"
 
-	"nexus-cortex/cortex/compute"
+	"ilaria/cortex/compute"
 )
 
 var (

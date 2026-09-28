@@ -26,7 +26,7 @@ func main() {
 	root := flag.String("workspace", "/home/swypik/Workspace", "Explicit workspace")
 	index := flag.String("index", "/var/lib/swypik/index.jsonl", "Search index path (append-only log)")
 	state := flag.String("state-dir", "/var/lib/swypik/agent", "Private directory for last-run checkpoints")
-	endpoint := flag.String("ilaria-url", "http://127.0.0.1:8091", "Nexus loopback HTTP or authenticated HTTPS endpoint")
+	endpoint := flag.String("ilaria-url", "http://127.0.0.1:8091", "Ilaria loopback HTTP or authenticated HTTPS endpoint")
 	flag.Parse()
 	if os.Geteuid() == 0 {
 		fmt.Fprintln(os.Stderr, "Refusing to run the agent service as root")

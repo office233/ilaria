@@ -91,7 +91,7 @@
 // produces (max|Δ| and relative L2 at every captured stage, plus the
 // projector's max|Δ|) are measured by TestWhisperGPUTowerMatchesCPU /
 // TestWhisperGPUTinySynthetic (audio_whisper_gpu_test.go) against the
-// same NEXUS_EARS_DIR fixtures TestWhisperEquivalence /
+// same ILARIA_EARS_DIR fixtures TestWhisperEquivalence /
 // TestWhisperTinySynthetic (audio_whisper_test.go) use, checked against
 // the SAME tolerances (whisperMaxAbsTol/whisperRelL2Tol/
 // whisperLogMelTol) the CPU path uses, and reported in this task's
@@ -102,7 +102,7 @@ import (
 	"fmt"
 	"math"
 
-	"nexus-cortex/cortex/compute"
+	"ilaria/cortex/compute"
 )
 
 // whisperGPUBackend implements audioGPUBackend with resident fp32

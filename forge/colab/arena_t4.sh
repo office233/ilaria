@@ -8,8 +8,8 @@ D=/content/drive/MyDrive/ilaria
 mkdir -p "$D/arena"
 cd /content || exit 1
 nvidia-smi --query-gpu=name,memory.total --format=csv
-[ -d /content/nexus ] || { echo "cloning repo ($(date +%H:%M:%S))"; git clone --depth 1 https://github.com/office233/ilaria /content/nexus || exit 1; }
-cd /content/nexus || exit 1
+[ -d /content/ilaria ] || { echo "cloning repo ($(date +%H:%M:%S))"; git clone --depth 1 https://github.com/office233/ilaria /content/ilaria || exit 1; }
+cd /content/ilaria || exit 1
 git log --oneline -1
 pip install -q -U lm_eval "huggingface_hub[cli]" 2>&1 | tail -1
 mkdir -p data/pretrained/bitnet-b1.58-2B-4T data/forge/brain-a results docs/benchmarks

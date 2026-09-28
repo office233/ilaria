@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"nexus-cortex/cortex"
+	"ilaria/cortex"
 )
 
 // runInteractive starts an interactive REPL session with the organism.
@@ -14,7 +14,7 @@ import (
 // available for introspection and control.
 func runInteractive(org *cortex.Organism) {
 	fmt.Println()
-	fmt.Println("═══ NEXUS CORTEX — Interactive Mode ═══")
+	fmt.Println("═══ ILARIA — Interactive Mode ═══")
 	fmt.Println("Type anything to interact. Commands:")
 	fmt.Println("  /stats  — show organism stats")
 	fmt.Println("  /sleep  — trigger sleep cycle")

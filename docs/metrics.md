@@ -1,6 +1,6 @@
-# Nexus Cortex Capability Scoreboard Metrics
+# Ilaria Capability Scoreboard Metrics
 
-Acest document descrie modelul de măsurare și calibrare a inteligenței emergente pentru sistemul non-LLM **Nexus Cortex**.
+Acest document descrie modelul de măsurare și calibrare a inteligenței emergente pentru sistemul non-LLM **Ilaria**.
 
 ---
 
@@ -20,11 +20,11 @@ Evaluarea folosește trei seturi de date fixe (JSONL) pentru a calcula performan
 
 ---
 
-## 2. Calculul Scorului Global (Nexus Capability Score)
+## 2. Calculul Scorului Global (Ilaria Capability Score)
 
 Scorul general de capabilitate este determinat prin combinarea liniară ponderată a ratei totale de trecere și stabilității anti-ecou:
 
-$$\text{Nexus Capability Score} = (\text{Overall Pass Rate} \times 0.80) + (\text{Anti-Echo Rate} \times 0.20)$$
+$$\text{Ilaria Capability Score} = (\text{Overall Pass Rate} \times 0.80) + (\text{Anti-Echo Rate} \times 0.20)$$
 
 Această formulare penalizează sever sistemele care repetă input-ul, dar raportul trebuie citit împreună cu suita **Held-out Generalization**. Evaluarea default reîncarcă organismul pentru fiecare caz, ca învățarea produsă în timpul evaluării să nu contamineze următoarele cazuri.
 

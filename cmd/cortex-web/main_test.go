@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"nexus-cortex/cortex"
+	"ilaria/cortex"
 )
 
 // newTestMux creates a ServeMux with all API routes wrapped by apiMiddleware,
@@ -62,7 +62,7 @@ func TestServerValidation(t *testing.T) {
 
 	// 2. Mutating POST with correct token but missing Origin/Referer should return 403 Forbidden
 	req2 := httptest.NewRequest(http.MethodPost, "/api/chat", strings.NewReader(`{"message":"test"}`))
-	req2.Header.Set("X-Nexus-Token", "test-secure-token-12345")
+	req2.Header.Set("X-Ilaria-Token", "test-secure-token-12345")
 	w2 := httptest.NewRecorder()
 
 	mux.ServeHTTP(w2, req2)
@@ -72,7 +72,7 @@ func TestServerValidation(t *testing.T) {
 
 	// 3. Mutating POST with correct token and valid Origin should succeed
 	req3 := httptest.NewRequest(http.MethodPost, "/api/chat", strings.NewReader(`{"message":"Hello"}`))
-	req3.Header.Set("X-Nexus-Token", "test-secure-token-12345")
+	req3.Header.Set("X-Ilaria-Token", "test-secure-token-12345")
 	req3.Header.Set("Origin", "http://localhost:8080")
 	w3 := httptest.NewRecorder()
 
@@ -86,7 +86,7 @@ func TestServerValidation(t *testing.T) {
 	payload, _ := json.Marshal(map[string]string{"message": largeBody})
 
 	req4 := httptest.NewRequest(http.MethodPost, "/api/chat", bytes.NewReader(payload))
-	req4.Header.Set("X-Nexus-Token", "test-secure-token-12345")
+	req4.Header.Set("X-Ilaria-Token", "test-secure-token-12345")
 	req4.Header.Set("Origin", "http://localhost:8080")
 	w4 := httptest.NewRecorder()
 
@@ -107,7 +107,7 @@ func TestServerValidation(t *testing.T) {
 
 	// 6. GET /api/stats with correct token should succeed
 	req6 := httptest.NewRequest(http.MethodGet, "/api/stats", nil)
-	req6.Header.Set("X-Nexus-Token", "test-secure-token-12345")
+	req6.Header.Set("X-Ilaria-Token", "test-secure-token-12345")
 	req6.Header.Set("Origin", "http://localhost:8080")
 	w6 := httptest.NewRecorder()
 
@@ -132,7 +132,7 @@ func TestRemovedTokenEndpoint(t *testing.T) {
 
 	// With valid token, the inner mux returns 404 (endpoint truly removed)
 	req2 := httptest.NewRequest(http.MethodGet, "/api/token", nil)
-	req2.Header.Set("X-Nexus-Token", "test-token")
+	req2.Header.Set("X-Ilaria-Token", "test-token")
 	req2.Header.Set("Origin", "http://localhost:8080")
 	w2 := httptest.NewRecorder()
 	mux.ServeHTTP(w2, req2)
@@ -162,7 +162,7 @@ func TestNonLoopbackBindGuard(t *testing.T) {
 		authToken := ""
 		explicitTokenPassed := authToken != "" && authToken != "none"
 		nonLoopback := bindAddr != "127.0.0.1" && bindAddr != "localhost" && bindAddr != ""
-		
+
 		if nonLoopback && !explicitTokenPassed {
 			// Expected safety block triggered
 		} else {
@@ -176,7 +176,7 @@ func TestNonLoopbackBindGuard(t *testing.T) {
 		authToken := "none"
 		explicitTokenPassed := authToken != "" && authToken != "none"
 		nonLoopback := bindAddr != "127.0.0.1" && bindAddr != "localhost" && bindAddr != ""
-		
+
 		if nonLoopback && !explicitTokenPassed {
 			// Expected safety block triggered
 		} else {
@@ -190,7 +190,7 @@ func TestNonLoopbackBindGuard(t *testing.T) {
 		authToken := "my-secret"
 		explicitTokenPassed := authToken != "" && authToken != "none"
 		nonLoopback := bindAddr != "127.0.0.1" && bindAddr != "localhost" && bindAddr != ""
-		
+
 		if nonLoopback && !explicitTokenPassed {
 			t.Error("expected non-loopback with explicit token to be allowed, but was blocked")
 		}
@@ -202,7 +202,7 @@ func TestNonLoopbackBindGuard(t *testing.T) {
 		authToken := ""
 		explicitTokenPassed := authToken != "" && authToken != "none"
 		nonLoopback := bindAddr != "127.0.0.1" && bindAddr != "localhost" && bindAddr != ""
-		
+
 		if nonLoopback && !explicitTokenPassed {
 			t.Error("expected loopback with empty token to be allowed, but was blocked")
 		}
@@ -216,7 +216,7 @@ func TestParsedRefererVerification(t *testing.T) {
 	// Test Case 1: Referer with exact origin and subpath -> should pass
 	{
 		req := httptest.NewRequest(http.MethodGet, "/api/stats", nil)
-		req.Header.Set("X-Nexus-Token", "test-token")
+		req.Header.Set("X-Ilaria-Token", "test-token")
 		req.Header.Set("Referer", "http://localhost:8080/dashboard/index.html?param=value")
 		w := httptest.NewRecorder()
 		mux.ServeHTTP(w, req)
@@ -228,7 +228,7 @@ func TestParsedRefererVerification(t *testing.T) {
 	// Test Case 2: Referer spoofing with prefix match but incorrect port -> should be rejected
 	{
 		req := httptest.NewRequest(http.MethodGet, "/api/stats", nil)
-		req.Header.Set("X-Nexus-Token", "test-token")
+		req.Header.Set("X-Ilaria-Token", "test-token")
 		req.Header.Set("Referer", "http://localhost:8080.attacker.com/path")
 		w := httptest.NewRecorder()
 		mux.ServeHTTP(w, req)
@@ -240,7 +240,7 @@ func TestParsedRefererVerification(t *testing.T) {
 	// Test Case 3: Referer with invalid URL -> should be rejected
 	{
 		req := httptest.NewRequest(http.MethodGet, "/api/stats", nil)
-		req.Header.Set("X-Nexus-Token", "test-token")
+		req.Header.Set("X-Ilaria-Token", "test-token")
 		req.Header.Set("Referer", "http://[invalid-url:::")
 		w := httptest.NewRecorder()
 		mux.ServeHTTP(w, req)
@@ -257,7 +257,7 @@ func TestSecurityHeaders(t *testing.T) {
 	mux := newTestMux(server)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/stats", nil)
-	req.Header.Set("X-Nexus-Token", "test-token")
+	req.Header.Set("X-Ilaria-Token", "test-token")
 	req.Header.Set("Origin", "http://localhost:8080")
 	w := httptest.NewRecorder()
 

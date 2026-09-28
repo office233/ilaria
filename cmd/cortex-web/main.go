@@ -20,8 +20,8 @@ import (
 	"syscall"
 	"time"
 
-	"nexus-cortex/cortex"
-	"nexus-cortex/web"
+	"ilaria/cortex"
+	"ilaria/web"
 )
 
 // StatsResponse incorporates biological stats along with volatile telemetry
@@ -104,7 +104,7 @@ func main() {
 
 	// Print visual launch banner
 	fmt.Println()
-	fmt.Println("  NEXUS CORTEX - Web UI Neural Dashboard")
+	fmt.Println("  ILARIA - Web UI Neural Dashboard")
 	fmt.Println("  Starting Zero-Dependency Real-Time Introspection Server")
 	fmt.Println()
 
@@ -181,7 +181,7 @@ func main() {
 		} else {
 			fmt.Println("  ⚠️ Persistence skipped (--no-save). All runtime changes will be lost.")
 		}
-		fmt.Println("  👋 Nexus Cortex digital organism hibernating. System offline.")
+		fmt.Println("  👋 Ilaria digital organism hibernating. System offline.")
 		os.Exit(0)
 	}()
 
@@ -279,11 +279,11 @@ func (s *Server) apiMiddleware(next http.Handler) http.Handler {
 // validateAuth verifies the security token and Same-Origin headers.
 // Called exclusively by apiMiddleware — individual handlers do NOT call this.
 func (s *Server) validateAuth(w http.ResponseWriter, r *http.Request) bool {
-	// 1. Validate the X-Nexus-Token custom header if security token is enabled
+	// 1. Validate the X-Ilaria-Token custom header if security token is enabled
 	if s.token != "" {
-		token := r.Header.Get("X-Nexus-Token")
+		token := r.Header.Get("X-Ilaria-Token")
 		if token == "" || token != s.token {
-			http.Error(w, "Unauthorized: invalid or missing X-Nexus-Token", http.StatusUnauthorized)
+			http.Error(w, "Unauthorized: invalid or missing X-Ilaria-Token", http.StatusUnauthorized)
 			return false
 		}
 	}

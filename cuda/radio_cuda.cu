@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════════
-// NEXUS CORTEX — RadioCortex CUDA Kernels
+// ILARIA — RadioCortex CUDA Kernels
 // ═══════════════════════════════════════════════════════════════════
 //
 // Compile: nvcc -shared -o radio_cuda.dll radio_cuda.cu -O3 -arch=sm_75

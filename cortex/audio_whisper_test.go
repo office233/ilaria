@@ -10,7 +10,7 @@ package cortex
 //
 // TestWhisperEquivalence (real openai/whisper-small) and
 // TestWhisperTinySynthetic (a random, undownloaded tiny encoder) are both
-// skipped unless NEXUS_EARS_DIR (an absolute path) is set to a directory
+// skipped unless ILARIA_EARS_DIR (an absolute path) is set to a directory
 // containing the files forge/multimodal/export_whisper_tower.py and
 // forge/multimodal/dump_audio_reference.py produce:
 //
@@ -182,7 +182,7 @@ func geluExactScalar(v float32) float32 {
 }
 
 // ─────────────────────────────────────────────────────────────────────
-// Real-checkpoint / synthetic-tiny equivalence (NEXUS_EARS_DIR)
+// Real-checkpoint / synthetic-tiny equivalence (ILARIA_EARS_DIR)
 // ─────────────────────────────────────────────────────────────────────
 
 type audioRefStage struct {
@@ -242,12 +242,12 @@ const (
 
 // TestWhisperEquivalence checks the real openai/whisper-small encoder
 // against forge/multimodal's PyTorch reference (see file doc comment for
-// how to produce NEXUS_EARS_DIR's contents). Skipped unless that env var
+// how to produce ILARIA_EARS_DIR's contents). Skipped unless that env var
 // is set.
 func TestWhisperEquivalence(t *testing.T) {
-	dir := os.Getenv("NEXUS_EARS_DIR")
+	dir := os.Getenv("ILARIA_EARS_DIR")
 	if dir == "" {
-		t.Skip("NEXUS_EARS_DIR not set — skipping real-checkpoint Whisper equivalence test")
+		t.Skip("ILARIA_EARS_DIR not set — skipping real-checkpoint Whisper equivalence test")
 	}
 	runWhisperEquivalence(t, dir, "audio_reference.json", "whisper_small_encoder.nxtf")
 }
@@ -259,13 +259,13 @@ func TestWhisperEquivalence(t *testing.T) {
 // path (LogMel, conv1d, attention, stack_frames, projector) without
 // needing the real ~350MB whisper-small checkpoint, so it "runs without
 // the real model" per the task spec — but still needs the small
-// fixture files under NEXUS_EARS_DIR (never a bare relative "data/..."
+// fixture files under ILARIA_EARS_DIR (never a bare relative "data/..."
 // path — see AGENTS.md), so it shares that env var's skip-if-unset gate
 // with TestWhisperEquivalence rather than running unconditionally.
 func TestWhisperTinySynthetic(t *testing.T) {
-	dir := os.Getenv("NEXUS_EARS_DIR")
+	dir := os.Getenv("ILARIA_EARS_DIR")
 	if dir == "" {
-		t.Skip("NEXUS_EARS_DIR not set — skipping synthetic tiny-config Whisper equivalence test")
+		t.Skip("ILARIA_EARS_DIR not set — skipping synthetic tiny-config Whisper equivalence test")
 	}
 	runWhisperEquivalence(t, dir, "audio_reference_tiny.json", "whisper_tiny_encoder.nxtf")
 }

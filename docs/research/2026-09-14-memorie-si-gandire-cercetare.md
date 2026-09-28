@@ -1,6 +1,6 @@
 # Cercetare: memorie ca un creier + gândire dincolo de predicție (2016–2026)
 
-**Pentru**: Ilaria (Nexus) — decizia „calea B": creierul se forjează în PyTorch, organismul rămâne în Go.
+**Pentru**: Ilaria (Ilaria) — decizia „calea B": creierul se forjează în PyTorch, organismul rămâne în Go.
 **Metodă**: 12 căutări web + verificare pe surse primare (abstracte arXiv, blogul ARC Prize, fișa
 HuggingFace, Nature Communications). Cifrele marcate ✅ sunt citate din sursa primară; cele marcate
 ⚠️ vin din rezumate terțe sau comunicate de presă și NU au fost verificate.

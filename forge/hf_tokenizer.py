@@ -1,5 +1,5 @@
 """hf_tokenizer.py — train a GPT-2-style byte-level BPE with HuggingFace
-`tokenizers` (fast, Rust) and export it in the Nexus tokenizer.json format
+`tokenizers` (fast, Rust) and export it in the Ilaria tokenizer.json format
 that the Go engine loads in byte-level mode (the same mode used for the
 DistilGPT-2 import). Also tokenizes JSONL shards into uint16 streams with the
 exact layout of cmd/corpus-tokenize (documents separated by <|endoftext|>).
@@ -52,15 +52,15 @@ def train(input_paths, vocab_size: int, out_path: str, min_frequency: int = 2):
         show_progress=False,
     )
     tok.train(list(input_paths), trainer)
-    export_nexus(tok, out_path)
+    export_ilaria(tok, out_path)
     hf_path = os.path.splitext(out_path)[0] + ".hf.json"
     tok.save(hf_path)
     print(f"[hf_tokenizer] vocab {tok.get_vocab_size()} -> {out_path} (+ {hf_path})")
     return tok
 
 
-def export_nexus(tok, out_path: str) -> None:
-    """Write the Nexus byte-level tokenizer.json (vocab + merges + byte_level)."""
+def export_ilaria(tok, out_path: str) -> None:
+    """Write the Ilaria byte-level tokenizer.json (vocab + merges + byte_level)."""
     vocab = tok.get_vocab()
     model = json.loads(tok.to_str())["model"]
     merges = []
@@ -81,7 +81,7 @@ def load(tok_path: str):
     hf_path = os.path.splitext(tok_path)[0] + ".hf.json"
     if os.path.exists(hf_path):
         return Tokenizer.from_file(hf_path)
-    # Rebuild from the Nexus JSON (vocab + merges) when only that exists.
+    # Rebuild from the Ilaria JSON (vocab + merges) when only that exists.
     _, _, models, _, _, _ = _hf()
     with open(tok_path, encoding="utf-8") as f:
         data = json.load(f)

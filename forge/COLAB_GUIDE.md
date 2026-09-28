@@ -61,8 +61,8 @@ drive.mount('/content/drive')
 
 ```bash
 %cd /content
-!git clone https://github.com/office233/Nexuscortex.git nexus
-%cd /content/nexus
+!git clone https://github.com/office233/Ilariacortex.git ilaria
+%cd /content/ilaria
 !pip -q install datasets
 # Go: pachetul apt e prea vechi pentru go.mod (1.26); luăm binarul oficial.
 !wget -q https://go.dev/dl/go1.26.2.linux-amd64.tar.gz && rm -rf /usr/local/go && tar -C /usr/local -xzf go1.26.2.linux-amd64.tar.gz

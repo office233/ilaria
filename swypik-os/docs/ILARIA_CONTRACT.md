@@ -1,12 +1,12 @@
 # Contract SwypikOS ↔ Ilaria
 
-Snapshot 27 septembrie 2026; alt agent modifică activ integrarea. Nexus a fost inspectat numai în citire.
+Snapshot 27 septembrie 2026; alt agent modifică activ integrarea. Ilaria a fost inspectat numai în citire.
 
-Surse: `D:\nexus\cmd\ilaria-serve\main.go`, `D:\swypik-os\core\ilaria\backend.go`, `D:\swypik-os\cmd\swypik-os\main.go`.
+Surse: `D:\ilaria\cmd\ilaria-serve\main.go`, `D:\swypik-os\core\ilaria\backend.go`, `D:\swypik-os\cmd\swypik-os\main.go`.
 
 ## Protocol observat
 
-- Nexus: HTTP `127.0.0.1:8091`; checkpoint/tokenizer furnizate explicit la pornire.
+- Ilaria: HTTP `127.0.0.1:8091`; checkpoint/tokenizer furnizate explicit la pornire.
 - `GET /health`: disponibilitatea serviciului.
 - `POST /v1/chat`, JSON: `{"prompt":"Salut","history":[{"role":"user","content":"..."},{"role":"assistant","content":"..."}]}`.
 - Răspuns: `reply`, `tokens`, `calls`. Clientul OS consumă `reply` și `error`.
@@ -22,4 +22,4 @@ Acesta este transportul către Ilaria, nu o arhitectură cu furnizori externi de
 3. Erori vizibile fără răspuns inventat; reconectare fără duplicarea mesajelor.
 4. Acțiunile OS validate separat; textul generat nu autorizează execuție arbitrară.
 
-Nu expunem endpointul loopback direct pe internet. Inferența la distanță necesită contract cu TLS și autentificare, coordonat cu Nexus; nu presupunem că există deja.
+Nu expunem endpointul loopback direct pe internet. Inferența la distanță necesită contract cu TLS și autentificare, coordonat cu Ilaria; nu presupunem că există deja.

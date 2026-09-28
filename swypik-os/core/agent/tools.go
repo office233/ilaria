@@ -38,7 +38,7 @@ func validateList(raw json.RawMessage) error {
 }
 
 // These tools never expand scope to Home, read file contents, execute commands
-// or probe third-party endpoints. Approved metadata goes to configured Nexus.
+// or probe third-party endpoints. Approved metadata goes to configured Ilaria.
 func ReadOnlyTools(root string) []Tool {
 	return []Tool{
 		{Spec: Spec{Name: "network.interfaces", Description: "Read host network adapters and addresses. Internet connectivity remains untested.", Arguments: "{}; no arguments"}, Validate: func(raw json.RawMessage) error { return DecodeObject(raw, &struct{}{}, 4096) }, Execute: func(ctx context.Context, _ json.RawMessage) (json.RawMessage, error) {

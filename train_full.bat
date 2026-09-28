@@ -1,11 +1,11 @@
 @echo off
 REM ═══════════════════════════════════════════════════════════════
-REM  NEXUS CORTEX — Full Progressive Training Pipeline (CUDA)
+REM  ILARIA — Full Progressive Training Pipeline (CUDA)
 REM  GTX 1660 Ti | CUDA 13.2 | SM 7.5
 REM ═══════════════════════════════════════════════════════════════
 
 set DATA_DIR=./data/cortex-smart
-set TRAIN=nexus-train-gpu.exe
+set TRAIN=ilaria-train-gpu.exe
 
 echo.
 echo ================================================================

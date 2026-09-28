@@ -7,5 +7,5 @@ D=/content/drive/MyDrive/ilaria
 code=$(curl -s -o /dev/null -w '%{http_code}' https://github.com/office233/ilaria)
 echo "github.com/office233/ilaria -> HTTP $code"
 [ "$code" = "200" ] || { echo "repo not reachable anonymously (private or restricted) — make it public, then re-run"; exit 1; }
-rm -rf /content/nexus /content/ilaria
+rm -rf /content/ilaria /content/ilaria
 exec bash "$D/run_all.sh"

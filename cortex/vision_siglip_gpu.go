@@ -59,7 +59,7 @@
 // equivalence numbers this produces (max|Δ| and relative L2 of the full
 // tower output, plus the projector's max|Δ|) are measured by
 // TestSiglipGPUTowerMatchesCPU (vision_siglip_gpu_test.go) against the
-// same NEXUS_EYES_DIR fixture TestSigLIPEquivalence
+// same ILARIA_EYES_DIR fixture TestSigLIPEquivalence
 // (vision_siglip_test.go) uses, and reported in this task's final
 // report rather than asserted here as a fixed bound — see that test's
 // doc comment for why.
@@ -69,7 +69,7 @@ import (
 	"fmt"
 	"math"
 
-	"nexus-cortex/cortex/compute"
+	"ilaria/cortex/compute"
 )
 
 // siglipGPUBackend implements visionGPUBackend with resident fp32 cuBLAS

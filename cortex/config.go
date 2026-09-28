@@ -9,7 +9,7 @@ import (
 const NoConfidentResponse = "(no confident response)"
 
 // Config represents all configurations, sizes, thresholds, seeds, paths,
-// and learning knobs for the Nexus Cortex digital organism.
+// and learning knobs for the Ilaria digital organism.
 type Config struct {
 	DataDir     string `json:"data_dir"`
 	Seed        int64  `json:"seed"`
@@ -585,7 +585,7 @@ func DefaultConfig() Config {
 		WebLearnerTimeoutSecs: 10,
 		WebLearnerRateLimitMs: 2000,
 		WebLearnerBodyLimitMB: 5,
-		WebLearnerUserAgent:   "NexusCortex/1.0 (autonomous learner)",
+		WebLearnerUserAgent:   "Ilaria/1.0 (autonomous learner)",
 		WebLearnerWikiBaseURL: "wikipedia.org",
 		WebLearnerHFSearchURL: "https://huggingface.co/api/datasets",
 		WebLearnerHFRowsURL:   "https://datasets-server.huggingface.co/rows",

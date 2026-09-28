@@ -1,4 +1,4 @@
-// forward_sparse.cu — CUDA kernels for Nexus Cortex neural computation.
+// forward_sparse.cu — CUDA kernels for Ilaria neural computation.
 //
 // Kernel 1: forward_sparse_kernel
 //   Computes ternary neural layer forward pass using hardware __popc().
@@ -112,7 +112,7 @@ __global__ void batch_sdr_similarity_kernel(
 
 static int cuda_initialized = 0;
 
-extern "C" int nexus_cuda_init(int device_id) {
+extern "C" int ilaria_cuda_init(int device_id) {
     cudaError_t err = cudaSetDevice(device_id);
     if (err != cudaSuccess) {
         fprintf(stderr, "[CUDA] Failed to set device %d: %s\n", device_id, cudaGetErrorString(err));
@@ -133,14 +133,14 @@ extern "C" int nexus_cuda_init(int device_id) {
     return 0;
 }
 
-extern "C" void nexus_cuda_close(void) {
+extern "C" void ilaria_cuda_close(void) {
     if (cuda_initialized) {
         cudaDeviceReset();
         cuda_initialized = 0;
     }
 }
 
-extern "C" int nexus_cuda_forward_sparse(
+extern "C" int ilaria_cuda_forward_sparse(
     const uint32_t* activeIndices,
     const int32_t*  activeValues,
     uint32_t        activeCount,
@@ -226,7 +226,7 @@ fail:
     return -1;
 }
 
-extern "C" int nexus_cuda_batch_sdr_similarity(
+extern "C" int ilaria_cuda_batch_sdr_similarity(
     const uint32_t* querySDR,
     const uint32_t* memorySDRs,
     uint8_t*        results,

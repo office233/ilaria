@@ -55,7 +55,7 @@ def main():
             report = {'boot': 'passed', 'firmware': 'uefi' if a.uefi else 'bios', 'agent_uid': 1000,
                       'session_uid': 1000, 'network': 'virtio DHCP lease confirmed', 'native_framebuffer': True,
                       'elapsed_seconds': round(time.monotonic() - started, 2),
-                      'model_inference': 'not tested: no Nexus model bundled',
+                      'model_inference': 'not tested: no Ilaria model bundled',
                       'physical_hardware': 'not tested', 'writes_to_host_disks': False}
             (out / 'report.json').write_text(json.dumps(report, indent=2) + '\n')
             print(json.dumps(report, indent=2))

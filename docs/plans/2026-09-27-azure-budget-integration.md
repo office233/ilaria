@@ -28,7 +28,7 @@ SwypikOS remains a local desktop client. Swypik and SwypikOS should share the Il
 
 ## Prepared integration and remaining steps
 
-- Nexus `cmd/ilaria-serve`: opt-in TLS serving with a runtime bearer credential; local serving remains default. Browser-origin restrictions remain enforced.
+- Ilaria `cmd/ilaria-serve`: opt-in TLS serving with a runtime bearer credential; local serving remains default. Browser-origin restrictions remain enforced.
 - SwypikOS `core/ilaria/backend.go`: authenticated HTTPS, redirect refusal and bounded requests/responses. `-ilaria-url` and runtime `ILARIA_API_TOKEN` support an operator-controlled pilot. A shared service token must not be embedded in publicly distributed clients; those need per-user gateway authentication.
 - Swypik `lib/ai/ilaria.ts` and `app/api/ilaria/chat/route.ts`: server-only HTTPS transport, existing administrator sessions, five requests per user per minute, bounded JSON and generic upstream failures. Configure `ILARIA_API_URL` and `ILARIA_API_TOKEN` on the server. No UI or production shopping-AI replacement is included.
 - Measure CPU RAM, latency and concurrency on an isolated serving target before assigning production capacity. Do not load inference on existing two-vCPU web/database VMs without measurements.
@@ -46,4 +46,4 @@ Live Azure CLI inventory and Consumption `lots`, `events` and Cost Management `q
 
 Security tests exercise token/TLS boundaries, redirects, history validation, body limits and failure handling. They do not certify deployed integration or model quality.
 
-Validation completed: Nexus `go vet ./...` and full `go test -count=1 -timeout 180s ./...` passed. SwypikOS vet passed; its full suite passed with `-p 1` after an initial compiler import-file error (the affected package also passed independently). Swypik `npm run typecheck` and all four new Ilaria Vitest cases passed. Existing unrelated web tests were not rerun.
+Validation completed: Ilaria `go vet ./...` and full `go test -count=1 -timeout 180s ./...` passed. SwypikOS vet passed; its full suite passed with `-p 1` after an initial compiler import-file error (the affected package also passed independently). Swypik `npm run typecheck` and all four new Ilaria Vitest cases passed. Existing unrelated web tests were not rerun.

@@ -28,8 +28,8 @@ import (
 	"strings"
 	"time"
 
-	"nexus-cortex/cortex"
-	"nexus-cortex/cortex/compute"
+	"ilaria/cortex"
+	"ilaria/cortex/compute"
 )
 
 // benchPrompts is the standard set used to compare checkpoints. Mix of

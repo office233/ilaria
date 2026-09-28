@@ -11,7 +11,7 @@ import (
 	"sort"
 	"strings"
 
-	"nexus-cortex/cortex"
+	"ilaria/cortex"
 )
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -334,7 +334,7 @@ func printComprehensiveReport(results []CaseResult) {
 	// ── Final composite score ────────────────────────────────────────────
 	score := compositeScore(cats)
 	fmt.Printf("\n══════════════════════════════════════════════════════════\n")
-	fmt.Printf("  NEXUS COMPREHENSIVE SCORE:  %.1f / 100.0\n", score)
+	fmt.Printf("  ILARIA COMPREHENSIVE SCORE:  %.1f / 100.0\n", score)
 	fmt.Printf("══════════════════════════════════════════════════════════\n")
 }
 
@@ -488,7 +488,7 @@ func printLegacyReport(suites []cortex.SuiteResult) {
 			suite.Name, suite.AvgConfidence, suite.AvgPassedConf, suite.AvgFailedConf)
 	}
 
-	fmt.Printf("\nNEXUS CAPABILITY SCORE: %.1f / 100.0\n", legacyCapabilityScore(suites))
+	fmt.Printf("\nILARIA CAPABILITY SCORE: %.1f / 100.0\n", legacyCapabilityScore(suites))
 }
 
 func legacyCapabilityScore(suites []cortex.SuiteResult) float64 {

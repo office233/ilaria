@@ -1,9 +1,9 @@
 @echo off
 REM build-cuda-cmd.bat — build a cmd/* binary with CUDA support and
-REM co-locate cuda_nexus.dll next to it.
+REM co-locate cuda_ilaria.dll next to it.
 REM
 REM This closes the trap documented in HARDCODING_AND_LIMITATIONS.md §10:
-REM binaries built with -tags cuda depend on cuda_nexus.dll, which
+REM binaries built with -tags cuda depend on cuda_ilaria.dll, which
 REM Windows only finds next to the executable (or on PATH). Forgetting
 REM the copy produces a silent exit 0xC0000135 with no error message.
 REM
@@ -30,8 +30,8 @@ if not exist "%ROOT%\cmd\%CMD_NAME%\main.go" (
 )
 
 REM ─── Ensure the DLL exists (build it on first use) ─────────────────
-if not exist "%CUDA_DIR%\cuda_nexus.dll" (
-    echo [build-cuda] cuda_nexus.dll missing — building it first...
+if not exist "%CUDA_DIR%\cuda_ilaria.dll" (
+    echo [build-cuda] cuda_ilaria.dll missing — building it first...
     pushd "%CUDA_DIR%"
     call build.bat
     if errorlevel 1 (
@@ -54,11 +54,11 @@ if errorlevel 1 (
 popd
 
 REM ─── Co-locate the DLL (the whole point of this script) ────────────
-copy /Y "%CUDA_DIR%\cuda_nexus.dll" "%BIN_DIR%\" >nul
+copy /Y "%CUDA_DIR%\cuda_ilaria.dll" "%BIN_DIR%\" >nul
 if errorlevel 1 (
-    echo [build-cuda] ERROR: failed to copy cuda_nexus.dll
+    echo [build-cuda] ERROR: failed to copy cuda_ilaria.dll
     exit /b 4
 )
 
-echo [build-cuda] OK: %BIN_DIR%\%CMD_NAME%.exe (+ cuda_nexus.dll)
+echo [build-cuda] OK: %BIN_DIR%\%CMD_NAME%.exe (+ cuda_ilaria.dll)
 endlocal

@@ -1,7 +1,7 @@
 # AGENTS.md
 
 ## 1. What This Project Is
-NexusCortex is an experimental sparse cognitive architecture written in Go.
+Ilaria is an experimental sparse cognitive architecture written in Go.
 It combines Sparse Distributed Representations (SDRs), associative memory, online learning,
 and sparse routing into a biologically-inspired, local-first cognitive prototype.
 

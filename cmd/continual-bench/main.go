@@ -4,7 +4,7 @@ package main
 //
 // THE CLAIM UNDER TEST
 //
-// A frozen LLM cannot learn a new fact without fine-tuning. Nexus —
+// A frozen LLM cannot learn a new fact without fine-tuning. Ilaria —
 // hippocampus + cognitive bridge over a frozen transformer — learns
 // from a SINGLE exposure, with zero gradient updates, and the fact
 // survives a full restart because episodic memory persists to disk.
@@ -50,8 +50,8 @@ import (
 	"strings"
 	"time"
 
-	cortex "nexus-cortex/cortex"
-	"nexus-cortex/cortex/evalsuite"
+	cortex "ilaria/cortex"
+	"ilaria/cortex/evalsuite"
 )
 
 // benchFact is one line of data/evals/continual.jsonl.
@@ -87,27 +87,27 @@ type factResult struct {
 
 // benchReport is the JSON artifact written at the end.
 type benchReport struct {
-	Timestamp          string       `json:"timestamp"`
-	ModelDir           string       `json:"model_dir"`
-	ModelParams        int          `json:"model_params"`
-	ScorerVersion      int          `json:"scorer_version"`
-	Facts              int          `json:"facts"`
-	TaughtExposures    int          `json:"taught_exposures_per_fact"`
-	GradientUpdates    int          `json:"gradient_updates"`
-	TransformerFrozen  bool         `json:"transformer_frozen"`
-	WeightHashTeach    string       `json:"weight_hash_before"`
-	WeightHashEval     string       `json:"weight_hash_after"`
-	RecallRate         float64      `json:"recall_rate"`
-	StrictAccFull      float64      `json:"strict_accuracy_full_system"`
-	StrictAccBiasOnly  float64      `json:"strict_accuracy_bias_only"`
-	StrictAccFrozen    float64      `json:"strict_accuracy_frozen_baseline"`
-	TokenRecallFull    float64      `json:"token_recall_full_system"`
-	TokenRecallBias    float64      `json:"token_recall_bias_only"`
-	TokenRecallFrozen  float64      `json:"token_recall_frozen_baseline"`
-	GenSettings        string       `json:"gen_settings"`
-	GPU                bool         `json:"gpu"`
-	EvalSeconds        float64      `json:"eval_seconds"`
-	Results            []factResult `json:"results"`
+	Timestamp         string       `json:"timestamp"`
+	ModelDir          string       `json:"model_dir"`
+	ModelParams       int          `json:"model_params"`
+	ScorerVersion     int          `json:"scorer_version"`
+	Facts             int          `json:"facts"`
+	TaughtExposures   int          `json:"taught_exposures_per_fact"`
+	GradientUpdates   int          `json:"gradient_updates"`
+	TransformerFrozen bool         `json:"transformer_frozen"`
+	WeightHashTeach   string       `json:"weight_hash_before"`
+	WeightHashEval    string       `json:"weight_hash_after"`
+	RecallRate        float64      `json:"recall_rate"`
+	StrictAccFull     float64      `json:"strict_accuracy_full_system"`
+	StrictAccBiasOnly float64      `json:"strict_accuracy_bias_only"`
+	StrictAccFrozen   float64      `json:"strict_accuracy_frozen_baseline"`
+	TokenRecallFull   float64      `json:"token_recall_full_system"`
+	TokenRecallBias   float64      `json:"token_recall_bias_only"`
+	TokenRecallFrozen float64      `json:"token_recall_frozen_baseline"`
+	GenSettings       string       `json:"gen_settings"`
+	GPU               bool         `json:"gpu"`
+	EvalSeconds       float64      `json:"eval_seconds"`
+	Results           []factResult `json:"results"`
 }
 
 func fail(stage string, err error) {

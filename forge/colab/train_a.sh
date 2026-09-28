@@ -4,7 +4,7 @@
 set -u
 D=/content/drive/MyDrive/ilaria
 L=/content/ilaria
-cd /content/nexus || exit 1
+cd /content/ilaria || exit 1
 mkdir -p "$L" "$D/brain-a"
 nvidia-smi --query-gpu=name,memory.total --format=csv
 [ -s "$L/train_stream.bin" ] || { echo "copying stream from Drive ($(date +%H:%M:%S))"; cp "$D/train_stream.json" "$L/" && cp "$D/train_stream.bin" "$L/" || exit 1; }

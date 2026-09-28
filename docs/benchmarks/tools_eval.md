@@ -6,7 +6,7 @@ calling) follows the one-line `CALL <tool>: <args>` protocol implemented in `cor
 decoder; nothing was cherry-picked and the prompt set was not iterated against these results (see
 "What was tuned" at the end).
 
-Command (from `D:/nexus`):
+Command (from `D:/ilaria`):
 
 ```bash
 go run -tags gpu ./cmd/ilaria-chat -cuda \

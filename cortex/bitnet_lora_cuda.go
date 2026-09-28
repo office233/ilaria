@@ -2,7 +2,7 @@
 
 package cortex
 
-import "nexus-cortex/cortex/compute"
+import "ilaria/cortex/compute"
 
 const bitnetLoRACUDASource = `
 extern "C" __global__ void lora_matvec(const float* w, const float* x,

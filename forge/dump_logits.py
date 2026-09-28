@@ -126,7 +126,7 @@ def main(argv=None) -> None:
         if not tok_meta.get("byte_level"):
             sys.exit(
                 "dump_logits.py only supports byte-level tokenizers "
-                "(tokenizer.json 'byte_level': true) — char-level Nexus "
+                "(tokenizer.json 'byte_level': true) — char-level Ilaria "
                 "tokenizers aren't wired up here"
             )
         tok = hf_tokenizer.load(tok_path)

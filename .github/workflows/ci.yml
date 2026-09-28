@@ -9,7 +9,7 @@ on:
 
 jobs:
   validate:
-    name: Validate Nexus Cortex
+    name: Validate Ilaria
     runs-on: ubuntu-latest
 
     steps:

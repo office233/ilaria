@@ -84,8 +84,8 @@ import (
 	"time"
 	"unicode"
 
-	cortex "nexus-cortex/cortex"
-	"nexus-cortex/cortex/compute"
+	cortex "ilaria/cortex"
+	"ilaria/cortex/compute"
 )
 
 const audioMarker = "<audio>"

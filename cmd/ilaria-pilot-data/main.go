@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"nexus-cortex/cortex"
+	"ilaria/cortex"
 	"os"
 	"path/filepath"
 )
@@ -56,7 +56,7 @@ func main() {
 		} else if hash[0]%10 == 1 {
 			split = "test"
 		}
-		splits[split] = append(splits[split], example{"en", id, "synthetic-pilot; tool observations executed with Nexus Go tools", msgs})
+		splits[split] = append(splits[split], example{"en", id, "synthetic-pilot; tool observations executed with Ilaria Go tools", msgs})
 	}
 	for i := 1; i <= 48; i++ {
 		a, b := i*17+3, i*7+2

@@ -249,7 +249,7 @@ func initNVRTC() error {
 // since compiled kernels are a build artifact of this machine's CUDA
 // install/GPU arch, not something to commit or share across machines.
 func ptxCacheDir() string {
-	return filepath.Join(os.TempDir(), "nexus-nvrtc-cache")
+	return filepath.Join(os.TempDir(), "ilaria-nvrtc-cache")
 }
 
 // ptxCachePath returns the cache file path for a given source string,
@@ -266,7 +266,7 @@ func ptxCachePath(src string) string {
 // no explicit __global__/__device__ execution-space gymnastics beyond
 // what bitnet_cuda.go's kernel source already uses), consulting an
 // on-disk cache first (keyed by sha256(src) under
-// os.TempDir()/nexus-nvrtc-cache) so repeated calls with identical
+// os.TempDir()/ilaria-nvrtc-cache) so repeated calls with identical
 // source — the common case, since the kernel source is a fixed Go
 // string constant — skip recompilation entirely after the first run of
 // a given binary.

@@ -2,11 +2,11 @@
 
 > **For Antigravity:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Evolve the Nexus Cortex from a hardcoded demo to a trained cognitive organism capable of recalling facts on the capability scoreboard using a robust pre-training CLI tool (`cortex-train`) and a curriculum learning scheduler.
+**Goal:** Evolve the Ilaria from a hardcoded demo to a trained cognitive organism capable of recalling facts on the capability scoreboard using a robust pre-training CLI tool (`cortex-train`) and a curriculum learning scheduler.
 
 **Architecture:** A modular trainer CLI that loads a custom JSON/JSONL pre-training corpus (supporting both single paragraphs and Q&A pairs), sorts training samples by length and complexity (curriculum scheduler), measures cognitive surprise/prediction error, and performs dynamic spaced repetition of high-error samples.
 
-**Tech Stack:** Go 1.26, Go Standard Library (bufio, encoding/json, flag, os, fmt, time), existing `nexus-cortex/cortex` package.
+**Tech Stack:** Go 1.26, Go Standard Library (bufio, encoding/json, flag, os, fmt, time), existing `ilaria/cortex` package.
 
 ---
 

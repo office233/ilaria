@@ -4,7 +4,7 @@ package cortex
 
 // audio_whisper_gpu_test.go — GPU-vs-CPU equivalence for the resident
 // fp32 cuBLAS Whisper encoder backend (audio_whisper_gpu.go). Uses the
-// same NEXUS_EARS_DIR fixtures and shared helpers (audioRefFile,
+// same ILARIA_EARS_DIR fixtures and shared helpers (audioRefFile,
 // compareStage, flatten, maxAbsAndRelL2, readFloat32Bin, whisperMaxAbsTol/
 // whisperRelL2Tol) as TestWhisperEquivalence/TestWhisperTinySynthetic
 // (audio_whisper_test.go) — both files are package cortex, so the test
@@ -27,7 +27,7 @@ import (
 	"testing"
 	"time"
 
-	"nexus-cortex/cortex/compute"
+	"ilaria/cortex/compute"
 )
 
 // TestWhisperGPUTowerMatchesCPU runs the real openai/whisper-small
@@ -42,7 +42,7 @@ import (
 // re-runs RealFrameCount + StackFrames + the projector on the GPU
 // tower's own output and checks it stays within whisperMaxAbsTol too,
 // per the task's numerics requirement. Also logs CPU-vs-GPU forward
-// timing on the same input. Skipped unless NEXUS_EARS_DIR is set and a
+// timing on the same input. Skipped unless ILARIA_EARS_DIR is set and a
 // CUDA device/driver is present.
 func TestWhisperGPUTowerMatchesCPU(t *testing.T) {
 	runWhisperGPUEquivalence(t, "audio_reference.json", "whisper_small_encoder.nxtf")
@@ -59,9 +59,9 @@ func TestWhisperGPUTinySynthetic(t *testing.T) {
 
 func runWhisperGPUEquivalence(t *testing.T, refJSONName, towerFileName string) {
 	t.Helper()
-	dir := os.Getenv("NEXUS_EARS_DIR")
+	dir := os.Getenv("ILARIA_EARS_DIR")
 	if dir == "" {
-		t.Skip("NEXUS_EARS_DIR not set — skipping GPU tower equivalence test")
+		t.Skip("ILARIA_EARS_DIR not set — skipping GPU tower equivalence test")
 	}
 	if err := compute.InitCuBLAS(); err != nil {
 		t.Skipf("cuda not available: %v", err)

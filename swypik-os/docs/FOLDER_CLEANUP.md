@@ -12,6 +12,6 @@ Verificări trecute după reorganizare:
 - `go test ./...` și `go vet ./...`.
 - Smoke test într-un workspace temporar: startup headless pe port alocat, UI embedded, telemetrie/configurație, listare fișiere, protejarea surselor, CORS, validarea inputului și WAV.
 
-Nu s-au modificat fișiere Nexus sau resurse Azure. Testul headless nu validează inferența pe checkpoint real, trainingul GPU sau comportamentul complet al UI-ului Windows. Acestea sunt etape distincte în OS_PLAN.md.
+Nu s-au modificat fișiere Ilaria sau resurse Azure. Testul headless nu validează inferența pe checkpoint real, trainingul GPU sau comportamentul complet al UI-ului Windows. Acestea sunt etape distincte în OS_PLAN.md.
 
 CODE_AUDIT.md este raportul anterior reorganizării; comenzile sale de build care indică executabile în rădăcină sunt istorice. Comanda curentă este în README și scripts/build.ps1.

@@ -47,7 +47,7 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 
-USER_AGENT = "nexus-cortex-eval/1.0 (https://github.com/office233/Nexuscortex)"
+USER_AGENT = "ilaria-eval/1.0 (https://github.com/office233/Ilariacortex)"
 MIN_REQUEST_INTERVAL = 0.55  # seconds -> <= ~1.8 req/s, safely under the 2 req/s cap
 MAX_RETRIES = 4
 RETRY_BACKOFF = 1.5  # seconds, doubled each retry

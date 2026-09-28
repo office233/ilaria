@@ -32,7 +32,7 @@ package cortex
 import (
 	"fmt"
 
-	"nexus-cortex/cortex/compute"
+	"ilaria/cortex/compute"
 )
 
 // mhaGPU holds resident handles for one attention block's projections.

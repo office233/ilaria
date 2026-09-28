@@ -9,7 +9,7 @@ package cortex
 // (no fixtures needed beyond the tiny committed
 // forge/fixtures/resize_bilinear_fixture.json).
 //
-// TestSigLIPEquivalence is skipped unless NEXUS_EYES_DIR (an absolute
+// TestSigLIPEquivalence is skipped unless ILARIA_EYES_DIR (an absolute
 // path) is set to a directory containing:
 //
 //	siglip2_base.nxtf         — forge/multimodal/export_tower.py
@@ -174,7 +174,7 @@ func TestResizeBilinearRGBVsPIL(t *testing.T) {
 }
 
 // ─────────────────────────────────────────────────────────────────────
-// Real-checkpoint tower + projector equivalence (NEXUS_EYES_DIR)
+// Real-checkpoint tower + projector equivalence (ILARIA_EYES_DIR)
 // ─────────────────────────────────────────────────────────────────────
 
 type visionRefFile struct {
@@ -253,12 +253,12 @@ func maxAbsAndRelL2(want []float64, got []float32) (maxAbs, relL2 float64) {
 
 // TestSigLIPEquivalence checks the real google/siglip2-base-patch16-512
 // tower and a projector adapter against forge/multimodal's PyTorch
-// reference (see file doc comment for how to produce NEXUS_EYES_DIR's
+// reference (see file doc comment for how to produce ILARIA_EYES_DIR's
 // contents). Skipped unless that env var is set.
 func TestSigLIPEquivalence(t *testing.T) {
-	dir := os.Getenv("NEXUS_EYES_DIR")
+	dir := os.Getenv("ILARIA_EYES_DIR")
 	if dir == "" {
-		t.Skip("NEXUS_EYES_DIR not set — skipping real-checkpoint SigLIP equivalence test")
+		t.Skip("ILARIA_EYES_DIR not set — skipping real-checkpoint SigLIP equivalence test")
 	}
 
 	refRaw, err := os.ReadFile(filepath.Join(dir, "vision_ref.json"))

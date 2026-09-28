@@ -34,7 +34,7 @@ class ExportFormatTests(unittest.TestCase):
         self.out = os.path.join(self.dir, "tok.json")
         self.tok = ht.train([sample], 600, self.out)
 
-    def test_nexus_json_has_go_loadable_shape(self):
+    def test_ilaria_json_has_go_loadable_shape(self):
         with open(self.out, encoding="utf-8") as f:
             data = json.load(f)
         self.assertTrue(data["byte_level"])
@@ -45,7 +45,7 @@ class ExportFormatTests(unittest.TestCase):
         for m in data["merges"][:50]:
             self.assertIn(m["a"] + m["b"], data["vocab"])
 
-    def test_reload_from_nexus_json_encodes_identically(self):
+    def test_reload_from_ilaria_json_encodes_identically(self):
         os.remove(os.path.splitext(self.out)[0] + ".hf.json")  # force the rebuild path
         rebuilt = ht.load(self.out)
         for s in SAMPLE[:3]:

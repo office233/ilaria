@@ -22,7 +22,7 @@ Every "today" cell below was checked against the repository at commit `484e0e7`.
 | Font: built-in 5x7 uppercase bitmap glyphs; unknown runes render as `?` | `core/session/render.go` |
 | DHCP via BusyBox `udhcpc` on every interface; IPv4 route + `resolv.conf` | `rcS`, `system/rootfs/etc/udhcpc.script` |
 | Agent: approval-gated, read-only tools (`network.interfaces`, `workspace.list`, search) | `core/agent/tools.go`, `cmd/swypikd/main_linux.go` |
-| No model bundled; inference is a remote/loopback Nexus endpoint | `cmd/swypikd/main_linux.go` (`--ilaria-url`), `README.md` |
+| No model bundled; inference is a remote/loopback Ilaria endpoint | `cmd/swypikd/main_linux.go` (`--ilaria-url`), `README.md` |
 | amd64 only (`//go:build linux && amd64`, `GOARCH=amd64`) | `core/session/*.go`, `cmd/swypik-session/main_linux.go`, `scripts/build-os.sh` |
 
 The Linux binaries import only `core/{agent,ilaria,search,service,session,network}` and
@@ -73,7 +73,7 @@ diagnostic/VM-only; **Partial** = real but incomplete.
 | Accessibility (screen reader, magnifier, high contrast) | Narrator, Magnifier, contrast themes | VoiceOver, Zoom | **Missing.** README: "accessibility ... remain to implement" | AT-SPI2 + Orca; compositor zoom; high-contrast theme; shell toolkit must expose AT-SPI (GTK4 via gotk4 does; the custom bitmap renderer cannot realistically) |
 | Localization | 100+ languages | 40+ languages | **Missing** on Linux: English uppercase-only strings, no Unicode shaping (`render.go`); Windows EXE has Romanian tab names | glibc locales, gettext, fontconfig + FreeType + HarfBuzz, Noto fonts; `ro_RO` first |
 | System-wide search | Windows Search | Spotlight | **Partial, differentiator.** Own BM25 index + crawler with confirmation, diacritic folding (`core/search/*`), agent tool; indexes only explicit dirs; no file-change watching | Keep own engine; add fanotify/inotify incremental indexing, content extractors, per-app providers via D-Bus |
-| AI assistant | Copilot (cloud) | Apple Intelligence (on-device + PCC) | **Partial, differentiator.** Approval-gated agent with checkpoints (`core/agent/*`); no model bundled, fails explicitly without Nexus | Ship a local inference service option (llama.cpp/vLLM-class runtime for Ilaria weights) so "local-first" is real; keep per-step approvals |
+| AI assistant | Copilot (cloud) | Apple Intelligence (on-device + PCC) | **Partial, differentiator.** Approval-gated agent with checkpoints (`core/agent/*`); no model bundled, fails explicitly without Ilaria | Ship a local inference service option (llama.cpp/vLLM-class runtime for Ilaria weights) so "local-first" is real; keep per-step approvals |
 | Settings app | Settings | System Settings | **Missing** on Linux (Windows EXE has a Settings tab) | Own shell Settings backed by D-Bus services: NetworkManager, BlueZ, UPower, PipeWire, logind, localed/timedated, fwupd, polkit |
 | Virtualization / containers | Hyper-V, WSL2, Sandbox | Virtualization.framework | **Missing** | KVM + QEMU + libvirt, Podman, distrobox/toolbox; Waydroid for Android apps |
 | Gaming (Vulkan, Proton) | DirectX 12, Game Pass | Metal, Game Porting Toolkit | **Missing** (no GPU driver) | Mesa RADV/ANV/NVK or NVIDIA Vulkan, Steam (Flatpak) + Proton, gamescope, gamemode. Kernel anti-cheat titles will not work |

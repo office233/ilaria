@@ -1,5 +1,5 @@
 # DE CITIT URGENT PENTRU CLAUDE OPUS / CLAUDE CODE
-**Proiect:** NexusCortex & Ilaria (sub umbrela THERAPIUM GROUP SRL / Swypik / Multi-ERP)  
+**Proiect:** Ilaria & Ilaria (sub umbrela THERAPIUM GROUP SRL / Swypik / Multi-ERP)  
 **Fondator & Arhitect:** Abel Varga (Founder & CTO)  
 **Data transmiterii:** 27 Septembrie 2026 (Actualizat la zi)  
 **Prioritate:** Maximă / Strategică / Executivă  
@@ -22,25 +22,25 @@
 
 ---
 
-## 2. Ce a Construit Deja Opus în `D:\nexus\data\forge` (Inspecție Validată)
+## 2. Ce a Construit Deja Opus în `D:\ilaria\data\forge` (Inspecție Validată)
 
 În sesiunea din 24 septembrie 2026, s-a finalizat forjarea unui **organism multimodal biologic complet**:
 
 1. **Creierul (The Brain)**:
-   - `D:\nexus\data\forge\bitnet-2b4t\bitnet.nxtf` (**1,83 GB**): Greutățile modelului nativ ternar **Microsoft BitNet b1.58 2B-4T** (pre-antrenat pe 4 Trilioane de tokeni, licență MIT), convertite și mapate direct în formatul binar de mare viteză `.nxtf`.
-   - `D:\nexus\data\forge\brain-a\transformer.nxtf` (**512 MB**): Modelul de limbaj antrenat pe TinyStories (`tinystories-train.jsonl` 364 MB / `tinystories.bin` 173 MB), cu vocabular dedicat și verificare de perplexitate (`ppl_heldout_go.json`).
+   - `D:\ilaria\data\forge\bitnet-2b4t\bitnet.nxtf` (**1,83 GB**): Greutățile modelului nativ ternar **Microsoft BitNet b1.58 2B-4T** (pre-antrenat pe 4 Trilioane de tokeni, licență MIT), convertite și mapate direct în formatul binar de mare viteză `.nxtf`.
+   - `D:\ilaria\data\forge\brain-a\transformer.nxtf` (**512 MB**): Modelul de limbaj antrenat pe TinyStories (`tinystories-train.jsonl` 364 MB / `tinystories.bin` 173 MB), cu vocabular dedicat și verificare de perplexitate (`ppl_heldout_go.json`).
 
 2. **Ochii (The Eyes — Viziune & Video)**:
-   - `D:\nexus\data\forge\eyes\siglip2_base.nxtf` (**345 MB**): Encoder vizual SigLIP2.
-   - `D:\nexus\data\forge\eyes\projector_seed42.safetensors` (**97 MB**): Proiectorul vizual care leagă cadrele de imagine de spațiul de embedding al creierului. Testat pe `test_cat.jpg`, `test_photo.jpg`, `test_video.mp4`.
+   - `D:\ilaria\data\forge\eyes\siglip2_base.nxtf` (**345 MB**): Encoder vizual SigLIP2.
+   - `D:\ilaria\data\forge\eyes\projector_seed42.safetensors` (**97 MB**): Proiectorul vizual care leagă cadrele de imagine de spațiul de embedding al creierului. Testat pe `test_cat.jpg`, `test_photo.jpg`, `test_video.mp4`.
 
 3. **Urechile (The Ears — Audio & Voce)**:
-   - `D:\nexus\data\forge\ears\whisper_small_encoder.nxtf` (**352 MB**): Encoderul audio Whisper Small.
-   - `D:\nexus\data\forge\ears\projector_seed42.safetensors` (**89 MB**): Adaptorul audio. Testat pe `test_tone.wav`.
+   - `D:\ilaria\data\forge\ears\whisper_small_encoder.nxtf` (**352 MB**): Encoderul audio Whisper Small.
+   - `D:\ilaria\data\forge\ears\projector_seed42.safetensors` (**89 MB**): Adaptorul audio. Testat pe `test_tone.wav`.
 
 4. **Memoria & Graful de Cunoaștere**:
-   - `D:\nexus\data\cortex-distill`: Memoria episodică (`hippocampus.nxhip`), rețeaua sinaptică (`network.nxnet`) și arhitectura fractală (`fractal_cortex`).
-   - `D:\nexus\data\knowledge\biomed`: Graf biomedical complet (ChEMBL, OpenTargets, RxNorm cu `graph.json`).
+   - `D:\ilaria\data\cortex-distill`: Memoria episodică (`hippocampus.nxhip`), rețeaua sinaptică (`network.nxnet`) și arhitectura fractală (`fractal_cortex`).
+   - `D:\ilaria\data\knowledge\biomed`: Graf biomedical complet (ChEMBL, OpenTargets, RxNorm cu `graph.json`).
 
 ---
 
@@ -56,7 +56,7 @@ Scopul antrenării pe **8x H200** este să injectăm **Reflexe NATIVE de Program
 * **Dieta de Antrenare (Environment Trajectories)**:
   * Nu antrenăm pe text static! Antrenăm pe **traiectorii reale de terminal**:
     `Problemă -> <think> Analiză </think> -> <action:bash> go test </action:bash> -> <obs:stderr> Eroare linia 45 </obs:stderr> -> <action:edit_file> Fix </action:edit_file> -> <action:bash> go test </action:bash> -> <obs:stdout> PASS </obs:stdout>`.
-  * **Dataset-uri cheie**: SWE-bench, SWE-smith, Glaive Function Calling v2, ToolBench, plus întreg codebase-ul din `E:\Swypik\multi-erp` (Go 1.26, React 19, SQLC, saga patterns) și `D:\nexus` (CUDA kernels, cuBLAS).
+  * **Dataset-uri cheie**: SWE-bench, SWE-smith, Glaive Function Calling v2, ToolBench, plus întreg codebase-ul din `E:\Swypik\multi-erp` (Go 1.26, React 19, SQLC, saga patterns) și `D:\ilaria` (CUDA kernels, cuBLAS).
 
 ### B. Nucleul de Raționament Pur & Judecată Autonomă (CoT & DPO)
 * **Chain-of-Thought (CoT)**: OpenHermes 2.5, Magpie Reasoning, NuminaMath. Modelul este obligat să gândească pas cu pas înainte de a da un verdict.
@@ -64,7 +64,7 @@ Scopul antrenării pe **8x H200** este să injectăm **Reflexe NATIVE de Program
 
 ### C. Mecanismul de Supraviețuire și Auto-Evoluție (Biological Self-Loop)
 Pentru ca Ilaria să nu „moară” și să continue să evolueze autonom:
-1. **Ziua (Curiozitate Activă)**: Modulul `CuriosityDrive` din Go identifică funcții lente sau fără teste din `nexus` / `multi-erp` și generează ramuri de experimentare (`git checkout -b agent/exp-X`).
+1. **Ziua (Curiozitate Activă)**: Modulul `CuriosityDrive` din Go identifică funcții lente sau fără teste din `ilaria` / `multi-erp` și generează ramuri de experimentare (`git checkout -b agent/exp-X`).
 2. **Judecata Realității**: Compilatorul Go (`go test`) este judecătorul absolut (recompensă binară +1 / -1).
 3. **Noaptea (Consolidarea prin Somn - Sleep Mode)**: În funcția `Sleep()`, experiențele reușite din hipocamp sunt rulate printr-un ciclu de fine-tuning/LoRA, imprimând noile deprinderi direct în greutățile sinaptice (Tadros et al., Nature Communications 2022).
 
@@ -97,7 +97,7 @@ Conform benchmark-urilor mondiale independente din 2025–2026 (**OSWorld**), si
 4. **Cost colosal de tokeni**:
    - Mii de tokeni arși la fiecare secundă pe capturi 4K trimise prin internet.
 
-### Arhitectura Câștigătoare Ilaria & NexusCortex (Hibrid în 3 Niveluri):
+### Arhitectura Câștigătoare Ilaria & Ilaria (Hibrid în 3 Niveluri):
 * **Nivelul 1: Nativ OS / CLI & APIs (Viteză: ~5ms | Acuratețe: 100%)**:
   - Când Ilaria vrea să afle ceva pe PC sau în rețea, execută direct comenzi de sistem, inspectează fișierele și apelează API-uri interne fără să deschidă interfețe grafice lente.
 * **Nivelul 2: Accessibility Tree / UI Automation (~20ms)**:
@@ -238,9 +238,9 @@ Date concrete măsurate în `docs/benchmarks/` și `data/evals/`:
   - Exact ca într-un pool de minat Bitcoin/Ethereum: dacă avem 100 de GPU-uri conectate și 50 de utilizatori își închid laptopurile sau pornesc un joc, **nimic nu dă crash și antrenamentul nu se oprește**.
   - Scade doar temporar debitul („hashrate-ul de tokeni / sec”). Când utilizatorii revin, puterea crește la loc.
   - La 100.000 sau 1.000.000 de PC-uri conectate la nivel global, **puterea colectivă depășește cel mai mare cluster centralizat din lume**, iar costurile de hosting devin practic zero.
-* **Avantajul Absolut al Motorului în Go (`d:\nexus`)**:
+* **Avantajul Absolut al Motorului în Go (`d:\ilaria`)**:
   - AI-ul concurent este prizonier în Python (dependințe fragile, medii virtuale, sute de MB de biblioteci greu de instalat).
-  - NexusCortex este scris în **Go pur** și compilează într-un **singur executabil binar ultra-ușor (`.exe` de 15–20 MB)**, fără dependințe externe, capabil să ruleze silențios pe orice Windows/Linux și să se conecteze la rețeaua P2P.
+  - Ilaria este scris în **Go pur** și compilează într-un **singur executabil binar ultra-ușor (`.exe` de 15–20 MB)**, fără dependințe externe, capabil să ruleze silențios pe orice Windows/Linux și să se conecteze la rețeaua P2P.
 
 ### B. Depășirea Paradigmei de „Prompting” — Operatorul Cognitiv Autonom
 * **Sfârșitul Epocii Prompturilor**: Abel Varga a stabilit direcția strategică: *„Eu nu mai vreau să scriu prompturi! Vreau ca Ilaria să fie peste prompturi, să discute cu mine ca un om și să execute complet autonom orice task.”*
@@ -257,7 +257,7 @@ Date concrete măsurate în `docs/benchmarks/` și `data/evals/`:
    - Cont de facturare verificat și confirmat în *Good Standing*: **`Therapium Group Billing` (`018A6B-04F6E9-4AE181`)**.
 2. **Cerere Oficială de Cotă NVIDIA H200 (8x H200 141GB - Seria A3 Ultra)**:
    - Înregistrată la Google Cloud sub tichetul de suport **`[#ae53fdb5d4254532b4]`**.
-   - Escaladare oficială transmisă direct la `cloudquota@google.com` cu justificarea de pre-training / fine-tuning pentru arhitecturile cognitive Swypik / NexusCortex.
+   - Escaladare oficială transmisă direct la `cloudquota@google.com` cu justificarea de pre-training / fine-tuning pentru arhitecturile cognitive Swypik / Ilaria.
 3. **Cerere Oficială de Cotă NVIDIA B200 (8x B200 180GB Blackwell - Seria A4)**:
    - Înregistrată oficial sub **`Case ID: 1566ab85-e407-4ae2-a385-6dd95c761483`** / Tichet **`[#e4636227d3044df199]`**.
 4. **Google Colab Pro+ Activ**:
@@ -286,7 +286,7 @@ Această secțiune documentează arhitectura tehnică pentru transformarea ecosi
 
 ### B. Ce Calculează Dispozitivele din Rețea (Sarcini Reale & Fezabile)
 
-Telefoanele și laptopurile utilizatorilor nu trebuie să țină tot modelul de zeci de miliarde de parametri în memorie. Grație arhitecturii ternare și modulare din NexusCortex, sarcinile sunt micro-partiționate:
+Telefoanele și laptopurile utilizatorilor nu trebuie să țină tot modelul de zeci de miliarde de parametri în memorie. Grație arhitecturii ternare și modulare din Ilaria, sarcinile sunt micro-partiționate:
 
 1. **Pre-procesare & Embeddings (Simțurile IlariEI)**:
    - Extracție de trăsături audio (chunk-uri de 5 secunde prin encodere Whisper locale) și viziune (SigLIP2 patch-uri).
@@ -321,7 +321,7 @@ flowchart TD
         C["Android Flagship (Charging + Wi-Fi)"]
     end
 
-    subgraph Dispatcher["Nexus Core / Swypik API Hub (Go Engine)"]
+    subgraph Dispatcher["Ilaria Core / Swypik API Hub (Go Engine)"]
         D["Job Dispatcher (Micro-Task Queue)"]
         E["Fault Tolerance Engine (15s Timeout & Reassign)"]
         F["Weight Aggregator (DiLoCo / FedAvg)"]
@@ -346,5 +346,5 @@ flowchart TD
 
 ---
 
-*Acest document este actualizat la zi și pregătit pentru Claude Opus / Claude Code. Toate modulele și căile specificate există fizic pe disc în `D:\nexus` și `E:\Swypik Studio`.*
+*Acest document este actualizat la zi și pregătit pentru Claude Opus / Claude Code. Toate modulele și căile specificate există fizic pe disc în `D:\ilaria` și `E:\Swypik Studio`.*
 

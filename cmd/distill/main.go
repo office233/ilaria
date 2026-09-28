@@ -1,11 +1,11 @@
 package main
 
 // distill — harvest instruction/response pairs from an LLM API into the
-// JSONL corpus format Nexuscortex already ingests.
+// JSONL corpus format Ilariacortex already ingests.
 //
 // WHY THIS EXISTS
 //
-// Nexus cannot be pre-trained from scratch on this hardware, but it does
+// Ilaria cannot be pre-trained from scratch on this hardware, but it does
 // not have to be: a larger model can act as a teacher. This tool asks a
 // teacher model a curriculum of prompts and writes the answers as
 // {"instruction","response"} lines — byte-identical to the format

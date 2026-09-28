@@ -20,7 +20,7 @@ review with tests, not proof that every line or hardware path is correct.
    searches to DuckDuckGo. The new native path uses only the actual own index.
 6. Ilaria exposed text chat, not native function calling. A bounded read-only
    agent loop now links structured decisions, validation, one-time approvals,
-   tool output and replanning. JSON adaptation does not establish native Nexus
+   tool output and replanning. JSON adaptation does not establish native Ilaria
    function calling or prove quality on a real model.
 7. The old web API could execute commands with user rights and expose configured
    Home/workspace paths. Origin checks were not a sandbox. The native image has
@@ -52,7 +52,7 @@ Documents directory. Windows CMD tests are explicitly platform-scoped.
 CI reruns all tests and attempts the actual ISO boots; inspect its logs/artifacts
 for each outcome rather than interpreting this document as a successful boot report.
 
-Pre-alpha only. Persistent storage, real Nexus inference/weights, full Wayland,
+Pre-alpha only. Persistent storage, real Ilaria inference/weights, full Wayland,
 native MCP/apps, writable sandboxed tools, accounts/credentials, Wi-Fi/firmware,
 audio, signed updates, rollback and physical hardware certification remain.
 No revenue guarantee, security certification or company affiliation is established.

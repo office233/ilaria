@@ -9,22 +9,22 @@
 //
 // This script closes that gap. Two modes:
 //
-//   --mode target   Loads a small curated set of facts (~70 lines) that
-//                   directly targets the 8 factual / instruct / reasoning
-//                   tasks where cursa D scored zero. Honest framing:
-//                   this is teach-to-the-test. It proves the recall +
-//                   prompt-augmentation pipeline works end-to-end, not
-//                   that the model generalises from the wild.
+//	--mode target   Loads a small curated set of facts (~70 lines) that
+//	                directly targets the 8 factual / instruct / reasoning
+//	                tasks where cursa D scored zero. Honest framing:
+//	                this is teach-to-the-test. It proves the recall +
+//	                prompt-augmentation pipeline works end-to-end, not
+//	                that the model generalises from the wild.
 //
-//   --mode bulk     Streams up to N Q/A pairs from data/corpus/dolly.jsonl
-//                   and data/corpus/alpaca.jsonl into Hippocampus. Tests
-//                   whether recall stays precise in the presence of
-//                   thousands of unrelated memories (the "needle in
-//                   haystack" stress test).
+//	--mode bulk     Streams up to N Q/A pairs from data/corpus/dolly.jsonl
+//	                and data/corpus/alpaca.jsonl into Hippocampus. Tests
+//	                whether recall stays precise in the presence of
+//	                thousands of unrelated memories (the "needle in
+//	                haystack" stress test).
 //
-//   --mode both     Runs target first, then bulk. The cleanest answer to
-//                   "did the architecture help, or did I just memorise
-//                   the eval set?".
+//	--mode both     Runs target first, then bulk. The cleanest answer to
+//	                "did the architecture help, or did I just memorise
+//	                the eval set?".
 //
 // All modes call org.LearnQA(q, a), which is the same path used by
 // cortex-web, cortex interactive, and cortex-autonomous when a user or
@@ -51,7 +51,7 @@ import (
 	"strings"
 	"time"
 
-	"nexus-cortex/cortex"
+	"ilaria/cortex"
 )
 
 // targetLine is the schema for data/evals/target-facts.jsonl — the

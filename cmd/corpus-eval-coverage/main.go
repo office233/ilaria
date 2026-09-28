@@ -10,15 +10,15 @@
 //     (substantive, entități — adăugate manual în taskKeywords mai jos).
 //  2. Extrage răspunsurile așteptate (Expected sau ExpectedNumber).
 //  3. Parcurge fiecare linie din corpus și clasifică:
-//        - COOCCUR: linia conține CEL PUȚIN UN keyword DIN prompt ȘI
-//                   CEL PUȚIN UN expected answer (învățare directă)
-//        - ANSWER_ONLY: linia conține doar răspunsul, fără context-ul
-//                   întrebării (vocabular OK, asociere absentă)
-//        - NONE: linia n-are nimic relevant
+//     - COOCCUR: linia conține CEL PUȚIN UN keyword DIN prompt ȘI
+//     CEL PUȚIN UN expected answer (învățare directă)
+//     - ANSWER_ONLY: linia conține doar răspunsul, fără context-ul
+//     întrebării (vocabular OK, asociere absentă)
+//     - NONE: linia n-are nimic relevant
 //  4. Etichetează task-ul:
-//        - GREEN  ≥ greenThreshold linii cu COOCCUR  (învățabil bine)
-//        - YELLOW 1..greenThreshold-1 linii COOCCUR  (învățabil marginal)
-//        - RED    0 linii COOCCUR                    (NEÎNVĂȚABIL)
+//     - GREEN  ≥ greenThreshold linii cu COOCCUR  (învățabil bine)
+//     - YELLOW 1..greenThreshold-1 linii COOCCUR  (învățabil marginal)
+//     - RED    0 linii COOCCUR                    (NEÎNVĂȚABIL)
 //
 // Output: tabel uman + JSON detaliat.
 //
@@ -44,7 +44,7 @@ import (
 	"strconv"
 	"strings"
 
-	"nexus-cortex/cortex/evalsuite"
+	"ilaria/cortex/evalsuite"
 )
 
 // taskKeywords mapează ID-ul fiecărui task la cuvintele-cheie care
@@ -73,26 +73,26 @@ var taskKeywords = map[string][]string{
 	"fact_continents":      {"continents"},
 
 	// ── math (numeric — keywords contextul aritmetic) ───────────
-	"math_add_basic": {"15", "27", "plus", "add"},
-	"math_mul":       {"12", "7", "times", "multiply"},
-	"math_sub":       {"100", "37", "minus", "subtract"},
-	"math_div":       {"144", "12", "divided", "divide"},
-	"math_sqrt":      {"square", "root", "81"},
+	"math_add_basic":   {"15", "27", "plus", "add"},
+	"math_mul":         {"12", "7", "times", "multiply"},
+	"math_sub":         {"100", "37", "minus", "subtract"},
+	"math_div":         {"144", "12", "divided", "divide"},
+	"math_sqrt":        {"square", "root", "81"},
 	"math_word_apples": {"alice", "apples", "bob"},
 
 	// ── instruct ────────────────────────────────────────────────
-	"instr_primary_colors":          {"primary", "colors"},
-	"instr_translate_hello_es":      {"hello", "spanish"},
-	"instr_translate_good_morning":  {"good morning", "spanish"},
-	"instr_define_photo":            {"photosynthesis"},
-	"instr_yesno":                   {"earth", "round"},
+	"instr_primary_colors":         {"primary", "colors"},
+	"instr_translate_hello_es":     {"hello", "spanish"},
+	"instr_translate_good_morning": {"good morning", "spanish"},
+	"instr_define_photo":           {"photosynthesis"},
+	"instr_yesno":                  {"earth", "round"},
 
 	// ── reasoning ───────────────────────────────────────────────
-	"reason_seq_arith":  {"2, 4, 6, 8", "sequence"},
-	"reason_seq_geom":   {"1, 2, 4, 8, 16", "sequence"},
-	"reason_syllogism":  {"penguin", "bird", "fly"},
-	"reason_age":        {"anna", "mark", "years old"},
-	"reason_compare":    {"larger", "0.9", "0.11"},
+	"reason_seq_arith": {"2, 4, 6, 8", "sequence"},
+	"reason_seq_geom":  {"1, 2, 4, 8, 16", "sequence"},
+	"reason_syllogism": {"penguin", "bird", "fly"},
+	"reason_age":       {"anna", "mark", "years old"},
+	"reason_compare":   {"larger", "0.9", "0.11"},
 }
 
 // taskExpectedStrings returnează stringurile pe care căutăm să le găsim
@@ -144,25 +144,25 @@ type prepared struct {
 }
 
 type taskStats struct {
-	TaskID       string   `json:"task_id"`
-	Category     string   `json:"category"`
-	Prompt       string   `json:"prompt"`
-	Keywords     []string `json:"keywords"`
-	Expected     []string `json:"expected"`
-	LinesCooccur int      `json:"lines_cooccur"`     // PROMPT-CTX + ANSWER
-	LinesAnsOnly int      `json:"lines_answer_only"` // ANSWER fără prompt-ctx
-	LinesPrOnly  int      `json:"lines_prompt_only"` // PROMPT-CTX fără answer
-	Verdict      string   `json:"verdict"`
+	TaskID        string   `json:"task_id"`
+	Category      string   `json:"category"`
+	Prompt        string   `json:"prompt"`
+	Keywords      []string `json:"keywords"`
+	Expected      []string `json:"expected"`
+	LinesCooccur  int      `json:"lines_cooccur"`     // PROMPT-CTX + ANSWER
+	LinesAnsOnly  int      `json:"lines_answer_only"` // ANSWER fără prompt-ctx
+	LinesPrOnly   int      `json:"lines_prompt_only"` // PROMPT-CTX fără answer
+	Verdict       string   `json:"verdict"`
 	SampleCooccur []string `json:"sample_cooccur,omitempty"` // primele 3 linii
 }
 
 type corpusReport struct {
-	CorpusPaths   []string     `json:"corpus_paths"`
-	TotalLines    int          `json:"total_lines"`
-	Tasks         []taskStats  `json:"tasks"`
-	GreenCount    int          `json:"green_count"`
-	YellowCount   int          `json:"yellow_count"`
-	RedCount      int          `json:"red_count"`
+	CorpusPaths    []string    `json:"corpus_paths"`
+	TotalLines     int         `json:"total_lines"`
+	Tasks          []taskStats `json:"tasks"`
+	GreenCount     int         `json:"green_count"`
+	YellowCount    int         `json:"yellow_count"`
+	RedCount       int         `json:"red_count"`
 	GreenThreshold int         `json:"green_threshold"`
 }
 

@@ -7,7 +7,7 @@ import (
 	"os"
 	"strings"
 
-	"nexus-cortex/cortex"
+	"ilaria/cortex"
 )
 
 // flowEmoji returns a human-readable flow indicator.
@@ -45,7 +45,7 @@ func banner() {
 	fmt.Println()
 	fmt.Println("╔══════════════════════════════════════════════════════════════════╗")
 	fmt.Println("║                                                                  ║")
-	fmt.Println("║   🧠  NEXUS CORTEX — Organism Digital v0.4                       ║")
+	fmt.Println("║   🧠  ILARIA — Organism Digital v0.4                       ║")
 	fmt.Println("║                                                                  ║")
 	fmt.Println("║   A living digital organism that learns, thinks, sleeps,         ║")
 	fmt.Println("║   feels, and evolves. Zero matrix multiplications.               ║")
@@ -114,7 +114,7 @@ func main() {
 	// ── CLI flags ───────────────────────────────────────────────────
 	// -config permite încărcarea unui JSON cu suprascrieri peste
 	// DefaultConfig. Vezi cortex/config_loader.go pentru precedență
-	// (flag > NEXUS_CORTEX_CONFIG env > nexus-cortex.json / config.json).
+	// (flag > ILARIA_CONFIG env > ilaria.json / config.json).
 	configPath := flag.String("config", "", "Path to JSON config file (overrides DefaultConfig)")
 	dataDir := flag.String("data-dir", "", "Path to organism data directory (overrides config)")
 	interactive := flag.Bool("i", false, "Enter interactive mode after demo")
@@ -371,7 +371,7 @@ func main() {
 	fmt.Printf("║   🌊 In flow                     : %-30v  ║\n", finalStats.IsInFlow)
 	fmt.Println("║                                                                  ║")
 	fmt.Println("║   ✅ Core pipeline operational (learn → think → respond).       ║")
-	fmt.Println("║   🧠 NEXUS CORTEX v0.4 — The organism is alive and learning.   ║")
+	fmt.Println("║   🧠 ILARIA v0.4 — The organism is alive and learning.   ║")
 	fmt.Println("║                                                                  ║")
 	fmt.Println("╚══════════════════════════════════════════════════════════════════╝")
 	fmt.Println()

@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"nexus-cortex/cortex"
+	"ilaria/cortex"
 )
 
 // ─────────────────────────────────────────────────────────────────────
@@ -136,7 +136,7 @@ func runTrain(inputFile, corpusDir, outputFile string, vocabSize, maxLines int) 
 	}
 
 	fmt.Printf("╔══════════════════════════════════════════════════════╗\n")
-	fmt.Printf("║      Nexus Cortex — BPE Tokenizer Trainer          ║\n")
+	fmt.Printf("║      Ilaria — BPE Tokenizer Trainer          ║\n")
 	fmt.Printf("╚══════════════════════════════════════════════════════╝\n\n")
 
 	// Gather input files
@@ -238,7 +238,7 @@ func runTrain(inputFile, corpusDir, outputFile string, vocabSize, maxLines int) 
 	testTexts := []string{
 		"Hello world",
 		"the cat sat on the mat",
-		"Nexus Cortex is a neural architecture project.",
+		"Ilaria is a neural architecture project.",
 		"neurons fire together and wire together",
 	}
 
@@ -310,7 +310,7 @@ func runInteractive(tokenizerFile string) {
 		os.Exit(1)
 	}
 
-	fmt.Printf("Nexus BPE Tokenizer — Interactive Mode\n")
+	fmt.Printf("Ilaria BPE Tokenizer — Interactive Mode\n")
 	fmt.Printf("Vocab: %d tokens, %d merges\n", tok.ActualVocabSize(), len(tok.Merges))
 	fmt.Printf("Type text to tokenize (Ctrl+C to exit):\n\n")
 

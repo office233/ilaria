@@ -10,7 +10,7 @@ import (
 )
 
 // TestBitNetGPUTiming loads the real microsoft/bitnet-b1.58-2B-4T
-// checkpoint (same NEXUS_BITNET_DIR convention as TestBitNetEquivalence
+// checkpoint (same ILARIA_BITNET_DIR convention as TestBitNetEquivalence
 // in bitnet_equivalence_test.go: an absolute path to a directory
 // containing bitnet.nxtf), enables the GPU BitLinear backend, and times
 // a 16-token prefill followed by 32 greedily-generated tokens, printing
@@ -19,12 +19,12 @@ import (
 // TestMatMulInt8NTTinyAgainstReference). The generation loop mirrors
 // cmd/bitnet-run's own Prefill/Step structure so the printed rate is
 // directly comparable to that CLI's "-gpu" run. Skipped unless
-// NEXUS_BITNET_DIR is set, bitnet.nxtf exists under it, and a CUDA
+// ILARIA_BITNET_DIR is set, bitnet.nxtf exists under it, and a CUDA
 // device/driver is present.
 func TestBitNetGPUTiming(t *testing.T) {
-	dir := os.Getenv("NEXUS_BITNET_DIR")
+	dir := os.Getenv("ILARIA_BITNET_DIR")
 	if dir == "" {
-		t.Skip("NEXUS_BITNET_DIR not set — skipping GPU timing test")
+		t.Skip("ILARIA_BITNET_DIR not set — skipping GPU timing test")
 	}
 	nxtfPath := filepath.Join(dir, "bitnet.nxtf")
 	if _, err := os.Stat(nxtfPath); err != nil {

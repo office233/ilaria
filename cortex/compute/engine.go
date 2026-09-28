@@ -1,7 +1,7 @@
 package compute
 
 // Engine defines the interface for hardware-accelerated computation
-// of the Nexus Cortex neural primitives.
+// of the Ilaria neural primitives.
 //
 // All methods return errors instead of panicking, allowing callers
 // to fall back to CPU gracefully.

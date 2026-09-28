@@ -241,7 +241,7 @@ func Run(ctx context.Context, socket, fbPath string) error {
 		body := ""
 		switch page {
 		case "HOME":
-			body = "BOOTED LINUX. NO WINDOWS HOST.\nNO ELECTRON. NO BROWSER RUNTIME.\n\nF2: OWN SEARCH INDEX + CRAWLER\nF3: ILARIA AGENT + TOOL APPROVALS\nF4: NETWORK ADAPTERS AND ADDRESSES\nF5: WORKSPACE FILES\n\nLIVE RAM SESSION: CHANGES ARE TEMPORARY.\nNO MODEL WEIGHTS ARE BUNDLED.\nCONFIGURE NEXUS TO ENABLE AI."
+			body = "BOOTED LINUX. NO WINDOWS HOST.\nNO ELECTRON. NO BROWSER RUNTIME.\n\nF2: OWN SEARCH INDEX + CRAWLER\nF3: ILARIA AGENT + TOOL APPROVALS\nF4: NETWORK ADAPTERS AND ADDRESSES\nF5: WORKSPACE FILES\n\nLIVE RAM SESSION: CHANGES ARE TEMPORARY.\nNO MODEL WEIGHTS ARE BUNDLED.\nCONFIGURE ILARIA TO ENABLE AI."
 		case "NETWORK":
 			body = fmt.Sprintf("DRIVERS: %s\nINTERNET: %s\n", state.Network.DriverOwner, state.Network.Internet)
 			for _, n := range state.Network.Interfaces {
@@ -252,7 +252,7 @@ func Run(ctx context.Context, socket, fbPath string) error {
 		case "FILES":
 			body = "WORKSPACE METADATA ONLY\n\n" + output
 		case "AGENT":
-			body = "GOAL AND APPROVED RESULTS GO TO NEXUS.\nNO ROOT, SHELL OR AUTOMATIC FILE WRITES.\nTYPE A GOAL AND PRESS ENTER.\n\n"
+			body = "GOAL AND APPROVED RESULTS GO TO ILARIA.\nNO ROOT, SHELL OR AUTOMATIC FILE WRITES.\nTYPE A GOAL AND PRESS ENTER.\n\n"
 			if state.Run != nil {
 				r := state.Run
 				body += "STATUS: " + r.Status + "\n"
@@ -349,12 +349,12 @@ func Run(ctx context.Context, socket, fbPath string) error {
 				}
 				if page == "AGENT" {
 					pendingValue = input
-					pending = "SEND GOAL AND APPROVED METADATA TO CONFIGURED NEXUS: " + pendingValue
+					pending = "SEND GOAL AND APPROVED METADATA TO CONFIGURED ILARIA: " + pendingValue
 				}
 			case 64:
 				if !busy && page == "AGENT" && state.Run != nil && state.Run.Status == "interrupted" && state.Run.Recovery == "replan" {
 					resumeID = state.Run.ID
-					pending = "RESUME SENDS RECORDED GOAL AND EVIDENCE TO NEXUS; NEW TOOL APPROVALS REQUIRED."
+					pending = "RESUME SENDS RECORDED GOAL AND EVIDENCE TO ILARIA; NEW TOOL APPROVALS REQUIRED."
 				}
 			case 66:
 				if busy || k.repeat {

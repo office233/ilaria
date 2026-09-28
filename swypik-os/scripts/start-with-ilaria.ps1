@@ -1,17 +1,17 @@
 <#
-Starts the local Ilaria model service from this Nexus checkout and opens the
+Starts the local Ilaria model service from this Ilaria checkout and opens the
 SwypikOS desktop connected to it.
 
   powershell -File swypik-os\scripts\start-with-ilaria.ps1          # GPU if available
   powershell -File swypik-os\scripts\start-with-ilaria.ps1 -Cpu     # force CPU (slow)
 
 Nothing is downloaded: the model and tokenizer must already exist under the
-Nexus data directory (see -Model and -Tokenizer). The service listens only on
+Ilaria data directory (see -Model and -Tokenizer). The service listens only on
 127.0.0.1 and is stopped when the desktop window closes.
 #>
 [CmdletBinding()]
 param(
-    [string]$NexusRoot = '',
+    [string]$IlariaRoot = '',
     [string]$Model = '',
     [string]$Tokenizer = '',
     [int]$Port = 8091,
@@ -21,9 +21,9 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $swypik = Split-Path -Parent $PSScriptRoot
-if (-not $NexusRoot) { $NexusRoot = Split-Path -Parent $swypik }
-if (-not $Model) { $Model = Join-Path $NexusRoot 'data\forge\bitnet-2b4t\bitnet.nxtf' }
-if (-not $Tokenizer) { $Tokenizer = Join-Path $NexusRoot 'data\pretrained\bitnet-b1.58-2B-4T\tokenizer.json' }
+if (-not $IlariaRoot) { $IlariaRoot = Split-Path -Parent $swypik }
+if (-not $Model) { $Model = Join-Path $IlariaRoot 'data\forge\bitnet-2b4t\bitnet.nxtf' }
+if (-not $Tokenizer) { $Tokenizer = Join-Path $IlariaRoot 'data\pretrained\bitnet-b1.58-2B-4T\tokenizer.json' }
 foreach ($required in @($Model, $Tokenizer)) {
     if (-not (Test-Path -LiteralPath $required -PathType Leaf)) { throw "Missing Ilaria file: $required" }
 }
@@ -35,7 +35,7 @@ $serve = Join-Path $binDir ($(if ($useCuda) { 'ilaria-serve-gpu.exe' } else { 'i
 $desktop = Join-Path $binDir 'swypik-os.exe'
 
 Write-Host "Building Ilaria service ($(if ($useCuda) { 'CUDA' } else { 'CPU' }))..."
-Push-Location $NexusRoot
+Push-Location $IlariaRoot
 try {
     if ($useCuda) { $env:CGO_ENABLED = '1'; go build -tags gpu -o $serve ./cmd/ilaria-serve }
     else { go build -o $serve ./cmd/ilaria-serve }

@@ -34,7 +34,7 @@ var (
 // "sandbox". Keys are paths relative to the module root; they may not escape it.
 func RunGo(ctx context.Context, files map[string]string) (ExecutionResult, error) {
 	start := time.Now()
-	dir, err := os.MkdirTemp("", "nexus-sandbox-")
+	dir, err := os.MkdirTemp("", "ilaria-sandbox-")
 	if err != nil {
 		return ExecutionResult{}, fmt.Errorf("sandbox: temp dir: %w", err)
 	}

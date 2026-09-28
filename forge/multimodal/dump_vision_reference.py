@@ -8,7 +8,7 @@ pixel-shuffled tokens, and projected image embeddings.
 
 If --image is omitted, a deterministic 512x512 PNG (colored shapes on a
 white background, no RNG) is synthesized instead -- there is no real photo
-anywhere under D:\\nexus\\data or forge/fixtures (checked; this repo's
+anywhere under D:\\ilaria\\data or forge/fixtures (checked; this repo's
 image assets are all diagrams/screenshots outside those trees), so this is
 the "otherwise synthesize a second one" fallback the task allows, doubling
 as the primary fixture too. `--variant N` picks between a couple of

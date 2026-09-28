@@ -46,6 +46,8 @@ type parser struct {
 	core      bool
 	tokens    []token
 	at, depth int
+	tailDepth int // block depth whose final bare expression is the function result; 0 = none
+	tailUsed  int // bare result expressions accepted so far
 }
 
 func failure(pos scanner.Position, format string, args ...any) error {
@@ -130,7 +132,7 @@ func parseSource(filename, source string, core bool) (program *Program, err erro
 			p.expect(">")
 			f.result = p.typeName(true)
 		}
-		f.body = p.block()
+		f.body = p.functionBody(f.result != "" && f.result != "void")
 		program.functions[name] = f
 	}
 	main, ok := program.functions["main"]
@@ -192,6 +194,20 @@ func (p *parser) block() []*stmt {
 	p.expect("}")
 	return body
 }
+
+// functionBody parses a function block. In Semantic Core mode a function
+// with a result may end with a bare expression and no ';' (Rust style), which
+// is its return value: code models write this form by default, and it was
+// previously a syntax error, so no valid program changes meaning.
+func (p *parser) functionBody(hasResult bool) []*stmt {
+	saved := p.tailDepth
+	p.tailDepth = 0
+	if p.core && hasResult {
+		p.tailDepth = p.depth + 1
+	}
+	defer func() { p.tailDepth = saved }()
+	return p.block()
+}
 func (p *parser) statement() *stmt {
 	s := &stmt{pos: p.tokens[p.at].pos}
 	switch {
@@ -211,9 +227,19 @@ func (p *parser) statement() *stmt {
 	case p.take("if"):
 		s.kind = "if"
 		s.value = p.expression(0)
+		// A final if/else may end each branch with a bare result expression
+		// (Rust's if-expression); anywhere else such a branch is an error.
+		tail, saved, used := p.tailDepth > 0 && p.depth == p.tailDepth, p.tailDepth, p.tailUsed
+		if tail {
+			p.tailDepth = p.depth + 1
+		}
 		s.body = p.block()
 		if p.take("else") {
 			s.other = p.block()
+		}
+		p.tailDepth = saved
+		if p.tailUsed != used && (s.other == nil || p.peek() != "}") {
+			p.bad("a bare result expression is only allowed at the end of a function or of both branches of its final if/else")
 		}
 	case p.take("while"):
 		s.kind = "while"
@@ -228,6 +254,11 @@ func (p *parser) statement() *stmt {
 		} else {
 			s.kind = "expr"
 			s.value = p.expression(0)
+			if p.tailDepth > 0 && p.depth == p.tailDepth && p.peek() == "}" {
+				s.kind = "return"
+				p.tailUsed++
+				return s
+			}
 		}
 		p.expect(";")
 	}

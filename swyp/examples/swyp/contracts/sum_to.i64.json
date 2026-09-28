@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "entry": "sum_to",
+  "inputs": [{"name": "n", "type": "i64", "min": "0", "max": "40"}],
+  "ensures": [
+    {"op": "eq", "args": [
+      {"op": "mul", "args": [{"var": "result"}, {"const": {"type": "i64", "value": "2"}}]},
+      {"op": "mul", "args": [{"var": "n"}, {"op": "add", "args": [{"var": "n"}, {"const": {"type": "i64", "value": "1"}}]}]}
+    ]}
+  ],
+  "max_steps": 2000
+}

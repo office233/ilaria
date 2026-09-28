@@ -35,6 +35,7 @@ type judgeError struct {
 	Version    int                `json:"version"`
 	Status     string             `json:"status"`
 	Diagnostic *coreir.Diagnostic `json:"diagnostic"`
+	Hint       string             `json:"hint,omitempty"`
 	Summary    string             `json:"summary"`
 }
 
@@ -44,6 +45,7 @@ type judgeError struct {
 // files, calls a model or runs anything but the fuel-bounded core executor.
 func judge(ctx context.Context, input io.Reader, output io.Writer) (err error) {
 	emitted := false
+	source := ""
 	defer func() {
 		if err == nil || emitted {
 			return
@@ -52,7 +54,11 @@ func judge(ctx context.Context, input io.Reader, output io.Writer) (err error) {
 		if !errors.As(err, &d) {
 			d = &coreir.Diagnostic{Code: "invalid_input", Message: err.Error()}
 		}
-		writeErr := json.NewEncoder(output).Encode(judgeError{1, "error", d, "ERROR " + d.Message})
+		summary, hint := "ERROR "+d.Message, judgeHint(source, d.Message)
+		if hint != "" {
+			summary += " -- hint: " + hint
+		}
+		writeErr := json.NewEncoder(output).Encode(judgeError{1, "error", d, hint, summary})
 		if writeErr != nil {
 			err = errors.Join(err, writeErr)
 		}
@@ -78,7 +84,7 @@ func judge(ctx context.Context, input io.Reader, output io.Writer) (err error) {
 	if err != nil {
 		return err
 	}
-	source := req.Source
+	source = req.Source
 	if !judgeHasMain.MatchString(source) {
 		source = strings.TrimRight(source, "\n") + "\nfn main() {}\n"
 	}
@@ -106,7 +112,7 @@ func judge(ctx context.Context, input io.Reader, output io.Writer) (err error) {
 	report.IRSHA256 = coreHash(canonical)
 	report.ContractSHA256 = coreHash(req.Contract)
 	emitted = true
-	if err := json.NewEncoder(output).Encode(judgeResponse{report, judgeSummary(report)}); err != nil {
+	if err := json.NewEncoder(output).Encode(judgeResponse{report, judgeSummary(report, contract)}); err != nil {
 		return err
 	}
 	if report.Status != "tested" && report.Status != "exhaustive" {
@@ -115,7 +121,7 @@ func judge(ctx context.Context, input io.Reader, output io.Writer) (err error) {
 	return nil
 }
 
-func judgeSummary(v coreir.Verification) string {
+func judgeSummary(v coreir.Verification, c coreir.Contract) string {
 	switch v.Status {
 	case "exhaustive":
 		return fmt.Sprintf("PASS exhaustive: %s satisfies the contract on all %d inputs of its domain", v.Entry, v.CasesChecked)
@@ -134,10 +140,56 @@ func judgeSummary(v coreir.Verification) string {
 			return fmt.Sprintf("FAIL counterexample: %s failed: %s", call, v.Witness.Diagnostic.Message)
 		}
 		if v.Witness.Result != nil {
-			return fmt.Sprintf("FAIL counterexample: %s returned %s, violating ensures[%d]", call, v.Witness.Result.Literal().Value, v.Witness.Postcondition)
+			i := v.Witness.Postcondition
+			if i >= 0 && i < len(c.Ensures) {
+				return fmt.Sprintf("FAIL counterexample: %s returned %s, but the contract requires %s (ensures[%d])", call, v.Witness.Result.Literal().Value, judgePredicate(c.Ensures[i], 0), i)
+			}
+			return fmt.Sprintf("FAIL counterexample: %s returned %s, violating ensures[%d]", call, v.Witness.Result.Literal().Value, i)
 		}
 		return fmt.Sprintf("FAIL counterexample: %s (%s)", call, v.Reason)
 	default:
 		return fmt.Sprintf("UNKNOWN %s: %s", v.Status, v.Reason)
 	}
+}
+
+var judgeInfix = map[string]struct {
+	symbol string
+	prec   int
+}{
+	"or": {"||", 1}, "and": {"&&", 2},
+	"eq": {"==", 3}, "ne": {"!=", 3},
+	"lt": {"<", 4}, "le": {"<=", 4}, "gt": {">", 4}, "ge": {">=", 4},
+	"add": {"+", 5}, "sub": {"-", 5},
+	"mul": {"*", 6}, "div": {"/", 6}, "rem": {"%", 6},
+}
+
+// judgePredicate renders a contract predicate in Swyp's own infix syntax, so
+// a model reads the rule it broke ("result >= 0") instead of an index.
+func judgePredicate(p coreir.Predicate, parent int) string {
+	switch {
+	case p.Variable != "":
+		return p.Variable
+	case p.Constant != nil:
+		return p.Constant.Value
+	}
+	if len(p.Args) == 1 && (p.Op == "neg" || p.Op == "not") {
+		symbol := "-"
+		if p.Op == "not" {
+			symbol = "!"
+		}
+		return symbol + judgePredicate(p.Args[0], 7)
+	}
+	op, ok := judgeInfix[p.Op]
+	if !ok || len(p.Args) != 2 {
+		args := make([]string, len(p.Args))
+		for i, a := range p.Args {
+			args[i] = judgePredicate(a, 0)
+		}
+		return p.Op + "(" + strings.Join(args, ", ") + ")"
+	}
+	text := judgePredicate(p.Args[0], op.prec) + " " + op.symbol + " " + judgePredicate(p.Args[1], op.prec+1)
+	if op.prec < parent {
+		return "(" + text + ")"
+	}
+	return text
 }

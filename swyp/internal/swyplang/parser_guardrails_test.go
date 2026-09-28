@@ -119,3 +119,35 @@ func TestParserAcceptsShallowExpressionTrees(t *testing.T) {
 		t.Fatalf("got %q, want 64", output.String())
 	}
 }
+
+func TestCoreTailExpressionIsFunctionResult(t *testing.T) {
+	accepted := []string{
+		"fn sq(x: i64) -> i64 { x * x }\nfn main() {}",
+		"fn ab(x: i64) -> i64 { if x < 0 { -x } else { x } }\nfn main() {}",
+		"fn s(n: i64) -> i64 { if n == 0 { 0 } else { if n > 100 { return 0; } s(n - 1) + n } }\nfn main() {}",
+		"fn sum(n: i64) -> i64 {\n  let t: i64 = 0;\n  let i: i64 = 1;\n  while i <= n { t = t + i; i = i + 1; }\n  t\n}\nfn main() {}",
+	}
+	for _, src := range accepted {
+		if _, err := ParseCore("tail.swyp", src); err != nil {
+			t.Fatalf("core rejected tail expression: %v\n%s", err, src)
+		}
+	}
+	rejected := map[string]string{
+		"legacy language":       "fn sq(x) -> number { x * x }\nfn main() {}",
+		"nested block tail":     "fn sq(x: i64) -> i64 { if x < 0 { x } return x; }\nfn main() {}",
+		"function without type": "fn f(x: i64) { x * x }\nfn main() {}",
+		"main":                  "fn main() { 1 + 1 }",
+		"if without else":       "fn f(x: i64) -> i64 { if x < 0 { x } }\nfn main() {}",
+		"if/else not final":     "fn f(x: i64) -> i64 { if x < 0 { x } else { 0 } return 1; }\nfn main() {}",
+		"tail inside while":     "fn f(x: i64) -> i64 { while x < 0 { x } }\nfn main() {}",
+	}
+	for name, src := range rejected {
+		parse := ParseCore
+		if name == "legacy language" {
+			parse = Parse
+		}
+		if _, err := parse("tail.swyp", src); err == nil {
+			t.Fatalf("%s: accepted %q", name, src)
+		}
+	}
+}

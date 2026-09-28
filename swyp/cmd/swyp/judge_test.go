@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"strings"
 	"testing"
+
+	"swyp-lang/internal/coreir"
 )
 
 const judgeSquareContract = `{"version":1,"entry":"square","inputs":[{"name":"x","type":"i64","min":"-100","max":"100"}],"ensures":[{"op":"eq","args":[{"var":"result"},{"op":"mul","args":[{"var":"x"},{"var":"x"}]}]}],"max_steps":100}`
@@ -41,7 +43,9 @@ func TestJudgeVerdicts(t *testing.T) {
 	}{
 		{"exhaustive pass without main", "fn square(x: i64) -> i64 {\n    return x * x;\n}", "exhaustive", "PASS exhaustive: square satisfies the contract on all 201 inputs", true},
 		{"explicit main kept", "fn square(x: i64) -> i64 { return x * x; }\nfn main() {}\n", "exhaustive", "PASS exhaustive", true},
-		{"counterexample", "fn square(x: i64) -> i64 {\n    return x + x;\n}", "counterexample", "FAIL counterexample: square(x=-100) returned -200, violating ensures[0]", false},
+		{"rust-style tail expression", "fn square(x: i64) -> i64 {\n    x * x\n}", "exhaustive", "PASS exhaustive", true},
+		{"one-line tail expression", "fn square(x: i64) -> i64 { x * x }", "exhaustive", "PASS exhaustive", true},
+		{"counterexample", "fn square(x: i64) -> i64 {\n    return x + x;\n}", "counterexample", "FAIL counterexample: square(x=-100) returned -200, but the contract requires result == x * x (ensures[0])", false},
 		{"parse error with position", "fn square(x: i64) -> i64 {\n    return x * ;\n}", "error", "ERROR candidate.swyp:2:", false},
 		{"missing entry", "fn cube(x: i64) -> i64 { return x * x * x; }", "error", "ERROR", false},
 	}
@@ -85,5 +89,48 @@ func TestJudgeRejectsMalformedRequests(t *testing.T) {
 				t.Fatalf("summary %q", s)
 			}
 		})
+	}
+}
+
+func TestJudgeHintsForCommonModelMistakes(t *testing.T) {
+	cases := map[string]string{
+		"fn square(x: i64) -> i64 { if x < 0 { x * x } return x * x; }":    "only allowed at the end of a function or of both branches of its final if/else",
+		"fn square(x: i64) -> i64 { let y: i64 = x; y *= x; return y; }":   "hint: Swyp has no compound assignment; write `y = y * ...;`",
+		"fn square(x: i64) -> i64 { return x ** 2; }":                      "hint: Swyp has no ** operator",
+		"fn square(x: i64) -> i64 { return x.pow(2); }":                    "hint: Swyp values have no methods (`.pow(...)`)",
+		"fn square(x: i64) -> i64 { while true { break; } return x * x; }": "hint: Swyp has no break/continue",
+		"fn square(x: i64) -> i64 { return abs(x) * abs(x); }":             "hint: Swyp has no built-in `abs`",
+	}
+	for source, want := range cases {
+		response, err := runJudge(t, judgeRequestJSON(t, source, judgeSquareContract))
+		summary, _ := response["summary"].(string)
+		if err == nil || response["status"] != "error" || !strings.Contains(summary, want) {
+			t.Fatalf("%q: summary %q, want %q", source, summary, want)
+		}
+	}
+	// A correct program and an ordinary counterexample carry no hint.
+	for _, source := range []string{"fn square(x: i64) -> i64 { return x * x; }", "fn square(x: i64) -> i64 { return x + x; }"} {
+		response, _ := runJudge(t, judgeRequestJSON(t, source, judgeSquareContract))
+		if s, _ := response["summary"].(string); strings.Contains(s, "hint:") {
+			t.Fatalf("unexpected hint: %q", s)
+		}
+	}
+}
+
+func TestJudgePredicateRendering(t *testing.T) {
+	cases := map[string]string{
+		`{"op":"ge","args":[{"var":"result"},{"const":{"type":"i64","value":"0"}}]}`:                                                           "result >= 0",
+		`{"op":"eq","args":[{"var":"r"},{"op":"mul","args":[{"op":"add","args":[{"var":"a"},{"var":"b"}]},{"var":"c"}]}]}`:                     "r == (a + b) * c",
+		`{"op":"eq","args":[{"var":"r"},{"op":"sub","args":[{"var":"x"},{"op":"sub","args":[{"var":"y"},{"var":"z"}]}]}]}`:                     "r == x - (y - z)",
+		`{"op":"or","args":[{"op":"eq","args":[{"var":"r"},{"var":"x"}]},{"op":"eq","args":[{"var":"r"},{"op":"neg","args":[{"var":"x"}]}]}]}`: "r == x || r == -x",
+	}
+	for raw, want := range cases {
+		var p coreir.Predicate
+		if err := json.Unmarshal([]byte(raw), &p); err != nil {
+			t.Fatal(err)
+		}
+		if got := judgePredicate(p, 0); got != want {
+			t.Fatalf("%s: got %q, want %q", raw, got, want)
+		}
 	}
 }

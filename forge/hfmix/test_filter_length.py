@@ -25,6 +25,7 @@ class FilterLengthTests(unittest.TestCase):
             src.mkdir()
             short = json.dumps(row("line separator inside a string", "pa"), ensure_ascii=False)
             long = json.dumps(row("x" * 500, "ta"), ensure_ascii=False)
+            self.assertIn(chr(0x2028), short)  # raw separator inside a JSON string
             (src / "train.jsonl").write_bytes((short + "\n" + long + "\n").encode())
             (src / "validation.jsonl").write_bytes((short + "\n").encode())
             (src / "manifest.json").write_text(json.dumps({"train": {}, "validation": {}, "notes": "x"}))

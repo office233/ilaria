@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	cortex "nexus-cortex/cortex"
+	cortex "ilaria/cortex"
 )
 
 // Batch mode (-tasks): one model load runs many Swyp Forge tasks

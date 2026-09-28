@@ -26,7 +26,7 @@ import (
 	"os"
 	"time"
 
-	cortex "nexus-cortex/cortex"
+	cortex "ilaria/cortex"
 )
 
 func main() {

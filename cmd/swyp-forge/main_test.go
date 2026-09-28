@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	cortex "nexus-cortex/cortex"
+	cortex "ilaria/cortex"
 )
 
 const absRef = "fn absolute(x: i64) -> i64 {\n    if x < 0 {\n        return -x;\n    }\n    return x;\n}"

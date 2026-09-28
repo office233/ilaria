@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	cortex "nexus-cortex/cortex"
+	cortex "ilaria/cortex"
 )
 
 const batchTasks = `{"id":"sq","tier":"arithmetic","split":"heldout","task":"Return x squared.","contract":{"version":1,"entry":"sq","inputs":[{"name":"x","type":"i64","min":"0","max":"3"}],"ensures":[],"max_steps":10}}

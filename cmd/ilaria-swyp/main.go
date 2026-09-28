@@ -24,6 +24,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	cortex "ilaria/cortex"
@@ -44,6 +45,10 @@ func main() {
 	split := flag.String("split", "heldout", "Batch mode: heldout, train or all")
 	reportPath := flag.String("report", "", "Batch mode: new JSONL file for per-task results and the summary")
 	printSystem := flag.Bool("print-system-prompt", false, "Print the exact system prompt the loop uses and exit")
+	temperature := flag.Float64("temperature", 0, "Sampling temperature for repair prompts (0 = greedy)")
+	topK := flag.Int("top-k", 40, "Candidates kept when sampling")
+	seed := flag.Int64("seed", 1, "Sampling seed (runs are reproducible)")
+	sampleAll := flag.Bool("sample-all", false, "Also sample the first prompt (changes pass@1)")
 	flag.Parse()
 
 	fail := func(stage string, err error) {
@@ -127,11 +132,23 @@ func main() {
 
 	// No ChatTools: verification is driven by the loop, not by CALL lines.
 	runner := cortex.NewRunner(dec, tok, stopIDs, model.Cfg.MaxSeqLen, nil, 0, *maxTokens, os.Stderr)
+	if err := runner.SetSampling(0, 0, *seed); err != nil {
+		fail("sampling", err)
+	}
 	generate := func(ctx context.Context, userText string) (string, error) {
 		start := time.Now()
 		// Fresh context per prompt (the system prompt KV stays cached): greedy
 		// decoding otherwise tends to copy its previous rejected reply.
 		runner.ResetToSystem()
+		// -temperature applies to repair prompts only (or every prompt with
+		// -sample-all), so pass@1 stays the greedy measurement.
+		t := 0.0
+		if *temperature > 0 && (*sampleAll || strings.HasPrefix(userText, "This Swyp function is wrong:")) {
+			t = *temperature
+		}
+		if err := runner.SetSamplingKeepSeed(t, *topK); err != nil {
+			return "", err
+		}
 		res, err := runner.UserTurn(ctx, userText)
 		if err == nil {
 			fmt.Fprintf(os.Stderr, "[ilaria-swyp] reply: %d tokens in %.1fs\n", res.Tokens, time.Since(start).Seconds())

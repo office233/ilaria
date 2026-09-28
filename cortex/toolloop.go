@@ -39,6 +39,8 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"math"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"strings"
@@ -434,6 +436,87 @@ type Runner struct {
 	log          io.Writer
 	ctx          context.Context
 	feedErr      error
+	temperature  float64    // 0 = greedy (default); see SetSampling
+	topK         int        // candidates kept when sampling
+	rng          *rand.Rand // seeded, so a sampled run is reproducible
+}
+
+// SetSampling switches next-token choice from greedy argmax to temperature
+// sampling over the topK most likely tokens, with a fixed seed so a run is
+// reproducible. temperature 0 restores greedy decoding.
+func (r *Runner) SetSampling(temperature float64, topK int, seed int64) error {
+	if temperature < 0 || temperature > 5 || math.IsNaN(temperature) {
+		return fmt.Errorf("temperature must be 0..5")
+	}
+	if temperature > 0 && (topK < 1 || topK > 1000) {
+		return fmt.Errorf("top-k must be 1..1000 when sampling")
+	}
+	r.temperature, r.topK = temperature, topK
+	r.rng = rand.New(rand.NewSource(seed))
+	return nil
+}
+
+// SetSamplingKeepSeed changes temperature/top-k without reseeding, so one
+// seeded stream continues across prompts. SetSampling must be called first.
+func (r *Runner) SetSamplingKeepSeed(temperature float64, topK int) error {
+	if r.rng == nil {
+		return fmt.Errorf("SetSampling must be called before SetSamplingKeepSeed")
+	}
+	rng := r.rng
+	if err := r.SetSampling(temperature, topK, 0); err != nil {
+		return err
+	}
+	r.rng = rng
+	return nil
+}
+
+// next picks the next token: argmax, or a seeded top-k temperature sample.
+func (r *Runner) next(logits []float32) int {
+	if r.temperature <= 0 || len(logits) == 0 {
+		return r.argmax(logits)
+	}
+	return sampleTopK(logits, r.topK, r.temperature, r.rng)
+}
+
+func sampleTopK(logits []float32, k int, temperature float64, rng *rand.Rand) int {
+	if k > len(logits) {
+		k = len(logits)
+	}
+	// Partial selection of the k largest logits (k is small).
+	idx := make([]int, 0, k)
+	for i, v := range logits {
+		if math.IsNaN(float64(v)) {
+			continue
+		}
+		if len(idx) < k {
+			idx = append(idx, i)
+			for j := len(idx) - 1; j > 0 && logits[idx[j]] > logits[idx[j-1]]; j-- {
+				idx[j], idx[j-1] = idx[j-1], idx[j]
+			}
+			continue
+		}
+		if v > logits[idx[k-1]] {
+			idx[k-1] = i
+			for j := k - 1; j > 0 && logits[idx[j]] > logits[idx[j-1]]; j-- {
+				idx[j], idx[j-1] = idx[j-1], idx[j]
+			}
+		}
+	}
+	top := float64(logits[idx[0]])
+	weights := make([]float64, len(idx))
+	total := 0.0
+	for i, id := range idx {
+		weights[i] = math.Exp((float64(logits[id]) - top) / temperature)
+		total += weights[i]
+	}
+	u := rng.Float64() * total
+	for i, w := range weights {
+		if u < w {
+			return idx[i]
+		}
+		u -= w
+	}
+	return idx[len(idx)-1]
 }
 
 // NewRunner constructs a Runner. stopIDs are the token ids that end a
@@ -600,7 +683,7 @@ func (r *Runner) generateSegment(logits []float32) (text string, tokens int, isC
 		if r.feedErr != nil {
 			return
 		}
-		next := r.argmax(logits)
+		next := r.next(logits)
 		ids = append(ids, next)
 		r.seq = append(r.seq, next)
 		tokens++

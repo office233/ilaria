@@ -92,14 +92,7 @@ func TestSwypJudgeChatToolConfiguration(t *testing.T) {
 // TestSwypJudgeChatToolRealSwyp runs against a real Swyp build when
 // SWYP_EXE points to one (e.g. <repo>/swyp/bin/swyp.exe).
 func TestSwypJudgeChatToolRealSwyp(t *testing.T) {
-	exe := os.Getenv("SWYP_EXE")
-	if exe == "" {
-		t.Skip("SWYP_EXE not set")
-	}
-	tool, err := NewSwypJudgeChatTool(exe)
-	if err != nil {
-		t.Fatal(err)
-	}
+	tool := realSwypOrSkip(t)
 	for source, want := range map[string]string{
 		"fn square(x: i64) -> i64 { return x * x; }": "PASS exhaustive",
 		"fn square(x: i64) -> i64 { return x + x; }": "FAIL counterexample: square(x=-100) returned -200",
@@ -110,4 +103,17 @@ func TestSwypJudgeChatToolRealSwyp(t *testing.T) {
 			t.Fatalf("%s: got %q %v, want prefix %q", source, out, err, want)
 		}
 	}
+}
+
+func realSwypOrSkip(t *testing.T) *SwypJudgeChatTool {
+	t.Helper()
+	exe := os.Getenv("SWYP_EXE")
+	if exe == "" {
+		t.Skip("SWYP_EXE not set")
+	}
+	tool, err := NewSwypJudgeChatTool(exe)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return tool
 }

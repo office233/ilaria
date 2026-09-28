@@ -81,13 +81,42 @@ func (t *SwypJudgeChatTool) Call(ctx context.Context, args string) (string, erro
 	if strings.TrimSpace(in.Source) == "" || len(in.Contract) == 0 {
 		return "", fmt.Errorf(`both "source" and "contract" are required`)
 	}
+	verdict, err := t.Verify(ctx, in.Source, in.Contract)
+	if err != nil {
+		return "", err
+	}
+	return verdict.Summary, nil
+}
+
+// SwypVerdict is one `swyp judge` answer: the status ("exhaustive", "tested",
+// "counterexample", "unknown", "timeout" or "error"), its one-line summary,
+// and the full JSON report with evidence hashes.
+type SwypVerdict struct {
+	Status  string          `json:"status"`
+	Summary string          `json:"summary"`
+	Report  json.RawMessage `json:"report"`
+}
+
+// Accepted reports whether the verdict is verification evidence: exhaustive
+// finite-domain execution or explicitly labelled sampling.
+func (v SwypVerdict) Accepted() bool { return v.Status == "exhaustive" || v.Status == "tested" }
+
+// Verify runs `swyp judge` on one candidate. A FAIL or ERROR verdict is a
+// normal result; err is non-nil only when no well-formed verdict came back.
+func (t *SwypJudgeChatTool) Verify(ctx context.Context, source string, contract json.RawMessage) (SwypVerdict, error) {
+	if t == nil || t.executable == "" {
+		return SwypVerdict{}, fmt.Errorf("swyp is disabled (no -swyp executable configured)")
+	}
 	request, err := json.Marshal(struct {
 		Version  int             `json:"version"`
 		Source   string          `json:"source"`
 		Contract json.RawMessage `json:"contract"`
-	}{1, in.Source, in.Contract})
+	}{1, source, contract})
 	if err != nil {
-		return "", err
+		return SwypVerdict{}, err
+	}
+	if len(request) > swypJudgeMaxArgs+64 {
+		return SwypVerdict{}, fmt.Errorf("swyp request exceeds %d bytes", swypJudgeMaxArgs)
 	}
 	cctx, cancel := context.WithTimeout(ctx, swypJudgeTimeout)
 	defer cancel()
@@ -99,20 +128,17 @@ func (t *SwypJudgeChatTool) Call(ctx context.Context, args string) (string, erro
 	cmd.WaitDelay = time.Second
 	runErr := cmd.Run()
 	if cctx.Err() != nil {
-		return "", fmt.Errorf("swyp judge timed out after %s", swypJudgeTimeout)
+		return SwypVerdict{}, fmt.Errorf("swyp judge timed out after %s", swypJudgeTimeout)
 	}
-	// A FAIL or ERROR verdict exits nonzero but is still a well-formed answer
-	// for the model; only a missing or malformed verdict is a tool error.
-	var verdict struct {
-		Status  string `json:"status"`
-		Summary string `json:"summary"`
-	}
-	if err := json.Unmarshal(bytes.TrimSpace(stdout.Bytes()), &verdict); err != nil || verdict.Summary == "" {
+	raw := bytes.TrimSpace(stdout.Bytes())
+	var verdict SwypVerdict
+	if err := json.Unmarshal(raw, &verdict); err != nil || verdict.Summary == "" || verdict.Status == "" {
 		var exitErr *exec.ExitError
 		if runErr != nil && !errors.As(runErr, &exitErr) {
-			return "", fmt.Errorf("swyp judge could not run: %v", runErr)
+			return SwypVerdict{}, fmt.Errorf("swyp judge could not run: %v", runErr)
 		}
-		return "", fmt.Errorf("swyp judge returned no verdict: %s", truncateForTool(strings.TrimSpace(stderr.String()), 300))
+		return SwypVerdict{}, fmt.Errorf("swyp judge returned no verdict: %s", truncateForTool(strings.TrimSpace(stderr.String()), 300))
 	}
-	return verdict.Summary, nil
+	verdict.Report = append(json.RawMessage(nil), raw...)
+	return verdict, nil
 }

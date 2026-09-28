@@ -1,124 +1,122 @@
 package autogenesis_test
 
 import (
+	"go/ast"
+	"go/importer"
+	"go/parser"
+	"go/token"
+	"go/types"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"swypik-os/core/autogenesis"
+	"swypik-os/core/evidence"
 	"swypik-os/core/hal"
 )
 
-func TestAutogenesisVehicleDriver(t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "swypik_drivers_*")
-	if err != nil {
-		t.Fatalf("Failed to create temp dir: %v", err)
-	}
-	defer os.RemoveAll(tempDir)
-
-	synth := autogenesis.NewSynthesizer(tempDir)
-
-	dev := &hal.DiscoveredDevice{
-		ID:           "dev_vehicle_can0",
-		Name:         "CAN Bus Vehicle Gateway",
-		Class:        hal.ClassVehicle,
-		Bus:          hal.BusCAN,
-		Port:         "vcan0",
-		Protocol:     "ISO-15765-4",
-		DriverStatus: hal.DriverNeedsAutogenesis,
-		Capabilities: []string{"read_rpm", "set_cabin_temp"},
-	}
-
+func synthesize(t *testing.T, dev *hal.DiscoveredDevice) (*autogenesis.Synthesizer, *autogenesis.SynthesizedDriver, string) {
+	t.Helper()
+	dir := t.TempDir()
+	synth := autogenesis.NewSynthesizer(dir)
 	driver, err := synth.SynthesizeDriver(dev)
 	if err != nil {
 		t.Fatalf("SynthesizeDriver failed: %v", err)
 	}
+	return synth, driver, dir
+}
 
-	if driver.State != autogenesis.StateActive {
-		t.Errorf("Expected driver StateActive, got %s", driver.State)
-	}
-
-	if len(driver.ExportedFuncs) < 3 {
-		t.Errorf("Expected at least 3 exported functions, got %v", driver.ExportedFuncs)
-	}
-
-	// Verify file was written to disk
-	filePath := filepath.Join(tempDir, dev.ID+".go")
-	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		t.Errorf("Synthesized driver file was not saved to %s", filePath)
-	}
-
-	// Verify HAL device was updated to Ready
-	if dev.DriverStatus != hal.DriverReady {
-		t.Errorf("Expected HAL DriverReady, got %s", dev.DriverStatus)
+func vehicleDevice() *hal.DiscoveredDevice {
+	return &hal.DiscoveredDevice{
+		ID: "dev_vehicle_can0", Name: "CAN Bus Vehicle Gateway", Class: hal.ClassVehicle,
+		Bus: hal.BusCAN, Port: "vcan0", Protocol: "ISO-15765-4",
+		DriverStatus: hal.DriverNeedsAutogenesis,
 	}
 }
 
-func TestAutogenesisRobotDriver(t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "swypik_drivers_*")
-	if err != nil {
-		t.Fatalf("Failed to create temp dir: %v", err)
-	}
-	defer os.RemoveAll(tempDir)
+// A generated candidate must never be reported as an active driver or make
+// the device look ready: nothing compiled, loaded or probed it.
+func TestSynthesizedDriverStaysUnverifiedDraft(t *testing.T) {
+	dev := vehicleDevice()
+	_, driver, dir := synthesize(t, dev)
 
-	synth := autogenesis.NewSynthesizer(tempDir)
-
-	dev := &hal.DiscoveredDevice{
-		ID:           "dev_robot_arm_0",
-		Name:         "6-DoF Articulated Manipulator",
-		Class:        hal.ClassRobot,
-		Bus:          hal.BusUART,
-		Port:         "COM3",
-		Protocol:     "DYNAMIXEL_V2",
-		DriverStatus: hal.DriverNeedsAutogenesis,
-		Capabilities: []string{"move_joint", "gripper", "estop"},
+	if driver.State != autogenesis.StateDraft {
+		t.Errorf("state = %s, want %s", driver.State, autogenesis.StateDraft)
 	}
-
-	driver, err := synth.SynthesizeDriver(dev)
-	if err != nil {
-		t.Fatalf("SynthesizeDriver failed: %v", err)
+	if driver.Evidence != evidence.Simulated {
+		t.Errorf("evidence = %s, want %s", driver.Evidence, evidence.Simulated)
 	}
-
-	if driver.Checksum == "" {
-		t.Error("Expected valid checksum on synthesized driver")
+	if dev.DriverStatus != hal.DriverCandidate {
+		t.Errorf("device driver status = %s, want %s", dev.DriverStatus, hal.DriverCandidate)
 	}
-
-	// Verify idempotency (re-fetching doesn't recreate from scratch)
-	driver2, err := synth.SynthesizeDriver(dev)
-	if err != nil {
-		t.Fatalf("Second SynthesizeDriver call failed: %v", err)
+	for key, want := range map[string]string{"compiled": "false", "loaded": "false", "hardware_probe": "not_performed", "cached_to_disk": "true"} {
+		if got := driver.Metrics[key]; got != want {
+			t.Errorf("metric %s = %q, want %q", key, got, want)
+		}
 	}
-	if driver.Checksum != driver2.Checksum {
-		t.Error("Checksum mismatch on cached driver")
+	if _, ok := driver.Metrics["zero_sandbox_panics"]; ok {
+		t.Error("driver claims a sandbox run that never happened")
+	}
+	if _, err := os.Stat(filepath.Join(dir, dev.ID+".go")); err != nil {
+		t.Errorf("candidate source not cached: %v", err)
 	}
 }
 
-func TestAutogenesisApplianceDriver(t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "swypik_drivers_*")
+// Generated device operations must fail loudly instead of returning invented
+// readings or pretending an actuator moved.
+func TestSynthesizedSourceHasNoFabricatedIO(t *testing.T) {
+	_, driver, _ := synthesize(t, vehicleDevice())
+	for _, fabricated := range []string{"2450.0", "62.5", "88.0", "340.5", "isOpen: true"} {
+		if strings.Contains(driver.SourceCode, fabricated) {
+			t.Errorf("candidate source still fabricates %q", fabricated)
+		}
+	}
+	if !strings.Contains(driver.SourceCode, "errNoTransport") {
+		t.Error("candidate source does not report its missing transport")
+	}
+}
+
+// Every generated class must at least type-check against the standard library,
+// so a later compile stage starts from code that builds.
+func TestSynthesizedSourceTypeChecks(t *testing.T) {
+	classes := map[hal.DeviceClass]string{
+		hal.ClassVehicle: "QueryPID", hal.ClassRobot: "MoveJoint",
+		hal.ClassAppliance: "SetRelay", hal.ClassSensor: "ReadRawTelemetry",
+	}
+	for class, method := range classes {
+		t.Run(string(class), func(t *testing.T) {
+			dev := &hal.DiscoveredDevice{ID: "dev-" + strings.ToLower(string(class)) + ":0", Name: "fixture", Class: class}
+			_, driver, _ := synthesize(t, dev)
+
+			fset := token.NewFileSet()
+			file, err := parser.ParseFile(fset, "candidate.go", driver.SourceCode, 0)
+			if err != nil {
+				t.Fatal(err)
+			}
+			conf := types.Config{Importer: importer.ForCompiler(fset, "source", nil)}
+			if _, err := conf.Check(file.Name.Name, fset, []*ast.File{file}, nil); err != nil {
+				t.Fatalf("candidate does not type-check: %v\n%s", err, driver.SourceCode)
+			}
+			found := false
+			for _, name := range driver.ExportedFuncs {
+				found = found || name == method
+			}
+			if !found {
+				t.Errorf("exported funcs %v missing %s", driver.ExportedFuncs, method)
+			}
+		})
+	}
+}
+
+func TestSynthesizeDriverIsIdempotent(t *testing.T) {
+	dev := vehicleDevice()
+	synth, first, _ := synthesize(t, dev)
+	second, err := synth.SynthesizeDriver(dev)
 	if err != nil {
-		t.Fatalf("Failed to create temp dir: %v", err)
+		t.Fatal(err)
 	}
-	defer os.RemoveAll(tempDir)
-
-	synth := autogenesis.NewSynthesizer(tempDir)
-
-	dev := &hal.DiscoveredDevice{
-		ID:           "dev_appliance_relays",
-		Name:         "Modbus Power Distribution Relay Hub",
-		Class:        hal.ClassAppliance,
-		Bus:          hal.BusModbus,
-		Port:         "COM4",
-		Protocol:     "MODBUS_RTU",
-		DriverStatus: hal.DriverNeedsAutogenesis,
-		Capabilities: []string{"relay_control", "power_metering"},
-	}
-
-	driver, err := synth.SynthesizeDriver(dev)
-	if err != nil {
-		t.Fatalf("SynthesizeDriver failed: %v", err)
-	}
-
-	if driver.Class != hal.ClassAppliance {
-		t.Errorf("Expected ClassAppliance, got %s", driver.Class)
+	if first != second || synth.TotalSynthesized() != 1 {
+		t.Errorf("second synthesis regenerated the candidate (total %d)", synth.TotalSynthesized())
 	}
 }

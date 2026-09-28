@@ -40,6 +40,11 @@ const (
  DriverNeedsAutogenesis DriverStatus = "NEEDS_AUTOGENESIS"
  DriverGeneric DriverStatus = "GENERIC_FALLBACK"
  DriverFailed DriverStatus = "FAILED"
+ // DriverCandidate: a generated driver exists but was never compiled, loaded
+ // or probed against the device.
+ DriverCandidate DriverStatus = "CANDIDATE_UNVERIFIED"
+ // DriverSimulated: the device is an in-memory fixture with no hardware behind it.
+ DriverSimulated DriverStatus = "SIMULATED"
 )
 type DiscoveredDevice struct {
  ID string `json:"id"`

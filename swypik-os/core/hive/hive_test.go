@@ -2,9 +2,12 @@ package hive_test
 
 import (
 	"context"
+	"errors"
+	"strings"
 	"testing"
 	"time"
 
+	"swypik-os/core/evidence"
 	"swypik-os/core/hive"
 )
 
@@ -58,17 +61,23 @@ func TestHiveMindTaskOffload(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
-	completed, err := hm.OffloadTask(ctx, task)
-	if err != nil {
-		t.Fatalf("OffloadTask failed: %v", err)
+	// Without a transport the task is routed on paper and reported as not run.
+	routed, err := hm.OffloadTask(ctx, task)
+	if !errors.Is(err, hive.ErrNoTransport) {
+		t.Fatalf("OffloadTask err = %v, want ErrNoTransport", err)
 	}
-
-	if completed.Status != "COMPLETED" {
-		t.Errorf("Expected status COMPLETED, got %s", completed.Status)
+	if routed.AssignedNodeID != carNode.ID || routed.Status != "NOT_EXECUTED" || routed.Evidence != evidence.Simulated {
+		t.Errorf("routed task = node %s status %s evidence %s", routed.AssignedNodeID, routed.Status, routed.Evidence)
+	}
+	if strings.Contains(routed.Result, "completed") || strings.Contains(routed.Result, "zero latency") {
+		t.Errorf("task result claims execution: %s", routed.Result)
 	}
 
 	status := hm.GetMeshStatus()
-	if status["active_peers"] != 2 {
-		t.Errorf("Expected 2 active peers, got %v", status["active_peers"])
+	if status["registered_peers"] != 2 {
+		t.Errorf("Expected 2 registered peers, got %v", status["registered_peers"])
+	}
+	if status["mesh_health"] != "UNVERIFIED" || status["transport"] != "none" || status["executed_tasks"] != 0 {
+		t.Errorf("mesh status claims more than a local registry: %v", status)
 	}
 }

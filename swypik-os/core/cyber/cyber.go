@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"swypik-os/core/autogenesis"
+	"swypik-os/core/evidence"
 	"swypik-os/core/hal"
 )
 
@@ -39,10 +40,14 @@ type PhysicalCommand struct {
 	RawPrompt      string                 `json:"raw_prompt"`
 }
 
-// ActuationResult holds the outcome and telemetry feedback of a physical action.
+// ActuationResult holds the outcome of a command. Success means the command
+// was accepted; Evidence says what it actually touched. This orchestrator has
+// no bus transport, so every accepted command is evidence.Simulated and its
+// telemetry is the simulation's own state, not a device reading.
 type ActuationResult struct {
 	Command         *PhysicalCommand   `json:"command"`
 	Success         bool               `json:"success"`
+	Evidence        evidence.Level     `json:"evidence"`
 	Telemetry       map[string]float64 `json:"telemetry"`
 	FeedbackMessage string             `json:"feedback_message"`
 	ExecutionTimeMs int64              `json:"execution_time_ms"`
@@ -112,7 +117,8 @@ func (g *SafetyGovernor) Validate(cmd *PhysicalCommand) error {
 	return nil
 }
 
-// Orchestrator translates human intent into physical cybernetic control across all devices.
+// Orchestrator parses intents and applies them to an in-memory simulation.
+// It never performs device I/O.
 type Orchestrator struct {
 	mu           sync.RWMutex
 	halMgr       *hal.Manager
@@ -135,15 +141,15 @@ func NewOrchestrator(halMgr *hal.Manager, synth *autogenesis.Synthesizer) *Orche
 		halMgr:        halMgr,
 		synth:         synth,
 		safety:        NewSafetyGovernor(),
+		// The simulation starts parked and idle; there is no camera to report on.
 		lastTelemetry: map[string]float64{
-			"vehicle_speed_kmh":    64.0,
-			"vehicle_rpm":          2150.0,
+			"vehicle_speed_kmh":    0.0,
+			"vehicle_rpm":          0.0,
 			"vehicle_cabin_temp_c": 21.0,
 			"robot_arm_joint_1":    0.0,
 			"robot_gripper_pct":    0.0,
 			"appliance_relay_1":    0.0,
 			"appliance_power_w":    0.0,
-			"camera_feed_status":   1.0,
 		},
 		history: make([]*ActuationResult, 0),
 	}
@@ -161,7 +167,8 @@ func (o *Orchestrator) DispatchIntent(ctx context.Context, naturalPrompt string)
 		return &ActuationResult{
 			Command: &PhysicalCommand{Action: "RESET_ESTOP", RawPrompt: clean},
 			Success: true,
-			FeedbackMessage: "Safety Governor re-armed: Physical E-Stop cleared, all actuators operational.",
+			Evidence: evidence.Simulated,
+			FeedbackMessage: "SIMULATION: software E-Stop latch cleared. No hardware safety circuit is connected.",
 			ExecutionTimeMs: time.Since(start).Milliseconds(),
 			Timestamp: time.Now(),
 		}, nil
@@ -182,6 +189,7 @@ func (o *Orchestrator) DispatchIntent(ctx context.Context, naturalPrompt string)
 		return &ActuationResult{
 			Command:         cmd,
 			Success:         false,
+			Evidence:        evidence.Failed,
 			FeedbackMessage: fmt.Sprintf("[SAFETY REJECTED] %v", err),
 			ExecutionTimeMs: time.Since(start).Milliseconds(),
 			Timestamp:       time.Now(),
@@ -195,6 +203,7 @@ func (o *Orchestrator) DispatchIntent(ctx context.Context, naturalPrompt string)
 	result := &ActuationResult{
 		Command:         cmd,
 		Success:         true,
+		Evidence:        evidence.Simulated,
 		Telemetry:       make(map[string]float64),
 		Timestamp:       time.Now(),
 	}
@@ -207,7 +216,7 @@ func (o *Orchestrator) DispatchIntent(ctx context.Context, naturalPrompt string)
 		}
 		o.lastTelemetry["vehicle_cabin_temp_c"] = temp
 		result.Telemetry["cabin_temp_c"] = temp
-		result.FeedbackMessage = fmt.Sprintf("Vehicle HVAC set: Cabin climate stabilized at %.1f°C via CAN-Bus Gateway.", temp)
+		result.FeedbackMessage = fmt.Sprintf("SIMULATION: cabin setpoint recorded as %.1f°C. No CAN frame was sent.", temp)
 
 	case ActionVehicleDoors:
 		unlock, ok := cmd.Params["unlock"].(bool)
@@ -218,14 +227,14 @@ func (o *Orchestrator) DispatchIntent(ctx context.Context, naturalPrompt string)
 		if unlock {
 			stateStr = "Unlocked"
 		}
-		result.FeedbackMessage = fmt.Sprintf("Vehicle BCM Security: Doors %s via ISO-15765 CAN Bus command.", stateStr)
+		result.FeedbackMessage = fmt.Sprintf("SIMULATION: doors marked %s. No body-control command was sent.", stateStr)
 
 	case ActionVehicleTelemetry:
 		// Return current telemetry state without overwriting
 		result.Telemetry["speed_kmh"] = o.lastTelemetry["vehicle_speed_kmh"]
 		result.Telemetry["rpm"] = o.lastTelemetry["vehicle_rpm"]
 		result.Telemetry["cabin_temp_c"] = o.lastTelemetry["vehicle_cabin_temp_c"]
-		result.FeedbackMessage = fmt.Sprintf("Vehicle Telemetry: Speed: %.1f km/h | Engine: %.0f RPM | Cabin: %.1f°C | Battery: 94%%",
+		result.FeedbackMessage = fmt.Sprintf("SIMULATION state (no vehicle read): Speed: %.1f km/h | Engine: %.0f RPM | Cabin: %.1f°C",
 			result.Telemetry["speed_kmh"], result.Telemetry["rpm"], result.Telemetry["cabin_temp_c"])
 
 	case ActionRobotMove:
@@ -243,7 +252,7 @@ func (o *Orchestrator) DispatchIntent(ctx context.Context, naturalPrompt string)
 		}
 		o.lastTelemetry[fmt.Sprintf("robot_arm_joint_%d", jointID)] = angle
 		result.Telemetry[fmt.Sprintf("joint_%d_deg", jointID)] = angle
-		result.FeedbackMessage = fmt.Sprintf("Robot Kinematics: Joint %d rotated to %.1f° via Dynamixel UART bus (No collision detected).", jointID, angle)
+		result.FeedbackMessage = fmt.Sprintf("SIMULATION: joint %d setpoint recorded as %.1f°. No servo command was sent and no collision check ran.", jointID, angle)
 
 	case ActionRobotGripper:
 		pct, ok := cmd.Params["percent"].(float64)
@@ -252,15 +261,15 @@ func (o *Orchestrator) DispatchIntent(ctx context.Context, naturalPrompt string)
 		}
 		o.lastTelemetry["robot_gripper_pct"] = pct
 		result.Telemetry["gripper_pct"] = pct
-		result.FeedbackMessage = fmt.Sprintf("Robot End-Effector: Gripper actuator positioned at %.0f%% grip force.", pct)
+		result.FeedbackMessage = fmt.Sprintf("SIMULATION: gripper setpoint recorded as %.0f%%. No actuator moved.", pct)
 
 	case ActionRobotDrive:
 		dist, ok := cmd.Params["distance_m"].(float64)
 		if !ok {
 			return nil, fmt.Errorf("invalid distance_m parameter")
 		}
-		result.Telemetry["distance_traveled_m"] = dist
-		result.FeedbackMessage = fmt.Sprintf("Robotic AMR Rover: Navigated forward %.2f meters using visual-inertial odometry.", dist)
+		result.Telemetry["requested_distance_m"] = dist
+		result.FeedbackMessage = fmt.Sprintf("SIMULATION: drive request for %.2f m recorded. No motor was commanded and no odometry was measured.", dist)
 
 	case ActionApplianceRelay:
 		var ch int
@@ -282,16 +291,13 @@ func (o *Orchestrator) DispatchIntent(ctx context.Context, naturalPrompt string)
 			stateStr = "ON"
 		}
 		o.lastTelemetry[fmt.Sprintf("appliance_relay_%d", ch)] = val
-		o.lastTelemetry["appliance_power_w"] = 420.0 * val
 		result.Telemetry[fmt.Sprintf("relay_%d", ch)] = val
-		result.Telemetry["power_w"] = o.lastTelemetry["appliance_power_w"]
-		result.FeedbackMessage = fmt.Sprintf("Appliance Control: Relay %d switched %s via Modbus-RTU | Hub Power: %.1f W.", ch, stateStr, result.Telemetry["power_w"])
+		result.FeedbackMessage = fmt.Sprintf("SIMULATION: relay %d marked %s. No Modbus frame was sent and no power was measured.", ch, stateStr)
 
 	case ActionCameraInspect:
-		o.lastTelemetry["camera_feed_status"] = 1.0
-		result.Telemetry["camera_fps"] = 60.0
-		result.Telemetry["optical_resolution_p"] = 1080.0
-		result.FeedbackMessage = "Optical Sensor Feed verified: 1080p @ 60 FPS live frame stream operational, zero artifacts."
+		result.Success = false
+		result.Evidence = evidence.Failed
+		result.FeedbackMessage = "No camera device is bound; no frames were captured."
 	}
 
 	result.ExecutionTimeMs = time.Since(start).Milliseconds()
@@ -436,7 +442,8 @@ func (o *Orchestrator) parseCommand(clean string, lower string) (*PhysicalComman
 	return nil, fmt.Errorf("could not resolve physical domain from prompt: %q", clean)
 }
 
-// TriggerEStop applies an emergency stop in <1 millisecond across all physical domains.
+// TriggerEStop latches the software governor and parks the simulation. It
+// cannot stop hardware: a real E-Stop must be an independent safety circuit.
 func (o *Orchestrator) TriggerEStop() *ActuationResult {
 	o.safety.TriggerEStop()
 	o.mu.Lock()
@@ -457,7 +464,8 @@ func (o *Orchestrator) TriggerEStop() *ActuationResult {
 			RawPrompt:      "EMERGENCY_STOP",
 		},
 		Success:         true,
-		FeedbackMessage: "🛑 PHYSICAL EMERGENCY STOP (E-STOP) ACTIVATED: All robot joints locked, vehicle throttles cut to 0, appliance relays opened.",
+		Evidence:        evidence.Simulated,
+		FeedbackMessage: "SIMULATION EMERGENCY STOP: software governor latched and simulated state parked. No hardware safety circuit is connected; no physical actuator was stopped.",
 		ExecutionTimeMs: 0,
 		Timestamp:       time.Now(),
 	}
@@ -468,7 +476,8 @@ func (o *Orchestrator) TriggerEStop() *ActuationResult {
 	return res
 }
 
-// GetTelemetrySnapshot returns a thread-safe copy of live telemetry for UI visualizers.
+// GetTelemetrySnapshot returns a copy of the simulation state. None of it was
+// read from a device.
 func (o *Orchestrator) GetTelemetrySnapshot() map[string]float64 {
 	o.mu.RLock()
 	defer o.mu.RUnlock()

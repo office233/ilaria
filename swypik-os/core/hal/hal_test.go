@@ -26,6 +26,7 @@ func TestHALVehicleAndRobotAttachment(t *testing.T) {
   list := m.ListDevicesByClass(class)
   if len(list) != 1 { t.Fatalf("%s: expected one fixture, got %d", class, len(list)) }
   if list[0].Metadata["simulation"] != "true" { t.Fatal("unlabeled simulation") }
+  if list[0].DriverStatus != hal.DriverSimulated { t.Fatalf("%s: simulation fixture reported driver status %s", class, list[0].DriverStatus) }
  }
 }
 func TestHALCUDAGPUDiscovery(t *testing.T) {

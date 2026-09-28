@@ -8,21 +8,22 @@ import (
 
 	"swypik-os/core/autogenesis"
 	"swypik-os/core/cyber"
+	"swypik-os/core/evidence"
 	"swypik-os/core/hal"
 )
 
-func setupTestOrchestrator() *cyber.Orchestrator {
+func setupTestOrchestrator(t *testing.T) *cyber.Orchestrator {
 	halMgr := hal.NewManager()
 	halMgr.AttachVehicleSimulation("CyberTruck Gateway", "5YJSA1E21LF123456")
 	halMgr.AttachRobotSimulation("Swypik Arm 6-DoF", 6)
 	halMgr.AttachApplianceSimulation("Modbus Industrial Relay", 4)
 
-	synth := autogenesis.NewSynthesizer("")
+	synth := autogenesis.NewSynthesizer(t.TempDir())
 	return cyber.NewOrchestrator(halMgr, synth)
 }
 
 func TestCyberVehicleCommands(t *testing.T) {
-	orch := setupTestOrchestrator()
+	orch := setupTestOrchestrator(t)
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
@@ -43,8 +44,8 @@ func TestCyberVehicleCommands(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Telemetry command error: %v", err)
 	}
-	if res.Telemetry["speed_kmh"] != 64.0 {
-		t.Errorf("Expected speed 64.0, got %v", res.Telemetry["speed_kmh"])
+	if res.Telemetry["speed_kmh"] != 0.0 {
+		t.Errorf("Expected the parked simulation speed 0, got %v", res.Telemetry["speed_kmh"])
 	}
 
 	// 3. Unlock Doors
@@ -58,7 +59,7 @@ func TestCyberVehicleCommands(t *testing.T) {
 }
 
 func TestCyberRobotCommands(t *testing.T) {
-	orch := setupTestOrchestrator()
+	orch := setupTestOrchestrator(t)
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
@@ -88,13 +89,16 @@ func TestCyberRobotCommands(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Drive rover error: %v", err)
 	}
-	if res.Telemetry["distance_traveled_m"] != 2.5 {
-		t.Errorf("Expected distance 2.5, got %v", res.Telemetry["distance_traveled_m"])
+	if res.Telemetry["requested_distance_m"] != 2.5 {
+		t.Errorf("Expected requested distance 2.5, got %v", res.Telemetry["requested_distance_m"])
+	}
+	if _, ok := res.Telemetry["distance_traveled_m"]; ok {
+		t.Error("simulation must not report a measured distance")
 	}
 }
 
 func TestCyberApplianceAndSensor(t *testing.T) {
-	orch := setupTestOrchestrator()
+	orch := setupTestOrchestrator(t)
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
@@ -121,13 +125,13 @@ func TestCyberApplianceAndSensor(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Camera inspect error: %v", err)
 	}
-	if !strings.Contains(res.FeedbackMessage, "1080p") {
-		t.Errorf("Expected 1080p feed, got: %s", res.FeedbackMessage)
+	if res.Success || res.Evidence != evidence.Failed {
+		t.Errorf("camera inspection without a camera must fail, got success=%v evidence=%s: %s", res.Success, res.Evidence, res.FeedbackMessage)
 	}
 }
 
 func TestCyberSafetyGovernorAndEStop(t *testing.T) {
-	orch := setupTestOrchestrator()
+	orch := setupTestOrchestrator(t)
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
@@ -176,5 +180,39 @@ func TestCyberSafetyGovernorAndEStop(t *testing.T) {
 
 	if orch.IsEStopActive() {
 		t.Error("Safety governor should be cleared after re-arm")
+	}
+}
+
+// No accepted command may claim bus traffic, sensor measurements or a
+// physical effect: the orchestrator has no transport, so everything it
+// accepts is simulated and must say so.
+func TestCyberResultsNeverClaimHardware(t *testing.T) {
+	orch := setupTestOrchestrator(t)
+	ctx := context.Background()
+	prompts := []string{
+		"seteaza clima la 22 grade", "descuie portierele", "car telemetry",
+		"robot ridica bratul la 30 grade", "strange clestele", "inainteaza 1 metri",
+		"porneste ventilatorul", "OPRIRE DE URGENTA", "rearmeaza sistemul",
+	}
+	forbidden := []string{"via CAN", "CAN Bus command", "Dynamixel", "Modbus-RTU", "No collision detected", "odometry.", "zero artifacts", "operational"}
+	for _, prompt := range prompts {
+		res, err := orch.DispatchIntent(ctx, prompt)
+		if err != nil {
+			t.Fatalf("%q: %v", prompt, err)
+		}
+		if res.Success && res.Evidence != evidence.Simulated {
+			t.Errorf("%q: accepted with evidence %s, want %s", prompt, res.Evidence, evidence.Simulated)
+		}
+		if res.Evidence.Real() {
+			t.Errorf("%q: claims real evidence %s without any transport", prompt, res.Evidence)
+		}
+		if !strings.Contains(res.FeedbackMessage, "SIMULATION") {
+			t.Errorf("%q: message does not say it is a simulation: %s", prompt, res.FeedbackMessage)
+		}
+		for _, claim := range forbidden {
+			if strings.Contains(res.FeedbackMessage, claim) {
+				t.Errorf("%q: message claims %q: %s", prompt, claim, res.FeedbackMessage)
+			}
+		}
 	}
 }

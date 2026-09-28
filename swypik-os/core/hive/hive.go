@@ -2,11 +2,18 @@ package hive
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
 	"sync"
 	"time"
+
+	"swypik-os/core/evidence"
 )
+
+// ErrNoTransport reports that this build has no peer transport (no QUIC, no
+// node identity, no discovery), so offloaded work is routed but never runs.
+var ErrNoTransport = errors.New("hive: no mesh transport in this build; task was not executed")
 
 // MeshNodeRole designates the node's functional profile within the Hive Mind.
 type MeshNodeRole string
@@ -18,7 +25,8 @@ const (
 	RoleSensorSatellite    MeshNodeRole = "SENSOR_SATELLITE"
 )
 
-// MeshNode represents a peer SwypikOS node participating in the distributed neural mesh.
+// MeshNode is a peer record as registered locally. Its figures are declared by
+// whoever registered it; nothing here has contacted or measured the peer.
 type MeshNode struct {
 	ID             string       `json:"id"`
 	Name           string       `json:"name"`
@@ -42,9 +50,11 @@ type ComputeTask struct {
 	Status         string        `json:"status"`
 	Result         string        `json:"result"`
 	ExecutionTime  time.Duration `json:"execution_time"`
+	Evidence       evidence.Level `json:"evidence"`
 }
 
-// HiveMind coordinates peer-to-peer compute sharing across cars, robots, workstations, and appliances.
+// HiveMind keeps peer records and picks an offload target. Without a
+// transport it can only make routing decisions; it cannot run remote work.
 type HiveMind struct {
 	mu           sync.RWMutex
 	localNodeID  string
@@ -52,7 +62,6 @@ type HiveMind struct {
 	peers        map[string]*MeshNode
 	tasks        map[string]*ComputeTask
 	totalTasks   int64
-	offloadedOps int64
 }
 
 // NewHiveMind initializes the distributed hive mind orchestrator.
@@ -109,11 +118,15 @@ func (h *HiveMind) SelectBestOffloadNode() (*MeshNode, error) {
 	return best, nil
 }
 
+// OffloadTask records which peer would receive the task, then returns the
+// task together with ErrNoTransport: no bytes were sent and no inference ran.
 func (h *HiveMind) OffloadTask(ctx context.Context, task *ComputeTask) (*ComputeTask, error) {
 	if task == nil {
 		return nil, fmt.Errorf("task cannot be nil")
 	}
-	start := time.Now()
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
 
 	peer, err := h.SelectBestOffloadNode()
 	if err != nil {
@@ -122,7 +135,10 @@ func (h *HiveMind) OffloadTask(ctx context.Context, task *ComputeTask) (*Compute
 
 	h.mu.Lock()
 	task.AssignedNodeID = peer.ID
-	task.Status = "RUNNING"
+	task.Status = "NOT_EXECUTED"
+	task.Evidence = evidence.Simulated
+	task.Result = fmt.Sprintf("Routed to %s [%s] on paper only; no transport exists, so nothing was sent and no inference ran.", peer.Name, peer.Role)
+	h.totalTasks++
 	h.tasks[task.ID] = task
 	if len(h.tasks) > 500 {
 		keys := make([]string, 0, len(h.tasks))
@@ -139,47 +155,33 @@ func (h *HiveMind) OffloadTask(ctx context.Context, task *ComputeTask) (*Compute
 	}
 	h.mu.Unlock()
 
-	// In real network: gRPC / QUIC P2P stream.
-	// Here: Deterministic simulated neural processing latency
-	select {
-	case <-time.After(10 * time.Millisecond):
-		task.Result = fmt.Sprintf("Inference completed by %s [%s]: Tensor outputs synthesized with zero latency penalty.", peer.Name, peer.Role)
-		task.Status = "COMPLETED"
-		task.ExecutionTime = time.Since(start)
-	case <-ctx.Done():
-		task.Status = "TIMEOUT"
-		return nil, ctx.Err()
-	}
-
-	h.mu.Lock()
-	h.totalTasks++
-	h.offloadedOps++
-	h.mu.Unlock()
-
-	return task, nil
+	return task, ErrNoTransport
 }
 
-// GetMeshStatus returns live network topology metrics for UI display.
+// GetMeshStatus reports the local peer registry. Peers are counted when their
+// record is fresh, not when they were reached; no health is claimed.
 func (h *HiveMind) GetMeshStatus() map[string]interface{} {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
-	activePeers := 0
-	totalTFLOPS := 0.0
+	registeredPeers := 0
+	declaredTFLOPS := 0.0
 
 	for _, p := range h.peers {
 		if time.Since(p.LastSeen) <= 30*time.Second {
-			activePeers++
-			totalTFLOPS += p.TFLOPS
+			registeredPeers++
+			declaredTFLOPS += p.TFLOPS
 		}
 	}
 
 	return map[string]interface{}{
-		"local_id":       h.localNodeID,
-		"local_role":     h.localRole,
-		"active_peers":   activePeers,
-		"total_tflops":   totalTFLOPS,
-		"offloaded_ops":  h.offloadedOps,
-		"mesh_health":    "OPTIMAL",
+		"local_id":         h.localNodeID,
+		"local_role":       h.localRole,
+		"registered_peers": registeredPeers,
+		"declared_tflops":  declaredTFLOPS,
+		"routed_tasks":     h.totalTasks,
+		"executed_tasks":   0,
+		"transport":        "none",
+		"mesh_health":      "UNVERIFIED",
 	}
 }

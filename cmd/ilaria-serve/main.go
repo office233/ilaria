@@ -15,6 +15,7 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"syscall"
 	"time"
 
 	"ilaria/cortex"
@@ -195,7 +196,7 @@ func main() {
 		}
 	}
 	srv := &http.Server{Addr: net.JoinHostPort(*listen, fmt.Sprint(*port)), Handler: h, ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 15 * time.Second, WriteTimeout: 3 * time.Minute, IdleTimeout: 30 * time.Second}
-	ctx, stopSignal := signal.NotifyContext(context.Background(), os.Interrupt)
+	ctx, stopSignal := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stopSignal()
 	go func() {
 		<-ctx.Done()

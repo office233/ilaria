@@ -17,12 +17,15 @@ then LNFGamma, LNFBeta.
 from __future__ import annotations
 
 import json
+import math
+import os
 import struct
 
 import numpy as np
 import torch
 
 from ilaria_model import IlariaConfig, IlariaTransformer
+from atomic_io import atomic_binary_writer
 
 MAGIC = b"NXTF2BIN"
 
@@ -46,7 +49,7 @@ def save_nxtf(model: IlariaTransformer, path: str) -> None:
         "config": model.cfg.to_go_json(),
         "use_tied_weights": True,
     }).encode("utf-8")
-    with open(path, "wb") as f:
+    with atomic_binary_writer(path) as f:
         f.write(MAGIC)
         f.write(struct.pack("<I", len(header)))
         f.write(header)
@@ -58,27 +61,99 @@ def save_nxtf(model: IlariaTransformer, path: str) -> None:
             f.write(arr.astype("<f4", copy=False).tobytes())
 
 
-def load_nxtf(path: str, device: str = "cpu") -> IlariaTransformer:
+def _read_exact(f, n: int) -> bytes:
+    data = f.read(n)
+    if len(data) != n:
+        raise ValueError(f"truncated NXTF file: expected {n} bytes, got {len(data)}")
+    return data
+
+
+def _tensor_shapes(cfg: IlariaConfig) -> list[tuple[int, ...]]:
+    d, f = cfg.embed_dim, cfg.ffn_dim
+    shapes = [(cfg.vocab_size, d), (cfg.max_seq_len, d)]
+    for _ in range(cfg.num_layers):
+        shapes += [(d, d)] * 4 + [(d,)] * 4
+        shapes += [(d, f), (f,), (f, d), (d,)] + [(d,)] * 4
+        if cfg.use_swiglu:
+            shapes += [(d, f), (f,)]
+    return shapes + [(d,), (d,)]
+
+
+def load_nxtf(path: str, device: str = "cpu", *, max_parameters: int = 256_000_000,
+              max_header_bytes: int = 64 * 1024) -> IlariaTransformer:
+    """Load a validated NXTF2BIN file, preflighting it BEFORE model allocation.
+
+    The parameter limit is a resource budget, not an OS isolation boundary.
+    Lower it when accepting smaller untrusted artifacts; raise it explicitly
+    for trusted larger models. The binary layout is unchanged.
+    """
+    if type(max_parameters) is not int or max_parameters < 1:
+        raise ValueError("max_parameters must be a positive integer")
+    if type(max_header_bytes) is not int or max_header_bytes < 1:
+        raise ValueError("max_header_bytes must be a positive integer")
     with open(path, "rb") as f:
-        assert f.read(8) == MAGIC, "not an NXTF2BIN file"
-        (hdr_len,) = struct.unpack("<I", f.read(4))
-        header = json.loads(f.read(hdr_len))
-        c = header["config"]
-        cfg = IlariaConfig(
-            vocab_size=c["vocab_size"], embed_dim=c["embed_dim"],
-            num_heads=c["num_heads"], num_layers=c["num_layers"],
-            ffn_dim=c["ffn_dim"], max_seq_len=c["max_seq_len"],
-            eos_token_id=c.get("eos_token_id", 3),
-            dropout_rate=c.get("dropout_rate", 0.0),
-            use_rope=c.get("use_rope", False), use_swiglu=c.get("use_swiglu", False),
-        )
+        if _read_exact(f, 8) != MAGIC:
+            raise ValueError("not an NXTF2BIN file")
+        (hdr_len,) = struct.unpack("<I", _read_exact(f, 4))
+        if not 0 < hdr_len <= max_header_bytes:
+            raise ValueError("NXTF header exceeds limit or is empty")
+        try:
+            header = json.loads(_read_exact(f, hdr_len))
+        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+            raise ValueError("invalid NXTF JSON header") from exc
+        if not isinstance(header, dict) or type(header.get("version")) is not int or header["version"] != 2:
+            raise ValueError("unsupported NXTF version")
+        if header.get("use_tied_weights") is not True:
+            raise ValueError("this loader requires tied weights")
+        c = header.get("config")
+        if not isinstance(c, dict):
+            raise ValueError("invalid NXTF config")
+        integer_fields = ("vocab_size", "embed_dim", "num_heads", "num_layers", "ffn_dim", "max_seq_len")
+        for key in integer_fields:
+            if type(c.get(key)) is not int or c[key] < 1:
+                raise ValueError(f"invalid NXTF config field: {key}")
+        # Bound the layer count before generating the shape list.
+        if c["num_layers"] > 4096:
+            raise ValueError("NXTF layer count exceeds limit")
+        for key in ("use_rope", "use_swiglu"):
+            if key in c and type(c[key]) is not bool:
+                raise ValueError(f"invalid NXTF boolean field: {key}")
+        eos, dropout = c.get("eos_token_id", 3), c.get("dropout_rate", 0.0)
+        if type(eos) is not int or not 0 <= eos < c["vocab_size"]:
+            raise ValueError("invalid NXTF EOS token")
+        if type(dropout) not in (int, float) or not math.isfinite(dropout) or not 0 <= dropout < 1:
+            raise ValueError("invalid NXTF dropout")
+        if c["embed_dim"] % c["num_heads"]:
+            raise ValueError("NXTF embed dimension must be divisible by heads")
+        if c.get("use_rope", False) and (c["embed_dim"] // c["num_heads"]) % 2:
+            raise ValueError("NXTF RoPE requires an even head dimension")
+        cfg = IlariaConfig(**{k: c[k] for k in integer_fields}, eos_token_id=eos,
+                           dropout_rate=dropout, use_rope=c.get("use_rope", False),
+                           use_swiglu=c.get("use_swiglu", False))
+        shapes = _tensor_shapes(cfg)
+        if sum(math.prod(s) for s in shapes) > max_parameters:
+            raise ValueError("NXTF parameter budget exceeded")
+        size = os.fstat(f.fileno()).st_size
+        offsets = []
+        for shape in shapes:
+            (ndim,) = struct.unpack("<I", _read_exact(f, 4))
+            if ndim != len(shape):
+                raise ValueError("NXTF tensor rank mismatch")
+            dims = struct.unpack("<" + "I" * ndim, _read_exact(f, 4 * ndim))
+            if dims != shape:
+                raise ValueError(f"NXTF shape mismatch: {dims} vs {shape}")
+            nbytes = 4 * math.prod(shape)
+            offset = f.tell()
+            if nbytes > size - offset:
+                raise ValueError("truncated NXTF tensor payload")
+            offsets.append((offset, nbytes))
+            f.seek(nbytes, 1)
+        if f.tell() != size:
+            raise ValueError("unexpected trailing NXTF data")
         model = IlariaTransformer(cfg)
-        for t in _ordered_tensors(model):
-            (ndim,) = struct.unpack("<I", f.read(4))
-            dims = struct.unpack("<" + "I" * ndim, f.read(4 * ndim))
-            assert tuple(dims) == tuple(t.shape), f"shape mismatch {dims} vs {tuple(t.shape)}"
-            n = int(np.prod(dims))
-            arr = np.frombuffer(f.read(4 * n), dtype="<f4").reshape(dims)
-            with torch.no_grad():
+        with torch.no_grad():
+            for t, shape, (offset, nbytes) in zip(_ordered_tensors(model), shapes, offsets):
+                f.seek(offset)
+                arr = np.frombuffer(_read_exact(f, nbytes), dtype="<f4").reshape(shape)
                 t.copy_(torch.from_numpy(arr.copy()))
     return model.to(device)

@@ -73,25 +73,30 @@ func main() {
 
 	cfg, configSource, err := cortex.MustLoadConfigWithDefaults(*configPath)
 	if err != nil {
-		fmt.Printf("  ❌ Config error: %v\n", err)
-		return
+		fmt.Fprintf(os.Stderr, "Config error: %v\n", err)
+		os.Exit(1)
 	}
 	if configSource != "" {
 		fmt.Printf("  📋 Config loaded from: %s\n", configSource)
 	}
-	// Fallback la path-ul tradițional al acestui binar dacă nici flag,
-	// nici JSON nu specifică DataDir. Păstrăm comportamentul existent.
-	if *dataDir != "" {
-		cfg.DataDir = *dataDir
-	} else if cfg.DataDir == "" || cfg.DataDir == "./data/cortex" {
+	// Without a config file, retain this command's historical default path.
+	// An explicit JSON path, including ./data/cortex, must not be rewritten.
+	if configSource == "" {
 		cfg.DataDir = "./data/cortex-training"
 	}
-	// Reproductibilitate: folosim cfg.Seed (nu time.Now), conform claim-ului
-	// "deterministic seed" din README. Pentru sesiuni non-deterministe,
-	// utilizatorul poate seta cfg.Seed = time.Now().UnixNano() explicit.
+	if err := cortex.ApplyConfigFlags(&cfg, flag.CommandLine, map[string]func(){
+		"data-dir":             func() { cfg.DataDir = *dataDir },
+		"radio-cortex-enabled": func() { cfg.RadioCortexEnabled = *radioEnabled },
+		"neuro-radio-enabled":  func() { cfg.NeuroRadioEnabled = *neuroRadioEnabled },
+	}); err != nil {
+		fmt.Fprintf(os.Stderr, "Invalid merged config: %v\n", err)
+		os.Exit(1)
+	}
+	if *qaEpochs < 1 || *nrEpochs < 1 {
+		fmt.Fprintln(os.Stderr, "Training epochs must be positive")
+		os.Exit(1)
+	}
 	rng := rand.New(rand.NewSource(cfg.Seed))
-	cfg.RadioCortexEnabled = *radioEnabled
-	cfg.NeuroRadioEnabled = *neuroRadioEnabled
 
 	// ══════════════════════════════════════════════════════════
 	// LOAD EXTERNAL TRAINING DATA
@@ -130,7 +135,11 @@ func main() {
 	// ══════════════════════════════════════════════════════════
 	fmt.Println("  🔬 Creating organism...")
 	startTime := time.Now()
-	org := cortex.NewOrganism(cfg, rng)
+	org, err := cortex.OpenOrganism(cfg, rng)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Cannot open organism: %v\n", err)
+		os.Exit(1)
+	}
 	if org.RadioCortex != nil {
 		fmt.Printf("  ✅ Organism alive. RadioCortex: %d neurons (%.1f MB)\n",
 			org.RadioCortex.Size, float64(org.RadioCortex.Size*4)/(1024*1024))

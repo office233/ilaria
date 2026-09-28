@@ -27,7 +27,7 @@ This is not a replacement for frontier LLMs. It is not an AGI claim. The goal is
 <p align="center">
   <img src="https://img.shields.io/badge/Go-1.26-00ADD8?style=flat-square&logo=go" />
   <img src="https://img.shields.io/badge/CUDA-Optional-76B900?style=flat-square&logo=nvidia" />
-  <img src="https://img.shields.io/badge/Tests-137_passing-brightgreen?style=flat-square" />
+  <img src="https://img.shields.io/badge/Tests-see_CI-blue?style=flat-square" />
   <img src="https://img.shields.io/badge/License-AGPL--3.0-blue?style=flat-square" />
 </p>
 
@@ -35,7 +35,7 @@ This is not a replacement for frontier LLMs. It is not an AGI claim. The goal is
   <a href="#what-it-implements">What It Implements</a> •
   <a href="#architecture">Architecture</a> •
   <a href="#quick-start">Quick Start</a> •
-  <a href="#neural-dashboard">Dashboard</a> •
+  <a href="#swypikos-integration">Headless API</a> •
   <a href="#benchmark-performance-local-vs-own-dense-baseline">Benchmarks</a> •
   <a href="#roadmap">Roadmap</a>
 </p>
@@ -52,9 +52,9 @@ This is not a replacement for frontier LLMs. It is not an AGI claim. The goal is
 - **Sleep consolidation** — replay-inspired episodic → semantic memory transfer (`sleep_consolidation.go`)
 - **Fractal architecture** — multi-block expert routing (`fractal_cortex.go`)
 - **Thousand Brains Theory** — Jeff Hawkins-inspired implementation (`thousand_brains.go`)
-- **Local dashboard** — web UI for inspecting runtime state, emotional compass, cognitive vitals
+- **Headless API** — model inference for SwypikOS; the user interface lives in its separate repository
 - **CUDA compute backend** — optional GPU acceleration for sparse forward passes
-- **Go tests** — 137 tests + 3 fuzz smoke tests, `go vet`, `staticcheck`, `gosec`, `govulncheck`
+- **Tests** — Go unit/fuzz checks and Python CPU regressions. Consult the actual CI workflow for enabled jobs.
 
 ---
 
@@ -124,14 +124,13 @@ ilaria/
 │   ├── cortex-train/        # Curriculum trainer
 │   ├── cortex-eval/         # Evaluation runner
 │   ├── cortex-autonomous/   # Autonomous learning loop
-│   ├── cortex-web/          # Dashboard server
+│   ├── ilaria-serve/        # Headless inference API
 │   ├── cortex-tokenizer/    # Tokenizer tools
 │   ├── cortex-diagnose/     # System diagnostics
 │   ├── corpus-convert/      # Corpus format converter
 │   └── train/               # Alternative trainer
 ├── cortex/                  # Core engine (all regions, compute, tests)
 ├── cuda/                    # CUDA kernel implementations
-├── web/                     # Dashboard UI
 ├── data/
 │   ├── corpus/              # Training corpora
 │   └── evals/               # Evaluation suites
@@ -197,8 +196,7 @@ go run ./cmd/ilaria-biomed -query "gefitinib și warfarină la pacient cu EGFR T
 `patient.json` is either a FHIR Bundle or `{"active_medications":["warfarin"],"variants":[{"gene":"EGFR","change":"T790M"}],"labs":{"eGFR":{"value":38,"unit":"mL/min/1.73m2"}}}`.
 Inside the organism the same organ is a `Tool` (enable with `"biomed_enabled": true`
 in the config); it speaks only when the RxNorm index finds a drug in the input and stays
-silent offline. `cortex/swe` now holds a **real** sandbox (`RunGo`) that vets, builds and
-tests Go code through the actual toolchain, the organism's self-verification organ.
+silent offline. `cortex/swe.RunGo` refuses execution without OS isolation. `RunTrustedGo` is an explicit, unsafe host executor for operator-trusted code on supported Unix hosts; it is not an OS sandbox. The HTTP service never registers it.
 
 ## Ilaria-130M — the forge-trained language cortex (2026-09-22)
 
@@ -407,11 +405,10 @@ The system prompt is prefilled once and reused across prompts (`Runner.ResetToSy
 
 ## Test Results
 
-```
-ok   ilaria/cmd/cortex       1.3s    ✅
-ok   ilaria/cmd/cortex-web   9.5s    ✅
-ok   ilaria/cortex          86.3s    ✅  (137 tests + 3 fuzz tests)
-```
+Use the actual workflow run for the commit being tested rather than a static
+passing-count badge. Headless regression checks are documented in
+[HEADLESS_OPERATION.md](docs/HEADLESS_OPERATION.md). GPU/Windows runtime results
+must be reported separately; a compile-only job is not a GPU runtime test.
 
 ---
 
@@ -443,30 +440,30 @@ If you want to explore the codebase, start here:
 
 | Layer | What |
 |-------|------|
-| **Language** | Go 1.21+ |
+| **Language** | Go 1.26.2, as required by go.mod |
 | **Compute** | CPU-first, optional CUDA kernels |
 | **Weight format** | RGBA32 ternary tiles (0.25 bytes/param) |
 | **Storage** | JSON persistence + NTX1 binary format |
-| **Dashboard** | Vanilla HTML/CSS/JS |
-| **CI** | GitHub Actions (`go test -race`, `go vet`, `govulncheck`, `staticcheck`, `gosec`) |
+| **Interface** | Headless HTTP API; SwypikOS owns the UI |
+| **CI** | GitHub Actions: vet, tests, fuzz smoke and builds; security scanners are currently disabled in the workflow |
 | **Dependencies** | 4 Go modules: `govaluate`, `mmap-go`, `go-webgpu`, `golang.org/x/sys` |
 
 ---
 
-## Neural Dashboard
+## SwypikOS integration
 
-A local web UI for inspecting cognitive state, emotional compass, memory stats, and interacting with the system in real time.
-
-```bash
-go run ./cmd/cortex-web -port 8080 -data-dir ./data/cortex -open
-```
+Ilaria is headless. SwypikOS owns the user interface in its separate repository.
+`cmd/ilaria-serve` provides `GET /health` and `POST /v1/chat`. The default bind is
+`127.0.0.1:8091`; access it from the SwypikOS backend, not directly from the browser.
+Non-loopback serving requires TLS and `ILARIA_API_TOKEN`; do not bypass its origin
+or authentication checks. See [headless operation](docs/HEADLESS_OPERATION.md).
 
 ---
 
 ## Quick Start
 
 ### Prerequisites
-- Go 1.21+ (tested on 1.26)
+- Go 1.26.2 or newer, as required by go.mod
 - No other dependencies required
 
 ### Build & Run
@@ -490,8 +487,8 @@ go run ./cmd/cortex-train \
 # Run evaluation
 go run ./cmd/cortex-eval -data-dir ./data/cortex
 
-# Start dashboard
-go run ./cmd/cortex-web -port 8080 -data-dir ./data/cortex -open
+# Start the headless API (supply real model/tokenizer paths)
+go run ./cmd/ilaria-serve -model /path/to/bitnet.nxtf -tokenizer /path/to/tokenizer.json
 ```
 
 ---
@@ -501,7 +498,6 @@ go run ./cmd/cortex-web -port 8080 -data-dir ./data/cortex -open
 - [x] 10 neural regions with sparse compute
 - [x] Curriculum training with surprise-based replay
 - [x] Sleep consolidation
-- [x] Neural Dashboard
 - [x] Autonomous learning loop
 - [x] CUDA compute backend
 - [x] 137 unit tests + 3 fuzz tests

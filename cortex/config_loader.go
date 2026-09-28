@@ -19,6 +19,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+
+	"ilaria/internal/runtimeguard"
 )
 
 // DefaultConfigPaths returnează căile căutate implicit de ResolveConfigPath
@@ -137,7 +139,7 @@ func SaveConfig(path string, cfg Config) error {
 			return fmt.Errorf("mkdir %s: %w", dir, err)
 		}
 	}
-	if err := os.WriteFile(path, raw, 0o600); err != nil {
+	if err := runtimeguard.AtomicWriteFile(path, raw, 0o600); err != nil {
 		return fmt.Errorf("write config %s: %w", path, err)
 	}
 	return nil

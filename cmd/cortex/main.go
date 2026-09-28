@@ -120,7 +120,7 @@ func main() {
 	interactive := flag.Bool("i", false, "Enter interactive mode after demo")
 	fresh := flag.Bool("fresh", false, "Start with a new organism (ignore saved state)")
 	noSave := flag.Bool("no-save", false, "Don't auto-save after demo")
-	seed := flag.Int64("seed", 0, "Random seed (0 = use config value)")
+	seed := flag.Int64("seed", 0, "Random seed (only explicit flags override config)")
 	demo := flag.Bool("demo", true, "Run learning and interaction demo phases")
 	demoFile := flag.String("demo-file", "./data/demo/default.json", "Path to external demo scenario JSON")
 	flag.Parse()
@@ -137,36 +137,26 @@ func main() {
 	if configSource != "" {
 		fmt.Printf("  📋 Config loaded from: %s\n", configSource)
 	}
-	if *dataDir != "" {
-		cfg.DataDir = *dataDir
+	if err := cortex.ApplyConfigFlags(&cfg, flag.CommandLine, map[string]func(){
+		"data-dir": func() { cfg.DataDir = *dataDir },
+		"fresh":    func() { cfg.Fresh = *fresh },
+		"no-save":  func() { cfg.NoSave = *noSave },
+		"seed":     func() { cfg.Seed = *seed },
+		"demo":     func() { cfg.Demo = *demo },
+	}); err != nil {
+		fmt.Fprintf(os.Stderr, "fatal: invalid merged config: %v\n", err)
+		os.Exit(1)
 	}
-	cfg.Fresh = *fresh
-	cfg.NoSave = *noSave
-	if *seed != 0 {
-		cfg.Seed = *seed
-	}
-	cfg.Demo = *demo
 
 	// Deterministic RNG for reproducible results.
 	rng := rand.New(rand.NewSource(cfg.Seed))
 
 	// ── Create or restore the Organism ──────────────────────────────
 	fmt.Printf("  🔬 Initializing Organism (data dir: %s)...\n", cfg.DataDir)
-	var org *cortex.Organism
-	// `err` este deja declarat mai sus (din LoadConfig); reutilizăm.
-	err = nil
-	if !cfg.Fresh {
-		org, err = cortex.LoadOrganism(cfg, rng)
-	}
-	if org == nil {
-		if err != nil {
-			fmt.Printf("  No saved organism found or load failed (%v), creating new one...\n", err)
-		} else if cfg.Fresh {
-			fmt.Println("  --fresh flag set, creating new organism...")
-		}
-		org = cortex.NewOrganism(cfg, rng)
-	} else {
-		fmt.Println("  ✅ Loaded saved organism.")
+	org, err := cortex.OpenOrganism(cfg, rng)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "fatal: %v\n", err)
+		os.Exit(1)
 	}
 	fmt.Println("  ✅ Organism is alive.")
 	fmt.Println()

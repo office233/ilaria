@@ -25,7 +25,7 @@ package main
 //	config.json         (n_layer/n_head/n_embd/n_ctx)
 //
 // Output: transformer.nxtf (binary v2) + tokenizer.json in -out, ready
-// for cortex-web / broca-eval / the cognitive bridge.
+// for cortex / broca-eval / the cognitive bridge.
 
 import (
 	"encoding/binary"
@@ -434,5 +434,5 @@ func main() {
 	}
 
 	fmt.Printf("[import] DONE: %s + %s\n", tfPath, tokPath)
-	fmt.Println("[import] use with e.g.: go run ./cmd/cortex-web -data-dir", *out)
+	fmt.Println("[import] use with e.g.: go run ./cmd/cortex -data-dir", *out)
 }

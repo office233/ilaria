@@ -27,7 +27,7 @@
 //	                the eval set?".
 //
 // All modes call org.LearnQA(q, a), which is the same path used by
-// cortex-web, cortex interactive, and cortex-autonomous when a user or
+// cortex interactive and cortex-autonomous when a user or
 // the web learner teaches the organism. This guarantees the resulting
 // state is structurally identical to a production-trained organism —
 // the same SDR encoding (Wernicke.Understand), the same keyword index

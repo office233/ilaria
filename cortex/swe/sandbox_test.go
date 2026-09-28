@@ -7,7 +7,7 @@ import (
 )
 
 func TestRunGo_PassingTest(t *testing.T) {
-	res, err := RunGo(context.Background(), map[string]string{
+	res, err := runTrustedFixture(t, context.Background(), map[string]string{
 		"add.go":      "package sandbox\n\nfunc Add(a, b int) int { return a + b }\n",
 		"add_test.go": "package sandbox\n\nimport \"testing\"\n\nfunc TestAdd(t *testing.T) {\n\tif Add(2, 2) != 4 {\n\t\tt.Fatal(\"bad\")\n\t}\n}\n",
 	})
@@ -20,7 +20,7 @@ func TestRunGo_PassingTest(t *testing.T) {
 }
 
 func TestRunGo_CompileError(t *testing.T) {
-	res, err := RunGo(context.Background(), map[string]string{
+	res, err := runTrustedFixture(t, context.Background(), map[string]string{
 		"broken.go": "package sandbox\n\nfunc Broken() int { return \"x\" }\n",
 	})
 	if err != nil {
@@ -42,7 +42,7 @@ func TestRunGo_CompileError(t *testing.T) {
 }
 
 func TestRunGo_FailingTest(t *testing.T) {
-	res, err := RunGo(context.Background(), map[string]string{
+	res, err := runTrustedFixture(t, context.Background(), map[string]string{
 		"x.go":      "package sandbox\n\nfunc X() int { return 1 }\n",
 		"x_test.go": "package sandbox\n\nimport \"testing\"\n\nfunc TestX(t *testing.T) {\n\tif X() != 2 {\n\t\tt.Fatal(\"expected 2\")\n\t}\n}\n\nfunc TestOK(t *testing.T) {}\n",
 	})
@@ -64,7 +64,7 @@ func TestRunGo_FailingTest(t *testing.T) {
 }
 
 func TestRunGo_BraceInStringLiteral(t *testing.T) {
-	res, err := RunGo(context.Background(), map[string]string{
+	res, err := runTrustedFixture(t, context.Background(), map[string]string{
 		"s.go":      "package sandbox\n\nfunc S() string { return \"}\" }\n",
 		"s_test.go": "package sandbox\n\nimport \"testing\"\n\nfunc TestS(t *testing.T) {\n\tif S() != \"}\" {\n\t\tt.Fatal(\"bad\")\n\t}\n}\n",
 	})
@@ -79,7 +79,7 @@ func TestRunGo_BraceInStringLiteral(t *testing.T) {
 func TestRunGo_Timeout(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 4*time.Second)
 	defer cancel()
-	res, err := RunGo(ctx, map[string]string{
+	res, err := runTrustedFixture(t, ctx, map[string]string{
 		"h.go":      "package sandbox\n\nfunc Hang() { select {} }\n",
 		"h_test.go": "package sandbox\n\nimport \"testing\"\n\nfunc TestHang(t *testing.T) { Hang() }\n",
 	})
@@ -92,8 +92,18 @@ func TestRunGo_Timeout(t *testing.T) {
 }
 
 func TestRunGo_RejectsPathEscape(t *testing.T) {
-	_, err := RunGo(context.Background(), map[string]string{"../evil.go": "package x\n"})
+	_, err := runTrustedFixture(t, context.Background(), map[string]string{"../evil.go": "package x\n"})
 	if err == nil {
 		t.Fatal("expected error for path escaping the sandbox")
 	}
+}
+
+// These fixed source fixtures are intentionally trusted. Production RunGo stays
+// disabled, and its fail-closed behavior has a separate regression test.
+func runTrustedFixture(t *testing.T, ctx context.Context, files map[string]string) (ExecutionResult, error) {
+	t.Helper()
+	if !hostExecutionSupported {
+		t.Skip("trusted host executor unsupported on this platform")
+	}
+	return RunTrustedGo(ctx, files)
 }

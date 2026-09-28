@@ -93,9 +93,32 @@ got `absolute(x=-50) returned -50`, then "fixed" it to `x` in both branches.
 
 20 tasks is a small sample; these are counts, not rates to generalize.
 
+## Semantic Core `else if` and sampled repair, 2026-09-28
+
+Same held-out command and base model (no adapter), with the judge built from
+the branch where Semantic Core accepts `else if` and a `return` without `;`
+before `}`. Sampled runs add `-temperature 0.7 -top-k 40 -seed N`, which
+applies only to repair prompts, so pass@1 stays the greedy number. Raw
+reports: `forge/colab/swyp-repair-eval-20260928/`.
+
+| Run | pass@1 | repair@4 | repaired after rejection | replies: error / counterexample / pass |
+|---|---:|---:|---|---|
+| baseline (old parser, greedy) | 6 | 6 | 0 of 14 | 44 / 12 / 6 |
+| new parser, greedy | 11 | 11 | 0 of 9 | 16 / 20 / 11 |
+| new parser, sampled, seed 1 | 11 | 12 | `absolute` (round 3) | 18 / 16 / 12 |
+| new parser, sampled, seed 2 | 11 | 12 | `binary_length` (round 2) | 18 / 14 / 12 |
+
+The parser change alone moves the base model above the Swyp Forge v1 adapter
+(10 of 20), because most of the old failures were syntax the language now
+accepts. Sampling produced the first repairs after a rejection, but one task
+per seed and a different one each time: that is noise-level on 9 failing
+tasks, not a repair skill. Repair still needs training data or a stronger
+model.
+
 ## Limits
 
 - Six tasks is a demo, not a benchmark. The contracts are small finite
   domains; `exhaustive` is complete execution over them, not an SMT proof.
-- The model does not repair logic from a counterexample yet (`absolute`).
-  Verified replies from this loop are the natural fine-tuning data for that.
+- The model rarely repairs logic from a counterexample (greedy: never;
+  sampled: one task per seed). Verified replies from this loop are the
+  natural fine-tuning data for that.

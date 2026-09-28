@@ -6,7 +6,8 @@ for tool in go cpio gzip modprobe depmod busybox grub-mkrescue xorriso; do
  command -v "$tool" >/dev/null || { echo "Missing build dependency: $tool" >&2; exit 1; }
 done
 [[ $(id -u) = 0 ]] || { echo 'Use an isolated root Linux builder for staged device nodes.' >&2; exit 1; }
-KVER=${KERNEL_VERSION:-$(find /boot -maxdepth 1 -name 'vmlinuz-*' -printf '%f\n' | sed 's/^vmlinuz-//' | sort -V | tail -1)}
+KVER=${KERNEL_VERSION:-}
+[[ $KVER =~ ^[0-9][A-Za-z0-9._+-]*$ ]] || { echo "Set KERNEL_VERSION to an explicit installed kernel version." >&2; exit 1; }
 [[ -n $KVER && -f /boot/vmlinuz-$KVER && -d /lib/modules/$KVER ]] || { echo 'Matching kernel and modules are required.' >&2; exit 1; }
 OUT=$(pwd)/out
 mkdir -p "$OUT"
@@ -58,7 +59,8 @@ cp /boot/vmlinuz-"$KVER" "$ISO/boot/vmlinuz"
 {
  printf 'SwypikOS native boot prototype\nKernel: %s\n' "$KVER"
  go version
- git rev-parse HEAD 2>/dev/null || true
+ printf "Source: %s\nWorking tree modified: %s\n" "${SOURCE_REVISION:-$(git rev-parse HEAD 2>/dev/null || echo unknown)}" "${SOURCE_DIRTY:-$(if test -n "$(git status --porcelain 2>/dev/null)"; then echo true; else echo false; fi)}"
+ [[ ! -f "$OUT/source-files.sha256" ]] || sha256sum "$OUT/source-files.sha256"
  dpkg-query -W -f='${Package} ${Version}\n' "linux-image-$KVER" busybox-static busybox kmod grub-pc-bin grub-efi-amd64-bin libc6 2>/dev/null || true
  printf '\nDrivers included:\n'; cat "$ROOT/usr/share/swypik/drivers.txt"
 } > "$OUT/build-manifest.txt"

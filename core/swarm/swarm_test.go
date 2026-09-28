@@ -42,12 +42,20 @@ func TestSwarmGPUAutoDetection(t *testing.T) {
 	t.Logf("Swarm Status GPU Info -> HasGPU: %v | Model: %s | VRAM: %d MB | CUDA: %s | TFLOPS: %.1f",
 		status.HasGPU, status.GPUModel, status.VRAMMB, status.CUDAVersion, status.LocalTflops)
 
+	// nvidia-smi inventory proves identity and VRAM, not measured throughput.
+	// Zero means unknown until an explicit benchmark supplies a measurement.
+	// This contract must hold on GPU-equipped hosts as well as CPU-only CI.
+	if status.LocalTflops != 0 {
+		t.Errorf("inventory must not fabricate measured TFLOPS, got %v", status.LocalTflops)
+	}
 	if status.HasGPU {
-		if status.LocalTflops < 2.0 {
-			t.Errorf("Expected GPU TFLOPS to reflect physical hardware (>= 2.0), got %.1f", status.LocalTflops)
-		}
 		if status.GPUModel == "" {
 			t.Errorf("Expected non-empty GPUModel when HasGPU is true")
 		}
+		if status.VRAMMB <= 0 {
+			t.Errorf("detected GPU inventory must include positive VRAM, got %d", status.VRAMMB)
+		}
+	} else if status.VRAMMB != 0 {
+		t.Errorf("no detected GPU must not report VRAM, got %d", status.VRAMMB)
 	}
 }

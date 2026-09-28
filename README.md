@@ -1,16 +1,82 @@
-# SwypikOS — native operating-system prototype
+# SwypikOS — native Windows desktop
 
-The product target is a **bootable, Linux-based, AI-driven operating system**.
-It is not a Windows application, Electron host, Chrome app window, or web page
-presented as an OS. Linux supplies the kernel and real device drivers; Swypik
-supplies its native session, service, approval-gated agent and own search index.
+The current desktop delivery is **`bin/swypik-os.exe`: a native Go/Win32
+Windows application, without Electron, Chromium, WebView, Node or an HTTP UI
+server**. It uses the Windows kernel and drivers. The EXE is not an independent
+bootable operating system. The separate Linux OS prototype is preserved below;
+it is no longer the default Windows build target.
+
+## Build and run the Windows EXE
+
+From a Windows checkout with Go installed:
+
+```powershell
+powershell -File scripts/build.ps1
+.\bin\swypik-os.exe -workspace "D:\swypik-os"
+```
+
+`Start-SwypikOS.bat` launches an already-built EXE using this checkout as its
+workspace. It does not download dependencies or open a browser. The build runs
+Go tests and vet, checks both PE subsystem headers, and writes:
+
+```text
+bin/swypik-os.exe                    Native GUI; no console window
+bin/swypik-os-console.exe            Same native app with console diagnostics
+bin/swypik-os-windows-amd64.zip       Portable package on an amd64 builder
+bin/build-manifest.json              Build/toolchain facts and SHA256 hashes
+bin/SHA256SUMS                       Binary checksums
+```
+
+The direct EXE defaults to `%LOCALAPPDATA%\SwypikOS\workspace`; logs, the search
+index and local state are under `%LOCALAPPDATA%\SwypikOS`. Use `-workspace` and
+`-data-dir` to override these locations. Relative legacy file operations resolve
+in the selected workspace, but that directory is **not a security sandbox**.
+
+```powershell
+.\bin\swypik-os-console.exe -version
+.\bin\swypik-os-console.exe -check
+powershell -File scripts/verify.ps1 -Race
+powershell -File scripts/smoke-windows.ps1
+```
+
+`-check` prints configuration without creating files, opening a window or making
+network requests. Race tests need a compatible C compiler; the release binaries
+are built with CGO disabled. The smoke test launches its own isolated window,
+checks Win32 ownership and responsiveness, sends a harmless local search command,
+checks for browser children/TCP listeners, and verifies clean shutdown plus logs.
+It never closes other running SwypikOS sessions.
+
+## Windows feature scope
+
+The native desktop now has a real executable entrypoint, a checked Win32 message
+loop, Unicode keyboard input, cancellable asynchronous command dispatch, workspace
+file listing and persistent local-index search. Type `help`, `search <query>` or
+`cancel` in the bottom command bar. `stop` bypasses a busy command; it requests
+software cancellation and does not prove physical emergency-stop capability.
+
+No search results are invented for an empty index. Swarm compute and simulated
+training start disabled. Voice capture is not implemented; legacy application
+panels are explicitly marked as prototypes. The old command dispatcher still
+contains developer commands and simulations. It is **not** the new approval-gated
+agent runtime and is not a privilege boundary. Windows crawl approval, durable
+agent recovery, production accessibility and the complete app ecosystem remain
+integration work. Ilaria needs a separately configured real inference service;
+there are no bundled weights or simulated AI replies. See
+[Windows architecture and limitations](docs/WINDOWS_DESKTOP.md).
+
+## Separate Linux OS prototype
+
+The preserved Linux track supplies a bootable Linux kernel with real drivers,
+a framebuffer session, a private service, an approval-gated agent and an own
+search index. The remainder of this README describes that separate track, not
+the Windows EXE or its keyboard shortcuts.
 
 **Maturity: pre-alpha, RAM-only VM prototype.** This is not a finished Windows or
 macOS replacement. No custom kernel, disk installer, Secure Boot chain, persistent
 user partition or production Wayland compositor is claimed. No Ilaria/Nexus model
 weights are bundled. AI calls fail explicitly until a real Nexus service is configured.
 
-## Build a live ISO
+## Linux: build a live ISO
 
 Use an isolated x86_64 Linux builder (CI uses Ubuntu 24.04), Go, and these tools:
 
@@ -18,12 +84,13 @@ Use an isolated x86_64 Linux builder (CI uses Ubuntu 24.04), Go, and these tools
 sudo apt-get update
 sudo apt-get install --no-install-recommends linux-image-virtual busybox-static \
   kmod grub-pc-bin grub-efi-amd64-bin xorriso mtools qemu-system-x86 ovmf
-sudo env PATH="$PATH" bash scripts/build-os.sh
+KERNEL_VERSION=<installed-generic-kernel-version>
+sudo env PATH="$PATH" KERNEL_VERSION="$KERNEL_VERSION" bash scripts/build-os.sh
 ```
 
 The script assembles ordinary files under `out/`; it never formats or writes a
 block device. It packages the installed kernel and matching module dependencies.
-`KERNEL_VERSION` can select a particular installed kernel. The build manifest
+`KERNEL_VERSION` is required; the builder never silently picks an Azure/host kernel. The build manifest
 records the actual toolchain, kernel and package versions. This is **not yet a
 bit-for-bit reproducible or signed release**; repeat builds may select newer
 installed packages unless all inputs are pinned.
@@ -38,7 +105,7 @@ Use a VM only. No host disk is passed to this command. The prototype does not
 mount disks, install alongside Windows, migrate personal files or enable Secure
 Boot. Files and the index survive a service restart but **not a VM reboot**.
 
-## Native interface
+## Linux: native interface
 
 F1 opens Home, F2 Search, F3 Agent, F4 Network, and F5 Workspace. This first native
 renderer uses a Linux framebuffer and evdev keyboard input, not a browser.
@@ -62,7 +129,31 @@ HTTP or authenticated HTTPS contract; remote HTTPS requires `ILARIA_API_TOKEN`.
 Provision tokens at runtime, never in the ISO. The default loopback service is
 not included, and absent inference is reported as an error rather than simulated.
 
-## Verification
+## Linux: build from Windows using WSL
+
+```powershell
+powershell -File scripts/verify.ps1 -Target Linux -Distro swypik
+powershell -File scripts/build.ps1 -Target Linux -Distro swypik -KernelVersion <installed-generic-kernel-version>
+```
+
+Install Linux development dependencies inside the selected WSL distribution first;
+the helpers do not install software automatically. Results, exact source snapshots
+and test logs are copied into a unique `out/linux-*` directory.
+`out/last-linux-build.txt` identifies that directory. WSL is only the build host.
+
+## Linux: agent recovery
+
+The last run is checkpointed in the owner-only directory selected by
+`swypikd --state-dir` (default `/var/lib/swypik/agent`). Service restart does not
+replay any tool. Pending approvals become invalid. For a safe interrupted run,
+F6 requests resume and F8 confirms sending the saved goal/evidence to Nexus.
+Every tool then needs a fresh approval. Original deadlines and budgets remain.
+An interrupted tool with an unrecorded outcome cannot be resumed automatically.
+This stores only the last run, not a multi-run history; starting a new run replaces
+it. State is plaintext with restricted permissions, not encrypted. The RAM-only
+ISO still loses state at VM reboot. See [recovery design](docs/AGENT_RECOVERY.md).
+
+## Linux: verification
 
 ```sh
 go test -race -count=1 ./...
@@ -82,16 +173,19 @@ workflow result and its logs rather than treating this README as a test report.
 socket; `cmd/swypik-session` is the native UI. `core/agent`, `core/network`,
 `core/search`, `core/service` and `core/session` are the new execution path.
 
-The Electron host, its npm dependency tree, Windows launcher and shortcut were
-removed. The old browser-served UI and hosted Windows entrypoint were also
-removed; their source remains in Git history, not in the OS image. The previous
-embedded-app/MCP interface has **not** been ported to the native session.
-Windows `.ps1` product launchers now explain the Linux image build instead of
-producing a misleading `.exe` OS.
+The Electron host, its npm dependency tree and old browser-served UI remain
+removed; their source is available only in Git history. The new Windows entrypoint
+is `cmd/swypik-os/main_windows.go`, with `ui/engine` providing Win32/GDI rendering.
+The previous embedded-app/MCP interface has not been ported to either native UI.
+PowerShell helpers now default to the native Windows EXE. Select `-Target Linux`
+explicitly for the preserved WSL verification/ISO workflow; `build-linux.ps1`
+retains its existing implementation. No bootloader or driver replacement is
+installed by the Windows desktop build.
 
 Several older modules remain prototypes, including simulated distributed compute,
 rewards and hardware synthesis. They do not supply real drivers, a bootloader or
 model training. The simulated installer now fails instead of reporting success.
-Older documents describe the retired Windows prototype; this README and the
-native design documents define the current target. See [native OS design](docs/NATIVE_OS.md),
+Older documents describe different migration stages; this README and
+[Windows desktop design](docs/WINDOWS_DESKTOP.md) define the current EXE target.
+For the separate Linux track, see [native OS design](docs/NATIVE_OS.md),
 [search limits](docs/OWN_SEARCH.md) and [repository audit](docs/NATIVE_AUDIT.md).

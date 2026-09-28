@@ -37,7 +37,7 @@ var (
 	kernel32 = syscall.NewLazyDLL("kernel32.dll")
 
 	procRegisterClassExW       = user32.NewProc("RegisterClassExW")
-	procCreateWindowExW         = user32.NewProc("CreateWindowExW")
+	procCreateWindowExW        = user32.NewProc("CreateWindowExW")
 	procDefWindowProcW         = user32.NewProc("DefWindowProcW")
 	procShowWindow             = user32.NewProc("ShowWindow")
 	procUpdateWindow           = user32.NewProc("UpdateWindow")
@@ -125,34 +125,35 @@ type MSG struct {
 
 // ShellApp represents the active native shell instance.
 type ShellApp struct {
-	hwnd         syscall.Handle
-	state        *views.DesktopState
-	ilariaEngine *ilaria.Engine
-	swarmDaemon  *swarm.Daemon
-	searchEngine *search.Engine
-	notifBroker  *notifications.Broker
-	coderEngine  *coder.Engine
-	cyberOrch    *cyber.Orchestrator
-	evolveEngine *evolution.Engine
-	bciProc      *bci.Processor
-	worldModel   *worldmodel.Simulator
-	neuroAdapter *neuromorphic.Adapter
-	cbfArbiter   *cbf.SimplexArbiter
-	chameleonHC  *chameleon.HardwareController
-	actionGraph  *actiongraph.CyclicActionGraph
-	l402Engine   *l402.SettlementEngine
+	hwnd          syscall.Handle
+	state         *views.DesktopState
+	ilariaEngine  *ilaria.Engine
+	swarmDaemon   *swarm.Daemon
+	searchEngine  *search.Engine
+	notifBroker   *notifications.Broker
+	coderEngine   *coder.Engine
+	cyberOrch     *cyber.Orchestrator
+	evolveEngine  *evolution.Engine
+	bciProc       *bci.Processor
+	worldModel    *worldmodel.Simulator
+	neuroAdapter  *neuromorphic.Adapter
+	cbfArbiter    *cbf.SimplexArbiter
+	chameleonHC   *chameleon.HardwareController
+	actionGraph   *actiongraph.CyclicActionGraph
+	l402Engine    *l402.SettlementEngine
 	fedAggregator *federated.FederatedAggregator
 	azureCoord    *azure.CoordinatorClient
-	fontRegular  syscall.Handle
-	fontTitle    syscall.Handle
-	fontBold     syscall.Handle
-	fontSmall    syscall.Handle
-	fontCode     syscall.Handle
+	fontRegular   syscall.Handle
+	fontTitle     syscall.Handle
+	fontBold      syscall.Handle
+	fontSmall     syscall.Handle
+	fontCode      syscall.Handle
 
 	cachedFiles    []coder.FileItem
 	cachedFilesAt  time.Time
 	cachedSearch   string
 	cachedSearchAt time.Time
+	native         nativeState
 }
 
 var globalApp *ShellApp
@@ -179,21 +180,21 @@ func NewShellApp(
 	azureCoord := azure.NewCoordinatorClient(azure.CoordinatorConfig{})
 
 	app := &ShellApp{
-		state:        state,
-		ilariaEngine: iEngine,
-		swarmDaemon:  sDaemon,
-		searchEngine: srchEngine,
-		notifBroker:  nBroker,
-		coderEngine:  cEngine,
-		cyberOrch:    cyberOrch,
-		evolveEngine: evolveEngine,
-		bciProc:      bciProc,
-		worldModel:   worldModel,
-		neuroAdapter: neuroAdapter,
-		cbfArbiter:   cbfArbiter,
-		chameleonHC:  chameleonHC,
-		actionGraph:  actionGraph,
-		l402Engine:   l402Engine,
+		state:         state,
+		ilariaEngine:  iEngine,
+		swarmDaemon:   sDaemon,
+		searchEngine:  srchEngine,
+		notifBroker:   nBroker,
+		coderEngine:   cEngine,
+		cyberOrch:     cyberOrch,
+		evolveEngine:  evolveEngine,
+		bciProc:       bciProc,
+		worldModel:    worldModel,
+		neuroAdapter:  neuroAdapter,
+		cbfArbiter:    cbfArbiter,
+		chameleonHC:   chameleonHC,
+		actionGraph:   actionGraph,
+		l402Engine:    l402Engine,
 		fedAggregator: fedAggregator,
 		azureCoord:    azureCoord,
 	}
@@ -208,10 +209,18 @@ func wndProc(hwnd syscall.Handle, msg uint32, wParam, lParam uintptr) uintptr {
 	}
 
 	switch msg {
-	case WM_DESTROY:
-		if globalApp != nil {
-			globalApp.cleanup()
+	case 0x0010: // WM_CLOSE: use the same checked path as a title-bar close.
+		globalApp.reportLifecycle("Win32 WM_CLOSE received")
+		globalApp.native.commands.stop()
+		if result, _, err := procDestroyWindow.Call(uintptr(hwnd)); result == 0 {
+			globalApp.reportLifecycle(fmt.Sprintf("Win32 DestroyWindow failed: %v", err))
 		}
+		return 0
+	case WM_DESTROY:
+		globalApp.reportLifecycle("Win32 WM_DESTROY received")
+		globalApp.native.commands.stop()
+		// Release GDI resources after the message loop, not inside a nested
+		// callback that may interrupt a paint operation.
 		procPostQuitMessage.Call(0)
 		return 0
 
@@ -230,11 +239,15 @@ func wndProc(hwnd syscall.Handle, msg uint32, wParam, lParam uintptr) uintptr {
 	case WM_CHAR:
 		ch := rune(wParam)
 		if ch == 8 { // Backspace
+			globalApp.native.input.high = 0
 			globalApp.state.PopInput()
 		} else if ch == 13 { // Enter
+			globalApp.native.input.high = 0
 			globalApp.executeOmnibar()
 		} else if ch >= 32 {
-			globalApp.state.AppendInput(ch)
+			for _, decoded := range globalApp.native.input.push(uint16(wParam)) {
+				globalApp.state.AppendInput(decoded)
+			}
 		}
 		procInvalidateRect.Call(uintptr(hwnd), 0, 0)
 		return 0
@@ -259,12 +272,7 @@ func wndProc(hwnd syscall.Handle, msg uint32, wParam, lParam uintptr) uintptr {
 	return r
 }
 
-func (app *ShellApp) executeOmnibar() {
-	cmd := strings.TrimSpace(app.state.ClearInput())
-	if cmd == "" {
-		return
-	}
-
+func (app *ShellApp) executeLegacyCommand(ctx context.Context, cmd string) {
 	lower := strings.ToLower(cmd)
 
 	// 0. Physical E-Stop Guard
@@ -321,7 +329,7 @@ func (app *ShellApp) executeOmnibar() {
 			VibrationG:  0.8,
 		}
 		uNom := cbf.ControlInput{ActuationTorque: 50.0, AuxCoolingDuty: 0.2}
-		res := app.cbfArbiter.FilterAction(context.Background(), state, uNom, 2*time.Millisecond)
+		res := app.cbfArbiter.FilterAction(ctx, state, uNom, 2*time.Millisecond)
 		app.state.SetExecutionLog(fmt.Sprintf("[CBF QUADRATIC PROGRAMMING FILTER] Input: %.1f Nm -> Certified: %.1f Nm | Dev: %.2f | Margin: %.2f | Duration: %dμs | Simplex Engaged: %v",
 			uNom.ActuationTorque, res.CertifiedInput.ActuationTorque, res.Deviation, res.MinSafetyMargin, res.FilterDurationMicro, res.SimplexEngaged))
 		return
@@ -355,7 +363,7 @@ func (app *ShellApp) executeOmnibar() {
 	if strings.HasPrefix(lower, "mmio") || strings.HasPrefix(lower, "chameleon") {
 		capToken := app.chameleonHC.MintCapability([]uint32{chameleon.AddrActuationTorque, chameleon.AddrCoolingDuty}, true, 10*time.Second)
 		cmd := &chameleon.MultiRegisterActuationCommand{TargetTorque: 520, TargetCooling: 75}
-		_ = cmd.Execute(context.Background(), app.chameleonHC, capToken)
+		_ = cmd.Execute(ctx, app.chameleonHC, capToken)
 		tVal := app.chameleonHC.ReadMMIO(chameleon.AddrActuationTorque)
 		cVal := app.chameleonHC.ReadMMIO(chameleon.AddrCoolingDuty)
 		app.state.SetExecutionLog(fmt.Sprintf("[CHAMELEON MMIO CAPABILITY] Token: %s | Perm: WRITE | MMIO[0x1004]=%d Torque, MMIO[0x1008]=%d Cooling | Verified",
@@ -423,7 +431,7 @@ func (app *ShellApp) executeOmnibar() {
 		strings.Contains(lower, "brat") || strings.Contains(lower, "motor") || strings.Contains(lower, "releu") ||
 		strings.Contains(lower, "priza") || strings.Contains(lower, "car ") || strings.Contains(lower, "brake") ||
 		strings.Contains(lower, "lights") {
-		res, err := app.cyberOrch.DispatchIntent(context.Background(), cmd)
+		res, err := app.cyberOrch.DispatchIntent(ctx, cmd)
 		if err != nil {
 			app.state.SetExecutionLog(fmt.Sprintf("[CYBER-PHYSICAL REJECTED] %v", err))
 		} else {
@@ -458,13 +466,17 @@ func (app *ShellApp) executeOmnibar() {
 		execCmd = strings.TrimPrefix(execCmd, "run ")
 		execCmd = strings.TrimPrefix(execCmd, "exec ")
 
-		res := app.coderEngine.ExecuteCommand(execCmd)
+		res := app.coderEngine.ExecuteCommandContext(ctx, execCmd)
 		app.state.SetExecutionLog(fmt.Sprintf("[TERMINAL EXECUTION: %s] (Exit: %v • Latency: %dms)\n%s", res.Command, res.Success, res.LatencyMs, res.Output))
 		return
 	}
 
 	// 7. Ilaria AI Natural Prompt
-	reply, _ := app.ilariaEngine.ProcessPrompt(cmd)
+	reply, _, err := app.ilariaEngine.ProcessPromptContext(ctx, cmd)
+	if err != nil {
+		app.state.SetExecutionLog(fmt.Sprintf("[ILARIA ERROR] %v", err))
+		return
+	}
 	app.state.SetExecutionLog(fmt.Sprintf("[ILARIA AI] %s", reply))
 }
 
@@ -497,12 +509,7 @@ func (app *ShellApp) handleClick(x, y int32) {
 	if y >= h-75 && y <= h-15 {
 		// Voice button [🎙️ Voice]
 		if x >= 30 && x <= 140 {
-			active := app.state.ToggleVoice()
-			if active {
-				app.state.SetExecutionLog("[VOICE ACTIVE] Listening to speech input... Spoken commands will be parsed by Ilaria.")
-			} else {
-				app.state.SetExecutionLog("[VOICE STANDBY] Microphone muted.")
-			}
+			app.state.SetExecutionLog("Voice capture is not implemented in this native build. No microphone has been activated.")
 			return
 		}
 
@@ -556,53 +563,84 @@ func (app *ShellApp) cleanup() {
 
 // Run launches the native Win32 message loop and displays the SwypikOS desktop.
 func (app *ShellApp) Run() error {
+	// A window and its message queue belong to the creating OS thread.
+	unlock := lockNativeThread()
+	defer unlock()
+	globalApp = app
+	defer func() { globalApp = nil }()
 	className, _ := syscall.UTF16PtrFromString("SwypikOS_Native_Class")
-	windowTitle, _ := syscall.UTF16PtrFromString("SwypikOS — Sovereign Native Operating System")
+	windowTitle, _ := syscall.UTF16PtrFromString("SwypikOS - Native Windows Desktop")
 
 	app.initFonts()
-
+	defer func() {
+		app.reportLifecycle("Win32 releasing GDI resources")
+		app.cleanup()
+		app.reportLifecycle("Win32 GDI resources released")
+	}()
+	defer app.native.commands.stop()
+	hInstance, _, instanceErr := procGetModuleHandleW.Call(0)
+	if hInstance == 0 {
+		return fmt.Errorf("GetModuleHandleW failed: %v", instanceErr)
+	}
+	cursor, _, _ := procLoadCursorW.Call(0, 32512) // IDC_ARROW
 	wc := WNDCLASSEXW{
 		CbSize:        uint32(unsafe.Sizeof(WNDCLASSEXW{})),
 		Style:         0x0003,
 		LpfnWndProc:   syscall.NewCallback(wndProc),
-		HInstance:     0,
+		HInstance:     syscall.Handle(hInstance),
+		HCursor:       syscall.Handle(cursor),
 		LpszClassName: className,
 	}
-
-	procRegisterClassExW.Call(uintptr(unsafe.Pointer(&wc)))
-
-	hwnd, _, err := procCreateWindowExW.Call(
-		0,
-		uintptr(unsafe.Pointer(className)),
-		uintptr(unsafe.Pointer(windowTitle)),
-		WS_OVERLAPPEDWINDOW|WS_VISIBLE,
-		80, 80, 1420, 890,
-		0, 0, 0, 0,
-	)
-
-	if hwnd == 0 {
-		return fmt.Errorf("failed to create native window: %v", err)
+	atom, _, registerErr := procRegisterClassExW.Call(uintptr(unsafe.Pointer(&wc)))
+	if atom == 0 {
+		return fmt.Errorf("RegisterClassExW failed: %v", registerErr)
 	}
+	defer func() {
+		// Capture the typed pointer, not an eagerly converted uintptr: the Go
+		// allocation must remain reachable until this deferred Win32 call.
+		app.reportLifecycle("Win32 unregistering window class")
+		if result, _, err := procUnregisterClassW.Call(uintptr(unsafe.Pointer(className)), hInstance); result == 0 {
+			app.reportLifecycle(fmt.Sprintf("Win32 UnregisterClassW failed: %v", err))
+		}
+	}()
 
+	// Create hidden first: paint callbacks must not run before app.hwnd is set.
+	hwnd, _, createErr := procCreateWindowExW.Call(
+		0, uintptr(unsafe.Pointer(className)), uintptr(unsafe.Pointer(windowTitle)),
+		WS_OVERLAPPEDWINDOW, 80, 80, 1420, 890, 0, 0, hInstance, 0,
+	)
+	if hwnd == 0 {
+		return fmt.Errorf("CreateWindowExW failed: %v", createErr)
+	}
 	app.hwnd = syscall.Handle(hwnd)
-
-	// Set 1-second timer
-	procSetTimer.Call(uintptr(app.hwnd), 1, 1000, 0)
-
-	procShowWindow.Call(uintptr(app.hwnd), SW_SHOWMAXIMIZED)
-	procUpdateWindow.Call(uintptr(app.hwnd))
+	defer func() {
+		procKillTimer.Call(hwnd, 1)
+		if exists, _, _ := procIsWindow.Call(hwnd); exists != 0 {
+			procDestroyWindow.Call(hwnd)
+		}
+		app.hwnd = 0
+	}()
+	timer, _, timerErr := procSetTimer.Call(hwnd, 1, 1000, 0)
+	if timer == 0 {
+		return fmt.Errorf("SetTimer failed: %v", timerErr)
+	}
+	procShowWindow.Call(hwnd, SW_SHOWMAXIMIZED)
+	procUpdateWindow.Call(hwnd)
 
 	var msg MSG
 	for {
-		r, _, _ := procGetMessageW.Call(uintptr(unsafe.Pointer(&msg)), 0, 0, 0)
-		if r == 0 || int32(r) == -1 {
-			break
+		result, _, messageErr := procGetMessageW.Call(uintptr(unsafe.Pointer(&msg)), 0, 0, 0)
+		quit, err := nativeMessageResult(result, messageErr)
+		if err != nil {
+			return err
+		}
+		if quit {
+			app.reportLifecycle("Win32 WM_QUIT received")
+			return nil
 		}
 		procTranslateMessage.Call(uintptr(unsafe.Pointer(&msg)))
 		procDispatchMessageW.Call(uintptr(unsafe.Pointer(&msg)))
 	}
-
-	return nil
 }
 
 // render performs flicker-free double-buffered drawing on the window.
@@ -733,6 +771,11 @@ func (app *ShellApp) render(hdc syscall.Handle) {
 
 	// Render App Content inside Main Surface
 	app.renderAppContent(hMemDC, mainSurfaceRect, activeApp)
+	if activeApp != views.AppSearch && activeApp != views.AppFiles {
+		procSelectObject.Call(memDC, uintptr(app.fontBold))
+		procSetTextColor.Call(memDC, uintptr(theme.RGBToCOLORREF(theme.ColorIndigo)))
+		app.drawText(hMemDC, mainSurfaceRect.Left+20, mainSurfaceRect.Bottom-28, "PROTOTYPE PANEL - demonstration data; not verified live services")
+	}
 
 	// 4. Render Floating Conversational Omnibar at Bottom (Chat & Voice)
 	app.renderBottomOmnibar(hMemDC, w, h)
@@ -898,9 +941,13 @@ func (app *ShellApp) renderAppContent(hdc syscall.Handle, r RECT, active views.A
 		app.drawText(hdc, x, y, "◈ Swypik Search — Sovereign Web Intelligence")
 		procSelectObject.Call(uintptr(hdc), uintptr(app.fontRegular))
 		procSetTextColor.Call(uintptr(hdc), uintptr(theme.RGBToCOLORREF(theme.ColorTextSecondary)))
-		app.drawText(hdc, x, y+35, "Direct organic search results synthesized by Ilaria AI. 100% ad-free & tracker-stripped.")
+		app.drawText(hdc, x, y+35, "Your own persistent index. No external search provider; no fabricated results.")
 
-		res, _ := app.searchEngine.Search("Sovereign Operating Architecture")
+		query := app.native.query()
+		summary := fmt.Sprintf("%d indexed documents. Type search <query> in the command bar.", app.searchEngine.Count())
+		if query != "" {
+			summary = fmt.Sprintf("Query: %s | %d indexed documents. Results are shown below.", query, app.searchEngine.Count())
+		}
 		aBox := RECT{Left: x, Top: y + 75, Right: r.Right - 30, Bottom: y + 180}
 		aBrush, _, _ := procCreateSolidBrush.Call(uintptr(theme.RGBToCOLORREF(theme.ColorBgSurface)))
 		aPen, _, _ := procCreatePen.Call(PS_SOLID, 1, uintptr(theme.RGBToCOLORREF(theme.ColorBorderActive)))
@@ -914,11 +961,11 @@ func (app *ShellApp) renderAppContent(hdc syscall.Handle, r RECT, active views.A
 
 		procSelectObject.Call(uintptr(hdc), uintptr(app.fontBold))
 		procSetTextColor.Call(uintptr(hdc), uintptr(theme.RGBToCOLORREF(theme.ColorIndigo)))
-		app.drawText(hdc, x+20, y+92, "✦ ILARIA DIRECT SYNTHESIS • VERIFIED PURE")
+		app.drawText(hdc, x+20, y+92, "LOCAL SEARCH INDEX")
 
 		procSelectObject.Call(uintptr(hdc), uintptr(app.fontRegular))
 		procSetTextColor.Call(uintptr(hdc), uintptr(theme.RGBToCOLORREF(theme.ColorTextPrimary)))
-		app.drawText(hdc, x+20, y+125, res.AIAnswer)
+		app.drawText(hdc, x+20, y+125, summary)
 
 		// Live Execution Log Display Card
 		logBox := RECT{Left: x, Top: y + 195, Right: r.Right - 30, Bottom: r.Bottom - 25}

@@ -28,7 +28,7 @@ jobs:
           mkdir -p out
           go test -race -count=1 -timeout=5m -json ./... | tee out/go-tests.jsonl
           go vet ./...
-          bash -n scripts/build-os.sh
+          bash -n scripts/build-os.sh scripts/build-wsl.sh
           python3 -m py_compile scripts/smoke-os.py
       - name: Install isolated image build tools
         run: |
@@ -37,7 +37,9 @@ jobs:
       - name: Build RAM-only live ISO
         id: image
         run: |
-          sudo env PATH="$PATH" bash scripts/build-os.sh
+          kernel=$(find /boot -maxdepth 1 -name "vmlinuz-*-generic" -printf "%f\n" | sed "s/^vmlinuz-//" | sort -V | tail -1)
+          test -n "$kernel"
+          sudo env PATH="$PATH" KERNEL_VERSION="$kernel" bash scripts/build-os.sh
           sudo chown -R "$(id -u):$(id -g)" out
           git archive --format=zip HEAD -o out/source.zip
       - name: BIOS boot and native UI verification

@@ -81,6 +81,10 @@ Supported: booleans, typed parameters and locals, lexical shadowing, mutation,
 if/else, while, early return, pure function calls and bounded recursion. Logical
 `&&` and `||` are compiled into branches, so their right sides remain lazy.
 
+The source frontend remains pure-only. Effect/capability semantics are currently
+IR-first so existing source syntax and pure programs remain unchanged. See
+[EFFECTS_CAPABILITIES](EFFECTS_CAPABILITIES.md).
+
 `Program.CoreIR(entry)` selects that function and its transitive callees.
 Unrelated functions are not included or claimed as checked by this operation.
 Every statement in the selected functions is checked, including dead statements
@@ -98,9 +102,11 @@ exported IR, not through the old native/JavaScript/STV2 backends.
 
 `internal/coreir` has no dependency on the source parser. The version-1 JSON
 module contains named functions, typed parameter and local slots, basic blocks,
-ordered instructions and explicit terminators. This is a **mutable-slot CFG IR,
-not SSA**. It does not yet perform liveness analysis, register allocation,
-spilling or optimization. Short-circuiting and control flow are explicit.
+ordered instructions and explicit terminators. Optional function metadata uses
+Effect ABI v1 (`effect_version`, `effects`, `required_capabilities`) with a closed
+effect registry and canonical ordering. This is a **mutable-slot CFG IR, not
+SSA**. It does not yet perform liveness analysis, register allocation, spilling
+or optimization. Short-circuiting and control flow are explicit.
 
 Instructions include constants, moves, pure calls, typed arithmetic, comparison
 and boolean negation. Source locations and checked `may_trap` annotations are
@@ -115,6 +121,11 @@ initialize a value for the other branch. Unreachable blocks are still checked
 structurally and for operand types, but are not subject to reachable-path
 initialization requirements.
 
+Effect validation is fail-closed: unknown/duplicate/noncanonical effects,
+malformed or duplicate capability requirements, capability requirements for
+undeclared effects, and missing call-graph propagation are rejected. Strict JSON
+also rejects guest attempts to add capability tokens or `capability_refs` to IR.
+
 Bounds: version exactly 1; JSON at most 1 MiB; 64 functions; 256 blocks and 512
 slots per function; 16 parameters; at most 8,192 instructions plus terminators
 across the module. The loader rejects unknown fields, duplicate JSON keys
@@ -128,8 +139,13 @@ instruction and terminator consumes one. AST and STV2 fuel counts are different
 accounting systems, not interchangeable performance measurements. Context
 cancellation and deadlines are checked at every tick.
 
-There are no guest filesystem/network/model opcodes. This restricted runtime
-is not advertised as an OS security sandbox, a memory quota or a certification.
+Prepared functions expose a `pure` or `effectful` semantics profile. `Run`
+rejects effectful entries with `effectful_program` before guest execution. Core
+does not resolve capabilities and does not execute host effects.
+
+There are no guest filesystem/network/process/model/tool effect opcodes. Effect
+metadata is a declaration, not authority. This restricted runtime is not
+advertised as an OS security sandbox, a memory quota or a certification.
 JSON file reads are size-bounded, not guaranteed to time out on special devices.
 CLI execution deadlines begin after reading, lowering and preparing input.
 
@@ -158,10 +174,14 @@ plus lazy `and`/`or` and `not`. No free-form predicate evaluation is used.
 
 `requires` filters admissible tuples and cannot reference `result`. `ensures`
 must contain at least one boolean predicate and may reference `result`. Input
-name `result` is reserved. Effects must be empty in this version. Numeric
-predicates themselves use checked i64/finite-f64 operations, not unbounded
-mathematical integers. A predicate overflow or zero division is reported as
-an evaluation problem, not silently treated as false or proved correct.
+name `result` is reserved. Pure contracts omit effect metadata. Effectful
+contracts use `effect_version: 1` plus the exact canonical effect set of the
+executable entry. `Verify` reports such a program as `effectful` and returns
+`unknown` / `effectful_execution_not_supported` without executing a case.
+Numeric predicates themselves use checked i64/finite-f64 operations, not
+unbounded mathematical integers. A predicate overflow or zero division is
+reported as an evaluation problem, not silently treated as false or proved
+correct.
 
 Limits: contract files at most 64 KiB through the CLI; at most four numeric
 inputs, sixteen preconditions and sixteen postconditions, 256 predicate nodes
@@ -215,6 +235,7 @@ Reproduce the principal checks from the repository root:
 go test ./... -count=1 -timeout=180s
 go test -v ./internal/swyplang -run '^TestCore' -count=1
 go test -v ./internal/coreir -count=1
+go test -v ./internal/coreir -run 'Effect|Capability' -count=1
 go test -v ./cmd/swyp -run '^TestCore' -count=1
 go vet ./...
 go build ./...

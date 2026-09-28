@@ -336,7 +336,7 @@ func WorkspaceTools(root string, run RunFunc) []Tool {
 			Command string `json:"command"`
 		}
 		tools = append(tools, Tool{
-			Spec: Spec{Name: "process.run", Description: "Run one command line in the workspace directory with the user's permissions (for example: go test ./...). Output is truncated to the last 10 KiB.", Arguments: `{"command":"go test ./..."}`},
+			Spec: Spec{Name: "process.run", Description: "Run one command line in the workspace directory with the user's permissions and a scrubbed allowlisted environment (for example: go test ./...). This is process hardening, not a filesystem/network sandbox. Output is truncated to the last 10 KiB.", Arguments: `{"command":"go test ./..."}`},
 			Validate: func(raw json.RawMessage) error {
 				var a runArgs
 				if err := DecodeObject(raw, &a, 4096); err != nil {

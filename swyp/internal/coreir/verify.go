@@ -34,22 +34,26 @@ type Witness struct {
 	Postcondition int          `json:"postcondition"`
 }
 type Verification struct {
-	Version        int           `json:"version"`
-	Status         string        `json:"status"`
-	Method         string        `json:"method"`
-	Entry          string        `json:"entry"`
-	DomainSize     string        `json:"domain_size,omitempty"`
-	Exhaustive     bool          `json:"exhaustive"`
-	CasesExamined  int           `json:"cases_examined"`
-	CasesChecked   int           `json:"cases_checked"`
-	CasesSkipped   int           `json:"cases_skipped"`
-	StepsConsumed  int           `json:"steps_consumed"`
-	Budgets        VerifyOptions `json:"budgets"`
-	Reason         string        `json:"reason,omitempty"`
-	Witness        *Witness      `json:"witness,omitempty"`
-	SourceSHA256   string        `json:"source_sha256,omitempty"`
-	IRSHA256       string        `json:"ir_sha256,omitempty"`
-	ContractSHA256 string        `json:"contract_sha256,omitempty"`
+	Version              int                     `json:"version"`
+	Status               string                  `json:"status"`
+	Method               string                  `json:"method"`
+	Entry                string                  `json:"entry"`
+	Purity               string                  `json:"purity,omitempty"`
+	EffectVersion        int                     `json:"effect_version,omitempty"`
+	Effects              []string                `json:"effects,omitempty"`
+	RequiredCapabilities []CapabilityRequirement `json:"required_capabilities,omitempty"`
+	DomainSize           string                  `json:"domain_size,omitempty"`
+	Exhaustive           bool                    `json:"exhaustive"`
+	CasesExamined        int                     `json:"cases_examined"`
+	CasesChecked         int                     `json:"cases_checked"`
+	CasesSkipped         int                     `json:"cases_skipped"`
+	StepsConsumed        int                     `json:"steps_consumed"`
+	Budgets              VerifyOptions           `json:"budgets"`
+	Reason               string                  `json:"reason,omitempty"`
+	Witness              *Witness                `json:"witness,omitempty"`
+	SourceSHA256         string                  `json:"source_sha256,omitempty"`
+	IRSHA256             string                  `json:"ir_sha256,omitempty"`
+	ContractSHA256       string                  `json:"contract_sha256,omitempty"`
 }
 
 // Verify is bounded testing, not an SMT proof. "exhaustive" means all tuples in
@@ -60,9 +64,22 @@ func Verify(ctx context.Context, e *Executable, c Contract, options VerifyOption
 	if ctx == nil || options.MaxCases < 1 || options.MaxCases > MaxCases || options.FuelPerCase < 1 || options.FuelPerCase > MaxFuel || options.TotalFuel < 1 || options.TotalFuel > MaxTotalFuel {
 		return r, diagnostic("invalid_budget", "verification host budgets out of range")
 	}
+	semantics, err := e.Semantics(c.Entry)
+	if err != nil {
+		return r, err
+	}
+	r.Purity = semantics.Purity
+	r.EffectVersion = semantics.EffectVersion
+	r.Effects = append([]string(nil), semantics.Effects...)
+	r.RequiredCapabilities = append([]CapabilityRequirement(nil), semantics.RequiredCapabilities...)
 	bounds, err := c.validate(e)
 	if err != nil {
 		return r, err
+	}
+	if semantics.Purity != "pure" {
+		r.Method = "effect-contract-validation"
+		r.Reason = "effectful_execution_not_supported"
+		return r, nil
 	}
 	if r.Budgets.FuelPerCase > c.MaxSteps {
 		r.Budgets.FuelPerCase = c.MaxSteps

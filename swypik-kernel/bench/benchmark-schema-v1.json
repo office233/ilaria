@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "swypik://os-base/benchmark/v1",
+  "title": "SwypikOS OS-base benchmark record v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "implementation",
+    "environment",
+    "boot_ms",
+    "ipc_roundtrip_ns",
+    "memory_overhead_bytes",
+    "fault_recovery_ms",
+    "status"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "implementation": { "type": "string", "minLength": 1 },
+    "environment": { "type": "string", "minLength": 1 },
+    "boot_ms": { "type": "number", "minimum": 0 },
+    "ipc_roundtrip_ns": { "type": "number", "minimum": 0 },
+    "memory_overhead_bytes": { "type": "integer", "minimum": 0 },
+    "fault_recovery_ms": { "type": "number", "minimum": 0 },
+    "status": { "enum": ["measured", "placeholder"] }
+  }
+}

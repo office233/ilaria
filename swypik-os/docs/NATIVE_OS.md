@@ -1,33 +1,54 @@
 # Native OS architecture and acceptance gates
 
-## Decision
+## Decision status
 
-The clarified requirement is a bootable operating system, not an app hosted by
-Windows, Chrome or Electron. Linux is the actual kernel. Swypik owns the native
-session, AI orchestration and search, rather than pretending a Go server is a kernel.
+The clarified requirement is a bootable **independent SwypikOS**, not an app
+hosted by Windows, Chrome or Electron and not automatically a Linux distribution.
+
+The repository currently contains a **Linux-based bootable reference prototype**.
+That is a useful bring-up/compatibility test bed, but it is **not a final product
+kernel decision**. Production kernel/platform ownership is gated by
+`ADR-OS-BASE-001`, comparative prototypes, benchmarks and owner approval.
+
+No document or implementation may silently promote the current Linux prototype
+into the final SwypikOS architecture.
+
+Current reference path:
 
 ```
 BIOS/UEFI -> GRUB -> Linux -> initramfs /init -> BusyBox init
-                                      |-> Linux modules + DHCP
-                                      |-> swypikd (UID 1000, Unix IPC)
-                                      `-> swypik-session (UID 1000, fbdev + evdev)
+                                       |-> Linux modules + DHCP
+                                       |-> swypikd (UID 1000, Unix IPC)
+                                       `-> swypik-session (UID 1000, fbdev + evdev)
 ```
 
-The session is a native diagnostic desktop, not a complete compositor. The
-production target is a native Wayland desktop, using DRM/KMS, Mesa and libinput,
-with full text shaping, accessibility, per-application surfaces and crash recovery.
-Do not relabel the framebuffer implementation as a Wayland compositor.
+Production candidates must include at minimum:
+
+1. a Swypik-owned kernel/platform prototype;
+2. a hybrid compatibility architecture where third-party kernels/drivers are
+   isolated compatibility domains rather than implicit OS identity;
+3. the current Linux-based approach as a measured reference candidate.
+
+The same workloads must be compared for boot time, memory, IPC, fault isolation,
+security/capability enforcement, driver coverage, power behavior and engineering
+complexity before the product base is chosen.
+
+The current Linux session is a native diagnostic desktop, not a complete
+compositor. Wayland/DRM/KMS/Mesa/libinput remain valid technologies for the Linux
+reference path, not mandatory foundations of the final SwypikOS shell.
+Do not relabel the framebuffer implementation as a production compositor.
 
 The model is a userspace service with limited tools, **not PID 1 or kernel code**.
 Kernel and network operations must remain available when inference is offline.
 No language-model output is executed as a shell command or granted root access.
 
-## Hardware and networking
+## Hardware and networking — current Linux reference
 
 The ISO packages real Linux modules and their dependencies. VM targets include
 VirtIO PCI/network/block, evdev, and available Bochs, PS/2/USB keyboard and Intel
 E1000 adapters. Build fails when required VirtIO or evdev drivers are missing.
-Drivers come from the selected distribution kernel, not from Swypik-authored drivers.
+Drivers on this prototype come from the selected distribution kernel, not from
+Swypik-authored drivers. This statement describes current state only.
 
 Networking is adapter -> Linux network driver -> TCP/IP -> IP/default route/DNS
 -> TLS/application protocols. BusyBox udhcpc obtains address, route and DNS.
@@ -36,8 +57,9 @@ adapter inventory from connectivity verification.
 
 Wi-Fi association, WPA credentials, captive portals, VPNs, Bluetooth, sound,
 battery management and broad Intel/AMD/NVIDIA coverage need separate work and
-hardware tests. Production needs NetworkManager or equivalent, appropriate Wi-Fi
-firmware and a privileged permission broker. QEMU boot is not universal hardware support.
+hardware tests. The Linux reference may use NetworkManager/iwd/BlueZ/PipeWire;
+the final SwypikOS platform must expose equivalent first-party contracts regardless
+of which substrate wins the ADR. QEMU boot is not universal hardware support.
 
 ## Security boundaries
 
@@ -70,10 +92,12 @@ encrypted persistent user storage, tested backup/restore, signed A/B updates,
 rollback, recovery image, Secure Boot strategy and physical hardware matrix.
 The old fake boot installer is disabled intentionally.
 
-The build packages GPL kernel/BusyBox/GRUB and other distribution components.
-Package versions and copyright notices accompany the image. Obtain and supply
-matching corresponding sources and satisfy redistribution obligations before
-public distribution. Do not claim authorship of third-party kernel/drivers.
+The reference build packages GPL kernel/BusyBox/GRUB and other distribution
+components. Package versions and copyright notices accompany the image. Obtain
+and supply matching corresponding sources and satisfy redistribution obligations
+before public distribution. Do not claim authorship of third-party kernel/drivers.
+If the final product uses a Swypik-owned kernel, do not transplant GPL kernel
+code/drivers into it without an explicit licensing review and compatible design.
 No company affiliation is established by this code.
 
 ## Verification scope

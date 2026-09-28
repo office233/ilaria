@@ -1,0 +1,603 @@
+package devicesynth
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"errors"
+	"path/filepath"
+	"testing"
+)
+
+type fakeSynthesizer struct {
+	candidate CandidateBundle
+}
+
+func (f fakeSynthesizer) Synthesize(_ context.Context, request SynthesisRequest) (SynthesisOutput, error) {
+	if len(request.UnsupportedDevices) != 1 {
+		return SynthesisOutput{}, errors.New("expected one unsupported device")
+	}
+	return SynthesisOutput{
+		Candidate:             f.candidate,
+		Assumptions:           append([]string(nil), f.candidate.Assumptions...),
+		RequestedCapabilities: append([]LogicalCapability(nil), f.candidate.RequestedCapabilities...),
+		Tests:                 append([]TestContract(nil), f.candidate.Tests...),
+	}, nil
+}
+
+func TestUnknownDeviceSynthesisVerifyCanaryRollback(t *testing.T) {
+	unknown := DeviceNode{
+		ID:    "nic0",
+		Kind:  DeviceNetwork,
+		BusID: "pcie0",
+		Identity: DeviceIdentity{
+			StableID:  PrivacySafeDeviceID("pcie", "0000:02:00.0", "1234", "5678"),
+			VendorID:  "1234",
+			ProductID: "5678",
+		},
+		FirmwareDigest: HashBytes([]byte("nic-fw-1.0")),
+	}
+	manifest := HardwareManifest{
+		SchemaVersion: HardwareManifestSchemaV1,
+		Architecture:  ArchX8664,
+		ABI:           "sysv64",
+		Endianness:    EndianLittle,
+		Firmware: []FirmwareDescriptor{
+			{Kind: FirmwareUEFI, Version: "2.10", Digest: HashBytes([]byte("uefi-fixture"))},
+			{Kind: FirmwareACPI, Version: "6.5", Digest: HashBytes([]byte("acpi-fixture"))},
+		},
+		Graph: DeviceGraph{
+			SchemaVersion: DeviceGraphSchemaV1,
+			Buses:         []BusDescriptor{{ID: "pcie0", Kind: BusPCIe}},
+			Devices:       []DeviceNode{unknown},
+		},
+		ProbeSource:  "fixture",
+		ProbeVersion: "1",
+	}
+	binding, err := HardwareBindingHash(manifest)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	source := []byte("driver source fixture")
+	buildManifest := []byte("tool=swypik-driver-build\nflags=reproducible")
+	toolchain := []byte("swypik-toolchain-fixture-v1")
+	provenance := []EvidenceReference{{ID: "spec-nic", Digest: HashBytes([]byte("approved hardware specification")), Approved: true}}
+	provenanceHash, err := CanonicalHash(provenance)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tests := []TestContract{{ID: "protocol", Name: "fake-device protocol test", Required: true}, {ID: "fault", Name: "fault injection", Required: true}}
+	candidate := CandidateBundle{
+		Manifest: DriverManifest{
+			SchemaVersion:        DriverManifestSchemaV1,
+			ABIVersion:           DriverABIVersion1,
+			Name:                 "fixture-nic-adapter",
+			Version:              "0.0.1",
+			Selector:             DeviceSelector{DeviceID: unknown.ID, Kind: unknown.Kind, VendorID: "1234", ProductID: "5678"},
+			UserMode:             true,
+			DeclaredCapabilities: []LogicalCapability{CapabilityMMIO, CapabilityIRQ, CapabilityDMA, CapabilityConfig, CapabilityPower},
+			Service:              ServiceInterface{Version: ServiceABIVersion1, Methods: []ServiceMethod{{Name: "Transmit", RequestSchemaHash: HashBytes([]byte("tx-req")), ResponseSchemaHash: HashBytes([]byte("tx-res"))}}},
+			HardwareBindingHash:  binding,
+			SourceHash:           HashBytes(source),
+			BuildManifestHash:    HashBytes(buildManifest),
+			BuildArtifactHash:    HashBytes([]byte("compiled-driver-fixture")),
+			ToolchainHash:        HashBytes(toolchain),
+			ProvenanceHash:       provenanceHash,
+		},
+		Source:                source,
+		BuildManifest:         buildManifest,
+		ToolchainIdentity:     toolchain,
+		Provenance:            provenance,
+		Assumptions:           []string{"device implements the approved fixture register contract"},
+		RequestedCapabilities: []LogicalCapability{CapabilityMMIO, CapabilityIRQ, CapabilityDMA, CapabilityConfig, CapabilityPower},
+		ObservedCapabilities:  []LogicalCapability{CapabilityMMIO, CapabilityIRQ, CapabilityDMA, CapabilityConfig, CapabilityPower},
+		Tests:                 tests,
+		TestEvidence: []TestEvidence{
+			{ContractID: "protocol", Passed: true, EvidenceHash: HashBytes([]byte("protocol-pass"))},
+			{ContractID: "fault", Passed: true, EvidenceHash: HashBytes([]byte("fault-pass"))},
+		},
+	}
+
+	synth := fakeSynthesizer{candidate: candidate}
+	output, err := synth.Synthesize(context.Background(), SynthesisRequest{
+		UnsupportedDevices: []DeviceNode{unknown},
+		Hardware:           manifest,
+		ABI:                ABI1(),
+		Evidence:           provenance,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	candidateDigest, err := output.Candidate.Digest()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	verifier := NewDeterministicVerifier("test-verifier")
+	anchor, err := verifier.TrustAnchor()
+	if err != nil {
+		t.Fatal(err)
+	}
+	journalPath := filepath.Join(t.TempDir(), "device-adaptation.json")
+	journal, err := OpenJournalForHardware(journalPath, binding, anchor)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := journal.Initialize(unknown.ID); err != nil {
+		t.Fatal(err)
+	}
+	mustTransition(t, journal, StateProbe, StateMatch, TransitionEvidence{Reason: "hardware probe complete"})
+	mustTransition(t, journal, StateMatch, StateSynthesize, TransitionEvidence{Reason: "no known signed driver matched"})
+	mustTransition(t, journal, StateSynthesize, StateBuild, TransitionEvidence{CandidateDigest: candidateDigest, Reason: "candidate synthesized"})
+	mustTransition(t, journal, StateBuild, StateVerify, TransitionEvidence{CandidateDigest: candidateDigest, Reason: "isolated build completed"})
+
+	if _, err := journal.Transition(StateVerify, StateStage, TransitionEvidence{CandidateDigest: candidateDigest}); !errors.Is(err, ErrVerificationRequired) {
+		t.Fatalf("unverified candidate reached STAGE: %v", err)
+	}
+
+	artifactBytes := []byte("compiled-driver-fixture")
+	trustedTests := trustedTestsForCandidate(t, output.Candidate, artifactBytes)
+	observation := trustedObservationForCandidate(t, output.Candidate, artifactBytes, output.Candidate.RequestedCapabilities)
+	verification, err := verifier.Verify(context.Background(), VerificationRequest{
+		Hardware:              manifest,
+		Candidate:             output.Candidate,
+		AllowedCapabilities:   ABI1().LogicalCapabilities,
+		ApprovedEvidence:      provenance,
+		BuiltArtifact:         artifactBytes,
+		TrustedTestEvidence:   trustedTests,
+		CapabilityObservation: observation,
+		TargetState:           StateActive,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := verification.Error(); err != nil {
+		t.Fatal(err)
+	}
+
+	artifact, err := NewArtifactManifest(output.Candidate, verification)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := NewLocalTrustRecord(artifact, verification, StateActive); err != nil {
+		t.Fatal(err)
+	}
+
+	proof := TransitionEvidence{CandidateDigest: candidateDigest, ArtifactDigest: artifact.ArtifactDigest, Verification: &verification}
+	mustTransition(t, journal, StateVerify, StateStage, proof)
+	mustTransition(t, journal, StateStage, StateCanary, proof)
+	healthOK := true
+	activeProof := proof
+	activeProof.HealthPassed = &healthOK
+	mustTransition(t, journal, StateCanary, StateActive, activeProof)
+
+	reopened, err := OpenJournalForHardware(journalPath, binding, anchor)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := reopened.Load(); err != nil {
+		t.Fatalf("signed journal failed reload validation: %v", err)
+	}
+
+	mustTransition(t, journal, StateActive, StateRollback, TransitionEvidence{
+		CandidateDigest: candidateDigest,
+		ArtifactDigest:  artifact.ArtifactDigest,
+		Reason:          "canary health regression after activation",
+	})
+
+	reloaded, err := journal.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if reloaded.Current != StateRollback {
+		t.Fatalf("expected durable rollback state, got %s", reloaded.Current)
+	}
+	if reloaded.Sequence != 8 || len(reloaded.History) != 8 {
+		t.Fatalf("expected 8 durable transitions, sequence=%d history=%d", reloaded.Sequence, len(reloaded.History))
+	}
+}
+
+func TestVerifierRejectsUndeclaredCapabilityAndBindingMismatch(t *testing.T) {
+	manifest, candidate := verifierFixture(t)
+	candidate.Manifest.HardwareBindingHash = HashBytes([]byte("different-machine"))
+	artifactBytes := []byte("artifact")
+	result, err := NewDeterministicVerifier("").Verify(context.Background(), VerificationRequest{
+		Hardware:              manifest,
+		Candidate:             candidate,
+		AllowedCapabilities:   ABI1().LogicalCapabilities,
+		ApprovedEvidence:      candidate.Provenance,
+		BuiltArtifact:         artifactBytes,
+		TrustedTestEvidence:   trustedTestsForCandidate(t, candidate, artifactBytes),
+		CapabilityObservation: trustedObservationForCandidate(t, candidate, artifactBytes, []LogicalCapability{CapabilityConfig, CapabilityClock}),
+		TargetState:           StateStage,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.OK {
+		t.Fatal("verifier accepted undeclared capability and wrong hardware binding")
+	}
+}
+
+func TestVerifierAcceptsIRCandidateWithoutSource(t *testing.T) {
+	manifest, candidate := verifierFixture(t)
+	candidate.IntermediateRepresentation = append([]byte(nil), candidate.Source...)
+	candidate.Source = nil
+	candidate.Manifest.SourceHash = HashBytes(candidate.IntermediateRepresentation)
+	artifactBytes := []byte("artifact")
+	result, err := NewDeterministicVerifier("").Verify(context.Background(), VerificationRequest{
+		Hardware:              manifest,
+		Candidate:             candidate,
+		AllowedCapabilities:   ABI1().LogicalCapabilities,
+		ApprovedEvidence:      candidate.Provenance,
+		BuiltArtifact:         artifactBytes,
+		TrustedTestEvidence:   trustedTestsForCandidate(t, candidate, artifactBytes),
+		CapabilityObservation: trustedObservationForCandidate(t, candidate, artifactBytes, candidate.RequestedCapabilities),
+		TargetState:           StateStage,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := result.Error(); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestFabricatedVerificationResultCannotStage(t *testing.T) {
+	manifest, candidate := verifierFixture(t)
+	binding, err := HardwareBindingHash(manifest)
+	if err != nil {
+		t.Fatal(err)
+	}
+	candidateDigest, err := candidate.Digest()
+	if err != nil {
+		t.Fatal(err)
+	}
+	verifier := NewDeterministicVerifier("trusted-verifier")
+	anchor, err := verifier.TrustAnchor()
+	if err != nil {
+		t.Fatal(err)
+	}
+	journal, _ := journalAtVerify(t, binding, anchor, candidateDigest)
+	fabricated := VerificationResult{
+		VerifierID:          "trusted-verifier",
+		VerifierVersion:     DefaultVerifierVersion,
+		OK:                  true,
+		TargetState:         StateActive,
+		HardwareBindingHash: binding,
+		CandidateDigest:     candidateDigest,
+		ArtifactDigest:      candidate.Manifest.BuildArtifactHash,
+	}
+	_, err = journal.Transition(StateVerify, StateStage, TransitionEvidence{
+		CandidateDigest: candidateDigest,
+		ArtifactDigest:  candidate.Manifest.BuildArtifactHash,
+		Verification:    &fabricated,
+	})
+	if !errors.Is(err, ErrVerificationRequired) {
+		t.Fatalf("fabricated public VerificationResult staged candidate: %v", err)
+	}
+}
+
+func TestTamperedAndStaleVerifierAttestationsFailClosed(t *testing.T) {
+	manifest, candidate := verifierFixture(t)
+	artifactBytes := []byte("artifact")
+	verifier := NewDeterministicVerifier("trusted-verifier")
+	verification := verifyCandidate(t, verifier, manifest, candidate, artifactBytes, StateActive, candidate.Provenance, candidate.RequestedCapabilities)
+	anchor, err := verifier.TrustAnchor()
+	if err != nil {
+		t.Fatal(err)
+	}
+	binding, err := HardwareBindingHash(manifest)
+	if err != nil {
+		t.Fatal(err)
+	}
+	candidateDigest, err := candidate.Digest()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("tampered signature payload", func(t *testing.T) {
+		journal, _ := journalAtVerify(t, binding, anchor, candidateDigest)
+		tampered := verification
+		attestation := *verification.Attestation
+		attestation.EvidenceSummaryHash = HashBytes([]byte("tampered-summary"))
+		tampered.Attestation = &attestation
+		tampered.EvidenceSummaryHash = attestation.EvidenceSummaryHash
+		_, err := journal.Transition(StateVerify, StateStage, TransitionEvidence{CandidateDigest: candidateDigest, ArtifactDigest: verification.ArtifactDigest, Verification: &tampered})
+		if !errors.Is(err, ErrVerificationRequired) {
+			t.Fatalf("tampered attestation was accepted: %v", err)
+		}
+	})
+
+	t.Run("stale hardware binding", func(t *testing.T) {
+		staleBinding := HashBytes([]byte("different-current-hardware"))
+		journal, _ := journalAtVerify(t, staleBinding, anchor, candidateDigest)
+		_, err := journal.Transition(StateVerify, StateStage, TransitionEvidence{CandidateDigest: candidateDigest, ArtifactDigest: verification.ArtifactDigest, Verification: &verification})
+		if !errors.Is(err, ErrVerificationRequired) {
+			t.Fatalf("stale hardware attestation was accepted: %v", err)
+		}
+	})
+
+	t.Run("tampered persisted attestation", func(t *testing.T) {
+		journal, path := journalAtVerify(t, binding, anchor, candidateDigest)
+		mustTransition(t, journal, StateVerify, StateStage, TransitionEvidence{CandidateDigest: candidateDigest, ArtifactDigest: verification.ArtifactDigest, Verification: &verification})
+		record, err := journal.Load()
+		if err != nil {
+			t.Fatal(err)
+		}
+		last := len(record.History) - 1
+		record.History[last].VerificationAttestation.EvidenceSummaryHash = HashBytes([]byte("persisted-tamper"))
+		record.History[last].VerificationDigest, err = CanonicalHash(*record.History[last].VerificationAttestation)
+		if err != nil {
+			t.Fatal(err)
+		}
+		record.History[last].Hash, err = transitionHash(record.History[last])
+		if err != nil {
+			t.Fatal(err)
+		}
+		encoded, err := json.MarshalIndent(record, "", "  ")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := atomicWriteFile(path, append(encoded, '\n'), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		reopened, err := OpenJournalForHardware(path, binding, anchor)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := reopened.Load(); err == nil {
+			t.Fatal("tampered persisted verifier attestation survived reload")
+		}
+	})
+}
+
+func TestVerifierRejectsCandidateOwnedAuthorityInputs(t *testing.T) {
+	manifest, candidate := verifierFixture(t)
+	artifactBytes := []byte("artifact")
+	verifier := NewDeterministicVerifier("trusted-verifier")
+
+	t.Run("self-approved provenance", func(t *testing.T) {
+		candidate.Provenance[0].Approved = true
+		result := verifyCandidateRaw(t, verifier, manifest, candidate, artifactBytes, StateStage, nil, candidate.RequestedCapabilities, trustedTestsForCandidate(t, candidate, artifactBytes))
+		if result.OK {
+			t.Fatal("candidate self-approved provenance without registry authority")
+		}
+	})
+
+	t.Run("candidate fake Passed test", func(t *testing.T) {
+		candidate.TestEvidence = []TestEvidence{{ContractID: "t1", Passed: true, EvidenceHash: HashBytes([]byte("candidate-fake-pass"))}}
+		result := verifyCandidateRaw(t, verifier, manifest, candidate, artifactBytes, StateStage, candidate.Provenance, candidate.RequestedCapabilities, nil)
+		if result.OK {
+			t.Fatal("candidate-owned Passed=true satisfied trusted test gate")
+		}
+	})
+}
+
+func TestVerifierRejectsArtifactMismatchAndCapabilityBoundaryBypass(t *testing.T) {
+	manifest, candidate := verifierFixture(t)
+	verifier := NewDeterministicVerifier("trusted-verifier")
+
+	t.Run("artifact bytes mismatch", func(t *testing.T) {
+		tamperedArtifact := []byte("different-artifact-bytes")
+		result := verifyCandidateRaw(t, verifier, manifest, candidate, tamperedArtifact, StateStage, candidate.Provenance, candidate.RequestedCapabilities, trustedTestsForCandidate(t, candidate, tamperedArtifact))
+		if result.OK {
+			t.Fatal("manifest accepted artifact bytes with mismatched SHA-256")
+		}
+	})
+
+	t.Run("arbitrary capability rejected even if policy allows it", func(t *testing.T) {
+		custom := candidate
+		forbidden := LogicalCapability("kernel-memory")
+		custom.RequestedCapabilities = append(append([]LogicalCapability(nil), candidate.RequestedCapabilities...), forbidden)
+		custom.Manifest.DeclaredCapabilities = append(append([]LogicalCapability(nil), candidate.Manifest.DeclaredCapabilities...), forbidden)
+		artifactBytes := []byte("artifact")
+		candidateDigest, err := custom.Digest()
+		if err != nil {
+			t.Fatal(err)
+		}
+		observation := CapabilityObservation{ScannerID: "fixture-scanner", ScannerVersion: "1", CandidateDigest: candidateDigest, ArtifactDigest: HashBytes(artifactBytes), EvidenceHash: HashBytes([]byte("scan")), Capabilities: custom.RequestedCapabilities}
+		result, err := verifier.Verify(context.Background(), VerificationRequest{
+			Hardware: manifest, Candidate: custom,
+			AllowedCapabilities: append(append([]LogicalCapability(nil), ABI1().LogicalCapabilities...), forbidden),
+			ApprovedEvidence:    custom.Provenance, BuiltArtifact: artifactBytes,
+			TrustedTestEvidence: trustedTestsForCandidate(t, custom, artifactBytes), CapabilityObservation: observation, TargetState: StateStage,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if result.OK {
+			t.Fatal("non-ABI capability was authorized by caller allowlist")
+		}
+	})
+
+	t.Run("candidate omission cannot hide trusted scanner observation", func(t *testing.T) {
+		custom := candidate
+		custom.ObservedCapabilities = nil
+		artifactBytes := []byte("artifact")
+		result := verifyCandidateRaw(t, verifier, manifest, custom, artifactBytes, StateStage, custom.Provenance, []LogicalCapability{CapabilityConfig, CapabilityClock}, trustedTestsForCandidate(t, custom, artifactBytes))
+		if result.OK {
+			t.Fatal("candidate omission hid undeclared trusted scanner capability")
+		}
+	})
+}
+
+func TestHardwareManifestRejectsInvalidTopology(t *testing.T) {
+	base := HardwareManifest{
+		SchemaVersion: HardwareManifestSchemaV1,
+		Architecture:  ArchX8664,
+		ABI:           "sysv64",
+		Endianness:    EndianLittle,
+		Graph: DeviceGraph{
+			SchemaVersion: DeviceGraphSchemaV1,
+			Buses:         []BusDescriptor{{ID: "b0", Kind: BusPCIe}, {ID: "b1", Kind: BusUSB}},
+			Devices: []DeviceNode{
+				{ID: "a", Kind: DeviceNetwork, BusID: "b0", Identity: DeviceIdentity{StableID: PrivacySafeDeviceID("a")}},
+				{ID: "b", Kind: DeviceStorage, BusID: "b1", Identity: DeviceIdentity{StableID: PrivacySafeDeviceID("b")}},
+			},
+		},
+	}
+	cases := map[string]HardwareManifest{}
+	missingParent := base
+	missingParent.Graph.Buses = []BusDescriptor{{ID: "b0", Kind: BusPCIe, ParentID: "missing"}, {ID: "b1", Kind: BusUSB}}
+	cases["bus missing parent"] = missingParent
+	busCycle := base
+	busCycle.Graph.Buses = []BusDescriptor{{ID: "b0", Kind: BusPCIe, ParentID: "b1"}, {ID: "b1", Kind: BusUSB, ParentID: "b0"}}
+	cases["bus parent cycle"] = busCycle
+	selfEdge := base
+	selfEdge.Graph.Edges = []DeviceEdge{{From: "a", To: "a", Relation: "depends-on"}}
+	cases["device self edge"] = selfEdge
+	deviceCycle := base
+	deviceCycle.Graph.Edges = []DeviceEdge{{From: "a", To: "b", Relation: "depends-on"}, {From: "b", To: "a", Relation: "depends-on"}}
+	cases["device cycle"] = deviceCycle
+	duplicateEdge := base
+	duplicateEdge.Graph.Edges = []DeviceEdge{{From: "a", To: "b", Relation: "depends-on"}, {From: "a", To: "b", Relation: "depends-on"}}
+	cases["duplicate device edge"] = duplicateEdge
+
+	for name, manifest := range cases {
+		t.Run(name, func(t *testing.T) {
+			if err := manifest.Validate(); err == nil {
+				t.Fatal("invalid topology was accepted")
+			}
+		})
+	}
+}
+
+func TestManifestDoesNotSerializeRawSerial(t *testing.T) {
+	rawSerial := "SUPER-SECRET-SERIAL-123"
+	manifest, _ := verifierFixture(t)
+	manifest.Graph.Devices[0].Identity.SerialDigest = HashPrivateIdentifier(rawSerial)
+	b, err := jsonMarshal(manifest)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if bytes.Contains(b, []byte(rawSerial)) {
+		t.Fatal("raw serial leaked into hardware manifest")
+	}
+	if !bytes.Contains(b, []byte("serial_digest")) {
+		t.Fatal("expected privacy-safe serial digest")
+	}
+}
+
+func mustTransition(t *testing.T, journal *Journal, from, to AdaptationState, evidence TransitionEvidence) {
+	t.Helper()
+	if _, err := journal.Transition(from, to, evidence); err != nil {
+		t.Fatalf("transition %s -> %s: %v", from, to, err)
+	}
+}
+
+func trustedTestsForCandidate(t *testing.T, candidate CandidateBundle, artifactBytes []byte) []TrustedTestEvidence {
+	t.Helper()
+	candidateDigest, err := candidate.Digest()
+	if err != nil {
+		t.Fatal(err)
+	}
+	artifactDigest := HashBytes(artifactBytes)
+	out := make([]TrustedTestEvidence, 0, len(candidate.Tests))
+	for _, contract := range candidate.Tests {
+		if !contract.Required {
+			continue
+		}
+		out = append(out, TrustedTestEvidence{
+			ContractID:      contract.ID,
+			RunnerID:        "fixture-runner",
+			RunnerVersion:   "1",
+			CandidateDigest: candidateDigest,
+			ArtifactDigest:  artifactDigest,
+			ToolchainHash:   candidate.Manifest.ToolchainHash,
+			Passed:          true,
+			EvidenceHash:    HashBytes([]byte("trusted-test:" + contract.ID)),
+		})
+	}
+	return out
+}
+
+func trustedObservationForCandidate(t *testing.T, candidate CandidateBundle, artifactBytes []byte, capabilities []LogicalCapability) CapabilityObservation {
+	t.Helper()
+	candidateDigest, err := candidate.Digest()
+	if err != nil {
+		t.Fatal(err)
+	}
+	return CapabilityObservation{
+		ScannerID:       "fixture-scanner",
+		ScannerVersion:  "1",
+		CandidateDigest: candidateDigest,
+		ArtifactDigest:  HashBytes(artifactBytes),
+		EvidenceHash:    HashBytes([]byte("trusted-static-scan")),
+		Capabilities:    append([]LogicalCapability(nil), capabilities...),
+	}
+}
+
+func verifyCandidate(t *testing.T, verifier DeterministicVerifier, manifest HardwareManifest, candidate CandidateBundle, artifactBytes []byte, target AdaptationState, approved []EvidenceReference, observed []LogicalCapability) VerificationResult {
+	t.Helper()
+	result := verifyCandidateRaw(t, verifier, manifest, candidate, artifactBytes, target, approved, observed, trustedTestsForCandidate(t, candidate, artifactBytes))
+	if err := result.Error(); err != nil {
+		t.Fatal(err)
+	}
+	if result.Attestation == nil {
+		t.Fatal("successful protected verification did not issue attestation")
+	}
+	return result
+}
+
+func verifyCandidateRaw(t *testing.T, verifier DeterministicVerifier, manifest HardwareManifest, candidate CandidateBundle, artifactBytes []byte, target AdaptationState, approved []EvidenceReference, observed []LogicalCapability, tests []TrustedTestEvidence) VerificationResult {
+	t.Helper()
+	result, err := verifier.Verify(context.Background(), VerificationRequest{
+		Hardware:              manifest,
+		Candidate:             candidate,
+		AllowedCapabilities:   ABI1().LogicalCapabilities,
+		ApprovedEvidence:      approved,
+		BuiltArtifact:         artifactBytes,
+		TrustedTestEvidence:   tests,
+		CapabilityObservation: trustedObservationForCandidate(t, candidate, artifactBytes, observed),
+		TargetState:           target,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return result
+}
+
+func journalAtVerify(t *testing.T, hardwareBinding string, anchor VerifierTrustAnchor, candidateDigest string) (*Journal, string) {
+	t.Helper()
+	path := filepath.Join(t.TempDir(), "device-adaptation.json")
+	journal, err := OpenJournalForHardware(path, hardwareBinding, anchor)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := journal.Initialize("dev0"); err != nil {
+		t.Fatal(err)
+	}
+	mustTransition(t, journal, StateProbe, StateMatch, TransitionEvidence{Reason: "probe complete"})
+	mustTransition(t, journal, StateMatch, StateSynthesize, TransitionEvidence{Reason: "unknown device"})
+	mustTransition(t, journal, StateSynthesize, StateBuild, TransitionEvidence{CandidateDigest: candidateDigest, Reason: "candidate built"})
+	mustTransition(t, journal, StateBuild, StateVerify, TransitionEvidence{CandidateDigest: candidateDigest, Reason: "build ready for verification"})
+	return journal, path
+}
+
+func verifierFixture(t *testing.T) (HardwareManifest, CandidateBundle) {
+	t.Helper()
+	device := DeviceNode{ID: "dev0", Kind: DeviceNetwork, BusID: "usb0", Identity: DeviceIdentity{StableID: PrivacySafeDeviceID("usb", "1", "2"), VendorID: "1", ProductID: "2"}}
+	manifest := HardwareManifest{SchemaVersion: HardwareManifestSchemaV1, Architecture: ArchARM64, ABI: "aapcs64", Endianness: EndianLittle, Graph: DeviceGraph{SchemaVersion: DeviceGraphSchemaV1, Buses: []BusDescriptor{{ID: "usb0", Kind: BusUSB}}, Devices: []DeviceNode{device}}}
+	binding, err := HardwareBindingHash(manifest)
+	if err != nil {
+		t.Fatal(err)
+	}
+	source := []byte("fixture")
+	build := []byte("build")
+	toolchain := []byte("toolchain")
+	provenance := []EvidenceReference{{ID: "ref", Digest: HashBytes([]byte("ref")), Approved: true}}
+	provenanceHash, _ := CanonicalHash(provenance)
+	candidate := CandidateBundle{
+		Manifest: DriverManifest{SchemaVersion: DriverManifestSchemaV1, ABIVersion: DriverABIVersion1, Name: "fixture", Version: "1", Selector: DeviceSelector{DeviceID: "dev0", Kind: DeviceNetwork, VendorID: "1", ProductID: "2"}, UserMode: true, DeclaredCapabilities: []LogicalCapability{CapabilityConfig}, Service: ServiceInterface{Version: ServiceABIVersion1}, HardwareBindingHash: binding, SourceHash: HashBytes(source), BuildManifestHash: HashBytes(build), BuildArtifactHash: HashBytes([]byte("artifact")), ToolchainHash: HashBytes(toolchain), ProvenanceHash: provenanceHash},
+		Source:   source, BuildManifest: build, ToolchainIdentity: toolchain, Provenance: provenance,
+		RequestedCapabilities: []LogicalCapability{CapabilityConfig}, ObservedCapabilities: []LogicalCapability{CapabilityConfig},
+		Tests: []TestContract{{ID: "t1", Name: "test", Required: true}}, TestEvidence: []TestEvidence{{ContractID: "t1", Passed: true, EvidenceHash: HashBytes([]byte("ok"))}},
+	}
+	return manifest, candidate
+}
+
+func jsonMarshal(v any) ([]byte, error) {
+	return json.Marshal(v)
+}

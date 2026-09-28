@@ -59,6 +59,20 @@ func (e *Executable) Parameters(entry string) ([]Parameter, Type, error) {
 	return append([]Parameter(nil), f.Params...), f.Result, nil
 }
 
+// Semantics returns the prepared function's immutable pure/effectful profile.
+// Capability requirements are declarative names only; opaque authority remains
+// outside Core IR and is owned by the SwypikOS capability broker.
+func (e *Executable) Semantics(entry string) (FunctionSemantics, error) {
+	if e == nil {
+		return FunctionSemantics{}, diagnostic("invalid_ir", "nil executable")
+	}
+	f, ok := e.functions[entry]
+	if !ok {
+		return FunctionSemantics{}, diagnostic("unknown_function", entry)
+	}
+	return semanticsForFunction(f.Function), nil
+}
+
 type machine struct {
 	executable  *Executable
 	ctx         context.Context
@@ -91,6 +105,13 @@ func (e *Executable) Run(ctx context.Context, entry string, args []Value, fuel i
 	params, _, err := e.Parameters(entry)
 	if err != nil {
 		return RunResult{}, err
+	}
+	semantics, err := e.Semantics(entry)
+	if err != nil {
+		return RunResult{}, err
+	}
+	if semantics.Purity != "pure" {
+		return RunResult{}, diagnostic("effectful_program", "Core executor does not execute host effects; submit an EffectRequest to the SwypikOS capability broker")
 	}
 	if len(args) != len(params) {
 		return RunResult{}, diagnostic("arity", "incorrect entry argument count")

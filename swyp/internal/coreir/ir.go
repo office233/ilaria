@@ -10,12 +10,15 @@ import (
 
 const (
 	Version         = 1
+	EffectVersion   = 1
 	MaxBytes        = 1 << 20
 	MaxFunctions    = 64
 	MaxBlocks       = 256
 	MaxSlots        = 512
 	MaxInstructions = 8192
 	MaxFuel         = 1_000_000
+	MaxEffects      = 16
+	MaxCapabilities = 32
 )
 
 type Module struct {
@@ -27,12 +30,14 @@ type Parameter struct {
 	Type Type   `json:"type"`
 }
 type Function struct {
-	Name    string      `json:"name"`
-	Params  []Parameter `json:"params,omitempty"`
-	Result  Type        `json:"result"`
-	Effects []string    `json:"effects,omitempty"`
-	Slots   []Type      `json:"slots,omitempty"`
-	Blocks  []Block     `json:"blocks"`
+	Name                 string                  `json:"name"`
+	Params               []Parameter             `json:"params,omitempty"`
+	Result               Type                    `json:"result"`
+	EffectVersion        int                     `json:"effect_version,omitempty"`
+	Effects              []string                `json:"effects,omitempty"`
+	RequiredCapabilities []CapabilityRequirement `json:"required_capabilities,omitempty"`
+	Slots                []Type                  `json:"slots,omitempty"`
+	Blocks               []Block                 `json:"blocks"`
 }
 type Block struct {
 	Instructions []Instruction `json:"instructions,omitempty"`
@@ -156,8 +161,11 @@ func (m Module) Validate() error {
 	total := 0
 	for _, f := range m.Functions {
 		fail := func(s string) error { return bad(f.Name + ": " + s) }
-		if (!f.Result.scalar() && f.Result != Void) || len(f.Effects) != 0 {
-			return fail("unsupported result or effect; core v1 is pure")
+		if !f.Result.scalar() && f.Result != Void {
+			return fail("unsupported result type")
+		}
+		if err := validateFunctionEffects(f); err != nil {
+			return fail(err.Error())
 		}
 		if len(f.Slots) > MaxSlots || len(f.Blocks) == 0 || len(f.Blocks) > MaxBlocks || len(f.Params) > len(f.Slots) || len(f.Params) > 16 {
 			return fail("invalid slots, parameters or blocks")
@@ -213,6 +221,9 @@ func (m Module) Validate() error {
 					callee, ok := functions[ins.Callee]
 					if !ok || len(types) != len(callee.Params) {
 						return fail("unknown call or incorrect arity")
+					}
+					if err := validateEffectPropagation(f, callee); err != nil {
+						return fail(err.Error())
 					}
 					for i, t := range types {
 						if t != callee.Params[i].Type {

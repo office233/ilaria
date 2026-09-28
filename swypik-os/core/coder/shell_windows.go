@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"sort"
 	"strings"
 	"sync"
 	"syscall"
@@ -30,6 +31,63 @@ var (
 type shellStartupInfo struct {
 	syscall.StartupInfo
 	Attributes uintptr
+}
+
+// commandEnvironmentAllowlist is intentionally small and name-based. The
+// process runner must never copy os.Environ wholesale: API tokens, provider
+// credentials and arbitrary caller variables are not part of a command's
+// ambient authority. These entries are limited to Windows/toolchain discovery,
+// user cache/config locations and temporary directories needed by normal build
+// commands. Adding a variable here is a security-sensitive compatibility change.
+var commandEnvironmentAllowlist = []string{
+	"APPDATA",
+	"CommonProgramFiles",
+	"CommonProgramFiles(x86)",
+	"HOMEDRIVE",
+	"HOMEPATH",
+	"LOCALAPPDATA",
+	"NUMBER_OF_PROCESSORS",
+	"OS",
+	"PATH",
+	"PATHEXT",
+	"ProgramData",
+	"ProgramFiles",
+	"ProgramFiles(x86)",
+	"SystemDrive",
+	"SystemRoot",
+	"TEMP",
+	"TMP",
+	"USERPROFILE",
+	"windir",
+}
+
+func commandEnvironment(shell string) ([]uint16, error) {
+	entries := make([]string, 0, len(commandEnvironmentAllowlist)+1)
+	entries = append(entries, "ComSpec="+shell)
+	for _, name := range commandEnvironmentAllowlist {
+		value, ok := os.LookupEnv(name)
+		if !ok {
+			continue
+		}
+		if strings.ContainsRune(value, 0) {
+			return nil, fmt.Errorf("invalid %s environment value", name)
+		}
+		entries = append(entries, name+"="+value)
+	}
+	sort.Slice(entries, func(i, j int) bool {
+		return strings.ToUpper(entries[i]) < strings.ToUpper(entries[j])
+	})
+	block := make([]uint16, 0, 256)
+	for _, entry := range entries {
+		wide, err := syscall.UTF16FromString(entry)
+		if err != nil {
+			return nil, fmt.Errorf("encode command environment: %w", err)
+		}
+		block = append(block, wide...)
+	}
+	// Each entry already ends in NUL. One additional NUL terminates the block.
+	block = append(block, 0)
+	return block, nil
 }
 
 // runShell owns a Windows job from before the shell's first instruction until
@@ -74,8 +132,16 @@ func runShell(ctx context.Context, command, directory string, output io.Writer) 
 	}
 	defer stdin.Close()
 
-	shell := filepath.Join(os.Getenv("SystemRoot"), "System32", "cmd.exe")
+	systemRoot := os.Getenv("SystemRoot")
+	if systemRoot == "" {
+		return fmt.Errorf("SystemRoot is unavailable")
+	}
+	shell := filepath.Join(systemRoot, "System32", "cmd.exe")
 	app, err := syscall.UTF16PtrFromString(shell)
+	if err != nil {
+		return err
+	}
+	environment, err := commandEnvironment(shell)
 	if err != nil {
 		return err
 	}
@@ -119,8 +185,12 @@ func runShell(ctx context.Context, command, directory string, output io.Writer) 
 			}
 			defer syscall.SetHandleInformation(handle, syscall.HANDLE_FLAG_INHERIT, 0)
 		}
-		// CREATE_SUSPENDED | CREATE_NO_WINDOW | EXTENDED_STARTUPINFO_PRESENT.
-		return syscall.CreateProcess(app, line, nil, nil, true, 0x4|0x08000000|0x80000, nil, cwd, &si.StartupInfo, &process)
+		// CREATE_SUSPENDED | CREATE_UNICODE_ENVIRONMENT | CREATE_NO_WINDOW |
+		// EXTENDED_STARTUPINFO_PRESENT. The explicit environment block is the
+		// secret-containment boundary for inherited parent environment variables.
+		err := syscall.CreateProcess(app, line, nil, nil, true, 0x4|0x400|0x08000000|0x80000, &environment[0], cwd, &si.StartupInfo, &process)
+		runtime.KeepAlive(environment)
+		return err
 	}()
 	runtime.KeepAlive(attributes)
 	runtime.KeepAlive(handles)

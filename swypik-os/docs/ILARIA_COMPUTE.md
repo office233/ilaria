@@ -1,4 +1,4 @@
-# Community GPU contribution to Ilaria training: design
+# Swyp Compute Fabric — community GPU/CPU/NPU contribution
 
 Status: **design only.** This build detects GPUs (`core/compute`) and stores the
 user's consent (`settings.json` → `compute`). It runs no training work, earns no
@@ -8,8 +8,18 @@ desktop.
 
 ## Goal
 
-People who install SwypikOS may lend idle GPU time to train Ilaria. The
-coordinator runs in Azure; devices do bounded, verifiable pieces of work.
+People who install SwypikOS may explicitly contribute idle GPU/CPU/NPU capacity
+to Ilaria and other verified Swypik workloads. This is a strategic compute plane,
+not a crypto/mining/reward feature.
+
+The first coordinator may run centrally for bootstrap, but the protocol must not
+be Azure-locked: later coordinators can be multi-region/federated while preserving
+the same signed-job, lease, verification and accounting contracts.
+
+Candidate workloads include evals, synthetic-data validation, adapter/LoRA
+training, distillation shards, embedding/index builds, search experiments and
+batched inference. Full synchronous training is used only when hardware/network
+economics justify it.
 
 ## Non-negotiable properties
 
@@ -31,11 +41,11 @@ coordinator runs in Azure; devices do bounded, verifiable pieces of work.
 ## Architecture
 
 ```text
-Azure coordinator
+Coordinator fabric
   ├─ registry: model versions, checkpoints (Blob Storage, content-addressed)
   ├─ scheduler: shards of training data → leases with deadlines
   ├─ verifier: replication, spot checks, robust aggregation
-  └─ ledger: accepted work per device (only after verification)
+  └─ ledger: useful verified work per device (only after verification)
 Device worker (SwypikOS)
   ├─ consent + idle/thermal/power policy
   ├─ lease client (device identity key, mTLS or signed requests)
@@ -74,8 +84,9 @@ training (for example low-rank adapters) rather than full-parameter updates.
 - **Signatures:** every result is signed with the device key registered at
   enrollment.
 
-Rewards, if any, are considered only after verified contribution accounting
-exists. No balance is shown until then.
+No cryptocurrency, mining or proof-of-work economic mechanism is part of the
+design. Any future non-crypto incentive model is a separate product decision and
+must never weaken consent, privacy or verification.
 
 ## What the desktop shows today
 

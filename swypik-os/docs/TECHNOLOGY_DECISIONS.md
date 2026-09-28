@@ -8,6 +8,8 @@
 | Go race detector + fuzzing | Concurență incorectă și intrări neprevăzute | Folosite în scripts/verify.ps1; fuzzing limitat la funcții fără efecte externe |
 | Windows Job Objects | Procese copil care pot supraviețui anulării shellului | Implementat în core/coder/shell_windows.go; verificat cu procese copil reale |
 | Microsoft WebView2 | Fereastră desktop cu lifecycle controlat de aplicație, în locul dependenței de procesul Edge lansat extern | Candidat pentru un prototip separat, înainte de migrare |
+| Kernel/platform SwypikOS | OS independent, hardware authority, drivere, IPC, memorie, securitate | **OPEN ADR**. Linux-ul curent este reference/prototype, nu decizie de produs. Se compară Swypik-owned kernel/platform, hybrid compatibility și Linux reference prin benchmark |
+| Swyp Compute Fabric | Utilizatorii pot contribui voluntar GPU/CPU/NPU idle pentru Ilaria și workload-uri verificate | **Strategic requirement**. Opt-in, revocabil, signed jobs, leases, sandbox, resource governor, result verification; zero crypto/mining |
 
 Playwright oferă așteptare automată pentru acțiuni și aserțiuni care reîncearcă până când starea așteptată este vizibilă. Harnessul curent folosește locatoare și așteptări pe starea paginii. [Aserțiuni](https://playwright.dev/docs/test-assertions), [auto-waiting](https://playwright.dev/docs/actionability).
 
@@ -17,4 +19,7 @@ Windows Job Objects permit gestionarea grupurilor de procese și terminarea proc
 
 WebView2 folosește un model cu mai multe procese. Nu îl prezentăm drept soluție automată pentru consumul de memorie. Prototipul trebuie să măsoare pornirea, memoria, închiderea ferestrei, recuperarea după crash și izolarea conținutului. [Modelul proceselor](https://learn.microsoft.com/en-us/microsoft-edge/webview2/concepts/process-model), [evenimentele proceselor](https://learn.microsoft.com/en-us/microsoft-edge/webview2/concepts/process-related-events).
 
-Nu introducem un framework nou pentru a bifa o listă. Păstrăm Go și UI-ul existent până când un prototip demonstrează un avantaj. Nu au fost rulate benchmarkuri comparative cu alte produse și nu pretindem superioritate universală.
+Nu introducem un framework nou pentru a bifa o listă. Păstrăm Go și UI-ul
+existent până când un prototip demonstrează un avantaj. Ținta este ca SwypikOS
+să depășească Windows/macOS/Linux pe workload-urile sale țintă, dar orice astfel
+de afirmație trebuie susținută de benchmarkuri comparabile și reproductibile.

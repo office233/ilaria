@@ -347,7 +347,10 @@ def main():
     p.add_argument("--sources", default=",".join(SOURCES))
     args = p.parse_args()
     out = Path(args.out)
-    out.mkdir(parents=True, exist_ok=False)
+    # An empty directory (left by an earlier failed build) may be reused; existing data never is.
+    if out.exists() and any(out.iterdir()):
+        raise FileExistsError(f"{out} is not empty; refusing to overwrite a built mix")
+    out.mkdir(parents=True, exist_ok=True)
     records = {name: load_source(name) for name in args.sources.split(",")}
     (train, val), stats = build(records, forbidden_prompts(args.bench))
     for path in args.extra_train:

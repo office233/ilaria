@@ -21,8 +21,11 @@ type expr struct {
 	value      any
 	args       []*expr
 	pos        scanner.Position
+	depth      int    // AST height, independent of parser recursion depth.
+	lexeme     string // Original numeric token, retained for exact core i64 literals.
 }
 type stmt struct {
+	annotation  string // Available only in ParseCore mode.
 	kind, name  string
 	value       *expr
 	body, other []*stmt
@@ -35,8 +38,12 @@ type function struct {
 	result      string
 	pos         scanner.Position
 }
-type Program struct{ functions map[string]function }
+type Program struct {
+	functions map[string]function
+	core      bool // Opt-in parser mode; legacy backends must reject it.
+}
 type parser struct {
+	core      bool
 	tokens    []token
 	at, depth int
 }
@@ -46,7 +53,16 @@ func failure(pos scanner.Position, format string, args ...any) error {
 }
 
 // Parse checks syntax and declarations without executing the program.
-func Parse(filename, source string) (program *Program, err error) {
+func Parse(filename, source string) (*Program, error) {
+	return parseSource(filename, source, false)
+}
+
+// ParseCore enables explicit i64/f64 and typed locals for the opt-in core pipeline.
+func ParseCore(filename, source string) (*Program, error) {
+	return parseSource(filename, source, true)
+}
+
+func parseSource(filename, source string, core bool) (program *Program, err error) {
 	if len(source) > 1_048_576 {
 		return nil, fmt.Errorf("%s: source exceeds 1 MiB limit", filename)
 	}
@@ -60,7 +76,7 @@ func Parse(filename, source string) (program *Program, err error) {
 			lexical = failure(s.Position, "%s", message)
 		}
 	}
-	p := &parser{}
+	p := &parser{core: core}
 	for k := s.Scan(); k != scanner.EOF; k = s.Scan() {
 		p.tokens = append(p.tokens, token{s.TokenText(), s.Position})
 	}
@@ -78,7 +94,7 @@ func Parse(filename, source string) (program *Program, err error) {
 			}
 		}
 	}()
-	program = &Program{functions: map[string]function{}}
+	program = &Program{functions: map[string]function{}, core: core}
 	for p.peek() != "<eof>" {
 		p.expect("fn")
 		name := p.identifier()
@@ -128,7 +144,7 @@ func Parse(filename, source string) (program *Program, err error) {
 }
 func (p *parser) typeName(allowVoid bool) string {
 	name := p.peek()
-	if name != "number" && name != "bool" && name != "string" && !(allowVoid && name == "void") {
+	if name != "number" && name != "bool" && name != "string" && !(allowVoid && name == "void") && !(p.core && (name == "i64" || name == "f64")) {
 		p.bad("expected type number, bool, or string")
 	}
 	p.at++
@@ -182,6 +198,9 @@ func (p *parser) statement() *stmt {
 	case p.take("let"):
 		s.kind = "let"
 		s.name = p.identifier()
+		if p.core && p.take(":") {
+			s.annotation = p.typeName(false)
+		}
 		p.expect("=")
 		s.value = p.expression(0)
 		p.expect(";")
@@ -262,9 +281,9 @@ func (p *parser) expression(min int) *expr {
 			}
 			p.at++
 			e = &expr{kind: "literal", value: v, pos: t.pos}
-		} else if v, err := strconv.ParseFloat(t.text, 64); err == nil && !math.IsInf(v, 0) {
+		} else if v, err := strconv.ParseFloat(t.text, 64); err == nil && !math.IsNaN(v) && !math.IsInf(v, 0) {
 			p.at++
-			e = &expr{kind: "literal", value: v, pos: t.pos}
+			e = &expr{kind: "literal", value: v, lexeme: t.text, pos: t.pos}
 		} else {
 			name := p.identifier()
 			e = &expr{kind: "variable", name: name, pos: t.pos}
@@ -282,6 +301,7 @@ func (p *parser) expression(min int) *expr {
 			}
 		}
 	}
+	e = boundedExpression(e)
 	for {
 		op, n := p.operator()
 		prec, ok := precedence[op]
@@ -289,7 +309,23 @@ func (p *parser) expression(min int) *expr {
 			break
 		}
 		p.at += n
-		e = &expr{kind: "binary", name: op, args: []*expr{e, p.expression(prec + 1)}, pos: t.pos}
+		e = boundedExpression(&expr{kind: "binary", name: op, args: []*expr{e, p.expression(prec + 1)}, pos: t.pos})
+	}
+	return e
+}
+
+// Left-associative chains are built in a loop, so parser recursion alone does
+// not bound the AST traversed recursively by the checker and code generators.
+// Children already have their height computed; each new node is checked once.
+func boundedExpression(e *expr) *expr {
+	e.depth = 1
+	for _, child := range e.args {
+		if depth := child.depth + 1; depth > e.depth {
+			e.depth = depth
+		}
+	}
+	if e.depth > 256 {
+		panic(failure(e.pos, "expression nesting limit exceeded"))
 	}
 	return e
 }
@@ -321,6 +357,9 @@ func (p *Program) Run(out io.Writer, budget int) (err error) {
 	return p.RunArgs(out, budget, nil)
 }
 func (p *Program) RunArgs(out io.Writer, budget int, args []float64) (err error) {
+	if p.core {
+		return fmt.Errorf("core source requires the CoreIR execution pipeline")
+	}
 	if budget <= 0 {
 		return fmt.Errorf("step budget must be positive")
 	}

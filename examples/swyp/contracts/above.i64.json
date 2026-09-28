@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "entry": "above",
+  "inputs": [{"name": "x", "type": "i64", "min": "-20", "max": "20"}],
+  "ensures": [
+    {"op": "gt", "args": [{"var": "result"}, {"var": "x"}]},
+    {"op": "le", "args": [
+      {"var": "result"},
+      {"op": "add", "args": [{"var": "x"}, {"const": {"type": "i64", "value": "2"}}]}
+    ]}
+  ],
+  "max_steps": 100
+}

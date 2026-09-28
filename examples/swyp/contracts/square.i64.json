@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "entry": "square",
+  "inputs": [
+    {"name": "x", "type": "i64", "min": "-100", "max": "100"}
+  ],
+  "effects": [],
+  "requires": [],
+  "ensures": [
+    {"op": "eq", "args": [
+      {"var": "result"},
+      {"op": "mul", "args": [{"var": "x"}, {"var": "x"}]}
+    ]},
+    {"op": "ge", "args": [{"var": "result"}, {"const": {"type": "i64", "value": "0"}}]}
+  ],
+  "max_steps": 100
+}

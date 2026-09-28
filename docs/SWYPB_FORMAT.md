@@ -61,8 +61,14 @@ not implicitly coerced to false/true.
 A maximum 64 KiB read/allocation bound applies to the complete module. STV2's
 4,096-instruction limit is stricter: its largest payload is 22,946 bytes and the
 corresponding module is 22,994 bytes. The module overhead is exactly 48 bytes.
-The sum example is 109 bytes of STV2 plus 48 bytes, or 157 bytes in total.
+With read-only operand reuse, the sum example is 98 bytes of STV2 plus 48 bytes,
+or 146 bytes in total (16 instructions). Earlier compilers emitted 157-byte,
+18-instruction modules for the same example; those modules remain valid. The
+wire format and VM instruction semantics have not changed. Optimized code can
+consume less instruction fuel for the same source computation.
 These sizes exclude the executable, decoded instructions and runtime memory.
+See [the research campaign](AI_LANGUAGE_RESEARCH_20260928.md) for measured
+variants, source hashes, limitations and cross-language comparisons.
 
 Unknown versions, targets, profiles and type tags, nonzero reserved fields,
 incorrect lengths, checksum mismatches and malformed STV2 are rejected. The

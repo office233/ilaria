@@ -228,20 +228,20 @@ func (l *stv2Lowerer) block(body []*stmt) {
 		case "let":
 			locals[s.name] = l.expression(s.value)
 		case "assign":
-			r := l.expression(s.value)
+			r := l.operand(s.value)
 			target := l.lookup(s.name, s.pos)
-			l.emit(vm.V2Instruction{Op: vm.V2Mov, A: target, B: r}, s.pos)
-			l.free(r)
+			l.emit(vm.V2Instruction{Op: vm.V2Mov, A: target, B: r.reg}, s.pos)
+			l.releaseOperand(r)
 		case "expr":
-			l.free(l.expression(s.value))
+			l.releaseOperand(l.operand(s.value))
 		case "return":
-			r := l.expression(s.value)
-			l.emit(vm.V2Instruction{Op: vm.V2Halt, A: r}, s.pos)
-			l.free(r)
+			r := l.operand(s.value)
+			l.emit(vm.V2Instruction{Op: vm.V2Halt, A: r.reg}, s.pos)
+			l.releaseOperand(r)
 		case "if":
-			r := l.expression(s.value)
-			no := l.jump(vm.V2Jz, r, s.pos)
-			l.free(r)
+			r := l.operand(s.value)
+			no := l.jump(vm.V2Jz, r.reg, s.pos)
+			l.releaseOperand(r)
 			l.block(s.body)
 			end := l.jump(vm.V2Jmp, 0, s.pos)
 			l.patch(no)
@@ -249,9 +249,9 @@ func (l *stv2Lowerer) block(body []*stmt) {
 			l.patch(end)
 		case "while":
 			start := len(l.code)
-			r := l.expression(s.value)
-			end := l.jump(vm.V2Jz, r, s.pos)
-			l.free(r)
+			r := l.operand(s.value)
+			end := l.jump(vm.V2Jz, r.reg, s.pos)
+			l.releaseOperand(r)
 			l.block(s.body)
 			l.emit(vm.V2Instruction{Op: vm.V2Jmp, Immediate: int32(start)}, s.pos)
 			l.patch(end)
@@ -307,13 +307,13 @@ func (l *stv2Lowerer) expression(e *expr) uint8 {
 				op = vm.V2Jnz
 			}
 			end := l.jump(op, left, e.pos)
-			right := l.expression(e.args[1])
-			l.emit(vm.V2Instruction{Op: vm.V2Mov, A: left, B: right}, e.pos)
-			l.free(right)
+			right := l.operand(e.args[1])
+			l.emit(vm.V2Instruction{Op: vm.V2Mov, A: left, B: right.reg}, e.pos)
+			l.releaseOperand(right)
 			l.patch(end)
 			return left
 		}
-		right := l.expression(e.args[1])
+		right := l.operand(e.args[1])
 		if (e.name == "==" || e.name == "!=") && l.checked.expressions[e.args[0]].root().mask != l.checked.expressions[e.args[1]].root().mask {
 			// Swyp's true is not the number 1. Both operands still evaluate.
 			var v int32
@@ -327,9 +327,9 @@ func (l *stv2Lowerer) expression(e *expr) uint8 {
 			if !ok {
 				stv2Bad(e.pos, "unsupported operator %s", e.name)
 			}
-			l.emit(vm.V2Instruction{Op: op, A: left, B: right}, e.pos)
+			l.emit(vm.V2Instruction{Op: op, A: left, B: right.reg}, e.pos)
 		}
-		l.free(right)
+		l.releaseOperand(right)
 		return left
 	}
 	stv2Bad(e.pos, "unsupported expression %s", e.kind)

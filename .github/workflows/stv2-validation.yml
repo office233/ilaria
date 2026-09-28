@@ -31,7 +31,13 @@ jobs:
       - name: Static analysis
         run: go vet ./...
       - name: Race detector
-        run: go test -race -count=1 -timeout=180s ./experiments/ternaryvm ./internal/swyplang ./cmd/swyp-stv2 ./cmd/swyp
+        run: go test -race -count=1 -timeout=180s ./experiments/ternaryvm ./internal/swyplang ./cmd/swyp-stv2 ./cmd/swyp ./internal/coreir
+      - name: Core IR fuzzing
+        run: go test ./internal/coreir -run '^$' -fuzz '^FuzzCoreIRDecode$' -fuzztime=10s -parallel=2
+      - name: Core source fuzzing
+        run: go test ./internal/swyplang -run '^$' -fuzz '^FuzzCoreLower$' -fuzztime=10s -parallel=2
+      - name: Contract fuzzing
+        run: go test ./internal/coreir -run '^$' -fuzz '^FuzzContractDecodeAndVerify$' -fuzztime=10s -parallel=2
       - name: Decoder fuzzing
         run: go test ./experiments/ternaryvm -run '^$' -fuzz '^FuzzSTV2DecodeAudit$' -fuzztime=10s -parallel=2
       - name: Assembler fuzzing
@@ -52,7 +58,14 @@ jobs:
           rm "$work/source.swyp"
           result="$(PATH="$work" "$work/swyp" exec "$work/sum.swypb" 100)"
           printf '%s\n' "$result"
-          printf '%s\n' "$result" | python3 -c 'import json,sys; r=json.load(sys.stdin); assert r["format"]=="SWYPB" and r["value"]==5050 and r["module_bytes"]==157'
+          printf '%s\n' "$result" | python3 -c 'import json,sys; r=json.load(sys.stdin); assert r["format"]=="SWYPB" and r["value"]==5050 and r["module_bytes"]==146'
+          "$work/swyp" ir -entry next -o "$work/next.core.json" examples/swyp/semantic-core.swyp
+          PATH="$work" "$work/swyp" core-exec -entry next "$work/next.core.json" 9007199254740993 > "$work/core-result.json"
+          python3 -c 'import json,sys; r=json.load(open(sys.argv[1])); assert r["result"]["value"]=={"type":"i64","value":"9007199254740994"}' "$work/core-result.json"
+          "$work/swyp" verify -contract examples/swyp/contracts/square.i64.json examples/swyp/semantic-core.swyp > "$work/verified.json"
+          python3 -c 'import json,sys; r=json.load(open(sys.argv[1])); assert r["status"]=="exhaustive" and r["cases_checked"]==201' "$work/verified.json"
+          if "$work/swyp" verify -contract examples/swyp/contracts/square.i64.json examples/swyp/contracts/wrong-square.swyp > "$work/counterexample.json"; then exit 1; fi
+          python3 -c 'import json,sys; r=json.load(open(sys.argv[1])); assert r["status"]=="counterexample"' "$work/counterexample.json"
           GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -o "$work/swyp.exe" ./cmd/swyp
           GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -o "$work/swyp-arm64" ./cmd/swyp
       - name: End-to-end example

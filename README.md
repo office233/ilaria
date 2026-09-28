@@ -1,5 +1,41 @@
 # Swyp Lang
 
+## Contract-guided synthesis (experimental)
+
+`synth -contract` now refines typed arithmetic candidates using real contract
+counterexamples. It preserves exact `i64` values and evaluates relational
+postconditions without inventing a unique expected output. Existing `synth`
+without this flag retains its previous float64/example-based behavior.
+
+```powershell
+go build -o bin/swyp-contract.exe ./cmd/swyp
+./bin/swyp-contract.exe synth -contract examples/swyp/contracts/square.i64.json -o bin/square-generated.swyp examples/swyp/synthesis-contract-square.json
+./bin/swyp-contract.exe core-run -entry square bin/square-generated.swyp 12
+```
+
+The example refines `x` into `x * x` in two rounds, checks all 201 integers in
+`[-100,100]`, and returns `144` for input `12`. Output must be new. Publication
+requires exhaustive finite-domain verification by default; sampled evidence
+requires explicit `-allow-sampled`. No SMT or universal proof is claimed.
+See [contracts, bounds, evidence and limitations](docs/CONTRACT_SYNTHESIS.md).
+
+## Opt-in Semantic Core and contracts (experimental)
+
+The new core pipeline has checked `i64`, finite `f64` (`number` remains binary64),
+verified control flow, pure function calls, typed JSON IR and bounded contract
+verification. It does not replace the existing interpreter, C/JS backends or STV2.
+
+```powershell
+go build -o bin/swyp-core.exe ./cmd/swyp
+./bin/swyp-core.exe core-run -entry next examples/swyp/semantic-core.swyp 9007199254740993
+./bin/swyp-core.exe verify -contract examples/swyp/contracts/square.i64.json examples/swyp/semantic-core.swyp
+```
+
+The first result is the exact integer `9007199254740994`. The second enumerates
+201 integer inputs. `tested` is sampling, `exhaustive` is finite-domain execution,
+and neither is an SMT proof. Failed checks emit JSON counterexamples or explicit
+`unknown`/`timeout` statuses and exit nonzero. See [syntax, IR and contract limits](docs/SEMANTIC_CORE.md).
+
 ## Compiled Swyp modules (experimental)
 
 Swyp source stays `.swyp`. The main `swyp` executable can now compile the existing

@@ -43,16 +43,29 @@ func pairs(values []numericPair) ([]synthesis.Example, error) {
 
 func synthCommand(args []string) error {
 	f := flag.NewFlagSet("synth", flag.ContinueOnError)
+	contractMode := addContractSynthFlags(f)
 	out := f.String("o", "", "destination .swyp file")
 	timeout := f.Duration("timeout", 5*time.Second, "synthesis search timeout (default 5s, max 60s)")
 	if err := f.Parse(args); err != nil {
 		return err
 	}
 	if *out == "" || len(f.Args()) != 1 {
-		return fmt.Errorf("usage: swyp synth -o new.swyp [-timeout duration] spec.json")
+		return fmt.Errorf("usage: swyp synth [-contract contract.json] -o new.swyp [-timeout duration] spec.json")
 	}
 	if *timeout <= 0 || *timeout > 60*time.Second {
 		return fmt.Errorf("timeout must be greater than 0 and at most 60s")
+	}
+	if contractMode.path != "" {
+		return synthContractCommand(*out, f.Arg(0), *timeout, *contractMode, os.Stdout)
+	}
+	var contractFlag string
+	f.Visit(func(value *flag.Flag) {
+		if value.Name != "o" && value.Name != "timeout" {
+			contractFlag = value.Name
+		}
+	})
+	if contractFlag != "" {
+		return fmt.Errorf("-%s requires a non-empty -contract path", contractFlag)
 	}
 
 	if _, err := os.Lstat(*out); err == nil {

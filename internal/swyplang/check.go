@@ -94,6 +94,9 @@ func (s *typeScope) lookup(n string, pos scanner.Position) *typeVar {
 // Check enforces monomorphic types, lexical names, arity and return coverage.
 func (p *Program) Check() error { _, err := p.check(); return err }
 func (p *Program) check() (c *checked, err error) {
+	if p.core {
+		return nil, fmt.Errorf("core source requires CoreIR; legacy backends are unchanged")
+	}
 	defer func() {
 		if r := recover(); r != nil {
 			if e, ok := r.(error); ok {

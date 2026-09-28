@@ -41,6 +41,14 @@ func execute(args []string) error {
 		defer cancel()
 		return worker(ctx, os.Stdin, os.Stdout)
 	}
+	if len(args) > 0 && args[0] == "judge" {
+		if len(args) != 1 {
+			return fmt.Errorf("judge accepts one JSON request on stdin, no arguments")
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		return judge(ctx, os.Stdin, os.Stdout)
+	}
 	if len(args) > 0 && args[0] == "synth" {
 		return synthCommand(args[1:])
 	}
@@ -58,7 +66,7 @@ func execute(args []string) error {
 		return nil
 	}
 	if len(args) < 2 || (args[0] != "run" && args[0] != "check" && args[0] != "build" && args[0] != "emit-c" && args[0] != "web") {
-		return fmt.Errorf("usage: swyp ir [-entry fn] [-o new.json] file.swyp | core-run [-entry fn] file.swyp [typed values] | core-exec [-entry fn] core.json [typed values] | verify -contract contract.json file.swyp | compile --target stv2 -o new.swypb file.swyp | exec [-steps N] module.swypb [integers] | worker < spec.json | synth -o new.swyp spec.json | run [-steps N] file.swyp [numbers] | check file.swyp | build -o app.exe file.swyp | web -o app.html file.swyp | emit-c file.swyp | ternary [-steps N] file.tasm [initial-r0] | draft -prompt task.txt -o new.swyp | expand/repair -o new.swyp [-response fixture] input.swyp | version")
+		return fmt.Errorf("usage: swyp ir [-entry fn] [-o new.json] file.swyp | core-run [-entry fn] file.swyp [typed values] | core-exec [-entry fn] core.json [typed values] | verify -contract contract.json file.swyp | compile --target stv2 -o new.swypb file.swyp | exec [-steps N] module.swypb [integers] | judge < request.json | worker < spec.json | synth -o new.swyp spec.json | run [-steps N] file.swyp [numbers] | check file.swyp | build -o app.exe file.swyp | web -o app.html file.swyp | emit-c file.swyp | ternary [-steps N] file.tasm [initial-r0] | draft -prompt task.txt -o new.swyp | expand/repair -o new.swyp [-response fixture] input.swyp | version")
 	}
 	flags := flag.NewFlagSet(args[0], flag.ContinueOnError)
 	steps := flags.Int("steps", 1_000_000, "interpreter evaluation budget")

@@ -3,194 +3,102 @@
 package engine
 
 import (
-	"context"
 	"errors"
 	"strings"
 	"testing"
-	"time"
-	"unicode/utf16"
-	"unicode/utf8"
 
-	"swypik-os/core/search"
-	"swypik-os/ui/views"
+	"swypik-os/ui/desktop"
 )
 
 func TestNativeMessageOutcomes(t *testing.T) {
-	for _, tc := range []struct {
-		name         string
-		value        uintptr
-		quit, failed bool
-	}{
-		{"message", 1, false, false}, {"quit", 0, true, false},
-		{"error32", uintptr(0xffffffff), false, true}, {"error64", ^uintptr(0), false, true},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			quit, err := nativeMessageResult(tc.value, errors.New("test syscall failure"))
-			if quit != tc.quit || (err != nil) != tc.failed {
-				t.Fatalf("got quit=%v err=%v", quit, err)
-			}
-		})
+	if quit, err := nativeMessageResult(1, nil); quit || err != nil {
+		t.Fatal("normal message")
+	}
+	if quit, err := nativeMessageResult(0, nil); !quit || err != nil {
+		t.Fatal("WM_QUIT")
+	}
+	if _, err := nativeMessageResult(^uintptr(0), errors.New("bad")); err == nil {
+		t.Fatal("-1 must be an error")
 	}
 }
 
-func TestNativeUTF16Input(t *testing.T) {
-	for _, text := range []string{"Romanian: \u0103\u00e2\u00ee\u0219\u021b", "A\U0001f60aB", "\U0001f680\U0001f600"} {
-		var decoder utf16Input
-		var decoded strings.Builder
-		for _, unit := range utf16.Encode([]rune(text)) {
-			decoded.WriteString(decoder.push(unit))
-		}
-		if decoded.String() != text || !utf8.ValidString(decoded.String()) {
-			t.Fatalf("corrupt text: %q -> %q", text, decoded.String())
-		}
+func TestLayoutRegionsDoNotOverlap(t *testing.T) {
+	inside := func(a, b rect) bool {
+		return a.Left >= b.Left && a.Right <= b.Right && a.Top >= b.Top && a.Bottom <= b.Bottom
 	}
-	for _, tc := range []struct {
-		units []uint16
-		want  string
-	}{
-		{[]uint16{0xdc00}, "\ufffd"}, {[]uint16{0xd800, 'a'}, "\ufffda"},
-		{[]uint16{0xd800, 0xd83d, 0xde00}, "\ufffd\U0001f600"},
-	} {
-		var decoder utf16Input
-		var actual strings.Builder
-		for _, unit := range tc.units {
-			actual.WriteString(decoder.push(unit))
-		}
-		if actual.String() != tc.want {
-			t.Fatalf("invalid sequence: got %q want %q", actual.String(), tc.want)
+	for _, dpi := range []int32{96, 144, 192} {
+		s := func(v int32) int32 { return v * dpi / 96 }
+		for _, size := range [][2]int32{{1280, 820}, {1920, 1040}, {900, 620}} {
+			w, h := s(size[0]), s(size[1])
+			for _, promptH := range []int32{0, s(180)} {
+				l := computeLayout(w, h, s, promptH)
+				if l.topbar.Bottom > l.panel.Top || l.panel.Bottom > l.omni.Top {
+					t.Fatalf("dpi %d %v: vertical overlap %+v", dpi, size, l)
+				}
+				if !inside(l.rail, l.panel) || !inside(l.body, l.panel) || l.body.Left < l.rail.Right {
+					t.Fatalf("dpi %d %v: panel regions %+v", dpi, size, l)
+				}
+				if promptH > 0 && (!inside(l.prompt, l.panel) || l.body.Bottom > l.prompt.Top) {
+					t.Fatalf("dpi %d %v: prompt overlaps content", dpi, size)
+				}
+				if !inside(l.edit, l.omni) || !inside(l.send, l.omni) || l.edit.Right > l.keycap.Left || l.keycap.Right > l.send.Left {
+					t.Fatalf("dpi %d %v: omnibar controls overlap", dpi, size)
+				}
+				if l.dock.width() > 0 && l.dock.Right > l.omni.Left {
+					t.Fatalf("dpi %d %v: dock overlaps omnibar", dpi, size)
+				}
+			}
 		}
 	}
 }
 
-func awaitIdle(t *testing.T, commands *nativeCommandState) {
-	t.Helper()
-	deadline := time.Now().Add(3 * time.Second)
-	for commands.busy.Load() {
-		if time.Now().After(deadline) {
-			t.Fatal("native command did not complete")
+func TestColorAndTextHelpers(t *testing.T) {
+	if colorRef(0x112233) != 0x332211 {
+		t.Fatalf("%x", colorRef(0x112233))
+	}
+	if stripNUL("a\x00b") != "a b" {
+		t.Fatal("NUL must not truncate UTF-16 text")
+	}
+	if loword(0xFFFF) != -1 || hiword(0xFF880000) != -120 {
+		t.Fatal("signed words")
+	}
+}
+
+func TestMeasureWrapsLongText(t *testing.T) {
+	dc, _, _ := procCreateCompatibleDC.Call(0)
+	if dc == 0 {
+		t.Skip("no GDI device context available")
+	}
+	defer procDeleteDC.Call(dc)
+	app := NewShellApp(nil)
+	app.createFonts()
+	defer app.deleteFonts()
+	long := strings.Repeat("cuvânt ", 200)
+	wide := measure(dc, app.fonts.ui, 2000, long, wrapFlags)
+	narrow := measure(dc, app.fonts.ui, 300, long, wrapFlags)
+	if wide <= 0 || narrow <= wide*2 {
+		t.Fatalf("wrapping not applied: wide=%d narrow=%d", wide, narrow)
+	}
+	b := desktop.Block{Kind: desktop.KindTool, Title: "t", Body: long}
+	h1, _, _ := app.blockGeometry(dc, b, 500)
+	h2, _, _ := app.blockGeometry(dc, b, 500)
+	if h1 != h2 || h1 <= narrow/2 {
+		t.Fatalf("cached block height %d %d", h1, h2)
+	}
+	// User messages are right-aligned bubbles no wider than 72% of the column.
+	_, x0, x1 := app.blockGeometry(dc, desktop.Block{Kind: desktop.KindUser, Body: "Salut"}, 1000)
+	if x1 != 1000 || x0 < 280 {
+		t.Fatalf("bubble %d..%d", x0, x1)
+	}
+}
+
+func TestGlyphsAndFaces(t *testing.T) {
+	for _, name := range desktop.TabIcons {
+		if g, ok := glyphs[name]; !ok || []rune(g)[0] < 0xE000 {
+			t.Fatalf("missing glyph for %s", name)
 		}
-		time.Sleep(time.Millisecond)
 	}
-}
-
-func TestNativeCommandCancellationAndSerialization(t *testing.T) {
-	var commands nativeCommandState
-	started := make(chan struct{})
-	finished := make(chan struct{})
-	failures := make(chan error, 1)
-	if !commands.start(func(ctx context.Context) {
-		close(started)
-		<-ctx.Done()
-		close(finished)
-	}, func(err error) { failures <- err }) {
-		t.Fatal("first command rejected")
-	}
-	select {
-	case <-started:
-	case <-time.After(3 * time.Second):
-		t.Fatal("command did not start")
-	}
-	if commands.start(func(context.Context) { failures <- errors.New("overlapping command executed") }, func(err error) { failures <- err }) {
-		t.Fatal("overlapping command accepted")
-	}
-	commands.stop()
-	select {
-	case <-finished:
-	case <-time.After(3 * time.Second):
-		t.Fatal("cancellation did not reach command")
-	}
-	awaitIdle(t, &commands)
-	select {
-	case err := <-failures:
-		t.Fatal(err)
-	default:
-	}
-}
-
-func TestNativeStopBypassesBusyCommand(t *testing.T) {
-	for _, command := range []string{"stop", "estop", "emergency stop"} {
-		t.Run(command, func(t *testing.T) {
-			app := &ShellApp{state: views.NewDesktopState()}
-			started := make(chan struct{})
-			finished := make(chan struct{})
-			failures := make(chan error, 1)
-			app.native.commands.start(func(ctx context.Context) {
-				close(started)
-				<-ctx.Done()
-				close(finished)
-			}, func(err error) { failures <- err })
-			defer app.native.commands.stop()
-			select {
-			case <-started:
-			case <-time.After(3 * time.Second):
-				t.Fatal("worker did not start")
-			}
-			for _, r := range command {
-				app.state.AppendInput(r)
-			}
-			app.executeOmnibar()
-			select {
-			case <-finished:
-			case <-time.After(3 * time.Second):
-				t.Fatal("busy command blocked stop request")
-			}
-			awaitIdle(t, &app.native.commands)
-			if !strings.Contains(app.state.GetExecutionLog(), "Software stop requested") || app.state.GetOmnibarInput() != "" {
-				t.Fatalf("stop was not handled immediately: %s", app.state.GetExecutionLog())
-			}
-			select {
-			case err := <-failures:
-				t.Fatal(err)
-			default:
-			}
-		})
-	}
-}
-
-func TestNativeCommandPanicDoesNotKillWindow(t *testing.T) {
-	var commands nativeCommandState
-	failures := make(chan error, 1)
-	commands.start(func(context.Context) { panic("test panic") }, func(err error) { failures <- err })
-	select {
-	case err := <-failures:
-		if !strings.Contains(err.Error(), "test panic") {
-			t.Fatalf("lost error: %v", err)
-		}
-	case <-time.After(3 * time.Second):
-		t.Fatal("panic was not reported")
-	}
-	awaitIdle(t, &commands)
-}
-
-func TestNativeSearchUsesLocalIndexWithoutIlaria(t *testing.T) {
-	index := search.NewEngine()
-	if err := index.Upsert(search.Document{URL: "https://example.org/native", Title: "Native unicorn", Text: "Local unicorn documentation"}); err != nil {
-		t.Fatal(err)
-	}
-	// A nil Ilaria engine ensures this command cannot quietly use inference.
-	app := &ShellApp{state: views.NewDesktopState(), searchEngine: index}
-	for _, r := range "search unicorn" {
-		app.state.AppendInput(r)
-	}
-	app.executeOmnibar()
-	awaitIdle(t, &app.native.commands)
-	log := app.state.GetExecutionLog()
-	if !strings.Contains(log, "Native unicorn") || !strings.Contains(log, "https://example.org/native") || app.native.query() != "unicorn" {
-		t.Fatalf("local result missing: %s", log)
-	}
-	if app.state.GetOmnibarInput() != "" {
-		t.Fatal("accepted input was not consumed")
-	}
-}
-
-func TestNativeEmptySearchDoesNotInventResults(t *testing.T) {
-	app := &ShellApp{state: views.NewDesktopState(), searchEngine: search.NewEngine()}
-	for _, r := range "search absent" {
-		app.state.AppendInput(r)
-	}
-	app.executeOmnibar()
-	awaitIdle(t, &app.native.commands)
-	if !strings.Contains(app.state.GetExecutionLog(), "No matching indexed documents") {
-		t.Fatalf("incorrect empty-index result: %s", app.state.GetExecutionLog())
+	if f := installedFace("Definitely Not A Font 42", "Segoe UI"); f != "Segoe UI" {
+		t.Fatalf("fallback face %q", f)
 	}
 }

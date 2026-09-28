@@ -46,23 +46,24 @@ checks Win32 ownership and responsiveness, sends a harmless local search command
 checks for browser children/TCP listeners, and verifies clean shutdown plus logs.
 It never closes other running SwypikOS sessions.
 
-## Windows feature scope
+## Windows desktop: what works
 
-The native desktop now has a real executable entrypoint, a checked Win32 message
-loop, Unicode keyboard input, cancellable asynchronous command dispatch, workspace
-file listing and persistent local-index search. Type `help`, `search <query>` or
-`cancel` in the bottom command bar. `stop` bypasses a busy command; it requests
-software cancellation and does not prove physical emergency-stop capability.
+Six tabs (Ctrl+1…6), a native input field with paste, history (↑/↓) and IME, and
+word-wrapped, scrollable, DPI-aware rendering:
 
-No search results are invented for an empty index. Swarm compute and simulated
-training start disabled. Voice capture is not implemented; legacy application
-panels are explicitly marked as prototypes. The old command dispatcher still
-contains developer commands and simulations. It is **not** the new approval-gated
-agent runtime and is not a privilege boundary. Windows crawl approval, durable
-agent recovery, production accessibility and the complete app ecosystem remain
-integration work. Ilaria needs a separately configured real inference service;
-there are no bundled weights or simulated AI replies. See
-[Windows architecture and limitations](docs/WINDOWS_DESKTOP.md).
+| Tab | What it does |
+| --- | --- |
+| Chat | Conversation with the configured Ilaria service. No service, no answer: errors are shown, never simulated. |
+| Agent | Give a goal. Ilaria plans one step at a time using `workspace.read/write/edit/list`, `process.run` and `search.query`. **Every step is shown and needs approval** (F8 approve, F9 deny; a prompt must be visible for 500 ms first). Edits require the file hash from a prior read, so stale content is never overwritten. Runs are checkpointed and survive restarts (`/resume`). |
+| Căutare | Your own search engine: BM25F ranking, Romanian/Hungarian diacritic folding, prefix matching and snippets. `/index [dir]` indexes local text and code files; `/crawl URL [pages]` indexes a site after confirmation, honouring robots.txt and blocking private addresses. No Google, Bing or DuckDuckGo. |
+| Fișiere | Browse and preview files inside the workspace. |
+| Calcul | Detected NVIDIA GPUs and your consent for future Ilaria training contribution. No work runs yet; see [the design](docs/ILARIA_COMPUTE.md). |
+| Setări | `/ilaria https://…` switches the Ilaria endpoint, `/test` checks it, `/workspace DIR` selects the workspace. |
+
+Connect Ilaria (for example the Azure deployment) as described in
+[docs/ILARIA_INTEGRATION.md](docs/ILARIA_INTEGRATION.md). Approved commands run
+with your permissions inside a Windows Job Object; that is lifecycle control,
+not a sandbox. See [Windows architecture and limitations](docs/WINDOWS_DESKTOP.md).
 
 ## Separate Linux OS prototype
 

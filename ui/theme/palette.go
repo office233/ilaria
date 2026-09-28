@@ -1,59 +1,54 @@
+// Package theme holds the desktop's design tokens as 0xRRGGBB values. The
+// look follows the original Swypik design: a lavender canvas, frosted white
+// panels, violet accents and soft colour tiles.
 package theme
 
-import (
-	"image/color"
+const (
+	CanvasTop    = 0xF6F4FD
+	CanvasBottom = 0xEEF0FB
+	GlowViolet   = 0xC4B5FD
+	GlowCyan     = 0xBAE6FD
+	GlowPink     = 0xFBCFE8
+
+	Panel       = 0xFFFFFF // drawn with alpha over the canvas
+	PanelBorder = 0xE6E3F4
+	Surface     = 0xFFFFFF
+	SurfaceSoft = 0xF7F6FC
+	Hover       = 0xF1EFFA
+	Divider     = 0xECEAF5
+	Shadow      = 0x4C3F8F
+
+	TextPrimary   = 0x16152B
+	TextSecondary = 0x5F5C78
+	TextMuted     = 0x9C99B3
+	TextOnAccent  = 0xFFFFFF
+
+	Accent      = 0x7C3AED
+	AccentLight = 0x8B5CF6
+	AccentDark  = 0x6D28D9
+	AccentSoft  = 0xEDE9FE
+
+	ErrorBg     = 0xFEF2F2
+	ErrorBorder = 0xFECACA
+	ErrorText   = 0xB42318
+	WarnBg      = 0xFFFBEB
+	WarnBorder  = 0xFDE68A
+	WarnText    = 0x92400E
+	Online      = 0x22C55E
+	Offline     = 0xF59E0B
+
+	CodeBg   = 0x1C1A2E
+	CodeText = 0xE7E5F4
 )
 
-// Luxury design tokens matching the visionOS & macOS Sequoia spatial design.
-var (
-	// Canvas Background & Atmospheric Aurora
-	ColorCanvasBase    = color.RGBA{R: 248, G: 250, B: 252, A: 255} // #f8fafc Porcelain
-	ColorAuroraCyan    = color.RGBA{R: 224, G: 242, B: 254, A: 255} // #e0f2fe Soft Sky Glow
-	ColorAuroraIndigo  = color.RGBA{R: 237, G: 233, B: 254, A: 255} // #ede9fe Soft Lavender Aura
+// Tone is a tile colour family: soft background and strong foreground.
+type Tone struct{ Bg, Fg uint32 }
 
-	// Frosted Glass Surfaces
-	ColorGlassSurface  = color.RGBA{R: 255, G: 255, B: 255, A: 255} // Pure White Card
-	ColorGlassElevated = color.RGBA{R: 255, G: 255, B: 255, A: 255} // Pure White Floating Pill
-	ColorGlassSubtle   = color.RGBA{R: 248, G: 250, B: 252, A: 255} // Inner Card Background
-	ColorGlassHover    = color.RGBA{R: 241, G: 245, B: 249, A: 255} // Light Gray Hover
-
-	// Multi-layer Depth Shadows
-	ColorShadowDeep    = color.RGBA{R: 203, G: 213, B: 225, A: 255} // #cbd5e1 Base shadow
-	ColorShadowMid     = color.RGBA{R: 226, G: 232, B: 240, A: 255} // #e2e8f0 Mid shadow
-	ColorShadowSoft    = color.RGBA{R: 241, G: 245, B: 249, A: 255} // #f1f5f9 Ambient shadow
-
-	// Borders & Specular Highlights
-	ColorBorderGlass   = color.RGBA{R: 226, G: 232, B: 240, A: 255} // #e2e8f0 Ultra-crisp border
-	ColorBorderRim     = color.RGBA{R: 255, G: 255, B: 255, A: 255} // Pure White Specular Rim
-	ColorBorderActive  = color.RGBA{R: 99, G: 102, B: 241, A: 255}  // #6366f1 Active Accent Border
-
-	// High-Contrast Refined Typography
-	ColorTextPrimary   = color.RGBA{R: 15, G: 23, B: 42, A: 255}   // #0f172a Deep Obsidian
-	ColorTextSecondary = color.RGBA{R: 71, G: 85, B: 105, A: 255}  // #475569 Slate
-	ColorTextMuted     = color.RGBA{R: 148, G: 163, B: 184, A: 255} // #94a3b8 Steel
-
-	// Electric Spatial Accents
-	ColorCyan          = color.RGBA{R: 14, G: 165, B: 233, A: 255}  // #0ea5e9 Electric Sky
-	ColorCyanGlow      = color.RGBA{R: 186, G: 230, B: 253, A: 255} // #bae6fd Cyan Aura Ring
-	ColorIndigo        = color.RGBA{R: 99, G: 102, B: 241, A: 255}  // #6366f1 Electric Indigo
-	ColorIndigoGlow    = color.RGBA{R: 199, G: 210, B: 254, A: 255} // #c7d2fe Indigo Aura
-	ColorEmerald       = color.RGBA{R: 16, G: 185, B: 129, A: 255}  // #10b981 Live Status Dot
-	ColorGreenPill     = color.RGBA{R: 209, G: 250, B: 229, A: 255} // #d1fae5 Done Tag Bg
-	ColorGreenText     = color.RGBA{R: 6, G: 95, B: 70, A: 255}     // #065f46 Done Tag Text
-
-	// Window Controls (macOS style)
-	ColorDotRed        = color.RGBA{R: 254, G: 96, B: 92, A: 255}   // Close
-	ColorDotYellow     = color.RGBA{R: 254, G: 188, B: 46, A: 255}  // Minimize
-	ColorDotGreen      = color.RGBA{R: 40, G: 200, B: 64, A: 255}   // Zoom
-
-	// Semantic Aliases (used by native window render)
-	ColorBgCore        = ColorCanvasBase    // Main canvas background
-	ColorBgSurface     = ColorGlassSurface  // Frosted surface panels
-	ColorBgElevated    = ColorGlassElevated // Elevated floating elements
-	ColorBgCardHover   = ColorGlassHover    // Card hover state
-)
-
-// RGBToCOLORREF converts RGBA into standard Win32 COLORREF format (0x00BBGGRR).
-func RGBToCOLORREF(c color.RGBA) uint32 {
-	return uint32(c.R) | (uint32(c.G) << 8) | (uint32(c.B) << 16)
+var Tones = map[string]Tone{
+	"violet": {0xEDE9FE, 0x7C3AED},
+	"pink":   {0xFCE7F3, 0xDB2777},
+	"cyan":   {0xE0F2FE, 0x0284C7},
+	"amber":  {0xFEF3C7, 0xD97706},
+	"green":  {0xDCFCE7, 0x16A34A},
+	"slate":  {0xF1F5F9, 0x475569},
 }

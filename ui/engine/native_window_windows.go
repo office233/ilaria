@@ -1,1273 +1,1091 @@
 //go:build windows
-// +build windows
 
+// Package engine is the native Win32 front end of the SwypikOS desktop. It
+// draws desktop.View snapshots with GDI+ (shapes) and GDI (ClearType text) and
+// forwards input to the controller. No browser, WebView or HTTP server.
 package engine
 
 import (
-	"context"
 	"fmt"
+	"hash/fnv"
+	"runtime"
 	"strings"
+	"sync/atomic"
 	"syscall"
 	"time"
 	"unsafe"
 
-	"swypik-os/core/actiongraph"
-	"swypik-os/core/azure"
-	"swypik-os/core/bci"
-	"swypik-os/core/cbf"
-	"swypik-os/core/chameleon"
-	"swypik-os/core/coder"
-	"swypik-os/core/cyber"
-	"swypik-os/core/evolution"
-	"swypik-os/core/federated"
-	"swypik-os/core/ilaria"
-	"swypik-os/core/l402"
-	"swypik-os/core/neuromorphic"
-	"swypik-os/core/notifications"
-	"swypik-os/core/search"
-	"swypik-os/core/swarm"
-	"swypik-os/core/worldmodel"
+	"swypik-os/ui/desktop"
 	"swypik-os/ui/theme"
-	"swypik-os/ui/views"
 )
 
-var (
-	user32   = syscall.NewLazyDLL("user32.dll")
-	gdi32    = syscall.NewLazyDLL("gdi32.dll")
-	kernel32 = syscall.NewLazyDLL("kernel32.dll")
+// ClassName is checked by scripts/smoke-windows.ps1.
+const ClassName = "SwypikOS_Native_Class"
 
-	procRegisterClassExW       = user32.NewProc("RegisterClassExW")
-	procCreateWindowExW        = user32.NewProc("CreateWindowExW")
-	procDefWindowProcW         = user32.NewProc("DefWindowProcW")
-	procShowWindow             = user32.NewProc("ShowWindow")
-	procUpdateWindow           = user32.NewProc("UpdateWindow")
-	procGetMessageW            = user32.NewProc("GetMessageW")
-	procTranslateMessage       = user32.NewProc("TranslateMessage")
-	procDispatchMessageW       = user32.NewProc("DispatchMessageW")
-	procPostQuitMessage        = user32.NewProc("PostQuitMessage")
-	procBeginPaint             = user32.NewProc("BeginPaint")
-	procEndPaint               = user32.NewProc("EndPaint")
-	procGetClientRect          = user32.NewProc("GetClientRect")
-	procInvalidateRect         = user32.NewProc("InvalidateRect")
-	procSetTimer               = user32.NewProc("SetTimer")
-	procCreateCompatibleDC     = gdi32.NewProc("CreateCompatibleDC")
-	procCreateCompatibleBitmap = gdi32.NewProc("CreateCompatibleBitmap")
-	procSelectObject           = gdi32.NewProc("SelectObject")
-	procDeleteObject           = gdi32.NewProc("DeleteObject")
-	procDeleteDC               = gdi32.NewProc("DeleteDC")
-	procBitBlt                 = gdi32.NewProc("BitBlt")
-	procCreateSolidBrush       = gdi32.NewProc("CreateSolidBrush")
-	procFillRect               = user32.NewProc("FillRect")
-	procSetBkMode              = gdi32.NewProc("SetBkMode")
-	procSetTextColor           = gdi32.NewProc("SetTextColor")
-	procTextOutW               = gdi32.NewProc("TextOutW")
-	procCreateFontW            = gdi32.NewProc("CreateFontW")
-	procRoundRect              = gdi32.NewProc("RoundRect")
-	procCreatePen              = gdi32.NewProc("CreatePen")
-)
+// approvalDwell is the minimum time a prompt is visible before F8 or a click
+// can accept it, so input meant for something else cannot approve it.
+const approvalDwell = 500 * time.Millisecond
+
+type hitKind int
 
 const (
-	WS_OVERLAPPEDWINDOW = 0x00CF0000
-	WS_VISIBLE          = 0x10000000
-	SW_SHOWMAXIMIZED    = 3
-	WM_DESTROY          = 0x0002
-	WM_PAINT            = 0x000F
-	WM_LBUTTONDOWN      = 0x0201
-	WM_TIMER            = 0x0113
-	WM_KEYDOWN          = 0x0100
-	WM_CHAR             = 0x0102
-	SRCCOPY             = 0x00CC0020
-	TRANSPARENT         = 1
-	PS_SOLID            = 0
+	hitTab hitKind = iota
+	hitAction
+	hitConfirm
+	hitReject
+	hitSend
+	hitSearchPill
 )
 
-type WNDCLASSEXW struct {
-	CbSize        uint32
-	Style         uint32
-	LpfnWndProc   uintptr
-	CbClsExtra    int32
-	CbWndExtra    int32
-	HInstance     syscall.Handle
-	HIcon         syscall.Handle
-	HCursor       syscall.Handle
-	HbrBackground syscall.Handle
-	LpszMenuName  *uint16
-	LpszClassName *uint16
-	HIconSm       syscall.Handle
+type hit struct {
+	r      rect
+	kind   hitKind
+	tab    desktop.Tab
+	action string
 }
 
-type RECT struct {
-	Left, Top, Right, Bottom int32
+type fontSet struct {
+	ui, bold, small, smallBold, title, h2, brand, empty, mono, icon, iconLg, iconSm syscall.Handle
 }
 
-type PAINTSTRUCT struct {
-	Hdc         syscall.Handle
-	FErase      int32
-	RcPaint     RECT
-	FRestore    int32
-	FIncUpdate  int32
-	RgbReserved [32]byte
-}
-
-type POINT struct {
-	X, Y int32
-}
-
-type MSG struct {
-	Hwnd     syscall.Handle
-	Message  uint32
-	WParam   uintptr
-	LParam   uintptr
-	Time     uint32
-	Pt       POINT
-	LPrivate uint32
-}
-
-// ShellApp represents the active native shell instance.
 type ShellApp struct {
-	hwnd          syscall.Handle
-	state         *views.DesktopState
-	ilariaEngine  *ilaria.Engine
-	swarmDaemon   *swarm.Daemon
-	searchEngine  *search.Engine
-	notifBroker   *notifications.Broker
-	coderEngine   *coder.Engine
-	cyberOrch     *cyber.Orchestrator
-	evolveEngine  *evolution.Engine
-	bciProc       *bci.Processor
-	worldModel    *worldmodel.Simulator
-	neuroAdapter  *neuromorphic.Adapter
-	cbfArbiter    *cbf.SimplexArbiter
-	chameleonHC   *chameleon.HardwareController
-	actionGraph   *actiongraph.CyclicActionGraph
-	l402Engine    *l402.SettlementEngine
-	fedAggregator *federated.FederatedAggregator
-	azureCoord    *azure.CoordinatorClient
-	fontRegular   syscall.Handle
-	fontTitle     syscall.Handle
-	fontBold      syscall.Handle
-	fontSmall     syscall.Handle
-	fontCode      syscall.Handle
-
-	cachedFiles    []coder.FileItem
-	cachedFilesAt  time.Time
-	cachedSearch   string
-	cachedSearchAt time.Time
-	native         nativeState
+	ctl         *desktop.Controller
+	hwnd        atomic.Uintptr // read by Notify from any goroutine
+	edit        syscall.Handle
+	dpi         int32
+	fonts       fontSet
+	faces       struct{ text, display, mono, icons string }
+	editBrush   uintptr
+	scroll      [desktop.TabCount]int32
+	maxScroll   [desktop.TabCount]int32
+	stick       [desktop.TabCount]bool
+	hits        []hit
+	hover       int
+	promptKey   string
+	promptAt    time.Time
+	heights     map[uint64]int32
+	view        desktop.View
+	lifecycle   func(string)
+	layout      layout
+	placeholder string
+	minute      int
 }
 
 var globalApp *ShellApp
 
-// NewShellApp initializes the native desktop shell application.
-func NewShellApp(
-	state *views.DesktopState,
-	iEngine *ilaria.Engine,
-	sDaemon *swarm.Daemon,
-	srchEngine *search.Engine,
-	nBroker *notifications.Broker,
-	cEngine *coder.Engine,
-) *ShellApp {
-	cyberOrch := cyber.NewOrchestrator(nil, nil)
-	evolveEngine := evolution.NewEngine()
-	bciProc := bci.NewProcessor(250.0, 32)
-	worldModel := worldmodel.NewSimulator()
-	neuroAdapter := neuromorphic.NewAdapter()
-	cbfArbiter := cbf.NewSimplexArbiter(cbf.SafetyEnvelope{})
-	chameleonHC := chameleon.NewHardwareController(nil)
-	actionGraph := actiongraph.NewCyclicActionGraph(100000)
-	l402Engine := l402.NewSettlementEngine(nil)
-	fedAggregator := federated.NewFederatedAggregator(1)
-	azureCoord := azure.NewCoordinatorClient(azure.CoordinatorConfig{})
-
-	app := &ShellApp{
-		state:         state,
-		ilariaEngine:  iEngine,
-		swarmDaemon:   sDaemon,
-		searchEngine:  srchEngine,
-		notifBroker:   nBroker,
-		coderEngine:   cEngine,
-		cyberOrch:     cyberOrch,
-		evolveEngine:  evolveEngine,
-		bciProc:       bciProc,
-		worldModel:    worldModel,
-		neuroAdapter:  neuroAdapter,
-		cbfArbiter:    cbfArbiter,
-		chameleonHC:   chameleonHC,
-		actionGraph:   actionGraph,
-		l402Engine:    l402Engine,
-		fedAggregator: fedAggregator,
-		azureCoord:    azureCoord,
-	}
-	globalApp = app
+func NewShellApp(ctl *desktop.Controller) *ShellApp {
+	app := &ShellApp{ctl: ctl, hover: -1, heights: map[uint64]int32{}, dpi: 96}
+	app.stick[desktop.TabChat] = true
+	app.stick[desktop.TabAgent] = true
 	return app
 }
 
-func wndProc(hwnd syscall.Handle, msg uint32, wParam, lParam uintptr) uintptr {
-	if globalApp == nil {
-		r, _, _ := procDefWindowProcW.Call(uintptr(hwnd), uintptr(msg), wParam, lParam)
-		return r
+// SetLifecycleReporter must be called before Run. Reports contain lifecycle
+// stages only, never prompts, credentials or file contents.
+func (app *ShellApp) SetLifecycleReporter(reporter func(string)) { app.lifecycle = reporter }
+
+func (app *ShellApp) report(stage string) {
+	if app.lifecycle != nil {
+		app.lifecycle(stage)
+	}
+}
+
+// Notify requests a repaint; safe from any goroutine.
+func (app *ShellApp) Notify() {
+	if h := app.hwnd.Load(); h != 0 {
+		procPostMessageW.Call(h, wmRepaint, 0, 0)
+	}
+}
+
+func (app *ShellApp) s(v int32) int32 { return v * app.dpi / 96 }
+func (app *ShellApp) handle() uintptr { return app.hwnd.Load() }
+func (app *ShellApp) invalidate()     { procInvalidateRect.Call(app.handle(), 0, 0) }
+
+// ---------------------------------------------------------------- layout
+
+type layout struct {
+	topbar, panel, rail, header, body, prompt, omni, edit, send, keycap, hint, dock rect
+}
+
+func centered(w, width int32) (int32, int32) {
+	left := (w - width) / 2
+	return left, left + width
+}
+
+// computeLayout is pure so it can be tested. promptH is 0 without a prompt.
+func computeLayout(w, h int32, s func(int32) int32, promptH int32) layout {
+	var l layout
+	m := s(20)
+	tw := w - 2*m
+	if tw > s(760) {
+		tw = s(760)
+	}
+	left, right := centered(w, tw)
+	l.topbar = rect{left, s(14), right, s(14) + s(56)}
+
+	ow := w - 2*m
+	if ow > s(900) {
+		ow = s(900)
+	}
+	left, right = centered(w, ow)
+	omniH := s(58)
+	l.omni = rect{left, h - s(30) - omniH, right, h - s(30)}
+	l.hint = rect{l.omni.Left, l.omni.Bottom + s(5), l.omni.Right, h - s(4)}
+	l.send = rect{l.omni.Right - s(7) - s(44), l.omni.Top + (omniH-s(44))/2, l.omni.Right - s(7), l.omni.Top + (omniH-s(44))/2 + s(44)}
+	l.keycap = rect{l.send.Left - s(12) - s(58), l.omni.Top + (omniH-s(26))/2, l.send.Left - s(12), l.omni.Top + (omniH-s(26))/2 + s(26)}
+	l.edit = rect{l.omni.Left + s(26), l.omni.Top + (omniH-s(24))/2, l.keycap.Left - s(16), l.omni.Top + (omniH-s(24))/2 + s(24)}
+	if l.omni.Left-m >= s(250) {
+		l.dock = rect{m, l.omni.Top - s(8), m + s(236), l.omni.Bottom + s(8)}
 	}
 
-	switch msg {
-	case 0x0010: // WM_CLOSE: use the same checked path as a title-bar close.
-		globalApp.reportLifecycle("Win32 WM_CLOSE received")
-		globalApp.native.commands.stop()
-		if result, _, err := procDestroyWindow.Call(uintptr(hwnd)); result == 0 {
-			globalApp.reportLifecycle(fmt.Sprintf("Win32 DestroyWindow failed: %v", err))
+	l.panel = rect{m, l.topbar.Bottom + s(14), w - m, l.omni.Top - s(16)}
+	l.rail = rect{l.panel.Left, l.panel.Top, l.panel.Left + s(76), l.panel.Bottom}
+	l.header = rect{l.rail.Right + s(12), l.panel.Top + s(16), l.panel.Right - s(24), l.panel.Top + s(16) + s(40)}
+	l.body = rect{l.rail.Right + s(4), l.header.Bottom + s(4), l.panel.Right - s(4), l.panel.Bottom - s(10)}
+	if promptH > 0 {
+		l.prompt = rect{l.body.Left + s(28), l.body.Bottom - promptH, l.body.Right - s(28), l.body.Bottom}
+		l.body.Bottom = l.prompt.Top - s(8)
+	}
+	return l
+}
+
+// ---------------------------------------------------------------- fonts
+
+var (
+	procGetTextFaceW          = gdi32.NewProc("GetTextFaceW")
+	procSetTextCharacterExtra = gdi32.NewProc("SetTextCharacterExtra")
+	procGetDC                 = user32.NewProc("GetDC")
+	procReleaseDC             = user32.NewProc("ReleaseDC")
+	dwmapi                    = syscall.NewLazyDLL("dwmapi.dll")
+	procDwmSetWindowAttribute = dwmapi.NewProc("DwmSetWindowAttribute")
+	procLoadIconW             = user32.NewProc("LoadIconW")
+)
+
+// installedFace returns the first face the system actually has, so Windows
+// 11 gets Segoe UI Variable and Fluent icons while Windows 10 falls back.
+func installedFace(candidates ...string) string {
+	dc, _, _ := procGetDC.Call(0)
+	defer procReleaseDC.Call(0, dc)
+	for _, face := range candidates {
+		f, _, _ := procCreateFontW.Call(uintptr(^uint32(15)), 0, 0, 0, 400, 0, 0, 0, 1, 0, 0, 0, 0, uintptr(unsafe.Pointer(utf16Ptr(face))))
+		old, _, _ := procSelectObject.Call(dc, f)
+		buf := make([]uint16, 64)
+		procGetTextFaceW.Call(dc, 64, uintptr(unsafe.Pointer(&buf[0])))
+		procSelectObject.Call(dc, old)
+		procDeleteObject.Call(f)
+		if strings.EqualFold(syscall.UTF16ToString(buf), face) {
+			return face
 		}
-		return 0
-	case WM_DESTROY:
-		globalApp.reportLifecycle("Win32 WM_DESTROY received")
-		globalApp.native.commands.stop()
-		// Release GDI resources after the message loop, not inside a nested
-		// callback that may interrupt a paint operation.
-		procPostQuitMessage.Call(0)
-		return 0
+	}
+	return candidates[len(candidates)-1]
+}
 
-	case WM_TIMER:
-		// Periodic 1-second refresh
-		procInvalidateRect.Call(uintptr(hwnd), 0, 0)
-		return 0
+func (app *ShellApp) makeFont(pt float64, weight int, face string) syscall.Handle {
+	height := -int32(pt*float64(app.dpi)/72 + 0.5)
+	f, _, _ := procCreateFontW.Call(uintptr(height), 0, 0, 0, uintptr(weight), 0, 0, 0, 1, 0, 0, cleartypeQuality, 0, uintptr(unsafe.Pointer(utf16Ptr(face))))
+	return syscall.Handle(f)
+}
 
-	case WM_LBUTTONDOWN:
-		x := int32(lParam & 0xFFFF)
-		y := int32((lParam >> 16) & 0xFFFF)
-		globalApp.handleClick(x, y)
-		procInvalidateRect.Call(uintptr(hwnd), 0, 0)
-		return 0
+func (app *ShellApp) createFonts() {
+	if app.faces.text == "" {
+		app.faces.text = installedFace("Segoe UI Variable Text", "Segoe UI")
+		app.faces.display = installedFace("Segoe UI Variable Display", "Segoe UI")
+		app.faces.mono = installedFace("Cascadia Mono", "Consolas")
+		app.faces.icons = installedFace("Segoe Fluent Icons", "Segoe MDL2 Assets")
+	}
+	app.deleteFonts()
+	t, d := app.faces.text, app.faces.display
+	app.fonts = fontSet{
+		ui:        app.makeFont(10.5, 400, t),
+		bold:      app.makeFont(10.5, 600, t),
+		small:     app.makeFont(8.75, 400, t),
+		smallBold: app.makeFont(8.25, 700, t),
+		title:     app.makeFont(24, 700, d),
+		h2:        app.makeFont(12, 600, d),
+		brand:     app.makeFont(14, 700, d),
+		empty:     app.makeFont(19, 400, d),
+		mono:      app.makeFont(9.5, 400, app.faces.mono),
+		icon:      app.makeFont(12, 400, app.faces.icons),
+		iconLg:    app.makeFont(16, 400, app.faces.icons),
+		iconSm:    app.makeFont(10, 400, app.faces.icons),
+	}
+	app.heights = map[uint64]int32{}
+	if app.edit != 0 {
+		procSendMessageW.Call(uintptr(app.edit), wmSetFont, uintptr(app.fonts.ui), 1)
+	}
+}
 
-	case WM_CHAR:
-		ch := rune(wParam)
-		if ch == 8 { // Backspace
-			globalApp.native.input.high = 0
-			globalApp.state.PopInput()
-		} else if ch == 13 { // Enter
-			globalApp.native.input.high = 0
-			globalApp.executeOmnibar()
-		} else if ch >= 32 {
-			for _, decoded := range globalApp.native.input.push(uint16(wParam)) {
-				globalApp.state.AppendInput(decoded)
+func (app *ShellApp) deleteFonts() {
+	f := app.fonts
+	for _, h := range []syscall.Handle{f.ui, f.bold, f.small, f.smallBold, f.title, f.h2, f.brand, f.empty, f.mono, f.icon, f.iconLg, f.iconSm} {
+		if h != 0 {
+			procDeleteObject.Call(uintptr(h))
+		}
+	}
+	app.fonts = fontSet{}
+}
+
+// Segoe Fluent Icons / MDL2 Assets code points.
+var glyphs = map[string]string{
+	"home": "\uE80F", "chat": "\uE8BD", "agent": "\uE99A", "search": "\uE721", "folder": "\uE8B7",
+	"chip": "\uE945", "settings": "\uE713", "refresh": "\uE72C", "globe": "\uE774", "plug": "\uE71B",
+	"sparkle": "\uE734", "send": "\uE74A", "open": "\uE8A7", "person": "\uE77B", "stop": "\uE71A",
+	"doc": "\uE8A5", "code": "\uE943", "error": "\uE783", "info": "\uE946", "back": "\uE72B",
+	"warning": "\uE7BA", "check": "\uE8FB", "pin": "\uE718",
+}
+
+func glyph(name string) string {
+	if g, ok := glyphs[name]; ok {
+		return g
+	}
+	return glyphs["sparkle"]
+}
+
+// ---------------------------------------------------------------- text
+
+func text(hdc uintptr, font syscall.Handle, color uint32, r rect, s string, flags uintptr) {
+	if s == "" {
+		return
+	}
+	procSelectObject.Call(hdc, uintptr(font))
+	procSetTextColor.Call(hdc, colorRef(color))
+	procDrawTextW.Call(hdc, uintptr(unsafe.Pointer(utf16Ptr(s))), ^uintptr(0), uintptr(unsafe.Pointer(&r)), flags|dtNoPrefix)
+}
+
+const wrapFlags = dtWordBreak | dtExpandTabs | dtEditControl
+const lineFlags = dtSingleLine | dtVCenter | dtEndEllipsis
+
+// measure returns the wrapped height of s at the given width.
+func measure(hdc uintptr, font syscall.Handle, width int32, s string, flags uintptr) int32 {
+	_, h := measureBox(hdc, font, width, s, flags)
+	return h
+}
+
+// measureBox returns the used width and height of s wrapped at width.
+func measureBox(hdc uintptr, font syscall.Handle, width int32, s string, flags uintptr) (int32, int32) {
+	if s == "" {
+		return 0, 0
+	}
+	procSelectObject.Call(hdc, uintptr(font))
+	r := rect{0, 0, width, 0}
+	procDrawTextW.Call(hdc, uintptr(unsafe.Pointer(utf16Ptr(s))), ^uintptr(0), uintptr(unsafe.Pointer(&r)), flags|dtCalcRect|dtNoPrefix)
+	return r.Right, r.Bottom
+}
+
+func textWidth(hdc uintptr, font syscall.Handle, s string) int32 {
+	w, _ := measureBox(hdc, font, 1<<20, s, dtSingleLine)
+	return w
+}
+
+// ---------------------------------------------------------------- blocks
+
+type blockStyle struct {
+	bg, border, title, body uint32
+	bodyFont                syscall.Handle
+	icon                    string
+	iconColor               uint32
+}
+
+func (app *ShellApp) style(b desktop.Block) blockStyle {
+	st := blockStyle{bg: theme.Surface, border: theme.PanelBorder, title: theme.TextPrimary, body: theme.TextPrimary, bodyFont: app.fonts.ui}
+	switch b.Kind {
+	case desktop.KindUser:
+		st.bg, st.border = theme.AccentSoft, theme.AccentSoft
+	case desktop.KindAssistant:
+		st.title = theme.Accent
+	case desktop.KindInfo:
+		st.bg, st.border, st.body, st.icon, st.iconColor = theme.SurfaceSoft, theme.SurfaceSoft, theme.TextSecondary, "info", theme.TextMuted
+	case desktop.KindError:
+		st.bg, st.border, st.title, st.body, st.icon, st.iconColor = theme.ErrorBg, theme.ErrorBorder, theme.ErrorText, theme.ErrorText, "error", theme.ErrorText
+	case desktop.KindTool:
+		st.bg, st.border, st.body, st.bodyFont, st.icon, st.iconColor = theme.SurfaceSoft, theme.Divider, theme.TextSecondary, app.fonts.mono, "code", theme.Accent
+	case desktop.KindResult:
+		st.title, st.body, st.icon, st.iconColor = theme.Accent, theme.TextSecondary, "open", theme.TextMuted
+		if strings.HasPrefix(b.Action, "files:") {
+			st.icon = "doc"
+			if strings.HasSuffix(b.Title, "/") || b.Title == ".." || strings.HasPrefix(b.Title, "←") {
+				st.icon = "folder"
 			}
 		}
-		procInvalidateRect.Call(uintptr(hwnd), 0, 0)
-		return 0
-
-	case WM_KEYDOWN:
-		// F1 or Escape to toggle Ilaria
-		if wParam == 0x70 || wParam == 0x1B { // F1 or ESC
-			globalApp.state.ToggleIlaria()
-			procInvalidateRect.Call(uintptr(hwnd), 0, 0)
+	case desktop.KindCode:
+		st.bg, st.border, st.body, st.bodyFont = theme.CodeBg, theme.CodeBg, theme.CodeText, app.fonts.mono
+	}
+	if b.Icon != "" {
+		st.icon = b.Icon
+		if b.Kind == desktop.KindTool {
+			st.bodyFont = app.fonts.ui // descriptive cards, not command output
 		}
-		return 0
+	}
+	return st
+}
 
-	case WM_PAINT:
-		var ps PAINTSTRUCT
-		hdc, _, _ := procBeginPaint.Call(uintptr(hwnd), uintptr(unsafe.Pointer(&ps)))
-		globalApp.render(syscall.Handle(hdc))
-		procEndPaint.Call(uintptr(hwnd), uintptr(unsafe.Pointer(&ps)))
-		return 0
+func blockTitle(b desktop.Block) string {
+	if b.Kind == desktop.KindAssistant && b.Title == "" {
+		return "Ilaria"
+	}
+	return b.Title
+}
+
+// blockGeometry lays out one block inside a column of width colW. It returns
+// the block height and the card's horizontal extent relative to the column.
+func (app *ShellApp) blockGeometry(hdc uintptr, b desktop.Block, colW int32) (h, x0, x1 int32) {
+	pad := app.s(16)
+	st := app.style(b)
+	switch b.Kind {
+	case desktop.KindUser:
+		maxW := colW * 72 / 100
+		tw, th := measureBox(hdc, app.fonts.ui, maxW-2*pad, b.Body, wrapFlags)
+		return th + 2*app.s(12), colW - tw - 2*pad, colW
+	case desktop.KindAssistant:
+		x0 = app.s(46)
+		x1 = colW
+		if x1-x0 > app.s(860) {
+			x1 = x0 + app.s(860)
+		}
+	default:
+		x0, x1 = 0, colW
+	}
+	key := fnv.New64a()
+	fmt.Fprintf(key, "%d|%d|%d|%s|%s|%s", b.Kind, x1-x0, app.dpi, b.Title, b.Body, b.Action)
+	sum := key.Sum64()
+	if v, ok := app.heights[sum]; ok {
+		return v, x0, x1
+	}
+	inner := x1 - x0 - 2*pad
+	if st.icon != "" {
+		inner -= app.s(30)
+	}
+	total := 2 * pad
+	if title := blockTitle(b); title != "" {
+		total += measure(hdc, app.fonts.bold, inner, title, wrapFlags)
+		if b.Body != "" {
+			total += app.s(6)
+		}
+	}
+	total += measure(hdc, st.bodyFont, inner, b.Body, wrapFlags)
+	if len(app.heights) > 4000 {
+		app.heights = map[uint64]int32{}
+	}
+	app.heights[sum] = total
+	return total, x0, x1
+}
+
+func (app *ShellApp) drawBlock(hdc uintptr, b desktop.Block, r rect, hovered bool) {
+	c := canvas{hdc}
+	st := app.style(b)
+	pad := app.s(16)
+	if b.Kind == desktop.KindUser {
+		c.round(r, app.s(18), argb(st.bg, 255))
+		text(hdc, app.fonts.ui, theme.TextPrimary, rect{r.Left + pad, r.Top + app.s(12), r.Right - pad, r.Bottom}, b.Body, wrapFlags)
+		return
+	}
+	if b.Kind == desktop.KindAssistant {
+		av := rect{r.Left - app.s(46), r.Top + app.s(2), r.Left - app.s(46) + app.s(34), r.Top + app.s(2) + app.s(34)}
+		c.gradient(av, app.s(17), argb(theme.AccentLight, 255), argb(theme.AccentDark, 255), 2)
+		text(hdc, app.fonts.bold, theme.TextOnAccent, av, "I", dtSingleLine|dtVCenter|dtCenter)
+	}
+	if hovered {
+		c.shadow(r, app.s(16), app.s(6), theme.Shadow, 40)
+	}
+	c.round(r, app.s(16), argb(st.bg, 255))
+	border := st.border
+	if hovered {
+		border = theme.AccentLight
+	}
+	c.stroke(r, app.s(16), argb(border, 255), 1)
+	inner := rect{r.Left + pad, r.Top + pad, r.Right - pad, r.Bottom - pad}
+	if st.icon != "" {
+		text(hdc, app.fonts.icon, st.iconColor, rect{inner.Left, inner.Top + app.s(1), inner.Left + app.s(22), inner.Top + app.s(22)}, glyph(st.icon), dtSingleLine)
+		inner.Left += app.s(30)
+	}
+	if title := blockTitle(b); title != "" {
+		th := measure(hdc, app.fonts.bold, inner.width(), title, wrapFlags)
+		text(hdc, app.fonts.bold, st.title, rect{inner.Left, inner.Top, inner.Right, inner.Top + th}, title, wrapFlags)
+		inner.Top += th + app.s(6)
+	}
+	text(hdc, st.bodyFont, st.body, inner, b.Body, wrapFlags)
+}
+
+// ---------------------------------------------------------------- content
+
+type item struct {
+	r      rect // relative to the content origin
+	block  *desktop.Block
+	tile   *desktop.Tile
+	isHead bool
+}
+
+func (app *ShellApp) layoutContent(hdc uintptr, v desktop.View, colW int32) ([]item, int32) {
+	var items []item
+	y := int32(0)
+	if v.Title != "" {
+		h := app.s(20) + app.s(48)
+		if v.Subtitle != "" {
+			h += measure(hdc, app.fonts.ui, colW, v.Subtitle, wrapFlags)
+		}
+		items = append(items, item{r: rect{0, 0, colW, h}, isHead: true})
+		y = h + app.s(24)
+	}
+	if n := len(v.Tiles); n > 0 {
+		gap := app.s(16)
+		cols := (colW + gap) / (app.s(196) + gap)
+		if cols < 1 {
+			cols = 1
+		}
+		if cols > 5 {
+			cols = 5
+		}
+		tw := (colW - (cols-1)*gap) / cols
+		th := app.s(118)
+		for i := range v.Tiles {
+			row, col := int32(i)/cols, int32(i)%cols
+			x := col * (tw + gap)
+			top := y + row*(th+gap)
+			items = append(items, item{r: rect{x, top, x + tw, top + th}, tile: &v.Tiles[i]})
+		}
+		rows := (int32(n) + cols - 1) / cols
+		y += rows*(th+gap) + app.s(8)
+	}
+	for i := range v.Blocks {
+		h, x0, x1 := app.blockGeometry(hdc, v.Blocks[i], colW)
+		items = append(items, item{r: rect{x0, y, x1, y + h}, block: &v.Blocks[i]})
+		y += h + app.s(12)
+	}
+	return items, y
+}
+
+func (app *ShellApp) drawHeading(hdc uintptr, v desktop.View, r rect) {
+	procSetTextCharacterExtra.Call(hdc, uintptr(app.s(2)))
+	text(hdc, app.fonts.smallBold, theme.TextSecondary, rect{r.Left, r.Top, r.Right, r.Top + app.s(18)}, v.Eyebrow, dtSingleLine|dtEndEllipsis)
+	procSetTextCharacterExtra.Call(hdc, 0)
+	ty := r.Top + app.s(20)
+	text(hdc, app.fonts.title, theme.TextPrimary, rect{r.Left, ty, r.Right, ty + app.s(46)}, v.Title, lineFlags)
+	w := textWidth(hdc, app.fonts.title, v.Title)
+	text(hdc, app.fonts.title, theme.Accent, rect{r.Left + w, ty, r.Right, ty + app.s(46)}, ".", lineFlags)
+	if v.Subtitle != "" {
+		text(hdc, app.fonts.ui, theme.TextSecondary, rect{r.Left, ty + app.s(48), r.Right, r.Bottom}, v.Subtitle, wrapFlags)
+	}
+}
+
+func (app *ShellApp) drawTile(hdc uintptr, t desktop.Tile, r rect, hovered bool) {
+	c := canvas{hdc}
+	if hovered {
+		c.shadow(r, app.s(18), app.s(8), theme.Shadow, 48)
+	}
+	c.round(r, app.s(18), argb(theme.Surface, 255))
+	border := uint32(theme.PanelBorder)
+	if hovered {
+		border = theme.AccentLight
+	}
+	c.stroke(r, app.s(18), argb(border, 255), 1)
+	tone, ok := theme.Tones[t.Tone]
+	if !ok {
+		tone = theme.Tones["violet"]
+	}
+	ic := rect{r.Left + app.s(18), r.Top + app.s(18), r.Left + app.s(18) + app.s(40), r.Top + app.s(18) + app.s(40)}
+	c.round(ic, app.s(12), argb(tone.Bg, 255))
+	text(hdc, app.fonts.iconLg, tone.Fg, ic, glyph(t.Icon), dtSingleLine|dtVCenter|dtCenter)
+	text(hdc, app.fonts.iconSm, theme.TextMuted, rect{r.Right - app.s(34), r.Top + app.s(14), r.Right - app.s(12), r.Top + app.s(34)}, glyph("open"), dtSingleLine|dtVCenter|dtCenter)
+	text(hdc, app.fonts.bold, theme.TextPrimary, rect{r.Left + app.s(18), ic.Bottom + app.s(10), r.Right - app.s(12), ic.Bottom + app.s(30)}, t.Title, lineFlags)
+	text(hdc, app.fonts.small, theme.TextSecondary, rect{r.Left + app.s(18), ic.Bottom + app.s(30), r.Right - app.s(12), ic.Bottom + app.s(48)}, t.Subtitle, lineFlags)
+}
+
+// ---------------------------------------------------------------- painting
+
+func (app *ShellApp) promptKeyOf(p *desktop.Prompt) string {
+	if p == nil {
+		return ""
+	}
+	return p.ID + "\x00" + p.Title + "\x00" + p.Body
+}
+
+func (app *ShellApp) promptReady() bool {
+	return app.view.Prompt != nil && time.Since(app.promptAt) >= approvalDwell
+}
+
+func (app *ShellApp) paint(target uintptr) {
+	var cr rect
+	procGetClientRect.Call(app.handle(), uintptr(unsafe.Pointer(&cr)))
+	w, h := cr.width(), cr.height()
+	if w <= 0 || h <= 0 {
+		return
+	}
+	memDC, _, _ := procCreateCompatibleDC.Call(target)
+	bmp, _, _ := procCreateCompatibleBitmap.Call(target, uintptr(w), uintptr(h))
+	if memDC == 0 || bmp == 0 {
+		if bmp != 0 {
+			procDeleteObject.Call(bmp)
+		}
+		if memDC != 0 {
+			procDeleteDC.Call(memDC)
+		}
+		return
+	}
+	oldBmp, _, _ := procSelectObject.Call(memDC, bmp)
+	procSetBkMode.Call(memDC, bkTransparent)
+	c := canvas{memDC}
+
+	v := app.ctl.View()
+	app.view = v
+	if key := app.promptKeyOf(v.Prompt); key != app.promptKey {
+		app.promptKey, app.promptAt = key, time.Now()
+	}
+	if v.Placeholder != app.placeholder && app.edit != 0 {
+		app.placeholder = v.Placeholder
+		procSendMessageW.Call(uintptr(app.edit), emSetCueBanner, 1, uintptr(unsafe.Pointer(utf16Ptr(v.Placeholder))))
+	}
+	app.hits = app.hits[:0]
+
+	// Canvas: lavender gradient with soft colour glows.
+	c.gradient(cr, 0, argb(theme.CanvasTop, 255), argb(theme.CanvasBottom, 255), 1)
+	c.glow(rect{-w / 4, h / 3, w / 2, h + h/3}, theme.GlowViolet, 120)
+	c.glow(rect{w * 3 / 5, -h / 3, w + w/4, h / 2}, theme.GlowCyan, 110)
+	c.glow(rect{w / 3, h * 2 / 3, w * 4 / 5, h + h/4}, theme.GlowPink, 70)
+
+	promptH := app.promptHeight(memDC, v, w, h)
+	l := computeLayout(w, h, app.s, promptH)
+	app.layout = l
+
+	app.paintTopBar(memDC, l.topbar, v)
+
+	// Frosted main panel.
+	c.shadow(l.panel, app.s(22), app.s(14), theme.Shadow, 44)
+	c.round(l.panel, app.s(22), argb(theme.Panel, 232))
+	c.stroke(l.panel, app.s(22), argb(theme.PanelBorder, 255), 1)
+	app.paintRail(memDC, l.rail, v)
+	app.paintHeader(memDC, l.header, v)
+	app.paintContent(memDC, l.body, v)
+	if v.Prompt != nil {
+		app.paintPrompt(memDC, l.prompt, v.Prompt)
+	}
+	app.paintOmnibar(memDC, l, v)
+	if l.dock.width() > 0 {
+		app.paintDock(memDC, l.dock, v)
 	}
 
-	r, _, _ := procDefWindowProcW.Call(uintptr(hwnd), uintptr(msg), wParam, lParam)
+	procBitBlt.Call(target, 0, 0, uintptr(w), uintptr(h), memDC, 0, 0, srcCopy)
+	procSelectObject.Call(memDC, oldBmp)
+	procDeleteObject.Call(bmp)
+	procDeleteDC.Call(memDC)
+}
+
+func (app *ShellApp) promptHeight(hdc uintptr, v desktop.View, w, h int32) int32 {
+	p := v.Prompt
+	if p == nil {
+		return 0
+	}
+	l0 := computeLayout(w, h, app.s, 0)
+	inner := l0.body.width() - 2*app.s(28) - 2*app.s(22) - app.s(46)
+	total := app.s(24) + measure(hdc, app.fonts.h2, inner, p.Title, wrapFlags) + app.s(12) + app.s(40) + app.s(22)
+	if p.Body != "" {
+		body := measure(hdc, app.fonts.mono, inner-2*app.s(12), p.Body, wrapFlags)
+		if limit := h / 3; body > limit {
+			body = limit
+		}
+		total += body + 2*app.s(12) + app.s(16)
+	}
+	return total
+}
+
+func (app *ShellApp) paintTopBar(hdc uintptr, r rect, v desktop.View) {
+	c := canvas{hdc}
+	c.shadow(r, r.height()/2, app.s(10), theme.Shadow, 36)
+	c.round(r, r.height()/2, argb(theme.Panel, 240))
+	c.stroke(r, r.height()/2, argb(theme.PanelBorder, 255), 1)
+	logo := rect{r.Left + app.s(10), r.Top + app.s(10), r.Left + app.s(10) + app.s(36), r.Top + app.s(10) + app.s(36)}
+	c.gradient(logo, app.s(10), argb(theme.AccentLight, 255), argb(theme.AccentDark, 255), 2)
+	text(hdc, app.fonts.icon, theme.TextOnAccent, logo, glyph("send"), dtSingleLine|dtVCenter|dtCenter)
+	x := logo.Right + app.s(12)
+	text(hdc, app.fonts.brand, theme.TextPrimary, rect{x, r.Top, x + app.s(130), r.Bottom}, "SwypikOS", lineFlags)
+	x += textWidth(hdc, app.fonts.brand, "SwypikOS") + app.s(18)
+	c.round(rect{x, r.Top + app.s(14), x + 1, r.Bottom - app.s(14)}, 0, argb(theme.Divider, 255))
+	x += app.s(18)
+	now := time.Now()
+	text(hdc, app.fonts.bold, theme.TextPrimary, rect{x, r.Top + app.s(9), x + app.s(140), r.Top + app.s(29)}, now.Format("15:04"), lineFlags)
+	days := [...]string{"Dum", "Lun", "Mar", "Mie", "Joi", "Vin", "Sâm"}
+	months := [...]string{"ian", "feb", "mar", "apr", "mai", "iun", "iul", "aug", "sept", "oct", "nov", "dec"}
+	text(hdc, app.fonts.small, theme.TextSecondary, rect{x, r.Top + app.s(28), x + app.s(140), r.Top + app.s(46)}, fmt.Sprintf("%s %d %s", days[now.Weekday()], now.Day(), months[now.Month()-1]), lineFlags)
+
+	// Right side: activity or connection, then the account avatar.
+	av := rect{r.Right - app.s(10) - app.s(36), r.Top + app.s(10), r.Right - app.s(10), r.Top + app.s(46)}
+	c.gradient(av, app.s(18), argb(0xA5A3BE, 255), argb(0x7E7B99, 255), 1)
+	text(hdc, app.fonts.icon, theme.TextOnAccent, av, glyph("person"), dtSingleLine|dtVCenter|dtCenter)
+	status, dot := v.Connection, uint32(theme.Online)
+	if v.Busy {
+		status, dot = v.BusyLabel+"…", theme.Offline
+	}
+	sw := textWidth(hdc, app.fonts.small, status)
+	if max := app.s(260); sw > max {
+		sw = max
+	}
+	sx := av.Left - app.s(16) - sw
+	c.circle(rect{sx - app.s(14), r.Top + r.height()/2 - app.s(4), sx - app.s(6), r.Top + r.height()/2 + app.s(4)}, argb(dot, 255))
+	text(hdc, app.fonts.small, theme.TextSecondary, rect{sx, r.Top, av.Left - app.s(12), r.Bottom}, status, lineFlags)
+}
+
+func (app *ShellApp) railButton(i int) rect {
+	l := app.layout
+	size := app.s(44)
+	left := l.rail.Left + (l.rail.width()-size)/2
+	if desktop.Tab(i) == desktop.TabSettings {
+		return rect{left, l.rail.Bottom - app.s(20) - size, left + size, l.rail.Bottom - app.s(20)}
+	}
+	top := l.rail.Top + app.s(22) + int32(i)*app.s(54)
+	if i >= 3 {
+		top += app.s(18) // group separator
+	}
+	return rect{left, top, left + size, top + size}
+}
+
+func (app *ShellApp) paintRail(hdc uintptr, r rect, v desktop.View) {
+	c := canvas{hdc}
+	for i := range desktop.TabNames {
+		b := app.railButton(i)
+		active := desktop.Tab(i) == v.Tab
+		hovered := app.hover == len(app.hits)
+		color := uint32(theme.TextSecondary)
+		if active {
+			c.round(b, app.s(12), argb(theme.AccentSoft, 255))
+			color = theme.Accent
+		} else if hovered {
+			c.round(b, app.s(12), argb(theme.Hover, 255))
+		}
+		text(hdc, app.fonts.iconLg, color, b, glyph(desktop.TabIcons[i]), dtSingleLine|dtVCenter|dtCenter)
+		app.hits = append(app.hits, hit{r: b, kind: hitTab, tab: desktop.Tab(i)})
+	}
+	sep := app.railButton(3).Top - app.s(10)
+	c.round(rect{r.Left + app.s(22), sep, r.Right - app.s(22), sep + 1}, 0, argb(theme.Divider, 255))
+}
+
+func (app *ShellApp) paintHeader(hdc uintptr, r rect, v desktop.View) {
+	c := canvas{hdc}
+	first := "Workspace"
+	fw := textWidth(hdc, app.fonts.bold, first)
+	text(hdc, app.fonts.bold, theme.TextPrimary, rect{r.Left + app.s(20), r.Top, r.Right, r.Bottom}, first, lineFlags)
+	text(hdc, app.fonts.ui, theme.TextMuted, rect{r.Left + app.s(20) + fw + app.s(10), r.Top, r.Right, r.Bottom}, "/   "+desktop.TabNames[v.Tab], lineFlags)
+	pill := rect{r.Right - app.s(260), r.Top, r.Right, r.Bottom}
+	hovered := app.hover == len(app.hits)
+	c.round(pill, pill.height()/2, argb(theme.Surface, 255))
+	border := uint32(theme.PanelBorder)
+	if hovered {
+		border = theme.AccentLight
+	}
+	c.stroke(pill, pill.height()/2, argb(border, 255), 1)
+	text(hdc, app.fonts.icon, theme.TextSecondary, rect{pill.Left + app.s(14), pill.Top, pill.Left + app.s(40), pill.Bottom}, glyph("search"), dtSingleLine|dtVCenter)
+	text(hdc, app.fonts.ui, theme.TextMuted, rect{pill.Left + app.s(42), pill.Top, pill.Right - app.s(44), pill.Bottom}, "Caută în indexul tău…", lineFlags)
+	key := rect{pill.Right - app.s(36), pill.Top + app.s(8), pill.Right - app.s(12), pill.Bottom - app.s(8)}
+	c.stroke(key, app.s(5), argb(theme.PanelBorder, 255), 1)
+	text(hdc, app.fonts.small, theme.TextSecondary, key, "/", dtSingleLine|dtVCenter|dtCenter)
+	app.hits = append(app.hits, hit{r: pill, kind: hitSearchPill})
+}
+
+func (app *ShellApp) paintContent(hdc uintptr, area rect, v desktop.View) {
+	pad := app.s(36)
+	col := rect{area.Left + pad, area.Top + app.s(18), area.Right - pad, area.Bottom}
+	colW := col.width()
+	if colW < app.s(200) {
+		return
+	}
+	items, total := app.layoutContent(hdc, v, colW)
+	viewH := col.height()
+	maxOff := total - viewH
+	if maxOff < 0 {
+		maxOff = 0
+	}
+	tab := v.Tab
+	app.maxScroll[tab] = maxOff
+	if app.stick[tab] {
+		app.scroll[tab] = maxOff
+	}
+	if app.scroll[tab] > maxOff {
+		app.scroll[tab] = maxOff
+	}
+	if app.scroll[tab] < 0 {
+		app.scroll[tab] = 0
+	}
+	saved, _, _ := procSaveDC.Call(hdc)
+	procIntersectClipRect.Call(hdc, uintptr(area.Left), uintptr(area.Top), uintptr(area.Right), uintptr(area.Bottom))
+	off := col.Top - app.scroll[tab]
+	for _, it := range items {
+		r := rect{col.Left + it.r.Left, off + it.r.Top, col.Left + it.r.Right, off + it.r.Bottom}
+		if r.Bottom < area.Top || r.Top > area.Bottom {
+			continue
+		}
+		action := ""
+		if it.tile != nil {
+			action = it.tile.Action
+		} else if it.block != nil {
+			action = it.block.Action
+		}
+		hovered := false
+		if action != "" {
+			visible := r
+			if visible.Top < area.Top {
+				visible.Top = area.Top
+			}
+			if visible.Bottom > area.Bottom {
+				visible.Bottom = area.Bottom
+			}
+			hovered = app.hover == len(app.hits)
+			app.hits = append(app.hits, hit{r: visible, kind: hitAction, action: action})
+		}
+		switch {
+		case it.isHead:
+			app.drawHeading(hdc, v, r)
+		case it.tile != nil:
+			app.drawTile(hdc, *it.tile, r, hovered)
+		case it.block != nil:
+			app.drawBlock(hdc, *it.block, r, hovered)
+		}
+	}
+	if len(v.Blocks) == 0 && len(v.Tiles) == 0 && v.Empty != "" {
+		text(hdc, app.fonts.empty, theme.TextMuted, rect{area.Left, off + total, area.Right, area.Bottom - app.s(40)}, v.Empty, dtSingleLine|dtVCenter|dtCenter)
+	}
+	procRestoreDC.Call(hdc, saved)
+	if total > viewH && viewH > 0 {
+		c := canvas{hdc}
+		trackH := area.height() - app.s(24)
+		thumbH := trackH * viewH / total
+		if thumbH < app.s(28) {
+			thumbH = app.s(28)
+		}
+		top := area.Top + app.s(12)
+		if maxOff > 0 {
+			top += (trackH - thumbH) * app.scroll[tab] / maxOff
+		}
+		c.round(rect{area.Right - app.s(12), top, area.Right - app.s(7), top + thumbH}, app.s(3), argb(theme.TextMuted, 140))
+	}
+}
+
+func (app *ShellApp) paintPrompt(hdc uintptr, r rect, p *desktop.Prompt) {
+	c := canvas{hdc}
+	accent, soft, border := uint32(theme.Accent), uint32(theme.AccentSoft), uint32(theme.AccentLight)
+	icon := "sparkle"
+	if p.Approval {
+		accent, soft, border, icon = theme.WarnText, theme.WarnBg, theme.WarnBorder, "warning"
+	}
+	c.shadow(r, app.s(18), app.s(10), theme.Shadow, 44)
+	c.round(r, app.s(18), argb(theme.Surface, 255))
+	c.stroke(r, app.s(18), argb(border, 255), 1.5)
+	pad := app.s(22)
+	ic := rect{r.Left + pad, r.Top + app.s(20), r.Left + pad + app.s(32), r.Top + app.s(20) + app.s(32)}
+	c.round(ic, app.s(10), argb(soft, 255))
+	text(hdc, app.fonts.icon, accent, ic, glyph(icon), dtSingleLine|dtVCenter|dtCenter)
+	inner := rect{ic.Right + app.s(14), r.Top + app.s(20), r.Right - pad, r.Bottom - pad}
+	th := measure(hdc, app.fonts.h2, inner.width(), p.Title, wrapFlags)
+	text(hdc, app.fonts.h2, theme.TextPrimary, rect{inner.Left, inner.Top + app.s(4), inner.Right, inner.Top + app.s(4) + th}, p.Title, wrapFlags)
+	y := inner.Top + app.s(4) + th + app.s(12)
+	by := r.Bottom - app.s(20) - app.s(40)
+	if p.Body != "" {
+		box := rect{inner.Left, y, inner.Right, by - app.s(16)}
+		c.round(box, app.s(12), argb(theme.SurfaceSoft, 255))
+		saved, _, _ := procSaveDC.Call(hdc)
+		procIntersectClipRect.Call(hdc, uintptr(box.Left), uintptr(box.Top), uintptr(box.Right), uintptr(box.Bottom))
+		text(hdc, app.fonts.mono, theme.TextPrimary, rect{box.Left + app.s(12), box.Top + app.s(12), box.Right - app.s(12), box.Bottom}, p.Body, wrapFlags)
+		procRestoreDC.Call(hdc, saved)
+	}
+	confirm := rect{inner.Left, by, inner.Left + app.s(170), by + app.s(40)}
+	reject := rect{confirm.Right + app.s(10), by, confirm.Right + app.s(10) + app.s(150), by + app.s(40)}
+	if app.promptReady() {
+		c.gradient(confirm, app.s(20), argb(theme.AccentLight, 255), argb(theme.AccentDark, 255), 0)
+	} else {
+		c.round(confirm, app.s(20), argb(theme.TextMuted, 255)) // not yet accepting input
+	}
+	text(hdc, app.fonts.bold, theme.TextOnAccent, confirm, p.Confirm, dtSingleLine|dtVCenter|dtCenter)
+	c.round(reject, app.s(20), argb(theme.Surface, 255))
+	c.stroke(reject, app.s(20), argb(theme.PanelBorder, 255), 1)
+	text(hdc, app.fonts.bold, theme.TextPrimary, reject, p.Reject, dtSingleLine|dtVCenter|dtCenter)
+	app.hits = append(app.hits, hit{r: confirm, kind: hitConfirm}, hit{r: reject, kind: hitReject})
+	if p.Approval {
+		text(hdc, app.fonts.small, theme.WarnText, rect{reject.Right + app.s(16), by, inner.Right, by + app.s(40)}, "Pasul rulează cu permisiunile tale.", lineFlags)
+	}
+}
+
+func (app *ShellApp) paintOmnibar(hdc uintptr, l layout, v desktop.View) {
+	c := canvas{hdc}
+	r := l.omni
+	c.shadow(r, r.height()/2, app.s(12), theme.Shadow, 46)
+	c.round(r, r.height()/2, argb(theme.Surface, 255))
+	c.stroke(r, r.height()/2, argb(0xD9D2FA, 255), 1.5)
+	text(hdc, app.fonts.small, theme.TextSecondary, l.keycap, "Ctrl L", dtSingleLine|dtVCenter|dtCenter)
+	c.stroke(l.keycap, app.s(6), argb(theme.PanelBorder, 255), 1)
+	stop := v.Live && v.Prompt == nil
+	if stop {
+		c.gradient(l.send, l.send.height()/2, argb(0xF87171, 255), argb(0xDC2626, 255), 1)
+	} else {
+		c.gradient(l.send, l.send.height()/2, argb(theme.AccentLight, 255), argb(theme.AccentDark, 255), 1)
+	}
+	g := "send"
+	if stop {
+		g = "stop"
+	}
+	text(hdc, app.fonts.iconLg, theme.TextOnAccent, l.send, glyph(g), dtSingleLine|dtVCenter|dtCenter)
+	app.hits = append(app.hits, hit{r: l.send, kind: hitSend})
+	text(hdc, app.fonts.small, theme.TextMuted, l.hint, "Încearcă „agent”, „/index” sau „/crawl URL”, ori întreab-o pe Ilaria.  ·  Esc anulează  ·  /help", dtSingleLine|dtCenter|dtEndEllipsis)
+}
+
+func (app *ShellApp) paintDock(hdc uintptr, r rect, v desktop.View) {
+	c := canvas{hdc}
+	c.shadow(r, app.s(16), app.s(8), theme.Shadow, 32)
+	c.round(r, app.s(16), argb(theme.Panel, 240))
+	c.stroke(r, app.s(16), argb(theme.PanelBorder, 255), 1)
+	procSetTextCharacterExtra.Call(hdc, uintptr(app.s(1)))
+	text(hdc, app.fonts.smallBold, theme.TextSecondary, rect{r.Left + app.s(14), r.Top + app.s(8), r.Right, r.Top + app.s(26)}, "FIXATE", lineFlags)
+	procSetTextCharacterExtra.Call(hdc, 0)
+	x := r.Left + app.s(12)
+	for _, t := range []desktop.Tab{desktop.TabChat, desktop.TabAgent, desktop.TabSearch} {
+		chip := rect{x, r.Top + app.s(32), x + app.s(68), r.Bottom - app.s(10)}
+		hovered := app.hover == len(app.hits)
+		bg := uint32(theme.Surface)
+		if hovered || v.Tab == t {
+			bg = theme.AccentSoft
+		}
+		c.round(chip, app.s(10), argb(bg, 255))
+		c.stroke(chip, app.s(10), argb(theme.PanelBorder, 255), 1)
+		text(hdc, app.fonts.iconSm, theme.Accent, rect{chip.Left + app.s(8), chip.Top, chip.Left + app.s(24), chip.Bottom}, glyph(desktop.TabIcons[t]), dtSingleLine|dtVCenter)
+		text(hdc, app.fonts.small, theme.TextPrimary, rect{chip.Left + app.s(26), chip.Top, chip.Right - app.s(4), chip.Bottom}, desktop.TabNames[t], lineFlags)
+		app.hits = append(app.hits, hit{r: chip, kind: hitTab, tab: t})
+		x = chip.Right + app.s(8)
+	}
+}
+
+// ---------------------------------------------------------------- window procedure
+
+// osPointer converts a pointer that Windows passed in a message parameter. The
+// memory belongs to the OS for the duration of the message, not the Go heap.
+func osPointer(p uintptr) unsafe.Pointer { return *(*unsafe.Pointer)(unsafe.Pointer(&p)) }
+
+func abs32(v int32) int32 {
+	if v < 0 {
+		return -v
+	}
+	return v
+}
+
+func wndProc(hwnd syscall.Handle, message uint32, wParam, lParam uintptr) uintptr {
+	app := globalApp
+	if app == nil || app.handle() == 0 {
+		r, _, _ := procDefWindowProcW.Call(uintptr(hwnd), uintptr(message), wParam, lParam)
+		return r
+	}
+	switch message {
+	case wmClose:
+		app.report("Win32 WM_CLOSE received")
+		app.ctl.Cancel()
+		if r, _, err := procDestroyWindow.Call(uintptr(hwnd)); r == 0 {
+			app.report(fmt.Sprintf("Win32 DestroyWindow failed: %v", err))
+		}
+		return 0
+	case wmDestroy:
+		app.report("Win32 WM_DESTROY received")
+		procPostQuitMessage.Call(0)
+		return 0
+	case wmEraseBkgnd:
+		return 1
+	case wmPaint:
+		var ps paintStruct
+		hdc, _, _ := procBeginPaint.Call(uintptr(hwnd), uintptr(unsafe.Pointer(&ps)))
+		app.paint(hdc)
+		procEndPaint.Call(uintptr(hwnd), uintptr(unsafe.Pointer(&ps)))
+		return 0
+	case wmSize:
+		app.placeEdit()
+		app.invalidate()
+		return 0
+	case wmSetFocus:
+		procSetFocus.Call(uintptr(app.edit))
+		return 0
+	case wmRepaint:
+		app.invalidate()
+		return 0
+	case wmTimer:
+		minute := time.Now().Minute()
+		if app.view.Live || minute != app.minute || (app.view.Prompt != nil && time.Since(app.promptAt) < approvalDwell+400*time.Millisecond) {
+			app.minute = minute
+			app.invalidate()
+		}
+		return 0
+	case wmMouseMove:
+		x, y := loword(lParam), hiword(lParam)
+		hover := -1
+		for i, h := range app.hits {
+			if h.r.contains(x, y) {
+				hover = i
+				break
+			}
+		}
+		if hover != app.hover {
+			app.hover = hover
+			app.invalidate()
+		}
+		return 0
+	case wmSetCursor:
+		if syscall.Handle(wParam) == hwnd && loword(lParam) == htClient {
+			id := uintptr(idcArrow)
+			if app.hover >= 0 {
+				id = idcHand
+			}
+			cur, _, _ := procLoadCursorW.Call(0, id)
+			procSetCursor.Call(cur)
+			return 1
+		}
+	case wmLButtonDown:
+		app.click(loword(lParam), hiword(lParam))
+		return 0
+	case wmMouseWheel:
+		delta := hiword(wParam)
+		app.scrollBy(abs32(delta)*app.s(56)/120, delta > 0)
+		return 0
+	case wmChar:
+		// Text posted to the main window (for example by automation) goes to
+		// the input field; Enter submits it.
+		if wParam == vkReturn {
+			t := windowText(app.edit)
+			setWindowText(app.edit, "")
+			app.submit(t)
+		} else {
+			procSendMessageW.Call(uintptr(app.edit), wmChar, wParam, lParam)
+		}
+		return 0
+	case wmCtlColorEdit:
+		procSetTextColor.Call(wParam, colorRef(theme.TextPrimary))
+		procSetBkColor.Call(wParam, colorRef(theme.Surface))
+		return app.editBrush
+	case wmGetMinMaxInfo:
+		info := (*minMaxInfo)(osPointer(lParam))
+		info.MinTrackSize = point{app.s(900), app.s(620)}
+		return 0
+	case wmDpiChanged:
+		app.dpi = loword(wParam)
+		app.createFonts()
+		suggested := (*rect)(osPointer(lParam))
+		procSetWindowPos.Call(uintptr(hwnd), 0, uintptr(suggested.Left), uintptr(suggested.Top), uintptr(suggested.width()), uintptr(suggested.height()), swpNoZOrder|swpNoActivate)
+		app.placeEdit()
+		app.invalidate()
+		return 0
+	}
+	r, _, _ := procDefWindowProcW.Call(uintptr(hwnd), uintptr(message), wParam, lParam)
 	return r
 }
 
-func (app *ShellApp) executeLegacyCommand(ctx context.Context, cmd string) {
-	lower := strings.ToLower(cmd)
+// ---------------------------------------------------------------- lifecycle
 
-	// 0. Physical E-Stop Guard
-	if lower == "estop" || lower == "stop" || strings.Contains(lower, "emergency stop") || strings.Contains(lower, "oprire de urgenta") {
-		res := app.cyberOrch.TriggerEStop()
-		app.state.SetExecutionLog(fmt.Sprintf("[PHYSICAL E-STOP ENGAGED] %s", res.FeedbackMessage))
-		return
-	}
-
-	// 1. Darwinian Evolution / Algorithmic Mutation
-	if strings.HasPrefix(lower, "evolve") || strings.HasPrefix(lower, "mutate") || strings.HasPrefix(lower, "optimize") {
-		mut, err := app.evolveEngine.SpawnMutant("vector_normalize", evolution.MutUnrollLoop)
-		if err == nil {
-			testVecs := [][]float64{{3.0, 4.0}, {1.0, 2.0, 3.0, 4.0}}
-			best, _ := app.evolveEngine.BenchmarkAndSelect("vector_normalize", testVecs)
-			if best != nil {
-				app.state.SetExecutionLog(fmt.Sprintf("[DARWINIAN EVOLUTION] Mutant '%s' selected & hot-swapped into kernel! Verified correct. Latency: %dns (Speedup: %.2fx)", best.ID, best.LatencyNs, best.Speedup))
-			} else {
-				app.state.SetExecutionLog(fmt.Sprintf("[DARWINIAN EVOLUTION] Evaluated mutant '%s'. Baseline retained (already optimal).", mut.ID))
-			}
-		} else {
-			app.state.SetExecutionLog(fmt.Sprintf("[EVOLUTION ERROR] %v", err))
-		}
-		return
-	}
-
-	// 2. 3D World Model / Counterfactual Physics Simulation
-	if strings.HasPrefix(lower, "sim") || strings.HasPrefix(lower, "physics") {
-		verdict := app.worldModel.EvaluateVehicleManeuver(worldmodel.VehicleState{
-			VelocityKmh: 90.0,
-			SteerAngle:  12.0,
-			MassKg:      1600.0,
-			Surface:     worldmodel.SurfaceIce,
-		}, 0.7, 12.0)
-		app.state.SetExecutionLog(fmt.Sprintf("[3D WORLD MODEL SIMULATION] 100 Counterfactuals in %dms | Surface: Black Ice | Safe: %v | Vetoed: %v | Risk: %.1f%% | Reason: %s",
-			verdict.SimulationDurationMs, verdict.Safe, verdict.Vetoed, verdict.RiskScore*100, verdict.Reason))
-		return
-	}
-
-	// 3. BCI & Subvocal EMG Thought Interface
-	if strings.HasPrefix(lower, "bci") || strings.HasPrefix(lower, "thought") || strings.HasPrefix(lower, "eeg") {
-		intent := app.bciProc.DecodeIntent()
-		app.state.SetExecutionLog(fmt.Sprintf("[BCI NEURAL DECODER] Decoded Motor Thought: %s (Confidence: %.1f%% • Dominant Channel: %d • Latency: %dms)",
-			intent.Intent, intent.Confidence*100, intent.Channel, intent.LatencyMs))
-		return
-	}
-
-	// 4. Control Barrier Function (CBF) & Simplex Filter
-	if strings.HasPrefix(lower, "cbf") || strings.HasPrefix(lower, "barrier") || strings.HasPrefix(lower, "simplex") {
-		state := cbf.PhysicalState{
-			ThermalC:    68.0,
-			VelocityMps: 2.8,
-			PositionM:   4.5,
-			VibrationG:  0.8,
-		}
-		uNom := cbf.ControlInput{ActuationTorque: 50.0, AuxCoolingDuty: 0.2}
-		res := app.cbfArbiter.FilterAction(ctx, state, uNom, 2*time.Millisecond)
-		app.state.SetExecutionLog(fmt.Sprintf("[CBF QUADRATIC PROGRAMMING FILTER] Input: %.1f Nm -> Certified: %.1f Nm | Dev: %.2f | Margin: %.2f | Duration: %dμs | Simplex Engaged: %v",
-			uNom.ActuationTorque, res.CertifiedInput.ActuationTorque, res.Deviation, res.MinSafetyMargin, res.FilterDurationMicro, res.SimplexEngaged))
-		return
-	}
-
-	// 5. Cyclic Pregel Action Graph & Context Compaction
-	if strings.HasPrefix(lower, "graph") || strings.HasPrefix(lower, "pregel") {
-		app.actionGraph.AddTokens(500)
-		tier, tokens, chkpts := app.actionGraph.GetStatus()
-		app.state.SetExecutionLog(fmt.Sprintf("[CYCLIC PREGEL ACTION GRAPH] Tokens: %d | Compaction Tier: %v | Checkpoints: %d | Pregel BSP Superstep Ready",
-			tokens, tier, chkpts))
-		return
-	}
-
-	// 6. L402 Lightning Micro-Settlement & Autonomous Procurement
-	if strings.HasPrefix(lower, "l402") || strings.HasPrefix(lower, "lightning") || strings.HasPrefix(lower, "procure") {
-		po, needed := app.l402Engine.EvaluateMaintenanceAndProcure(3.8, 600.0, "ROBOT_ARM_01")
-		challenge, preimage, _ := app.l402Engine.GenerateChallenge(21, "Offload Kinematic Path Planning")
-		_ = app.l402Engine.SettleInvoice(challenge.Invoice.PaymentHash, preimage)
-		sCount, sats := app.l402Engine.GetMetrics()
-		msg := fmt.Sprintf("[L402 LIGHTNING SETTLEMENT] Settled 21 Sats (~$0.015) via M2M Mesh | Total Settled: %d invoices (%d sats)", sCount, sats)
-		if needed && po != nil {
-			msg += fmt.Sprintf("\n[AUTONOMOUS PROCUREMENT] Bearing RUL: %.1fh (<150h) -> Dispatched purchase order %s via Delivery Drone (Budget: %d sats)",
-				po.EstimatedRUL, po.PartNumber, po.MaxCostSats)
-		}
-		app.state.SetExecutionLog(msg)
-		return
-	}
-
-	// 7. Chameleon Capability Token & MMIO Sandboxed Command
-	if strings.HasPrefix(lower, "mmio") || strings.HasPrefix(lower, "chameleon") {
-		capToken := app.chameleonHC.MintCapability([]uint32{chameleon.AddrActuationTorque, chameleon.AddrCoolingDuty}, true, 10*time.Second)
-		cmd := &chameleon.MultiRegisterActuationCommand{TargetTorque: 520, TargetCooling: 75}
-		_ = cmd.Execute(ctx, app.chameleonHC, capToken)
-		tVal := app.chameleonHC.ReadMMIO(chameleon.AddrActuationTorque)
-		cVal := app.chameleonHC.ReadMMIO(chameleon.AddrCoolingDuty)
-		app.state.SetExecutionLog(fmt.Sprintf("[CHAMELEON MMIO CAPABILITY] Token: %s | Perm: WRITE | MMIO[0x1004]=%d Torque, MMIO[0x1008]=%d Cooling | Verified",
-			capToken.TokenID[:8], tVal, cVal))
-		return
-	}
-
-	// 8. GPU Federated Learning Micro-Batch Step & Proof-of-Compute
-	if strings.HasPrefix(lower, "train") || strings.HasPrefix(lower, "gpu") {
-		delta, reward, err := app.swarmDaemon.ExecuteTrainingMicroBatch(1)
-		if err == nil {
-			accepted, reason := app.fedAggregator.SubmitDelta(delta)
-			_ = app.azureCoord.SubmitProofOfCompute(azure.ProofOfComputeDocument{
-				ID:             fmt.Sprintf("poc_%d", time.Now().UnixNano()),
-				RoundID:        delta.RoundID,
-				NodeID:         delta.NodeID,
-				DeltaHash:      delta.ProofHash,
-				TflopsComputed: delta.TFLOPSComputed,
-				RewardSWP:      reward,
-				Signature:      "SIG_LOCAL_GPU_2026",
-			})
-			app.state.SetExecutionLog(fmt.Sprintf("[GPU FEDERATED TRAINING] Micro-batch Computed: LoRA Adapter | Loss: %.3f | +%.4f SWP Coins Credited to Wallet | PoC Hash: %s... | Aggregator Status: %v (%s)",
-				delta.Loss, reward, delta.ProofHash[:12], accepted, reason))
-		} else {
-			app.state.SetExecutionLog(fmt.Sprintf("[TRAINING ERROR] %v", err))
-		}
-		return
-	}
-
-	// 9. Federated Averaging Round Aggregation & Azure Model Distribution
-	if strings.HasPrefix(lower, "fedavg") || strings.HasPrefix(lower, "aggregate") {
-		ckpt, totalTflops, err := app.fedAggregator.AggregateRound()
-		if err == nil {
-			_ = app.azureCoord.PublishTrainingRound(azure.TrainingRoundDocument{
-				ID:                    fmt.Sprintf("round_%d", ckpt.RoundID),
-				RoundID:               ckpt.RoundID,
-				BaseVersion:           "ilaria-v1.0",
-				TargetVersion:         ckpt.Version,
-				GlobalLoss:            ckpt.GlobalLoss,
-				TotalTflops:           totalTflops,
-				AggregatedWeightsBlob: fmt.Sprintf("https://swypikstorage.blob.core.windows.net/ilaria-checkpoints/%s.safetensors", ckpt.Version),
-				AggregatedWeightsHash: fmt.Sprintf("%x", ckpt.Timestamp.UnixNano()),
-				Status:                "FINALIZED",
-			})
-			app.state.SetExecutionLog(fmt.Sprintf("[FEDERATED AVERAGING] Model Updated to %s! Global Loss: %.3f | Aggregated TFLOPS: %.2f | Checkpoint Published to Azure Blob Storage & P2P Mesh",
-				ckpt.Version, ckpt.GlobalLoss, totalTflops))
-		} else {
-			app.state.SetExecutionLog(fmt.Sprintf("[FEDAVG STATUS] %v (Type 'train' first to compute a micro-batch)", err))
-		}
-		return
-	}
-
-	// 10. Azure Cosmos DB & Cloud Coordinator Status
-	if strings.HasPrefix(lower, "azure") || strings.HasPrefix(lower, "cloud") || strings.HasPrefix(lower, "cosmos") {
-		latest, _ := app.azureCoord.FetchLatestModelCheckpoint()
-		activeNodes := app.azureCoord.GetActiveNodeCount()
-		app.state.SetExecutionLog(fmt.Sprintf("[AZURE CLOUD COORDINATOR] Database: SwypikSwarmDB (Cosmos DB) | Active GPU Nodes: %d | Global Model: %s (Loss: %.3f, Size: %d MB) | P2P STUN/TURN Tracker: ONLINE",
-			activeNodes, latest.Version, latest.Loss, latest.SizeBytes/(1024*1024)))
-		return
-	}
-
-	// 4. Cyber-Physical Intention Actuation (Vehicles, Robots, Relays, Analog Machines)
-	if strings.Contains(lower, "masina") || strings.Contains(lower, "franeaza") || strings.Contains(lower, "faruri") ||
-		strings.Contains(lower, "lumini") || strings.Contains(lower, "clima") || strings.Contains(lower, "robot") ||
-		strings.Contains(lower, "brat") || strings.Contains(lower, "motor") || strings.Contains(lower, "releu") ||
-		strings.Contains(lower, "priza") || strings.Contains(lower, "car ") || strings.Contains(lower, "brake") ||
-		strings.Contains(lower, "lights") {
-		res, err := app.cyberOrch.DispatchIntent(ctx, cmd)
-		if err != nil {
-			app.state.SetExecutionLog(fmt.Sprintf("[CYBER-PHYSICAL REJECTED] %v", err))
-		} else {
-			app.state.SetExecutionLog(fmt.Sprintf("[CYBER-PHYSICAL ACTUATION: %s] Success: %v (Latency: %dms)\nFeedback: %s\nTelemetry: %v",
-				res.Command.Action, res.Success, res.ExecutionTimeMs, res.FeedbackMessage, res.Telemetry))
-		}
-		return
-	}
-
-	// 5. Code Synthesis Prompt (Claude Code / Codex style)
-	if strings.HasPrefix(lower, "create ") || strings.HasPrefix(lower, "write ") || strings.HasPrefix(lower, "code ") {
-		prompt := strings.TrimPrefix(cmd, "create ")
-		prompt = strings.TrimPrefix(prompt, "write ")
-		prompt = strings.TrimPrefix(prompt, "code ")
-
-		fn, code := app.coderEngine.GenerateCode(prompt, "go")
-		targetFile := fn
-		err := app.coderEngine.CreateFile(targetFile, code)
-		if err == nil {
-			app.state.SetExecutionLog(fmt.Sprintf("[CODER AGENT] Successfully synthesized & wrote %s:\n\n%s", targetFile, code))
-		} else {
-			app.state.SetExecutionLog(fmt.Sprintf("[ERROR] Failed to write file: %v", err))
-		}
-		return
-	}
-
-	// 6. Terminal Shell Command (dir, echo, go build, etc.)
-	if strings.HasPrefix(lower, "run ") || strings.HasPrefix(lower, "exec ") ||
-		strings.HasPrefix(lower, "dir") || strings.HasPrefix(lower, "go ") ||
-		strings.HasPrefix(lower, "git ") || strings.HasPrefix(lower, "echo ") {
-		execCmd := cmd
-		execCmd = strings.TrimPrefix(execCmd, "run ")
-		execCmd = strings.TrimPrefix(execCmd, "exec ")
-
-		res := app.coderEngine.ExecuteCommandContext(ctx, execCmd)
-		app.state.SetExecutionLog(fmt.Sprintf("[TERMINAL EXECUTION: %s] (Exit: %v • Latency: %dms)\n%s", res.Command, res.Success, res.LatencyMs, res.Output))
-		return
-	}
-
-	// 7. Ilaria AI Natural Prompt
-	reply, _, err := app.ilariaEngine.ProcessPromptContext(ctx, cmd)
-	if err != nil {
-		app.state.SetExecutionLog(fmt.Sprintf("[ILARIA ERROR] %v", err))
-		return
-	}
-	app.state.SetExecutionLog(fmt.Sprintf("[ILARIA AI] %s", reply))
-}
-
-func (app *ShellApp) handleClick(x, y int32) {
-	var rect RECT
-	procGetClientRect.Call(uintptr(app.hwnd), uintptr(unsafe.Pointer(&rect)))
-	h := rect.Bottom - rect.Top
-	w := rect.Right - rect.Left
-
-	// 1. Top taskbar app button clicks (Y from 12 to 68)
-	if y >= 12 && y <= 68 {
-		startX := int32(140)
-		btnW := int32(100)
-		for i, item := range views.NativeApps {
-			bx := startX + int32(i)*(btnW+6)
-			if x >= bx && x <= bx+btnW {
-				app.state.SetActiveApp(item.ID)
-				return
-			}
-		}
-
-		// Ilaria button (Top Right corner)
-		if x >= w-120 && x <= w-30 {
-			app.state.ToggleIlaria()
+func enableDPIAwareness() {
+	// DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2 == (HANDLE)-4
+	if procSetProcessDpiAwarenessC.Find() == nil {
+		if r, _, _ := procSetProcessDpiAwarenessC.Call(^uintptr(3)); r != 0 {
 			return
 		}
 	}
-
-	// 2. Bottom Conversational Omnibar clicks (Y from h - 75 to h - 15)
-	if y >= h-75 && y <= h-15 {
-		// Voice button [🎙️ Voice]
-		if x >= 30 && x <= 140 {
-			app.state.SetExecutionLog("Voice capture is not implemented in this native build. No microphone has been activated.")
-			return
-		}
-
-		// Execute Button [⚡ Run]
-		if x >= w-160 && x <= w-30 {
-			app.executeOmnibar()
-			return
-		}
+	if procSetProcessDPIAware.Find() == nil {
+		procSetProcessDPIAware.Call()
 	}
 }
 
-func (app *ShellApp) initFonts() {
-	segoe, _ := syscall.UTF16PtrFromString("Segoe UI")
-	consolas, _ := syscall.UTF16PtrFromString("Consolas")
-
-	f1, _, _ := procCreateFontW.Call(15, 0, 0, 0, 400, 0, 0, 0, 1, 0, 0, 0, 0, uintptr(unsafe.Pointer(segoe)))
-	f2, _, _ := procCreateFontW.Call(24, 0, 0, 0, 700, 0, 0, 0, 1, 0, 0, 0, 0, uintptr(unsafe.Pointer(segoe)))
-	f3, _, _ := procCreateFontW.Call(16, 0, 0, 0, 600, 0, 0, 0, 1, 0, 0, 0, 0, uintptr(unsafe.Pointer(segoe)))
-	f4, _, _ := procCreateFontW.Call(12, 0, 0, 0, 400, 0, 0, 0, 1, 0, 0, 0, 0, uintptr(unsafe.Pointer(segoe)))
-	f5, _, _ := procCreateFontW.Call(14, 0, 0, 0, 400, 0, 0, 0, 1, 0, 0, 0, 0, uintptr(unsafe.Pointer(consolas)))
-
-	app.fontRegular = syscall.Handle(f1)
-	app.fontTitle = syscall.Handle(f2)
-	app.fontBold = syscall.Handle(f3)
-	app.fontSmall = syscall.Handle(f4)
-	app.fontCode = syscall.Handle(f5)
+// styleFrame asks Windows 11 for rounded corners and a caption that matches
+// the canvas. Older systems ignore these attributes.
+func styleFrame(hwnd uintptr) {
+	if procDwmSetWindowAttribute.Find() != nil {
+		return
+	}
+	set := func(attr uintptr, v uint32) {
+		procDwmSetWindowAttribute.Call(hwnd, attr, uintptr(unsafe.Pointer(&v)), 4)
+	}
+	set(33, 2) // DWMWA_WINDOW_CORNER_PREFERENCE = DWMWCP_ROUND
+	set(34, uint32(colorRef(theme.CanvasTop)))
+	set(35, uint32(colorRef(theme.CanvasTop)))
+	set(36, uint32(colorRef(theme.TextPrimary)))
 }
 
-func (app *ShellApp) cleanup() {
-	if app.fontRegular != 0 {
-		procDeleteObject.Call(uintptr(app.fontRegular))
-		app.fontRegular = 0
-	}
-	if app.fontTitle != 0 {
-		procDeleteObject.Call(uintptr(app.fontTitle))
-		app.fontTitle = 0
-	}
-	if app.fontBold != 0 {
-		procDeleteObject.Call(uintptr(app.fontBold))
-		app.fontBold = 0
-	}
-	if app.fontSmall != 0 {
-		procDeleteObject.Call(uintptr(app.fontSmall))
-		app.fontSmall = 0
-	}
-	if app.fontCode != 0 {
-		procDeleteObject.Call(uintptr(app.fontCode))
-		app.fontCode = 0
-	}
-}
-
-// Run launches the native Win32 message loop and displays the SwypikOS desktop.
+// Run creates the window and runs the message loop until the window closes.
 func (app *ShellApp) Run() error {
-	// A window and its message queue belong to the creating OS thread.
-	unlock := lockNativeThread()
-	defer unlock()
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+	enableDPIAwareness()
+	token, ok := startGDIPlus()
+	if !ok {
+		return fmt.Errorf("GDI+ is unavailable")
+	}
+	defer stopGDIPlus(token)
 	globalApp = app
 	defer func() { globalApp = nil }()
-	className, _ := syscall.UTF16PtrFromString("SwypikOS_Native_Class")
-	windowTitle, _ := syscall.UTF16PtrFromString("SwypikOS - Native Windows Desktop")
 
-	app.initFonts()
-	defer func() {
-		app.reportLifecycle("Win32 releasing GDI resources")
-		app.cleanup()
-		app.reportLifecycle("Win32 GDI resources released")
-	}()
-	defer app.native.commands.stop()
-	hInstance, _, instanceErr := procGetModuleHandleW.Call(0)
-	if hInstance == 0 {
-		return fmt.Errorf("GetModuleHandleW failed: %v", instanceErr)
+	instance, _, err := procGetModuleHandleW.Call(0)
+	if instance == 0 {
+		return fmt.Errorf("GetModuleHandleW failed: %v", err)
 	}
-	cursor, _, _ := procLoadCursorW.Call(0, 32512) // IDC_ARROW
-	wc := WNDCLASSEXW{
-		CbSize:        uint32(unsafe.Sizeof(WNDCLASSEXW{})),
-		Style:         0x0003,
-		LpfnWndProc:   syscall.NewCallback(wndProc),
-		HInstance:     syscall.Handle(hInstance),
-		HCursor:       syscall.Handle(cursor),
-		LpszClassName: className,
-	}
-	atom, _, registerErr := procRegisterClassExW.Call(uintptr(unsafe.Pointer(&wc)))
-	if atom == 0 {
-		return fmt.Errorf("RegisterClassExW failed: %v", registerErr)
+	className := utf16Ptr(ClassName)
+	cursor, _, _ := procLoadCursorW.Call(0, idcArrow)
+	icon, _, _ := procLoadIconW.Call(instance, uintptr(unsafe.Pointer(utf16Ptr("APP"))))
+	wc := wndClassEx{Style: 0x0003, WndProc: syscall.NewCallback(wndProc), Instance: syscall.Handle(instance), Cursor: syscall.Handle(cursor), Icon: syscall.Handle(icon), IconSm: syscall.Handle(icon), ClassName: className}
+	wc.Size = uint32(unsafe.Sizeof(wc))
+	if atom, _, err := procRegisterClassExW.Call(uintptr(unsafe.Pointer(&wc))); atom == 0 {
+		return fmt.Errorf("RegisterClassExW failed: %v", err)
 	}
 	defer func() {
-		// Capture the typed pointer, not an eagerly converted uintptr: the Go
-		// allocation must remain reachable until this deferred Win32 call.
-		app.reportLifecycle("Win32 unregistering window class")
-		if result, _, err := procUnregisterClassW.Call(uintptr(unsafe.Pointer(className)), hInstance); result == 0 {
-			app.reportLifecycle(fmt.Sprintf("Win32 UnregisterClassW failed: %v", err))
-		}
+		app.report("Win32 unregistering window class")
+		procUnregisterClassW.Call(uintptr(unsafe.Pointer(className)), instance)
 	}()
 
-	// Create hidden first: paint callbacks must not run before app.hwnd is set.
-	hwnd, _, createErr := procCreateWindowExW.Call(
-		0, uintptr(unsafe.Pointer(className)), uintptr(unsafe.Pointer(windowTitle)),
-		WS_OVERLAPPEDWINDOW, 80, 80, 1420, 890, 0, 0, hInstance, 0,
-	)
+	hwnd, _, err := procCreateWindowExW.Call(0, uintptr(unsafe.Pointer(className)), uintptr(unsafe.Pointer(utf16Ptr("SwypikOS"))),
+		wsOverlappedWin|wsClipChildren, 80, 60, 1280, 820, 0, 0, instance, 0)
 	if hwnd == 0 {
-		return fmt.Errorf("CreateWindowExW failed: %v", createErr)
+		return fmt.Errorf("CreateWindowExW failed: %v", err)
 	}
-	app.hwnd = syscall.Handle(hwnd)
+	styleFrame(hwnd)
+	if procGetDpiForWindow.Find() == nil {
+		if d, _, _ := procGetDpiForWindow.Call(hwnd); d != 0 {
+			app.dpi = int32(d)
+		}
+	}
+	app.createFonts()
+	defer app.deleteFonts()
+	brush, _, _ := procCreateSolidBrush.Call(colorRef(theme.Surface))
+	app.editBrush = brush
+	defer procDeleteObject.Call(brush)
+
+	edit, _, err := procCreateWindowExW.Call(0, uintptr(unsafe.Pointer(utf16Ptr("EDIT"))), 0, wsChild|wsVisible|esAutoHScroll, 0, 0, 10, 10, hwnd, 0, instance, 0)
+	if edit == 0 {
+		procDestroyWindow.Call(hwnd)
+		return fmt.Errorf("create input field: %v", err)
+	}
+	app.edit = syscall.Handle(edit)
+	procSendMessageW.Call(edit, wmSetFont, uintptr(app.fonts.ui), 1)
+	procSendMessageW.Call(edit, 0x00C5, 4000, 0) // EM_LIMITTEXT
+	app.hwnd.Store(hwnd)
 	defer func() {
+		app.hwnd.Store(0)
 		procKillTimer.Call(hwnd, 1)
-		if exists, _, _ := procIsWindow.Call(hwnd); exists != 0 {
+		if ok, _, _ := procIsWindow.Call(hwnd); ok != 0 {
 			procDestroyWindow.Call(hwnd)
 		}
-		app.hwnd = 0
 	}()
-	timer, _, timerErr := procSetTimer.Call(hwnd, 1, 1000, 0)
-	if timer == 0 {
-		return fmt.Errorf("SetTimer failed: %v", timerErr)
+	if t, _, err := procSetTimer.Call(hwnd, 1, 300, 0); t == 0 {
+		return fmt.Errorf("SetTimer failed: %v", err)
 	}
-	procShowWindow.Call(hwnd, SW_SHOWMAXIMIZED)
+	// Scale the initial size to the monitor's DPI.
+	procSetWindowPos.Call(hwnd, 0, uintptr(app.s(80)), uintptr(app.s(60)), uintptr(app.s(1280)), uintptr(app.s(820)), swpNoZOrder|swpNoActivate)
+	app.placeEdit()
+	procShowWindow.Call(hwnd, swShowMaximized)
 	procUpdateWindow.Call(hwnd)
+	procSetFocus.Call(edit)
+	app.report("Win32 window ready")
 
-	var msg MSG
+	var m msg
 	for {
-		result, _, messageErr := procGetMessageW.Call(uintptr(unsafe.Pointer(&msg)), 0, 0, 0)
-		quit, err := nativeMessageResult(result, messageErr)
+		r, _, callErr := procGetMessageW.Call(uintptr(unsafe.Pointer(&m)), 0, 0, 0)
+		quit, err := nativeMessageResult(r, callErr)
 		if err != nil {
 			return err
 		}
 		if quit {
-			app.reportLifecycle("Win32 WM_QUIT received")
+			app.report("Win32 WM_QUIT received")
 			return nil
 		}
-		procTranslateMessage.Call(uintptr(unsafe.Pointer(&msg)))
-		procDispatchMessageW.Call(uintptr(unsafe.Pointer(&msg)))
+		if app.preTranslate(&m) {
+			continue
+		}
+		procTranslateMessage.Call(uintptr(unsafe.Pointer(&m)))
+		procDispatchMessageW.Call(uintptr(unsafe.Pointer(&m)))
 	}
 }
-
-// render performs flicker-free double-buffered drawing on the window.
-func (app *ShellApp) render(hdc syscall.Handle) {
-	var rect RECT
-	procGetClientRect.Call(uintptr(app.hwnd), uintptr(unsafe.Pointer(&rect)))
-	w := rect.Right - rect.Left
-	h := rect.Bottom - rect.Top
-	if w <= 0 || h <= 0 {
-		return
-	}
-
-	memDC, _, _ := procCreateCompatibleDC.Call(uintptr(hdc))
-	memBmp, _, _ := procCreateCompatibleBitmap.Call(uintptr(hdc), uintptr(w), uintptr(h))
-	oldBmp, _, _ := procSelectObject.Call(memDC, memBmp)
-
-	hMemDC := syscall.Handle(memDC)
-
-	// 1. Draw Clean Alabaster Canvas Background (#f8fafc)
-	bgBrush, _, _ := procCreateSolidBrush.Call(uintptr(theme.RGBToCOLORREF(theme.ColorBgCore)))
-	procFillRect.Call(memDC, uintptr(unsafe.Pointer(&rect)), bgBrush)
-	procDeleteObject.Call(bgBrush)
-
-	procSetBkMode.Call(memDC, TRANSPARENT)
-
-	// 2. Draw Top Sovereign Taskbar (Light Frosted Surface)
-	taskbarRect := RECT{Left: 20, Top: 12, Right: w - 20, Bottom: 68}
-	tbBrush, _, _ := procCreateSolidBrush.Call(uintptr(theme.RGBToCOLORREF(theme.ColorBgSurface)))
-	tbPen, _, _ := procCreatePen.Call(PS_SOLID, 1, uintptr(theme.RGBToCOLORREF(theme.ColorBorderActive)))
-	oldBrush, _, _ := procSelectObject.Call(memDC, tbBrush)
-	oldPen, _, _ := procSelectObject.Call(memDC, tbPen)
-	procRoundRect.Call(memDC, uintptr(taskbarRect.Left), uintptr(taskbarRect.Top), uintptr(taskbarRect.Right), uintptr(taskbarRect.Bottom), 16, 16)
-	procSelectObject.Call(memDC, oldBrush)
-	procSelectObject.Call(memDC, oldPen)
-	procDeleteObject.Call(tbBrush)
-	procDeleteObject.Call(tbPen)
-
-	// Brand Logo Glyph
-	procSelectObject.Call(memDC, uintptr(app.fontBold))
-	procSetTextColor.Call(memDC, uintptr(theme.RGBToCOLORREF(theme.ColorIndigo)))
-	app.drawText(hMemDC, 36, 24, "◈ SWYPIK OS")
-
-	// Pinned Native App Buttons in Taskbar
-	startX := int32(140)
-	btnW := int32(100)
-	activeApp := app.state.GetActiveApp()
-
-	for i, item := range views.NativeApps {
-		bx := startX + int32(i)*(btnW+6)
-		btnRect := RECT{Left: bx, Top: 18, Right: bx + btnW, Bottom: 60}
-
-		var btnBg colorRefWrapper
-		var textCol colorRefWrapper
-
-		if item.ID == activeApp {
-			btnBg = colorRefWrapper(theme.RGBToCOLORREF(theme.ColorIndigo))
-			textCol = colorRefWrapper(theme.RGBToCOLORREF(theme.ColorBgElevated))
-		} else {
-			btnBg = colorRefWrapper(theme.RGBToCOLORREF(theme.ColorBgCardHover))
-			textCol = colorRefWrapper(theme.RGBToCOLORREF(theme.ColorTextPrimary))
-		}
-
-		bBrush, _, _ := procCreateSolidBrush.Call(uintptr(btnBg))
-		oldBrushBtn, _, _ := procSelectObject.Call(memDC, bBrush)
-		procRoundRect.Call(memDC, uintptr(btnRect.Left), uintptr(btnRect.Top), uintptr(btnRect.Right), uintptr(btnRect.Bottom), 10, 10)
-		procSelectObject.Call(memDC, oldBrushBtn)
-		procDeleteObject.Call(bBrush)
-
-		procSelectObject.Call(memDC, uintptr(app.fontRegular))
-		procSetTextColor.Call(memDC, uintptr(textCol))
-
-		icon := "◈"
-		switch item.ID {
-		case views.AppSearch:
-			icon = "🔍"
-		case views.AppFiles:
-			icon = "📁"
-		case views.AppStudio:
-			icon = "🎥"
-		case views.AppWallet:
-			icon = "💳"
-		case views.AppTasks:
-			icon = "📋"
-		case views.AppConnect:
-			icon = "💬"
-		case views.AppSettings:
-			icon = "🛡️"
-		case views.AppStore:
-			icon = "🛍️"
-		case views.AppCyber:
-			icon = "🧠"
-		}
-		app.drawText(hMemDC, bx+8, 28, fmt.Sprintf("%s %s", icon, item.Glyph))
-	}
-
-	// Live Clock & Ilaria Trigger in Taskbar
-	clockStr := time.Now().Format("15:04:05")
-	procSelectObject.Call(memDC, uintptr(app.fontBold))
-	procSetTextColor.Call(memDC, uintptr(theme.RGBToCOLORREF(theme.ColorTextSecondary)))
-	app.drawText(hMemDC, w-210, 26, clockStr)
-
-	// Ilaria AI Button
-	ilariaBtnRect := RECT{Left: w - 110, Top: 18, Right: w - 30, Bottom: 60}
-	aiBrush, _, _ := procCreateSolidBrush.Call(uintptr(theme.RGBToCOLORREF(theme.ColorCyan)))
-	oldAiBrush, _, _ := procSelectObject.Call(memDC, aiBrush)
-	procRoundRect.Call(memDC, uintptr(ilariaBtnRect.Left), uintptr(ilariaBtnRect.Top), uintptr(ilariaBtnRect.Right), uintptr(ilariaBtnRect.Bottom), 10, 10)
-	procSelectObject.Call(memDC, oldAiBrush)
-	procDeleteObject.Call(aiBrush)
-
-	procSetTextColor.Call(memDC, uintptr(theme.RGBToCOLORREF(theme.ColorBgElevated)))
-	app.drawText(hMemDC, w-95, 28, "◈ AI")
-
-	// 3. Render Active App Main Surface (Light Luxury Card)
-	mainSurfaceRect := RECT{Left: 20, Top: 80, Right: w - 20, Bottom: h - 90}
-	if app.state.IsIlariaOpen() {
-		mainSurfaceRect.Right = w - 380
-	}
-
-	surfBrush, _, _ := procCreateSolidBrush.Call(uintptr(theme.RGBToCOLORREF(theme.ColorBgElevated)))
-	surfPen, _, _ := procCreatePen.Call(PS_SOLID, 1, uintptr(theme.RGBToCOLORREF(theme.ColorBorderGlass)))
-	oldBrushSurf, _, _ := procSelectObject.Call(memDC, surfBrush)
-	oldPenSurf, _, _ := procSelectObject.Call(memDC, surfPen)
-	procRoundRect.Call(memDC, uintptr(mainSurfaceRect.Left), uintptr(mainSurfaceRect.Top), uintptr(mainSurfaceRect.Right), uintptr(mainSurfaceRect.Bottom), 16, 16)
-	procSelectObject.Call(memDC, oldBrushSurf)
-	procSelectObject.Call(memDC, oldPenSurf)
-	procDeleteObject.Call(surfBrush)
-	procDeleteObject.Call(surfPen)
-
-	// Render App Content inside Main Surface
-	app.renderAppContent(hMemDC, mainSurfaceRect, activeApp)
-	if activeApp != views.AppSearch && activeApp != views.AppFiles {
-		procSelectObject.Call(memDC, uintptr(app.fontBold))
-		procSetTextColor.Call(memDC, uintptr(theme.RGBToCOLORREF(theme.ColorIndigo)))
-		app.drawText(hMemDC, mainSurfaceRect.Left+20, mainSurfaceRect.Bottom-28, "PROTOTYPE PANEL - demonstration data; not verified live services")
-	}
-
-	// 4. Render Floating Conversational Omnibar at Bottom (Chat & Voice)
-	app.renderBottomOmnibar(hMemDC, w, h)
-
-	// 5. Render Ilaria Sidecar Panel if toggled
-	if app.state.IsIlariaOpen() {
-		sidecarRect := RECT{Left: w - 360, Top: 80, Right: w - 20, Bottom: h - 90}
-		scBrush, _, _ := procCreateSolidBrush.Call(uintptr(theme.RGBToCOLORREF(theme.ColorBgSurface)))
-		scPen, _, _ := procCreatePen.Call(PS_SOLID, 1, uintptr(theme.RGBToCOLORREF(theme.ColorBorderActive)))
-		oldBrushSc, _, _ := procSelectObject.Call(memDC, scBrush)
-		oldPenSc, _, _ := procSelectObject.Call(memDC, scPen)
-		procRoundRect.Call(memDC, uintptr(sidecarRect.Left), uintptr(sidecarRect.Top), uintptr(sidecarRect.Right), uintptr(sidecarRect.Bottom), 16, 16)
-		procSelectObject.Call(memDC, oldBrushSc)
-		procSelectObject.Call(memDC, oldPenSc)
-		procDeleteObject.Call(scBrush)
-		procDeleteObject.Call(scPen)
-
-		procSelectObject.Call(memDC, uintptr(app.fontTitle))
-		procSetTextColor.Call(memDC, uintptr(theme.RGBToCOLORREF(theme.ColorIndigo)))
-		app.drawText(hMemDC, sidecarRect.Left+20, sidecarRect.Top+20, "◈ Ilaria Neural Assistant")
-
-		procSelectObject.Call(memDC, uintptr(app.fontSmall))
-		procSetTextColor.Call(memDC, uintptr(theme.RGBToCOLORREF(theme.ColorTextSecondary)))
-		app.drawText(hMemDC, sidecarRect.Left+20, sidecarRect.Top+55, "Native Autonomous Agent • Ready")
-
-		history := app.ilariaEngine.GetHistory()
-		startY := sidecarRect.Top + 85
-		for idx, msg := range history {
-			if idx > 7 {
-				break
-			}
-			prefix := "You: "
-			col := theme.RGBToCOLORREF(theme.ColorTextPrimary)
-			if msg.Sender == "ilaria" {
-				prefix = "Ilaria: "
-				col = theme.RGBToCOLORREF(theme.ColorIndigo)
-			}
-			procSetTextColor.Call(memDC, uintptr(col))
-			app.drawText(hMemDC, sidecarRect.Left+20, startY+int32(idx*26), prefix+msg.Text)
-		}
-	}
-
-	// BitBlt final composited image to screen (Zero Flicker 60 FPS)
-	procBitBlt.Call(uintptr(hdc), 0, 0, uintptr(w), uintptr(h), memDC, 0, 0, SRCCOPY)
-
-	procSelectObject.Call(memDC, oldBmp)
-	procDeleteObject.Call(memBmp)
-	procDeleteDC.Call(memDC)
-}
-
-func (app *ShellApp) renderBottomOmnibar(hdc syscall.Handle, w, h int32) {
-	barRect := RECT{Left: 20, Top: h - 75, Right: w - 20, Bottom: h - 15}
-
-	// Frosted Omnibar background with soft border
-	bBrush, _, _ := procCreateSolidBrush.Call(uintptr(theme.RGBToCOLORREF(theme.ColorBgSurface)))
-	bPen, _, _ := procCreatePen.Call(PS_SOLID, 1, uintptr(theme.RGBToCOLORREF(theme.ColorBorderActive)))
-	oldBrushB, _, _ := procSelectObject.Call(uintptr(hdc), bBrush)
-	oldPenB, _, _ := procSelectObject.Call(uintptr(hdc), bPen)
-	procRoundRect.Call(uintptr(hdc), uintptr(barRect.Left), uintptr(barRect.Top), uintptr(barRect.Right), uintptr(barRect.Bottom), 16, 16)
-	procSelectObject.Call(uintptr(hdc), oldBrushB)
-	procSelectObject.Call(uintptr(hdc), oldPenB)
-	procDeleteObject.Call(bBrush)
-	procDeleteObject.Call(bPen)
-
-	// Voice Action Button
-	voiceRect := RECT{Left: 32, Top: h - 65, Right: 135, Bottom: h - 25}
-	var vColor uint32 = theme.RGBToCOLORREF(theme.ColorTextSecondary)
-	vLabel := "🎙️ Voice"
-	if app.state.IsVoiceActive() {
-		vColor = theme.RGBToCOLORREF(theme.ColorEmerald)
-		vLabel = "🔴 Listening..."
-	}
-	vBrush, _, _ := procCreateSolidBrush.Call(uintptr(theme.RGBToCOLORREF(theme.ColorBgCardHover)))
-	oldBrushV, _, _ := procSelectObject.Call(uintptr(hdc), vBrush)
-	procRoundRect.Call(uintptr(hdc), uintptr(voiceRect.Left), uintptr(voiceRect.Top), uintptr(voiceRect.Right), uintptr(voiceRect.Bottom), 10, 10)
-	procSelectObject.Call(uintptr(hdc), oldBrushV)
-	procDeleteObject.Call(vBrush)
-
-	procSelectObject.Call(uintptr(hdc), uintptr(app.fontBold))
-	procSetTextColor.Call(uintptr(hdc), uintptr(vColor))
-	app.drawText(hdc, voiceRect.Left+12, voiceRect.Top+10, vLabel)
-
-	// Interactive Input text or Placeholder
-	inputRect := RECT{Left: 150, Top: h - 65, Right: w - 160, Bottom: h - 25}
-	inBrush, _, _ := procCreateSolidBrush.Call(uintptr(theme.RGBToCOLORREF(theme.ColorBgElevated)))
-	oldBrushIn, _, _ := procSelectObject.Call(uintptr(hdc), inBrush)
-	procRoundRect.Call(uintptr(hdc), uintptr(inputRect.Left), uintptr(inputRect.Top), uintptr(inputRect.Right), uintptr(inputRect.Bottom), 10, 10)
-	procSelectObject.Call(uintptr(hdc), oldBrushIn)
-	procDeleteObject.Call(inBrush)
-
-	inputText := app.state.GetOmnibarInput()
-	procSelectObject.Call(uintptr(hdc), uintptr(app.fontRegular))
-	if inputText == "" {
-		procSetTextColor.Call(uintptr(hdc), uintptr(theme.RGBToCOLORREF(theme.ColorTextMuted)))
-		app.drawText(hdc, inputRect.Left+14, inputRect.Top+10, "Ask Ilaria, write code, or execute any system command (e.g. 'run dir', 'create server.go')...")
-	} else {
-		procSetTextColor.Call(uintptr(hdc), uintptr(theme.RGBToCOLORREF(theme.ColorTextPrimary)))
-		app.drawText(hdc, inputRect.Left+14, inputRect.Top+10, inputText+"_")
-	}
-
-	// Execute Action Button [⚡ Run]
-	runRect := RECT{Left: w - 145, Top: h - 65, Right: w - 32, Bottom: h - 25}
-	runBrush, _, _ := procCreateSolidBrush.Call(uintptr(theme.RGBToCOLORREF(theme.ColorIndigo)))
-	oldBrushRun, _, _ := procSelectObject.Call(uintptr(hdc), runBrush)
-	procRoundRect.Call(uintptr(hdc), uintptr(runRect.Left), uintptr(runRect.Top), uintptr(runRect.Right), uintptr(runRect.Bottom), 10, 10)
-	procSelectObject.Call(uintptr(hdc), oldBrushRun)
-	procDeleteObject.Call(runBrush)
-
-	procSelectObject.Call(uintptr(hdc), uintptr(app.fontBold))
-	procSetTextColor.Call(uintptr(hdc), uintptr(theme.RGBToCOLORREF(theme.ColorBgElevated)))
-	app.drawText(hdc, runRect.Left+18, runRect.Top+10, "⚡ Execute")
-}
-
-func (app *ShellApp) renderAppContent(hdc syscall.Handle, r RECT, active views.AppID) {
-	procSelectObject.Call(uintptr(hdc), uintptr(app.fontTitle))
-	procSetTextColor.Call(uintptr(hdc), uintptr(theme.RGBToCOLORREF(theme.ColorTextPrimary)))
-
-	x := r.Left + 30
-	y := r.Top + 30
-
-	switch active {
-	case views.AppFiles:
-		app.drawText(hdc, x, y, "📁 Files & Folders — Sovereign Filesystem Explorer")
-		procSelectObject.Call(uintptr(hdc), uintptr(app.fontRegular))
-		procSetTextColor.Call(uintptr(hdc), uintptr(theme.RGBToCOLORREF(theme.ColorTextSecondary)))
-		app.drawText(hdc, x, y+35, fmt.Sprintf("Directory: %s • Native File Manager", app.state.GetCurrentPath()))
-
-		// List real files in current directory
-		var items []coder.FileItem
-		var err error
-		if time.Since(app.cachedFilesAt) > 2*time.Second {
-			items, err = app.coderEngine.ListDirectory(app.state.GetCurrentPath())
-			if err == nil {
-				app.cachedFiles = items
-				app.cachedFilesAt = time.Now()
-			}
-		} else {
-			items = app.cachedFiles
-		}
-		if err == nil {
-			startY := y + 80
-			for idx, item := range items {
-				if idx > 12 {
-					break
-				}
-				icon := "📄"
-				if item.IsDir {
-					icon = "📁"
-				}
-
-				rowY := startY + int32(idx*26)
-				procSelectObject.Call(uintptr(hdc), uintptr(app.fontRegular))
-				if item.IsDir {
-					procSetTextColor.Call(uintptr(hdc), uintptr(theme.RGBToCOLORREF(theme.ColorIndigo)))
-				} else {
-					procSetTextColor.Call(uintptr(hdc), uintptr(theme.RGBToCOLORREF(theme.ColorTextPrimary)))
-				}
-				app.drawText(hdc, x+10, rowY, fmt.Sprintf("%s  %-30s  %10d B   %s", icon, item.Name, item.Size, item.ModTime))
-			}
-		}
-
-	case views.AppSearch:
-		app.drawText(hdc, x, y, "◈ Swypik Search — Sovereign Web Intelligence")
-		procSelectObject.Call(uintptr(hdc), uintptr(app.fontRegular))
-		procSetTextColor.Call(uintptr(hdc), uintptr(theme.RGBToCOLORREF(theme.ColorTextSecondary)))
-		app.drawText(hdc, x, y+35, "Your own persistent index. No external search provider; no fabricated results.")
-
-		query := app.native.query()
-		summary := fmt.Sprintf("%d indexed documents. Type search <query> in the command bar.", app.searchEngine.Count())
-		if query != "" {
-			summary = fmt.Sprintf("Query: %s | %d indexed documents. Results are shown below.", query, app.searchEngine.Count())
-		}
-		aBox := RECT{Left: x, Top: y + 75, Right: r.Right - 30, Bottom: y + 180}
-		aBrush, _, _ := procCreateSolidBrush.Call(uintptr(theme.RGBToCOLORREF(theme.ColorBgSurface)))
-		aPen, _, _ := procCreatePen.Call(PS_SOLID, 1, uintptr(theme.RGBToCOLORREF(theme.ColorBorderActive)))
-		oldBrushA, _, _ := procSelectObject.Call(uintptr(hdc), aBrush)
-		oldPenA, _, _ := procSelectObject.Call(uintptr(hdc), aPen)
-		procRoundRect.Call(uintptr(hdc), uintptr(aBox.Left), uintptr(aBox.Top), uintptr(aBox.Right), uintptr(aBox.Bottom), 14, 14)
-		procSelectObject.Call(uintptr(hdc), oldBrushA)
-		procSelectObject.Call(uintptr(hdc), oldPenA)
-		procDeleteObject.Call(aBrush)
-		procDeleteObject.Call(aPen)
-
-		procSelectObject.Call(uintptr(hdc), uintptr(app.fontBold))
-		procSetTextColor.Call(uintptr(hdc), uintptr(theme.RGBToCOLORREF(theme.ColorIndigo)))
-		app.drawText(hdc, x+20, y+92, "LOCAL SEARCH INDEX")
-
-		procSelectObject.Call(uintptr(hdc), uintptr(app.fontRegular))
-		procSetTextColor.Call(uintptr(hdc), uintptr(theme.RGBToCOLORREF(theme.ColorTextPrimary)))
-		app.drawText(hdc, x+20, y+125, summary)
-
-		// Live Execution Log Display Card
-		logBox := RECT{Left: x, Top: y + 195, Right: r.Right - 30, Bottom: r.Bottom - 25}
-		lBrush, _, _ := procCreateSolidBrush.Call(uintptr(theme.RGBToCOLORREF(theme.ColorBgCardHover)))
-		oldBrushL, _, _ := procSelectObject.Call(uintptr(hdc), lBrush)
-		procRoundRect.Call(uintptr(hdc), uintptr(logBox.Left), uintptr(logBox.Top), uintptr(logBox.Right), uintptr(logBox.Bottom), 12, 12)
-		procSelectObject.Call(uintptr(hdc), oldBrushL)
-		procDeleteObject.Call(lBrush)
-
-		procSelectObject.Call(uintptr(hdc), uintptr(app.fontBold))
-		procSetTextColor.Call(uintptr(hdc), uintptr(theme.RGBToCOLORREF(theme.ColorTextSecondary)))
-		app.drawText(hdc, x+16, y+208, "⚡ AGENTIC EXECUTION TERMINAL (Claude Code / Codex Mode):")
-
-		procSelectObject.Call(uintptr(hdc), uintptr(app.fontCode))
-		procSetTextColor.Call(uintptr(hdc), uintptr(theme.RGBToCOLORREF(theme.ColorTextPrimary)))
-		logLines := strings.Split(app.state.GetExecutionLog(), "\n")
-		for lIdx, lStr := range logLines {
-			if lIdx > 5 {
-				break
-			}
-			app.drawText(hdc, x+16, y+235+int32(lIdx*22), lStr)
-		}
-
-	case views.AppStudio:
-		app.drawText(hdc, x, y, "🎥 Swypik Studio & Media — Video Commerce & Creator ERP")
-		procSelectObject.Call(uintptr(hdc), uintptr(app.fontRegular))
-		procSetTextColor.Call(uintptr(hdc), uintptr(theme.RGBToCOLORREF(theme.ColorTextSecondary)))
-		app.drawText(hdc, x, y+35, "Direct hardware NVENC video streaming, creator reels, and real-time inventory ERP ledger.")
-
-		studioCards := []struct {
-			domain string
-			status string
-			detail string
-		}{
-			{"🎥 Hardware NVENC Video Engine", "ACTIVE • 4K @ 60 FPS", "NVIDIA Turing NVENC hardware encoding active on GTX 1660 Ti. Sub-5ms stream latency."},
-			{"🛍️ Video Commerce & Live Cart", "SYNCED • 14 Products Live", "Interactive product overlays during stream. Instant 1-click purchase via L402 Lightning & SWP coins."},
-			{"📦 Sovereign Inventory & ERP", "AUTOMATED • 99.8% Match", "Warehouse stock automatically reconciled via Ilaria Vision AI. Autonomous reorder triggers armed."},
-			{"💰 Creator Royalty Smart Contract", "REAL-TIME • 92.5% Payout", "Direct peer-to-peer revenue split. Zero middleman fees. Instant settlement to sovereign wallet."},
-			{"🎬 Generative B-Roll AI Synthesizer", "STANDBY • Ready", "Local diffusion policy & video chunk synthesis directly utilizing spare Tensor Cores."},
-		}
-
-		startYStudio := y + 80
-		for idx, card := range studioCards {
-			rowY := startYStudio + int32(idx*44)
-
-			procSelectObject.Call(uintptr(hdc), uintptr(app.fontBold))
-			procSetTextColor.Call(uintptr(hdc), uintptr(theme.RGBToCOLORREF(theme.ColorIndigo)))
-			app.drawText(hdc, x+10, rowY, fmt.Sprintf("◈ %s", card.domain))
-
-			procSelectObject.Call(uintptr(hdc), uintptr(app.fontSmall))
-			procSetTextColor.Call(uintptr(hdc), uintptr(theme.RGBToCOLORREF(theme.ColorEmerald)))
-			app.drawText(hdc, x+270, rowY+2, fmt.Sprintf("[%s]", card.status))
-
-			procSelectObject.Call(uintptr(hdc), uintptr(app.fontRegular))
-			procSetTextColor.Call(uintptr(hdc), uintptr(theme.RGBToCOLORREF(theme.ColorTextPrimary)))
-			app.drawText(hdc, x+25, rowY+20, card.detail)
-		}
-
-	case views.AppWallet:
-		status := app.swarmDaemon.GetStatus()
-		app.drawText(hdc, x, y, "💳 Swypik Sovereign Wallet & P2P Federated Compute")
-		procSelectObject.Call(uintptr(hdc), uintptr(app.fontRegular))
-		procSetTextColor.Call(uintptr(hdc), uintptr(theme.RGBToCOLORREF(theme.ColorTextSecondary)))
-		app.drawText(hdc, x, y+35, fmt.Sprintf("Balance: %.2f SWP | Swarm Compute Node: %.1f TFLOPS Active | Tasks Completed: %d", status.CoinsEarned, status.LocalTflops, status.TasksCompleted))
-
-		fedCheckpoint := app.fedAggregator.GetCurrentCheckpoint()
-		fedRound := app.fedAggregator.GetCurrentRound()
-
-		gpuStatusText := "CPU Fallback (0.25 TFLOPS)"
-		gpuDetailText := "Running background compute on host CPU threads."
-		if status.HasGPU {
-			gpuStatusText = fmt.Sprintf("ONLINE • %s (%d MB, CUDA %s)", status.GPUModel, status.VRAMMB, status.CUDAVersion)
-			gpuDetailText = fmt.Sprintf("Direct CUDA acceleration active • %.1f FP32 TFLOPS • Tensor Cores enabled for Ilaria.", status.LocalTflops)
-		}
-
-		walletCards := []struct {
-			domain string
-			status string
-			detail string
-		}{
-			{"🚀 Discrete NVIDIA GPU Accelerator", gpuStatusText, gpuDetailText},
-			{"⚡ DiLoCo & DisTrO Federated Mesh", fmt.Sprintf("ONLINE • Round #%d (%s)", fedRound, fedCheckpoint.Version), fmt.Sprintf("500 inner steps (0ms latency), 1000x DeMo momentum compression, Multi-Krum Byzantine filter. Loss: %.4f", fedCheckpoint.GlobalLoss)},
-			{"☁️ Azure Cosmos DB & Blob Mesh", "SYNCED • Partitioned Key /id", "Cloud Node directory, Proof-of-Compute ledger, and distributed weight checkpoint blob distribution active."},
-			{"💰 Sovereign SWP Mining Wallet", fmt.Sprintf("ACTIVE • %.2f SWP Earned", status.CoinsEarned), "Rate: 0.10 SWP / TFLOP computed. Nonce cryptographic verification with zero external API dependencies."},
-			{"🌐 ElasticDeviceMesh & P2P NAT", fmt.Sprintf("PEERS: %d ONLINE", status.MeshNodes), "Churn-resilient mesh: nodes contribute only when idle & on AC power. FullCone/Symmetric NAT hole-punching."},
-			{"🧠 Zero-Latency Local Ilaria", "100% SOVEREIGN • 0ms Latency", "Model weights reside locally in VRAM. Collaborative gradient aggregation updates intelligence across the globe."},
-		}
-
-		startY := y + 80
-		for idx, card := range walletCards {
-			rowY := startY + int32(idx*44)
-
-			procSelectObject.Call(uintptr(hdc), uintptr(app.fontBold))
-			procSetTextColor.Call(uintptr(hdc), uintptr(theme.RGBToCOLORREF(theme.ColorIndigo)))
-			app.drawText(hdc, x+10, rowY, fmt.Sprintf("◈ %s", card.domain))
-
-			procSelectObject.Call(uintptr(hdc), uintptr(app.fontSmall))
-			procSetTextColor.Call(uintptr(hdc), uintptr(theme.RGBToCOLORREF(theme.ColorEmerald)))
-			app.drawText(hdc, x+270, rowY+2, fmt.Sprintf("[%s]", card.status))
-
-			procSelectObject.Call(uintptr(hdc), uintptr(app.fontRegular))
-			procSetTextColor.Call(uintptr(hdc), uintptr(theme.RGBToCOLORREF(theme.ColorTextPrimary)))
-			app.drawText(hdc, x+25, rowY+20, card.detail)
-		}
-
-	case views.AppTasks:
-		app.drawText(hdc, x, y, "📋 Swypik Tasks & Notes — Headless Accounting Engine")
-		procSelectObject.Call(uintptr(hdc), uintptr(app.fontRegular))
-		procSetTextColor.Call(uintptr(hdc), uintptr(theme.RGBToCOLORREF(theme.ColorTextSecondary)))
-		app.drawText(hdc, x, y+35, "Autonomous financial ledger, formula engine, and executive action tracker. Zero manual data entry.")
-
-		tasksCards := []struct {
-			domain string
-			status string
-			detail string
-		}{
-			{"📊 Autonomous General Ledger", "BALANCED • €142,500.00 MTD", "Reactive sheets engine with automated double-entry verification. Mathematical audit: PASS."},
-			{"🧾 Invoice OCR & Auto-Reconcile", "RECONCILED • 100% Match", "Ilaria Vision extracts invoice amounts, VAT rates, and IBANs. Reconciled against bank statements."},
-			{"⚖️ EU VAT & Tax Compliance Agent", "COMPLIANT • e-Factura Ready", "Autonomous XML compilation and digital signature. Zero human spreadsheet intervention required."},
-			{"📝 Executive Action Intelligence", "3 PENDING • 8 RESOLVED", "Ilaria synthesizes daily priorities from communications and schedules autonomous follow-ups."},
-			{"⚡ Reactive Formula Graph", "PREGEL BSP • 0ms Lag", "Dynamic cell dependency DAG recalculated instantaneously in RAM with cycle detection."},
-		}
-
-		startYTasks := y + 80
-		for idx, card := range tasksCards {
-			rowY := startYTasks + int32(idx*44)
-
-			procSelectObject.Call(uintptr(hdc), uintptr(app.fontBold))
-			procSetTextColor.Call(uintptr(hdc), uintptr(theme.RGBToCOLORREF(theme.ColorIndigo)))
-			app.drawText(hdc, x+10, rowY, fmt.Sprintf("◈ %s", card.domain))
-
-			procSelectObject.Call(uintptr(hdc), uintptr(app.fontSmall))
-			procSetTextColor.Call(uintptr(hdc), uintptr(theme.RGBToCOLORREF(theme.ColorEmerald)))
-			app.drawText(hdc, x+270, rowY+2, fmt.Sprintf("[%s]", card.status))
-
-			procSelectObject.Call(uintptr(hdc), uintptr(app.fontRegular))
-			procSetTextColor.Call(uintptr(hdc), uintptr(theme.RGBToCOLORREF(theme.ColorTextPrimary)))
-			app.drawText(hdc, x+25, rowY+20, card.detail)
-		}
-
-	case views.AppConnect:
-		app.drawText(hdc, x, y, "💬 Swypik Connect — Sovereign Communications & Audio")
-		procSelectObject.Call(uintptr(hdc), uintptr(app.fontRegular))
-		procSetTextColor.Call(uintptr(hdc), uintptr(theme.RGBToCOLORREF(theme.ColorTextSecondary)))
-		app.drawText(hdc, x, y+35, "Direct P2P encrypted voice, ultra-low latency audio streaming, and VIP priority dispatch.")
-
-		connectCards := []struct {
-			domain string
-			status string
-			detail string
-		}{
-			{"🎙️ Direct Lockless Audio Streamer", "ONLINE • 1.85 ms Latency", "Direct DMA Ring Buffer (16 kHz / 48 kHz). Sub-2ms pipeline eliminates all Windows mixer lag."},
-			{"🔒 End-to-End Encrypted Voice Link", "E2EE ACTIVE • Ed25519", "WireGuard / Noise protocol peer-to-peer voice and messaging. Zero intermediate relay servers."},
-			{"🛡️ Ilaria VIP Gatekeeper & Anti-Spam", "GUARDED • 0 Spam Allowed", "Inbound calls verified by AI proof-of-work. Telemarketers and bots automatically screened."},
-			{"📱 Seamless Android & Mobile Bridge", "PAIRED • 0ms P2P Sync", "End-to-end synchronized notifications, SMS relay, and shared clipboard between PC and phone."},
-			{"🔊 Neural Speech & VAD Engine", "READY • 100% Local", "Real-time voice activity detection (VAD) and sovereign text-to-speech synthesis in memory."},
-		}
-
-		startYConnect := y + 80
-		for idx, card := range connectCards {
-			rowY := startYConnect + int32(idx*44)
-
-			procSelectObject.Call(uintptr(hdc), uintptr(app.fontBold))
-			procSetTextColor.Call(uintptr(hdc), uintptr(theme.RGBToCOLORREF(theme.ColorIndigo)))
-			app.drawText(hdc, x+10, rowY, fmt.Sprintf("◈ %s", card.domain))
-
-			procSelectObject.Call(uintptr(hdc), uintptr(app.fontSmall))
-			procSetTextColor.Call(uintptr(hdc), uintptr(theme.RGBToCOLORREF(theme.ColorEmerald)))
-			app.drawText(hdc, x+270, rowY+2, fmt.Sprintf("[%s]", card.status))
-
-			procSelectObject.Call(uintptr(hdc), uintptr(app.fontRegular))
-			procSetTextColor.Call(uintptr(hdc), uintptr(theme.RGBToCOLORREF(theme.ColorTextPrimary)))
-			app.drawText(hdc, x+25, rowY+20, card.detail)
-		}
-
-	case views.AppSettings:
-		spamCount := app.notifBroker.GetSpamCount()
-		digestText, _ := app.notifBroker.GetDigestSummary()
-		app.drawText(hdc, x, y, "🛡️ Swypik Shield, Security Guard & System Preferences")
-		procSelectObject.Call(uintptr(hdc), uintptr(app.fontRegular))
-		procSetTextColor.Call(uintptr(hdc), uintptr(theme.RGBToCOLORREF(theme.ColorTextSecondary)))
-		app.drawText(hdc, x, y+35, fmt.Sprintf("System Status: %d Trackers Neutralized | %s", spamCount, digestText))
-
-		settingsCards := []struct {
-			domain string
-			status string
-			detail string
-		}{
-			{"🛡️ Sovereign Privacy & Ad-Shield", fmt.Sprintf("ACTIVE • %d Blocked", spamCount), "Telemetry, tracking cookies, and surveillance beacons neutralized at the socket level."},
-			{"⚡ Extreme Resource Efficiency", "RUNNING • ~28 MB RAM", "Entire OS running in a single lightweight Go process (vs. 4,500 MB RAM wasted by Windows)."},
-			{"🔒 Memory-Safe Kernel Guardian", "SECURE • Zero Buffer Overflows", "Go runtime memory safety ensures zero dangling pointers, use-after-free, or kernel RCE exploits."},
-			{"🔋 Green Battery & Storage Governor", "OPTIMIZED • Zero SSD Thrash", "No Windows SearchIndexer or DiagTrack heating your drive; SSD lifespan extended by 3x."},
-			{"☁️ Sovereign Azure Cloud Sync", "CONNECTED • Cosmos DB Mesh", "Encrypted backup of wallet balances and federated training weights to private Azure instance."},
-		}
-
-		startYSettings := y + 80
-		for idx, card := range settingsCards {
-			rowY := startYSettings + int32(idx*44)
-
-			procSelectObject.Call(uintptr(hdc), uintptr(app.fontBold))
-			procSetTextColor.Call(uintptr(hdc), uintptr(theme.RGBToCOLORREF(theme.ColorIndigo)))
-			app.drawText(hdc, x+10, rowY, fmt.Sprintf("◈ %s", card.domain))
-
-			procSelectObject.Call(uintptr(hdc), uintptr(app.fontSmall))
-			procSetTextColor.Call(uintptr(hdc), uintptr(theme.RGBToCOLORREF(theme.ColorEmerald)))
-			app.drawText(hdc, x+270, rowY+2, fmt.Sprintf("[%s]", card.status))
-
-			procSelectObject.Call(uintptr(hdc), uintptr(app.fontRegular))
-			procSetTextColor.Call(uintptr(hdc), uintptr(theme.RGBToCOLORREF(theme.ColorTextPrimary)))
-			app.drawText(hdc, x+25, rowY+20, card.detail)
-		}
-
-	case views.AppStore:
-		app.drawText(hdc, x, y, "🛍️ Swypik AI App Store — 100% Sovereign Ecosystem")
-		procSelectObject.Call(uintptr(hdc), uintptr(app.fontRegular))
-		procSetTextColor.Call(uintptr(hdc), uintptr(theme.RGBToCOLORREF(theme.ColorTextSecondary)))
-		app.drawText(hdc, x, y+35, "100% AI-generated & native compiled apps. Zero slow web wrappers. Instant 1-click install.")
-
-		storeApps := []struct {
-			name string
-			cat  string
-			desc string
-			size string
-		}{
-			{"Swypik Sheets AI", "Productivity", "Intelligent reactive grid with voice-prompted formula synthesis", "3.2 MB"},
-			{"Swypik Docs AI", "Productivity", "Autonomous executive document writer & PDF compiler", "2.8 MB"},
-			{"Swypik Coder Studio", "Developer Tools", "Agentic coding environment (Claude Code style) with native shell", "5.4 MB"},
-			{"Swypik Swarm Compute", "Finance & Compute", "P2P mesh daemon earning SWP coins from idle GPU cycles", "2.1 MB"},
-			{"Swypik Sovereign Search", "Internet & Privacy", "Zero-tracking, ad-free private web synthesizer", "1.5 MB"},
-			{"Swypik P2P Connect", "Communication", "End-to-end encrypted voice, chat & instant PC-to-Mobile sync", "3.0 MB"},
-		}
-
-		startY := y + 80
-		for idx, sa := range storeApps {
-			rowY := startY + int32(idx*44)
-
-			procSelectObject.Call(uintptr(hdc), uintptr(app.fontBold))
-			procSetTextColor.Call(uintptr(hdc), uintptr(theme.RGBToCOLORREF(theme.ColorIndigo)))
-			app.drawText(hdc, x+10, rowY, fmt.Sprintf("✦ %s", sa.name))
-
-			procSelectObject.Call(uintptr(hdc), uintptr(app.fontSmall))
-			procSetTextColor.Call(uintptr(hdc), uintptr(theme.RGBToCOLORREF(theme.ColorCyan)))
-			app.drawText(hdc, x+240, rowY+2, fmt.Sprintf("[%s • %s • INSTALLED]", sa.cat, sa.size))
-
-			procSelectObject.Call(uintptr(hdc), uintptr(app.fontRegular))
-			procSetTextColor.Call(uintptr(hdc), uintptr(theme.RGBToCOLORREF(theme.ColorTextPrimary)))
-			app.drawText(hdc, x+25, rowY+20, sa.desc)
-		}
-
-	case views.AppCyber:
-		app.drawText(hdc, x, y, "🧠 Universal Hardware Brain & Cybernetics Cockpit")
-		procSelectObject.Call(uintptr(hdc), uintptr(app.fontRegular))
-		procSetTextColor.Call(uintptr(hdc), uintptr(theme.RGBToCOLORREF(theme.ColorTextSecondary)))
-		app.drawText(hdc, x, y+35, "Direct physical control of Cars, Robots, Appliances & Analog Equipment via CAN, UART, Modbus & BCI.")
-
-		neuroPower, neuroSpikes := app.neuroAdapter.GetTelemetry()
-		lastIntent := app.bciProc.GetLastIntent()
-		kVer, kLat, kMut, _ := app.evolveEngine.GetKernelStatus("vector_normalize")
-
-		cyberCards := []struct {
-			domain string
-			status string
-			detail string
-		}{
-			{"🚗 Vehicle CAN Bus (OBD-II)", "ONLINE • 500 kbps", "Connected to Powertrain ECU. Intention parser ready ('franeaza masina', 'aprinde farurile')."},
-			{"🤖 Robotics Kinematics Bus", "ONLINE • 1 Mbps", "UART Dynamixel 6-DoF arm controller. Real-time forward kinematics & torque protection."},
-			{"⚡ Industrial Modbus RS-485", "ONLINE • 9600 baud", "Analog relays, high-voltage contactors, and HVAC climate control units active."},
-			{"🧠 Non-Invasive BCI & EMG", fmt.Sprintf("ONLINE • Intent: %s (%.0f%%)", lastIntent.Intent, lastIntent.Confidence*100), "8-channel microvolt bio-signal DSP. Subvocal EMG and motor strip thought decoder."},
-			{"🔬 Neuromorphic SNN Adapter", fmt.Sprintf("ACTIVE • %.1f mW | %d Spikes", neuroPower, neuroSpikes), "Event-driven analog bridge. 0-10V / 4-20mA retrofitting for legacy 1980s machinery."},
-			{"🧬 Darwinian Evolution Engine", fmt.Sprintf("OPTIMIZED • %s (%dns)", kVer, kLat), fmt.Sprintf("Algorithmic kernel mutation & superscalar unrolling active (%d mutants evaluated).", kMut)},
-			{"🌐 3D Physical World Model", "READY • 100 Sim/5ms", "Monte Carlo counterfactual safety simulator. Friction circles & dynamic tip-over guard."},
-		}
-
-		startY := y + 80
-		for idx, card := range cyberCards {
-			rowY := startY + int32(idx*44)
-
-			procSelectObject.Call(uintptr(hdc), uintptr(app.fontBold))
-			procSetTextColor.Call(uintptr(hdc), uintptr(theme.RGBToCOLORREF(theme.ColorIndigo)))
-			app.drawText(hdc, x+10, rowY, fmt.Sprintf("◈ %s", card.domain))
-
-			procSelectObject.Call(uintptr(hdc), uintptr(app.fontSmall))
-			procSetTextColor.Call(uintptr(hdc), uintptr(theme.RGBToCOLORREF(theme.ColorEmerald)))
-			app.drawText(hdc, x+270, rowY+2, fmt.Sprintf("[%s]", card.status))
-
-			procSelectObject.Call(uintptr(hdc), uintptr(app.fontRegular))
-			procSetTextColor.Call(uintptr(hdc), uintptr(theme.RGBToCOLORREF(theme.ColorTextPrimary)))
-			app.drawText(hdc, x+25, rowY+20, card.detail)
-		}
-	}
-}
-
-func (app *ShellApp) drawText(hdc syscall.Handle, x, y int32, text string) {
-	if text == "" {
-		return
-	}
-	cleanText := strings.ReplaceAll(text, "\x00", " ")
-	uText, err := syscall.UTF16FromString(cleanText)
-	if err != nil || len(uText) <= 1 {
-		return
-	}
-	procTextOutW.Call(uintptr(hdc), uintptr(x), uintptr(y), uintptr(unsafe.Pointer(&uText[0])), uintptr(len(uText)-1))
-}
-
-type colorRefWrapper uint32

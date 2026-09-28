@@ -5,29 +5,31 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
 	"io"
 	"log"
-	"net/url"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync/atomic"
 	"syscall"
 	"time"
 	"unsafe"
 
 	"swypik-os/config"
+	"swypik-os/core/agent"
 	"swypik-os/core/coder"
+	"swypik-os/core/compute"
 	"swypik-os/core/ilaria"
-	"swypik-os/core/notifications"
 	"swypik-os/core/search"
-	"swypik-os/core/swarm"
+	"swypik-os/core/service"
+	"swypik-os/ui/desktop"
 	"swypik-os/ui/engine"
-	"swypik-os/ui/views"
 )
 
 var buildVersion = "dev"
@@ -38,7 +40,7 @@ type launchOptions struct {
 	check     bool
 	workspace string
 	dataDir   string
-	ilariaURL string
+	ilariaURL string // overrides settings.json when set
 }
 
 func parseLaunchOptions(args []string, output io.Writer) (launchOptions, error) {
@@ -46,10 +48,10 @@ func parseLaunchOptions(args []string, output io.Writer) (launchOptions, error) 
 	flags := flag.NewFlagSet("swypik-os", flag.ContinueOnError)
 	flags.SetOutput(output)
 	flags.BoolVar(&options.version, "version", false, "Print build version and exit")
-	flags.BoolVar(&options.check, "check", false, "Print native startup configuration without opening a window or making network requests")
-	flags.StringVar(&options.workspace, "workspace", os.Getenv("SWYPIK_WORKSPACE_DIR"), "Workspace directory (default: per-user SwypikOS workspace)")
+	flags.BoolVar(&options.check, "check", false, "Print startup configuration without opening a window, writing files or using the network")
+	flags.StringVar(&options.workspace, "workspace", os.Getenv("SWYPIK_WORKSPACE_DIR"), "Workspace the agent may read and change (default: settings.json, then <data-dir>/workspace)")
 	flags.StringVar(&options.dataDir, "data-dir", os.Getenv("SWYPIK_STATE_DIR"), "Data directory (default: LocalAppData/SwypikOS)")
-	flags.StringVar(&options.ilariaURL, "ilaria-url", "http://127.0.0.1:8091", "Ilaria inference endpoint; contacted only after an explicit AI request")
+	flags.StringVar(&options.ilariaURL, "ilaria-url", "", "Ilaria service origin; overrides settings.json for this launch")
 	if err := flags.Parse(args); err != nil {
 		return options, err
 	}
@@ -59,14 +61,13 @@ func parseLaunchOptions(args []string, output io.Writer) (launchOptions, error) 
 	if options.version && options.check {
 		return options, fmt.Errorf("-version and -check cannot be combined")
 	}
-	u, err := url.Parse(options.ilariaURL)
-	if err != nil || u.User != nil || u.Hostname() == "" || u.RawQuery != "" || u.Fragment != "" || (u.Path != "" && u.Path != "/") {
-		return options, fmt.Errorf("invalid Ilaria endpoint: expected an origin without credentials, query, or path")
+	if options.ilariaURL != "" {
+		u, err := config.ValidateIlariaURL(options.ilariaURL)
+		if err != nil {
+			return options, err
+		}
+		options.ilariaURL = u
 	}
-	if u.Scheme != "https" && !(u.Scheme == "http" && u.Hostname() == "127.0.0.1") {
-		return options, fmt.Errorf("Ilaria requires loopback HTTP or authenticated HTTPS")
-	}
-	options.ilariaURL = strings.TrimRight(options.ilariaURL, "/")
 	return options, nil
 }
 
@@ -79,16 +80,14 @@ func resolveDirectories(options launchOptions) (workspace, dataDir string, err e
 		}
 		dataDir = filepath.Join(cache, "SwypikOS")
 	}
-	dataDir, err = filepath.Abs(dataDir)
-	if err != nil {
+	if dataDir, err = filepath.Abs(dataDir); err != nil {
 		return "", "", err
 	}
 	workspace = options.workspace
 	if workspace == "" {
 		workspace = filepath.Join(dataDir, "workspace")
 	}
-	workspace, err = filepath.Abs(workspace)
-	if err != nil {
+	if workspace, err = filepath.Abs(workspace); err != nil {
 		return "", "", err
 	}
 	for _, path := range []string{workspace, dataDir} {
@@ -112,6 +111,10 @@ func openDesktopLog(dataDir string) (*os.File, error) {
 	return os.OpenFile(filepath.Join(dir, name), os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600)
 }
 
+// desktopLimits bound one agent run: enough steps for read-edit-test cycles,
+// with a per-tool timeout suited to builds and test suites.
+var desktopLimits = agent.Limits{MaxSteps: 16, Duration: 30 * time.Minute, ToolTimeout: time.Minute, MaxOutputBytes: 64 * 1024}
+
 func run(args []string, output io.Writer) error {
 	options, err := parseLaunchOptions(args, output)
 	if errors.Is(err, flag.ErrHelp) {
@@ -124,20 +127,47 @@ func run(args []string, output io.Writer) error {
 		_, err := fmt.Fprintf(output, "SwypikOS %s (native Windows/%s; %s)\n", buildVersion, runtime.GOARCH, runtime.Version())
 		return err
 	}
+	_, dataDir, err := resolveDirectories(options)
+	if err != nil {
+		return err
+	}
+	settingsPath := filepath.Join(dataDir, "settings.json")
+	settings, err := config.LoadSettings(settingsPath)
+	if err != nil {
+		return err
+	}
+	if options.workspace == "" && settings.Workspace != "" {
+		options.workspace = settings.Workspace
+	}
 	workspace, dataDir, err := resolveDirectories(options)
 	if err != nil {
 		return err
 	}
+	if options.ilariaURL != "" {
+		settings.IlariaURL = options.ilariaURL
+	}
+	tokenFile := settings.IlariaTokenFile
+	if tokenFile == "" {
+		tokenFile = filepath.Join(dataDir, "ilaria.token")
+	}
+	token, err := config.ResolveToken(tokenFile)
+	if err != nil {
+		return fmt.Errorf("read Ilaria token: %w", err)
+	}
 	if options.check {
 		return json.NewEncoder(output).Encode(struct {
-			Version   string `json:"version"`
-			Runtime   string `json:"runtime"`
-			Workspace string `json:"workspace"`
-			DataDir   string `json:"data_dir"`
-			Browser   bool   `json:"browser_required"`
-			Listener  bool   `json:"http_listener"`
-		}{buildVersion, "win32", workspace, dataDir, false, false})
+			Version         string `json:"version"`
+			Runtime         string `json:"runtime"`
+			Workspace       string `json:"workspace"`
+			DataDir         string `json:"data_dir"`
+			Settings        string `json:"settings"`
+			IlariaURL       string `json:"ilaria_url"`
+			TokenConfigured bool   `json:"token_configured"`
+			Browser         bool   `json:"browser_required"`
+			Listener        bool   `json:"http_listener"`
+		}{buildVersion, "win32", workspace, dataDir, settingsPath, settings.IlariaURL, token != "", false, false})
 	}
+
 	file, err := openDesktopLog(dataDir)
 	if err != nil {
 		return err
@@ -149,33 +179,61 @@ func run(args []string, output io.Writer) error {
 		logger.Printf("Workspace unavailable: %v", err)
 		return err
 	}
-	// Resolve configuration before starting any worker. Writable state must never
-	// depend on Explorer's current directory or be placed beside an installed EXE.
-	cfg := config.Load()
-	cfg.WorkspaceDir = workspace
-	// Legacy relative file operations must resolve inside the selected workspace,
-	// not the directory inherited from Explorer or the launcher.
-	if err := os.Chdir(workspace); err != nil {
-		logger.Printf("Cannot select workspace: %v", err)
-		return fmt.Errorf("select workspace: %w", err)
-	}
-	if err := os.Setenv("SWYPIK_STATE_DIR", dataDir); err != nil {
-		return err
-	}
-	index, err := search.Open(filepath.Join(dataDir, "search-index.json"))
+
+	index, err := search.Open(filepath.Join(dataDir, "search-index.jsonl"))
 	if err != nil {
 		logger.Printf("Search index unavailable: %v", err)
 		return fmt.Errorf("open search index: %w", err)
 	}
-	i := ilaria.NewEngine()
-	i.SetBackend(ilaria.NewCloudBackend(options.ilariaURL, os.Getenv("ILARIA_API_TOKEN")))
-	// Inventory only: launching the desktop is not consent to run compute jobs.
-	s := swarm.NewDaemon(swarm.SwarmConfig{Enabled: false, TrainingEnabled: false})
-	defer s.Stop()
-	state := views.NewDesktopState()
-	state.SetExecutionLog("Native Windows desktop ready. Swarm compute is OFF. No browser or HTTP server is running.\nUse search <query> for the local index. AI requires a configured Ilaria service. Legacy app panels remain prototypes.")
-	app := engine.NewShellApp(state, i, s, index, notifications.NewBroker(), coder.NewEngine())
+	defer index.Close()
+	for _, w := range index.Warnings() {
+		logger.Print(w)
+	}
+	if n, err := index.ImportLegacy(filepath.Join(dataDir, "search-index.json")); err != nil {
+		logger.Printf("Legacy index not migrated: %v", err)
+	} else if n > 0 {
+		logger.Printf("Migrated %d documents from the legacy index", n)
+	}
+
+	chat := ilaria.NewEngine()
+	// The endpoint can change from Settings while a health check runs.
+	var backend atomic.Pointer[ilaria.LocalBackend]
+	backend.Store(ilaria.NewCloudBackend(settings.IlariaURL, token))
+	chat.SetBackend(backend.Load())
+
+	store, err := agent.OpenFileStore(filepath.Join(dataDir, "agent"))
+	if err != nil {
+		return fmt.Errorf("SwypikOS is already running or its state is unavailable: %w", err)
+	}
+	defer store.Close()
+	tools := append(agent.WorkspaceTools(workspace, coder.Run), service.SearchTool(index))
+	manager, err := agent.NewPersistent(agent.JSONPlanner{Complete: chat.Complete}, tools, desktopLimits, store)
+	if err != nil {
+		return fmt.Errorf("agent state: %w", err)
+	}
+	defer manager.Close()
+
+	var app *engine.ShellApp
+	ctl := desktop.New(desktop.Deps{
+		Chat: chat, Agent: manager, Search: index, Workspace: workspace,
+		SettingsPath: settingsPath, Settings: settings, TokenConfigured: token != "",
+		Health: func(ctx context.Context) error { return backend.Load().Health(ctx) },
+		ApplyIlaria: func(u string) error {
+			backend.Store(ilaria.NewCloudBackend(u, token))
+			chat.SetBackend(backend.Load())
+			logger.Printf("Ilaria endpoint changed to %s", u)
+			return nil
+		},
+		Compute: compute.Inspect,
+		Notify: func() {
+			if app != nil {
+				app.Notify()
+			}
+		},
+	})
+	app = engine.NewShellApp(ctl)
 	app.SetLifecycleReporter(func(stage string) { logger.Print(stage) })
+	logger.Printf("Workspace=%s Ilaria=%s token=%v indexed=%d", workspace, settings.IlariaURL, token != "", index.Count())
 	if err := app.Run(); err != nil {
 		logger.Printf("Native desktop failed: %v", err)
 		return err

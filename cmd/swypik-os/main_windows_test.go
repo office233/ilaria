@@ -22,8 +22,8 @@ func TestNativeLaunchDefaults(t *testing.T) {
 	if err != nil || opts.version || opts.check || opts.workspace != "" || opts.dataDir != "" {
 		t.Fatalf("unexpected native launch defaults: %+v, %v", opts, err)
 	}
-	if opts.ilariaURL != "http://127.0.0.1:8091" {
-		t.Fatalf("unexpected endpoint: %s", opts.ilariaURL)
+	if opts.ilariaURL != "" {
+		t.Fatalf("the endpoint must come from settings.json unless overridden: %s", opts.ilariaURL)
 	}
 }
 

@@ -80,8 +80,9 @@ try {
     if ($report.window_class -ne 'SwypikOS_Native_Class' -or -not $report.visible) { throw 'Expected visible SwypikOS Win32 window was not created.' }
     $reply = [UIntPtr]::Zero
     if ([Swypik.NativeSmoke]::SendMessageTimeout($hwnd, 0, [UIntPtr]::Zero, [IntPtr]::Zero, 2, 2000, [ref]$reply) -eq [IntPtr]::Zero) { throw 'Window is not responding to messages.' }
-    # Post a harmless local-index query using real UTF-16 input messages.
-    $text = 'search swypik ' + [char]0x0219 + [char]0x021B + [char]::ConvertFromUtf32(0x1F680)
+    # Post a harmless local command (help) with non-ASCII text using real UTF-16
+    # input messages; the window forwards them to its input field.
+    $text = '/help swypik ' + [char]0x0219 + [char]0x021B + [char]::ConvertFromUtf32(0x1F680)
     foreach ($character in $text.ToCharArray()) {
         if (-not [Swypik.NativeSmoke]::PostMessage($hwnd, 0x0102, [UIntPtr][uint32]$character, [IntPtr]::Zero)) { throw 'Could not post native text input.' }
     }
@@ -89,7 +90,7 @@ try {
     Start-Sleep -Milliseconds 1400
     $process.Refresh()
     if ($process.HasExited) { throw 'Desktop exited after native keyboard input.' }
-    if ([Swypik.NativeSmoke]::SendMessageTimeout($hwnd, 0, [UIntPtr]::Zero, [IntPtr]::Zero, 2, 2000, [ref]$reply) -eq [IntPtr]::Zero) { throw 'Window stopped responding after the search command.' }
+    if ([Swypik.NativeSmoke]::SendMessageTimeout($hwnd, 0, [UIntPtr]::Zero, [IntPtr]::Zero, 2, 2000, [ref]$reply) -eq [IntPtr]::Zero) { throw 'Window stopped responding after the help command.' }
     $report.responds_to_messages = $true
     $seenBrowsers += @(Get-CimInstance Win32_Process -Filter "ParentProcessId=$($process.Id)" | Where-Object { $_.Name -in $browserNames } | Select-Object -ExpandProperty Name)
     $report.browser_children = @($seenBrowsers | Sort-Object -Unique)

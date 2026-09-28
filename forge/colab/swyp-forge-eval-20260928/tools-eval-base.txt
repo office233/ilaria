@@ -1,0 +1,21 @@
+prompt                                    tool called  expected   tool-ok  answer-ok  calls  tokens  seconds
+What is 48213 * 9071?                     calc         calc       y        y          1      23      10.4
+What is the square root of 2, to 6 deci…  calc         calc       y        y          1      34      3.1
+Convert 72 miles to kilometres.           convert      convert    y        y          1      20      1.8
+What day of the week is it today?         -            time       n        n          0      17      1.5
+Run this Go program and tell me exactly…  -            go_run     n        y          0      13      1.4
+What is in the file notes.txt?            -            read_file  n        n          0      24      1.1
+What is 2 to the power of 16?             calc         calc       y        y          1      21      1.5
+How many kilograms is 150 pounds?         convert      convert    y        n          1      35      2.3
+What is the capital of France?            -            -          y        y          0      8       0.7
+Write a haiku about rain.                 -            -          y        y          0      18      0.9
+Explain in one sentence why the sky is …  -            -          y        y          0      25      1.2
+What is the largest planet in the solar…  -            -          y        y          0      11      0.8
+Give me one synonym for the word 'happy…  -            -          y        y          0      13      0.8
+Translate 'good morning' into French.     -            -          y        y          0      9       0.7
+
+tool-selection accuracy (prompts needing a tool): 5/8
+successful expected-tool execution:              3/8
+inference errors (included as failures):          0/14
+false-call rate (prompts needing no tool):        0/6
+answer accuracy (substring check):                7/10

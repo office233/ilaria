@@ -93,6 +93,41 @@ got `absolute(x=-50) returned -50`, then "fixed" it to `x` in both branches.
 
 20 tasks is a small sample; these are counts, not rates to generalize.
 
+## Swyp Forge v1 adapter, 2026-09-28
+
+LoRA r16/a32 trained from the base model for 105 steps (3 epochs) on Colab G4
+with `forge/colab/Ilaria_SwypForge_V1.ipynb` over `forge/colab/swyp-forge-examples-v1`
+(279 rows: 200 counterexample repairs, 64 compile-error repairs, 40 direct, 12
+verified model replies; held-out tasks never used). Validation loss on 5
+unseen train-split tasks: 0.0700 -> 0.0250. Adapter
+`adapter-step105.safetensors` sha256 `4ceeaf8e...de731`, `.json` `c57fa189...59ec7`.
+
+Held-out, same command plus `-adapter`:
+
+| Tier | Tasks | pass@1 base | pass@1 adapter | repair@4 base | repair@4 adapter |
+|---|---:|---:|---:|---:|---:|
+| arithmetic | 4 | 4 | 4 | 4 | 4 |
+| branches | 5 | 0 | 3 | 0 | 3 |
+| loops | 5 | 1 | 1 | 1 | 1 |
+| multi_input | 3 | 0 | 1 | 0 | 1 |
+| recursion | 3 | 1 | 1 | 1 | 1 |
+| **total** | **20** | **6** | **10** | **6** | **10** |
+
+Replies: exhaustive 6 -> 10, compile errors 44 -> 32, counterexamples 12 -> 8.
+Newly verified: clamp_0_50, distance_to_ten, flip_if_odd, digit_sum, safe_div.
+Regressed: sum_squares (verified by the base model, not by the adapter).
+Still unverified: absolute, grade, power_of_two, integer_sqrt, alternating_sum,
+digital_root, binary_length, max3, abs_diff.
+
+`cmd/ilaria-chat -eval cmd/ilaria-chat/testdata/tools_eval.jsonl` is identical
+with and without the adapter: tool selection 5/8, executed 3/8, false calls
+0/6, answers 7/10.
+
+By the acceptance rule (held-out repair@4 up, tools_eval not down) the adapter
+passes. Honest reading: every gain is a better **first** reply. The model still
+repaired **zero** tasks after a rejection; repair from a counterexample remains
+the open problem. 20 tasks; +4 is a small-sample result.
+
 ## Limits
 
 - Six tasks is a demo, not a benchmark. The contracts are small finite

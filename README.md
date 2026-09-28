@@ -34,8 +34,27 @@ Output files must not already exist; Swyp never overwrites.
 | Contracts: `verify` → `exhaustive` / `tested` / `counterexample` / `unknown` / `timeout` | Tested on finite domains; no SMT proofs | [SEMANTIC_CORE](docs/SEMANTIC_CORE.md) |
 | Synthesis: enumerative search with counterexample refinement (`synth`, `synth -contract`) | Tested; grammar is `x`, constants, `+ - *` | [CONTRACT_SYNTHESIS](docs/CONTRACT_SYNTHESIS.md) |
 | STV2 VM + SWYPB modules: compile once, run without source or toolchain | Tested, fuzzed; safe-integer subset only | [STV2_ISA](docs/STV2_ISA.md), [SWYPB_FORMAT](docs/SWYPB_FORMAT.md) |
-| Nexus/Ilaria worker (`swyp worker`, `bridge/nexus`) | Adapter tested, **not registered** in Nexus | [bridge/nexus](bridge/nexus/README.md) |
+| `swyp judge`: stdin `{source, contract}` → verdict + one-line summary for a model | Tested | below |
+| Ilaria (Nexus) `swyp` tool calling `swyp judge` | On Nexus branch `agent/swyp-judge-tool`, tested against a real Swyp build; not yet run with the live model | below |
+| Legacy Nexus worker (`swyp worker`, `bridge/nexus`) | Adapter tested, not registered | [bridge/nexus](bridge/nexus/README.md) |
 | Natural-language `draft` / `expand` / `repair` via Ilaria | Fixture-tested only; never run against a live model | [SWYP_LANG](docs/SWYP_LANG.md) |
+
+## Closed loop with Ilaria
+
+`swyp judge` is the verifier a model talks to. It reads one JSON request and
+answers with the verification report plus a `summary` line:
+
+```text
+PASS exhaustive: square satisfies the contract on all 201 inputs of its domain
+FAIL counterexample: square(x=-100) returned -200, violating ensures[0]
+ERROR candidate.swyp:1:39: expected identifier, got ";"
+```
+
+Nexus exposes it to the model as the `swyp` tool
+(`go run ./cmd/ilaria-chat -swyp "D:\swyp lang\bin\swyp.exe" ...`). The model
+writes `CALL swyp: {"source":"fn square(x: i64) -> i64 { return x * x; }","contract":{...}}`,
+reads the verdict and repairs on FAIL. The candidate never runs natively; it runs
+only in the fuel-bounded core interpreter.
 
 Direction and milestones: [ROADMAP](docs/ROADMAP.md). How the pieces fit:
 [ARCHITECTURE](docs/ARCHITECTURE.md). Local build and validation:

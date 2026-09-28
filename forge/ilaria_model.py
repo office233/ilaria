@@ -45,10 +45,13 @@ class IlariaConfig:
     dropout_rate: float = 0.0
     use_rope: bool = False
     use_swiglu: bool = False
+    ternary: bool = False
 
     def to_go_json(self) -> dict:
         """Keys == Go TransformerConfig json tags (omitempty ones included
-        explicitly; Go ignores zero values identically)."""
+        explicitly; Go ignores zero values identically). "ternary" appears
+        only when set, so full-precision exports stay byte-identical."""
+        extra = {"ternary": True} if self.ternary else {}
         return {
             "vocab_size": self.vocab_size,
             "embed_dim": self.embed_dim,
@@ -60,7 +63,7 @@ class IlariaConfig:
             "dropout_rate": self.dropout_rate,
             "use_rope": self.use_rope,
             "use_swiglu": self.use_swiglu,
-        }
+        } | extra
 
 
 def _mat(rows: int, cols: int, std: float) -> nn.Parameter:
@@ -69,6 +72,31 @@ def _mat(rows: int, cols: int, std: float) -> nn.Parameter:
 
 def _vec(n: int, fill: float = 0.0) -> nn.Parameter:
     return nn.Parameter(torch.full((n,), fill))
+
+
+def ternarize(w: torch.Tensor) -> torch.Tensor:
+    """BitNet b1.58 weights: round(W / mean|W|) clipped to {-1, 0, 1}, times mean|W|."""
+    scale = w.abs().mean().clamp(min=1e-5)
+    return (w / scale).round().clamp(-1, 1) * scale
+
+
+def weight_quant(w: torch.Tensor) -> torch.Tensor:
+    """ternarize(W) in the forward pass; the straight-through estimator passes
+    the gradient to the latent full-precision W unchanged."""
+    return w + (ternarize(w) - w).detach()
+
+
+def act_quant(x: torch.Tensor) -> torch.Tensor:
+    """BitNet b1.58 activations: symmetric 8-bit absmax per token, with a
+    straight-through gradient."""
+    scale = 127.0 / x.abs().amax(dim=-1, keepdim=True).clamp(min=1e-5)
+    q = (x * scale).round().clamp(-128, 127) / scale
+    return x + (q - x).detach()
+
+
+def linear(x: torch.Tensor, w: torch.Tensor, ternary: bool) -> torch.Tensor:
+    """x @ W, or its BitLinear form (8-bit activations, ternary weights)."""
+    return act_quant(x) @ weight_quant(w) if ternary else x @ w
 
 
 def apply_rope(x: torch.Tensor, pos_offset: int, head_dim: int, base: float = 10000.0) -> torch.Tensor:
@@ -100,13 +128,14 @@ class Attention(nn.Module):
         self.head_dim = d // cfg.num_heads
         self.use_rope = cfg.use_rope
         self.dropout = cfg.dropout_rate
+        self.ternary = cfg.ternary
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         B, T, d = x.shape
-        H, hd = self.num_heads, self.head_dim
-        q = (x @ self.WQ + self.BQ).view(B, T, H, hd)
-        k = (x @ self.WK + self.BK).view(B, T, H, hd)
-        v = (x @ self.WV + self.BV).view(B, T, H, hd)
+        H, hd, t = self.num_heads, self.head_dim, self.ternary
+        q = (linear(x, self.WQ, t) + self.BQ).view(B, T, H, hd)
+        k = (linear(x, self.WK, t) + self.BK).view(B, T, H, hd)
+        v = (linear(x, self.WV, t) + self.BV).view(B, T, H, hd)
         if self.use_rope:
             q = apply_rope(q, 0, hd)
             k = apply_rope(k, 0, hd)
@@ -118,7 +147,7 @@ class Attention(nn.Module):
             scale=1.0 / math.sqrt(hd),
         )
         out = out.transpose(1, 2).reshape(B, T, d)
-        return out @ self.WO + self.BO
+        return linear(out, self.WO, t) + self.BO
 
 
 class FeedForward(nn.Module):
@@ -134,15 +163,17 @@ class FeedForward(nn.Module):
             self.W3 = _mat(d, f, 1.0 / math.sqrt(d))
             self.B3 = _vec(f)
         self.dropout = cfg.dropout_rate
+        self.ternary = cfg.ternary
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        h = x @ self.W1 + self.B1
+        t = self.ternary
+        h = linear(x, self.W1, t) + self.B1
         if self.use_swiglu:
-            act = F.silu(h) * (x @ self.W3 + self.B3)
+            act = F.silu(h) * (linear(x, self.W3, t) + self.B3)
         else:
             act = F.gelu(h, approximate="tanh")
         act = F.dropout(act, self.dropout, self.training)
-        return act @ self.W2 + self.B2
+        return linear(act, self.W2, t) + self.B2
 
 
 class Block(nn.Module):
@@ -190,6 +221,14 @@ class IlariaTransformer(nn.Module):
                 x = blk(x)
         x = F.layer_norm(x, x.shape[-1:], self.LNFGamma, self.LNFBeta, 1e-5)
         return x @ self.TokenEmb.t()
+
+    @torch.no_grad()
+    def export_tensor(self, t: torch.Tensor) -> torch.Tensor:
+        """The value a runtime should load for parameter t: block matrices of a
+        ternary model are exported already quantized; everything else as is."""
+        if self.cfg.ternary and t.ndim == 2 and t is not self.TokenEmb and t is not self.PosEmb:
+            return ternarize(t.detach())
+        return t.detach()
 
     def param_count(self) -> int:
         return sum(p.numel() for p in self.parameters())

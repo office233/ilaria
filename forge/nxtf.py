@@ -54,7 +54,7 @@ def save_nxtf(model: IlariaTransformer, path: str) -> None:
         f.write(struct.pack("<I", len(header)))
         f.write(header)
         for t in _ordered_tensors(model):
-            arr = t.detach().to("cpu", torch.float32).contiguous().numpy()
+            arr = model.export_tensor(t).to("cpu", torch.float32).contiguous().numpy()
             f.write(struct.pack("<I", arr.ndim))
             for d in arr.shape:
                 f.write(struct.pack("<I", d))
@@ -115,7 +115,10 @@ def load_nxtf(path: str, device: str = "cpu", *, max_parameters: int = 256_000_0
         # Bound the layer count before generating the shape list.
         if c["num_layers"] > 4096:
             raise ValueError("NXTF layer count exceeds limit")
-        for key in ("use_rope", "use_swiglu"):
+        # "ternary" files carry block matrices already quantized to {-s, 0, s};
+        # they load as a plain model (no 8-bit activation rounding), since
+        # re-quantizing absmean weights is not idempotent.
+        for key in ("use_rope", "use_swiglu", "ternary"):
             if key in c and type(c[key]) is not bool:
                 raise ValueError(f"invalid NXTF boolean field: {key}")
         eos, dropout = c.get("eos_token_id", 3), c.get("dropout_rate", 0.0)

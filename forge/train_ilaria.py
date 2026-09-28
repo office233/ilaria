@@ -154,6 +154,8 @@ def main():
     ap.add_argument("--max-seq-len", type=int, default=1024)
     ap.add_argument("--rope", action="store_true")
     ap.add_argument("--swiglu", action="store_true")
+    ap.add_argument("--ternary", action="store_true",
+                    help="BitNet b1.58 training: ternary block weights and 8-bit activations (straight-through)")
     ap.add_argument("--dropout", type=float, default=0.1)
     ap.add_argument("--batch", type=int, default=16, help="sequences per micro-batch")
     ap.add_argument("--accum", type=int, default=1, help="gradient accumulation steps")
@@ -220,13 +222,15 @@ def main():
     cfg = IlariaConfig(vocab_size=meta["vocab_size"], embed_dim=args.embed_dim,
                        num_heads=args.heads, num_layers=args.layers, ffn_dim=args.ffn_dim,
                        max_seq_len=args.max_seq_len, eos_token_id=meta["eos_id"],
-                       dropout_rate=args.dropout, use_rope=args.rope, use_swiglu=args.swiglu)
+                       dropout_rate=args.dropout, use_rope=args.rope, use_swiglu=args.swiglu,
+                       ternary=args.ternary)
     model = IlariaTransformer(cfg)
     if args.grad_checkpoint:
         model.enable_gradient_checkpointing(True)
     model = model.to(device)
 
     print(f"[forge] model: {model.param_count()/1e6:.1f}M params | rope={cfg.use_rope} swiglu={cfg.use_swiglu} "
+          f"ternary={cfg.ternary} "
           f"ctx={args.ctx} batch={args.batch}x{args.accum} (effective batch {args.batch * args.accum}) "
           f"grad_checkpoint={args.grad_checkpoint} compile={args.compile}")
 

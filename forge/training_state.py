@@ -49,8 +49,11 @@ def training_signature(args, device: str, precision, data_sha256: str,
     # The total LR horizon is immutable. --stop-after does NOT shorten it.
     fields = ("steps", "warmup", "lr", "min_lr", "wd", "ctx", "batch", "accum",
               "seed", "compile", "grad_checkpoint", "eval_every", "eval_iters")
+    arguments = {k: getattr(args, k) for k in fields}
+    if getattr(args, "ternary", False):
+        arguments["ternary"] = True  # absent for full precision: old checkpoints still resume
     return {
-        "arguments": {k: getattr(args, k) for k in fields},
+        "arguments": arguments,
         "device": device,
         "precision": str(precision),
         "torch_version": str(torch.__version__),
@@ -108,6 +111,11 @@ def restore_checkpoint(ck: dict, model, optimizer, scaler, rng, signature: dict)
 
 def initialize_weights(ck: dict, model) -> None:
     """Explicit warm start for legacy checkpoints; never presented as resume."""
-    if not isinstance(ck, dict) or ck.get("cfg") != model.cfg.to_go_json() or "model" not in ck:
+    def normalized(cfg):
+        # A missing "ternary" (every checkpoint before it existed) means full precision.
+        return {"ternary": False} | cfg if isinstance(cfg, dict) else cfg
+
+    if (not isinstance(ck, dict) or normalized(ck.get("cfg")) != normalized(model.cfg.to_go_json())
+            or "model" not in ck):
         raise ValueError("weight initialization requires a matching checkpoint configuration")
     model.load_state_dict(ck["model"], strict=True)

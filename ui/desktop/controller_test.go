@@ -94,6 +94,7 @@ func hasBlock(v View, kind Kind, substr string) bool {
 func TestChatShowsReplyAndErrors(t *testing.T) {
 	f := newFixture(t)
 	f.backend.replies = []string{"Salut! Sunt Ilaria."}
+	f.c.SetTab(TabChat)
 	f.c.Submit("Salut")
 	v := waitFor(t, "reply", func(v View) bool { return !v.Busy && hasBlock(v, KindAssistant, "Sunt Ilaria") }, f.c)
 	if !hasBlock(v, KindUser, "Salut") {
@@ -242,5 +243,12 @@ func TestHomeNavigatesAndStartsChat(t *testing.T) {
 	f.c.SetTab(TabHome)
 	f.backend.replies = []string{"Bună!"}
 	f.c.Submit("Bună, Ilaria")
-	waitFor(t, "chat from home", func(v View) bool { return v.Tab == TabChat && hasBlock(v, KindAssistant, "Bună!") }, f.c)
+	v = waitFor(t, "chat from home", func(v View) bool { return !v.ChatBusy && len(v.Chat) == 2 }, f.c)
+	if v.Tab != TabHome || !v.ChatOpen || v.Chat[1].Body != "Bună!" {
+		t.Fatalf("home chat must open the Ilaria panel: %+v", v)
+	}
+	f.c.CloseChat()
+	if f.c.View().ChatOpen {
+		t.Fatal("panel did not close")
+	}
 }

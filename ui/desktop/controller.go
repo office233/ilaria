@@ -41,7 +41,7 @@ const (
 var TabNames = [TabCount]string{"Acasă", "Chat", "Agent", "Căutare", "Fișiere", "Calcul", "Setări"}
 
 // TabIcons name the icon of each tab; the window maps names to glyphs.
-var TabIcons = [TabCount]string{"home", "chat", "agent", "search", "folder", "chip", "settings"}
+var TabIcons = [TabCount]string{"grid", "chat", "terminal", "globe", "folder", "spark", "settings"}
 
 // Tile is a launcher card on the home screen. Tone names a colour family.
 type Tile struct {
@@ -50,7 +50,11 @@ type Tile struct {
 	Icon     string
 	Tone     string
 	Action   string
+	Category string
 }
+
+// TileCategories filter the home grid; "Toate" shows every tile.
+var TileCategories = []string{"Toate", "Ilaria", "Workspace", "Sistem"}
 
 type Kind int
 
@@ -93,9 +97,14 @@ type View struct {
 	Title    string
 	Subtitle string
 	// Empty is shown centred when there are no blocks.
-	Empty       string
-	Tiles       []Tile
-	Connection  string
+	Empty      string
+	Tiles      []Tile
+	Connection string
+	// Chat is the Ilaria conversation shown in the panel above the command
+	// bar; ChatOpen asks the window to show that panel.
+	Chat        []Block
+	ChatOpen    bool
+	ChatBusy    bool
 	Blocks      []Block
 	Prompt      *Prompt
 	Busy        bool
@@ -143,6 +152,8 @@ type Controller struct {
 	busyLabel string
 	cancel    context.CancelFunc
 	pending   *pending
+	chatOpen  bool
+	chatBusy  bool
 	history   []string
 	histPos   int
 }
@@ -336,8 +347,60 @@ func (c *Controller) homeLocked(cmd, arg, text string) {
 		c.settingsLocked(cmd, arg)
 		return
 	}
-	c.tab = TabChat
 	c.chatLocked(cmd, text)
+}
+
+// SubmitChat sends text to Ilaria regardless of the current tab (the chat
+// panel above the command bar). /new starts a new conversation.
+func (c *Controller) SubmitChat(text string) {
+	text = strings.TrimSpace(text)
+	if text == "" {
+		return
+	}
+	c.mu.Lock()
+	c.history = append(c.history, text)
+	c.histPos = len(c.history)
+	cmd := ""
+	if strings.HasPrefix(text, "/") {
+		cmd = strings.ToLower(strings.Fields(text)[0])
+	}
+	c.chatLocked(cmd, text)
+	c.chatOpen = true
+	c.mu.Unlock()
+	c.notify()
+}
+
+// Refresh reloads what the current tab shows.
+func (c *Controller) Refresh() {
+	switch c.Tab() {
+	case TabFiles:
+		c.mu.Lock()
+		c.filesList = c.listFilesLocked()
+		c.mu.Unlock()
+		c.notify()
+	case TabCompute:
+		c.Submit("/refresh")
+	default:
+		c.notify()
+	}
+}
+
+// OpenChat and CloseChat show or hide the Ilaria panel.
+func (c *Controller) OpenChat() {
+	c.mu.Lock()
+	c.chatOpen = true
+	c.mu.Unlock()
+	c.notify()
+}
+
+func (c *Controller) CloseChat() {
+	c.mu.Lock()
+	c.chatOpen = false
+	if c.tab == TabChat {
+		c.tab = TabHome
+	}
+	c.mu.Unlock()
+	c.notify()
 }
 
 func foldASCII(s string) string {
@@ -355,6 +418,7 @@ func (c *Controller) chatLocked(cmd, text string) {
 		return
 	}
 	c.addLocked(TabChat, Block{Kind: KindUser, Body: text})
+	c.chatOpen = true
 	c.startLocked(TabChat, "Ilaria răspunde", 3*time.Minute, func(ctx context.Context) {
 		reply, err := c.d.Chat.ProcessPromptContext(ctx, text)
 		if err != nil {
@@ -647,7 +711,7 @@ func (c *Controller) computeBlocksLocked() []Block {
 	case s.Contribute:
 		reason = "Protocolul coordonatorului nu este încă implementat în această versiune; nu se acceptă sarcini."
 	}
-	return append(blocks, Block{Kind: KindTool, Title: "Contribuție: " + state, Body: "Coordonator: " + coord + "\n" + reason, Icon: "plug"})
+	return append(blocks, Block{Kind: KindTool, Title: "Contribuție: " + state, Body: "Coordonator: " + coord + "\n" + reason, Icon: "link"})
 }
 
 func (c *Controller) settingsLocked(cmd, arg string) {
@@ -726,6 +790,8 @@ func (c *Controller) Activate(action string) string {
 		return ""
 	case strings.HasPrefix(action, "open:"), strings.HasPrefix(action, "fill:"):
 		return action
+	case action == "chat:open":
+		c.OpenChat()
 	case strings.HasPrefix(action, "tab:"):
 		if n, err := strconv.Atoi(strings.TrimPrefix(action, "tab:")); err == nil {
 			c.SetTab(Tab(n))
@@ -750,16 +816,16 @@ func (c *Controller) homeTilesLocked() []Tile {
 		gpu = c.compute.GPUs[0].Name
 	}
 	return []Tile{
-		{Title: "Ilaria", Subtitle: "Conversație", Icon: "chat", Tone: "violet", Action: "tab:1"},
-		{Title: "Agent", Subtitle: "Lucrează cu aprobarea ta", Icon: "agent", Tone: "pink", Action: "tab:2"},
-		{Title: "Căutare", Subtitle: fmt.Sprintf("%d documente indexate", c.d.Search.Count()), Icon: "search", Tone: "cyan", Action: "tab:3"},
-		{Title: "Fișiere", Subtitle: filepath.Base(c.d.Workspace), Icon: "folder", Tone: "amber", Action: "tab:4"},
-		{Title: "Calcul", Subtitle: gpu, Icon: "chip", Tone: "green", Action: "tab:5"},
-		{Title: "Setări", Subtitle: host, Icon: "settings", Tone: "slate", Action: "tab:6"},
-		{Title: "Indexează workspace-ul", Subtitle: "Fișierele tale devin căutabile", Icon: "refresh", Tone: "cyan", Action: "run:3:/index"},
-		{Title: "Adaugă un site", Subtitle: "Crawl cu confirmare", Icon: "globe", Tone: "violet", Action: "fill:/crawl https://"},
-		{Title: "Testează Ilaria", Subtitle: "Verifică conexiunea", Icon: "plug", Tone: "green", Action: "run:6:/test"},
-		{Title: "Conversație nouă", Subtitle: "Începe de la zero", Icon: "sparkle", Tone: "pink", Action: "run:1:/new"},
+		{Title: "Ilaria", Subtitle: "Asistent", Icon: "chat", Tone: "violet", Action: "chat:open", Category: "Ilaria"},
+		{Title: "Agent", Subtitle: "Lucrează cu aprobarea ta", Icon: "terminal", Tone: "rose", Action: "tab:2", Category: "Ilaria"},
+		{Title: "Căutare", Subtitle: fmt.Sprintf("%d documente indexate", c.d.Search.Count()), Icon: "search", Tone: "cyan", Action: "tab:3", Category: "Workspace"},
+		{Title: "Fișiere", Subtitle: filepath.Base(c.d.Workspace), Icon: "folder", Tone: "amber", Action: "tab:4", Category: "Workspace"},
+		{Title: "Calcul", Subtitle: gpu, Icon: "spark", Tone: "violet", Action: "tab:5", Category: "Sistem"},
+		{Title: "Setări", Subtitle: host, Icon: "settings", Tone: "ink", Action: "tab:6", Category: "Sistem"},
+		{Title: "Indexează", Subtitle: "Workspace-ul devine căutabil", Icon: "refresh", Tone: "cyan", Action: "run:3:/index", Category: "Workspace"},
+		{Title: "Adaugă un site", Subtitle: "Crawl cu confirmare", Icon: "globe", Tone: "violet", Action: "fill:/crawl https://", Category: "Workspace"},
+		{Title: "Testează Ilaria", Subtitle: "Verifică conexiunea", Icon: "link", Tone: "ink", Action: "run:6:/test", Category: "Sistem"},
+		{Title: "Conversație nouă", Subtitle: "Începe de la zero", Icon: "spark", Tone: "rose", Action: "run:1:/new", Category: "Ilaria"},
 	}
 }
 
@@ -811,6 +877,9 @@ func (c *Controller) View() View {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	v := View{Tab: c.tab, Busy: c.busy, BusyLabel: c.busyLabel, Live: c.busy}
+	v.Chat = append([]Block(nil), c.logs[TabChat]...)
+	v.ChatOpen = c.chatOpen || c.tab == TabChat
+	v.ChatBusy = c.busy && c.busyLabel == "Ilaria răspunde"
 	host := c.d.Settings.IlariaURL
 	if i := strings.Index(host, "://"); i >= 0 {
 		host = host[i+3:]
@@ -901,6 +970,16 @@ func runBlocks(r *agent.Run) []Block {
 func summarizeOutput(raw json.RawMessage) string {
 	var v map[string]interface{}
 	if json.Unmarshal(raw, &v) == nil {
+		if created, ok := v["created"].(bool); ok {
+			verb := "Fișier actualizat"
+			if created {
+				verb = "Fișier creat"
+			}
+			return fmt.Sprintf("%s · %v bytes", verb, v["bytes"])
+		}
+		if line, ok := v["line"].(float64); ok {
+			return fmt.Sprintf("Editat la linia %d", int(line))
+		}
 		for _, key := range []string{"output", "content"} {
 			if s, ok := v[key].(string); ok {
 				return clipText(s, 1500)

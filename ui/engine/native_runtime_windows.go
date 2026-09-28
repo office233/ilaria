@@ -86,6 +86,7 @@ const (
 	wmSysKeyDown     = 0x0104
 	wmTimer          = 0x0113
 	wmCtlColorEdit   = 0x0133
+	wmCommand        = 0x0111
 	wmMouseMove      = 0x0200
 	wmLButtonDown    = 0x0201
 	wmMouseWheel     = 0x020A

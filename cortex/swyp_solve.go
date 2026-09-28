@@ -143,6 +143,26 @@ func RenameSoleSwypFunction(reply, entry string) (source, renamedFrom string, ok
 // answer).
 const swypSyntaxHint = "Example of Swyp: fn double(x: i64) -> i64 { return x + x; }"
 
+// SwypFirstPrompt is the loop's opening prompt. The prompt builders are
+// exported so training data (cmd/swyp-forge) uses byte-identical text.
+func SwypFirstPrompt(task, signature string) string {
+	return fmt.Sprintf("%s\nWrite it as one Swyp function with exactly this signature: %s\n%s\nReply with only the function inside a ```swyp code block.",
+		strings.TrimSpace(task), signature, swypSyntaxHint)
+}
+
+// SwypRenamePrompt follows a reply that contained no usable function.
+func SwypRenamePrompt(task, entry, signature string) string {
+	return fmt.Sprintf("%s\nWrite it as one Swyp function named %s with exactly this signature: %s\n%s\nReply with only the function inside a ```swyp code block.",
+		strings.TrimSpace(task), entry, signature, swypSyntaxHint)
+}
+
+// SwypRepairPrompt quotes the rejected code and the verifier's summary: a
+// greedy decoder otherwise tends to reproduce its previous reply unchanged.
+func SwypRepairPrompt(task, signature, source, summary string) string {
+	return fmt.Sprintf("This Swyp function is wrong:\n```swyp\n%s\n```\nThe verifier says: %s\nTask: %s\nWrite a different, corrected function %s { ... }. Reply with only the function inside a ```swyp code block.",
+		source, summary, strings.TrimSpace(task), signature)
+}
+
 // SolveWithSwyp runs the generate → verify → repair loop for at most
 // rounds model replies. It returns an error only for infrastructure
 // failures (model or verifier unusable); running out of rounds is a normal
@@ -156,8 +176,7 @@ func SolveWithSwyp(ctx context.Context, task string, contract json.RawMessage, r
 		return SwypSolveReport{}, fmt.Errorf("rounds must be 1..16")
 	}
 	report := SwypSolveReport{Version: 1, Task: task, Signature: signature, Status: "unverified"}
-	prompt := fmt.Sprintf("%s\nWrite it as one Swyp function with exactly this signature: %s\n%s\nReply with only the function inside a ```swyp code block.",
-		strings.TrimSpace(task), signature, swypSyntaxHint)
+	prompt := SwypFirstPrompt(task, signature)
 	for round := 1; round <= rounds; round++ {
 		if err := ctx.Err(); err != nil {
 			return report, err
@@ -177,8 +196,7 @@ func SolveWithSwyp(ctx context.Context, task string, contract json.RawMessage, r
 		if !ok {
 			attempt.Note = "no function named " + entry + " in reply"
 			report.Attempts = append(report.Attempts, attempt)
-			prompt = fmt.Sprintf("%s\nWrite it as one Swyp function named %s with exactly this signature: %s\n%s\nReply with only the function inside a ```swyp code block.",
-				strings.TrimSpace(task), entry, signature, swypSyntaxHint)
+			prompt = SwypRenamePrompt(task, entry, signature)
 			continue
 		}
 		attempt.Source = source
@@ -193,10 +211,7 @@ func SolveWithSwyp(ctx context.Context, task string, contract json.RawMessage, r
 			report.Status, report.Source, report.Verdict = "verified", source, &verdict
 			return report, nil
 		}
-		// Quote the rejected code and the verdict: a greedy decoder otherwise
-		// tends to reproduce its previous reply unchanged.
-		prompt = fmt.Sprintf("This Swyp function is wrong:\n```swyp\n%s\n```\nThe verifier says: %s\nTask: %s\nWrite a different, corrected function %s { ... }. Reply with only the function inside a ```swyp code block.",
-			source, verdict.Summary, strings.TrimSpace(task), signature)
+		prompt = SwypRepairPrompt(task, signature, source, verdict.Summary)
 	}
 	return report, nil
 }

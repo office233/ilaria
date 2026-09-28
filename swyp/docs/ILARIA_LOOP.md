@@ -59,6 +59,40 @@ Measured on the same model before and after each change:
 One run hit the 10 s `swyp judge` deadline once while starting the process;
 it did not reproduce in two reruns.
 
+## Swyp Forge baseline, 2026-09-28
+
+Task corpus: `examples/swyp/tasks/tasks.jsonl`, 60 tasks in five tiers, every
+reference verified `exhaustive` (`cmd/swyp/tasks_test.go`), frozen split of
+40 train / 20 held-out. Batch mode loads the model once:
+
+```bash
+go build -tags gpu -o ilaria-swyp.exe ./cmd/ilaria-swyp
+ilaria-swyp.exe -cuda -model data/forge/bitnet-2b4t/bitnet.nxtf \
+  -tokenizer data/pretrained/bitnet-b1.58-2B-4T/tokenizer.json \
+  -swyp "D:\nexus\swyp\bin\swyp.exe" -tasks swyp/examples/swyp/tasks/tasks.jsonl \
+  -split heldout -rounds 4 -timeout 2h -report baseline-heldout.jsonl
+```
+
+Held-out, base BitNet b1.58 2B4T without adapter, greedy, GTX 1660 Ti:
+
+| Tier | Tasks | pass@1 | repair@4 |
+|---|---:|---:|---:|
+| arithmetic | 4 | 4 | 4 |
+| branches | 5 | 0 | 0 |
+| loops | 5 | 1 | 1 |
+| multi_input | 3 | 0 | 0 |
+| recursion | 3 | 1 | 1 |
+| **total** | **20** | **6** | **6** |
+
+No task was repaired after a rejection (0 of 14). Of the 62 replies, 44 were
+compile errors, 12 counterexamples and 6 exhaustive passes. The compile errors
+are Rust/C habits: `return 0` without `;` inside if/else blocks (24), compound
+assignment or `let mut` (16, each with a hint) and `else if`, which Semantic
+Core does not parse (4). `absolute` shows the logic gap: the model swapped the branches,
+got `absolute(x=-50) returned -50`, then "fixed" it to `x` in both branches.
+
+20 tasks is a small sample; these are counts, not rates to generalize.
+
 ## Limits
 
 - Six tasks is a demo, not a benchmark. The contracts are small finite

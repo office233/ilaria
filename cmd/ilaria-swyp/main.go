@@ -40,24 +40,54 @@ func main() {
 	rounds := flag.Int("rounds", 4, "Maximum model replies (1..16)")
 	maxTokens := flag.Int("max-tokens", 200, "Generation budget per reply")
 	timeout := flag.Duration("timeout", 10*time.Minute, "Overall deadline")
+	tasksPath := flag.String("tasks", "", "Batch mode: Swyp Forge tasks JSONL (replaces -contract/-task)")
+	split := flag.String("split", "heldout", "Batch mode: heldout, train or all")
+	reportPath := flag.String("report", "", "Batch mode: new JSONL file for per-task results and the summary")
+	printSystem := flag.Bool("print-system-prompt", false, "Print the exact system prompt the loop uses and exit")
 	flag.Parse()
 
 	fail := func(stage string, err error) {
 		fmt.Fprintf(os.Stderr, "error: %s: %v\n", stage, err)
 		os.Exit(2)
 	}
-	if *modelPath == "" || *tokenizerPath == "" || *swypExe == "" || *contractPath == "" || *task == "" {
-		fail("flags", fmt.Errorf("-model, -tokenizer, -swyp, -contract and -task are required"))
+	if *printSystem {
+		fmt.Print(cortex.BuildSystemPrompt(nil))
+		return
+	}
+	batch := *tasksPath != ""
+	if *modelPath == "" || *tokenizerPath == "" || *swypExe == "" {
+		fail("flags", fmt.Errorf("-model, -tokenizer and -swyp are required"))
+	}
+	if batch && (*reportPath == "" || *contractPath != "" || *task != "") {
+		fail("flags", fmt.Errorf("-tasks needs -report and excludes -contract/-task"))
+	}
+	if !batch && (*contractPath == "" || *task == "") {
+		fail("flags", fmt.Errorf("-contract and -task are required (or use -tasks)"))
 	}
 	if *maxTokens < 1 || *maxTokens > 4096 {
 		fail("flags", fmt.Errorf("-max-tokens must be 1..4096"))
 	}
-	contract, err := os.ReadFile(*contractPath)
-	if err != nil {
-		fail("contract", err)
-	}
-	if len(contract) > 64*1024 || !json.Valid(contract) {
-		fail("contract", fmt.Errorf("contract must be valid JSON of at most 64 KiB"))
+	var contract []byte
+	var tasks []forgeTask
+	var err error
+	if batch {
+		f, err := os.Open(*tasksPath)
+		if err != nil {
+			fail("tasks", err)
+		}
+		tasks, err = readForgeTasks(f, *split)
+		f.Close()
+		if err != nil {
+			fail("tasks", err)
+		}
+	} else {
+		contract, err = os.ReadFile(*contractPath)
+		if err != nil {
+			fail("contract", err)
+		}
+		if len(contract) > 64*1024 || !json.Valid(contract) {
+			fail("contract", fmt.Errorf("contract must be valid JSON of at most 64 KiB"))
+		}
 	}
 	judge, err := cortex.NewSwypJudgeChatTool(*swypExe)
 	if err != nil {
@@ -118,6 +148,14 @@ func main() {
 
 	ctx, cancel := context.WithTimeout(context.Background(), *timeout)
 	defer cancel()
+	if batch {
+		summary, err := runBatch(ctx, tasks, *rounds, *reportPath, generate, verify)
+		fmt.Print(summary.String())
+		if err != nil {
+			fail("batch", err)
+		}
+		return
+	}
 	report, err := cortex.SolveWithSwyp(ctx, *task, contract, *rounds, generate, verify)
 	enc := json.NewEncoder(os.Stdout)
 	enc.SetIndent("", "  ")

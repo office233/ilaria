@@ -33,6 +33,7 @@ import torch.nn.functional as F
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from ilaria_model import IlariaConfig, IlariaTransformer  # noqa: E402
+from imc_model import PRESETS, ImcConfig, ImcTransformer, save_imc  # noqa: E402
 from nxtf import save_nxtf  # noqa: E402
 from atomic_io import atomic_binary_writer  # noqa: E402
 from training_state import (file_sha256, training_signature, make_checkpoint,
@@ -79,7 +80,7 @@ def lr_at(step: int, warmup: int, total: int, peak: float, floor: float) -> floa
     return floor + 0.5 * (peak - floor) * (1 + math.cos(math.pi * p))
 
 
-def param_groups(model: IlariaTransformer, wd: float):
+def param_groups(model, wd: float):
     decay, no_decay = [], []
     for name, p in model.named_parameters():
         (decay if p.ndim == 2 else no_decay).append(p)   # matrices decay, vectors don't
@@ -107,6 +108,15 @@ def validate_training_args(args: argparse.Namespace) -> None:
             raise ValueError(f"--{name.replace('_', '-')} must be positive")
     if args.ctx > args.max_seq_len:
         raise ValueError("--ctx must not exceed --max-seq-len")
+    arch, preset = getattr(args, "arch", "ilaria"), getattr(args, "preset", "")
+    if arch == "imc":
+        kv_heads = getattr(args, "kv_heads", 4)
+        if preset and preset not in PRESETS:
+            raise ValueError(f"--preset must be one of {sorted(PRESETS)}")
+        if not preset and (kv_heads < 1 or args.heads % kv_heads):
+            raise ValueError("--heads must be divisible by --kv-heads")
+    elif preset:
+        raise ValueError("--preset applies only to --arch imc")
     if args.embed_dim % args.heads:
         raise ValueError("--embed-dim must be divisible by --heads")
     if args.rope and (args.embed_dim // args.heads) % 2:
@@ -146,6 +156,11 @@ def main():
     ap.add_argument("--data", required=True, help="token stream prefix (from cmd/corpus-tokenize)")
     ap.add_argument("--out", required=True, help="output dir (transformer.nxtf + tokenizer.json copied here)")
     ap.add_argument("--tokenizer", default="", help="tokenizer.json to copy next to the brain (default: from stream meta)")
+    ap.add_argument("--arch", choices=["ilaria", "imc"], default="ilaria",
+                    help="ilaria = Go MiniTransformer twin (NXTF export); imc = Ilaria MicroCortex (GQA, RMSNorm, imc.pt export)")
+    ap.add_argument("--preset", default="", help=f"imc size preset: {', '.join(PRESETS)} (overrides the dimension flags)")
+    ap.add_argument("--kv-heads", type=int, default=4, help="imc: key/value heads for grouped-query attention")
+    ap.add_argument("--ffn-act", choices=["silu", "relu2"], default="silu", help="imc: gated FFN activation")
     ap.add_argument("--embed-dim", type=int, default=384)
     ap.add_argument("--heads", type=int, default=6)
     ap.add_argument("--layers", type=int, default=6)
@@ -219,18 +234,30 @@ def main():
     print(f"[forge] tokens: {len(data):,} (train {len(train_data):,} / val {len(val_data):,}) "
           f"vocab {meta['vocab_size']} eos {meta['eos_id']} device {device} (precision: {autocast_dtype})")
 
-    cfg = IlariaConfig(vocab_size=meta["vocab_size"], embed_dim=args.embed_dim,
-                       num_heads=args.heads, num_layers=args.layers, ffn_dim=args.ffn_dim,
-                       max_seq_len=args.max_seq_len, eos_token_id=meta["eos_id"],
-                       dropout_rate=args.dropout, use_rope=args.rope, use_swiglu=args.swiglu,
-                       ternary=args.ternary)
-    model = IlariaTransformer(cfg)
+    if args.arch == "imc":
+        dims = PRESETS[args.preset] if args.preset else dict(
+            d_model=args.embed_dim, n_layers=args.layers, n_heads=args.heads,
+            n_kv_heads=args.kv_heads, ffn_dim=args.ffn_dim)
+        cfg = ImcConfig(vocab_size=meta["vocab_size"], max_seq_len=args.max_seq_len,
+                        eos_token_id=meta["eos_id"], ffn_act=args.ffn_act, ternary=args.ternary, **dims)
+        model = ImcTransformer(cfg)
+        best_name, export = "imc.pt", save_imc
+        desc = (f"imc d={cfg.d_model} layers={cfg.n_layers} heads={cfg.n_heads}/{cfg.n_kv_heads}kv "
+                f"ffn={cfg.ffn_dim} act={cfg.ffn_act}")
+    else:
+        cfg = IlariaConfig(vocab_size=meta["vocab_size"], embed_dim=args.embed_dim,
+                           num_heads=args.heads, num_layers=args.layers, ffn_dim=args.ffn_dim,
+                           max_seq_len=args.max_seq_len, eos_token_id=meta["eos_id"],
+                           dropout_rate=args.dropout, use_rope=args.rope, use_swiglu=args.swiglu,
+                           ternary=args.ternary)
+        model = IlariaTransformer(cfg)
+        best_name, export = "transformer.nxtf", save_nxtf
+        desc = f"rope={cfg.use_rope} swiglu={cfg.use_swiglu}"
     if args.grad_checkpoint:
         model.enable_gradient_checkpointing(True)
     model = model.to(device)
 
-    print(f"[forge] model: {model.param_count()/1e6:.1f}M params | rope={cfg.use_rope} swiglu={cfg.use_swiglu} "
-          f"ternary={cfg.ternary} "
+    print(f"[forge] model: {model.param_count()/1e6:.1f}M params | {desc} ternary={cfg.ternary} "
           f"ctx={args.ctx} batch={args.batch}x{args.accum} (effective batch {args.batch * args.accum}) "
           f"grad_checkpoint={args.grad_checkpoint} compile={args.compile}")
 
@@ -263,7 +290,7 @@ def main():
             ck, raw_model, opt, scaler, rng, signature)
         best_nxtf_sha256 = ck.get("best_nxtf_sha256")
         if math.isfinite(best_val):
-            best_source = os.path.join(os.path.dirname(os.path.abspath(args.resume)), "transformer.nxtf")
+            best_source = os.path.join(os.path.dirname(os.path.abspath(args.resume)), best_name)
             if not best_nxtf_sha256 or not os.path.isfile(best_source) or file_sha256(best_source) != best_nxtf_sha256:
                 ap.error("best NXTF export is missing or differs from the checkpoint; restore the matching run directory")
         print(f"[forge] resumed from {args.resume} @ step {start_step}")
@@ -271,7 +298,7 @@ def main():
 
     os.makedirs(args.out, exist_ok=True)
     if args.resume and math.isfinite(best_val):
-        best_destination = os.path.join(args.out, "transformer.nxtf")
+        best_destination = os.path.join(args.out, best_name)
         if os.path.realpath(best_source) != os.path.realpath(best_destination):
             import shutil
             with open(best_source, "rb") as src, atomic_binary_writer(best_destination) as dst:
@@ -337,8 +364,8 @@ def main():
                                   "ppl": math.exp(val), "lr": lr, "tokens": tokens_seen}) + "\n")
             log.flush()
             if improved:
-                best_path = os.path.join(args.out, "transformer.nxtf")
-                save_nxtf(raw_model, best_path)
+                best_path = os.path.join(args.out, best_name)
+                export(raw_model, best_path)
                 best_nxtf_sha256 = file_sha256(best_path)
         # A pause between evaluations saves resume state WITHOUT adding an eval
         # or changing which models qualify as best. Both files are individually
@@ -356,7 +383,7 @@ def main():
     print(f"[forge] greedy sample ids: {ids}")
     status = "DONE" if stop_step == args.steps else "PAUSED"
     if math.isfinite(best_val):
-        print(f"[forge] {status} — best val {best_val:.4f} (ppl {math.exp(best_val):.1f}) -> {args.out}/transformer.nxtf")
+        print(f"[forge] {status} — best val {best_val:.4f} (ppl {math.exp(best_val):.1f}) -> {args.out}/{best_name}")
     else:
         print(f"[forge] {status} — resume checkpoint saved; no scheduled validation/best export yet")
 

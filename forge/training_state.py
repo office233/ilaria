@@ -52,6 +52,8 @@ def training_signature(args, device: str, precision, data_sha256: str,
     arguments = {k: getattr(args, k) for k in fields}
     if getattr(args, "ternary", False):
         arguments["ternary"] = True  # absent for full precision: old checkpoints still resume
+    if getattr(args, "arch", "ilaria") != "ilaria":
+        arguments["arch"] = args.arch
     return {
         "arguments": arguments,
         "device": device,
@@ -63,6 +65,12 @@ def training_signature(args, device: str, precision, data_sha256: str,
     }
 
 
+def config_json(model) -> dict:
+    """The checkpoint's config record: Go-twin models keep their Go JSON, IMC its own."""
+    cfg = model.cfg
+    return cfg.to_go_json() if hasattr(cfg, "to_go_json") else {"arch": "imc"} | cfg.to_json()
+
+
 def make_checkpoint(model, optimizer, scaler, rng, step: int, best_val: float,
                     tokens_seen: int, signature: dict, best_nxtf_sha256: str | None = None) -> dict:
     return {
@@ -70,7 +78,7 @@ def make_checkpoint(model, optimizer, scaler, rng, step: int, best_val: float,
         "model": model.state_dict(), "opt": optimizer.state_dict(),
         "scaler": scaler.state_dict(), "rng": capture_rng(rng),
         "step": step, "best_val": best_val, "tokens_seen": tokens_seen,
-        "cfg": model.cfg.to_go_json(), "signature": signature,
+        "cfg": config_json(model), "signature": signature,
         "best_nxtf_sha256": best_nxtf_sha256,
     }
 
@@ -86,7 +94,7 @@ def restore_checkpoint(ck: dict, model, optimizer, scaler, rng, signature: dict)
     required = {"model", "opt", "scaler", "rng", "step", "best_val", "tokens_seen", "cfg", "signature"}
     if not required.issubset(ck):
         raise ValueError("incomplete training checkpoint")
-    if ck["cfg"] != model.cfg.to_go_json():
+    if ck["cfg"] != config_json(model):
         raise ValueError("checkpoint model configuration differs from this job")
     if ck["signature"] != signature:
         raise ValueError("checkpoint training signature differs (data/tokenizer/schedule/runtime)")
@@ -115,7 +123,7 @@ def initialize_weights(ck: dict, model) -> None:
         # A missing "ternary" (every checkpoint before it existed) means full precision.
         return {"ternary": False} | cfg if isinstance(cfg, dict) else cfg
 
-    if (not isinstance(ck, dict) or normalized(ck.get("cfg")) != normalized(model.cfg.to_go_json())
+    if (not isinstance(ck, dict) or normalized(ck.get("cfg")) != normalized(config_json(model))
             or "model" not in ck):
         raise ValueError("weight initialization requires a matching checkpoint configuration")
     model.load_state_dict(ck["model"], strict=True)

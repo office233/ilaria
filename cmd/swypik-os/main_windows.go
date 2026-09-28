@@ -15,6 +15,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"runtime/debug"
 	"strings"
 	"sync/atomic"
 	"syscall"
@@ -243,6 +244,10 @@ func run(args []string, output io.Writer) error {
 }
 
 func main() {
+	// The desktop's live heap is ~2 MB. Collect earlier and aim for a small
+	// soft ceiling so idle memory stays close to the Win32 floor.
+	debug.SetGCPercent(50)
+	debug.SetMemoryLimit(24 << 20)
 	if err := run(os.Args[1:], os.Stdout); err != nil {
 		fmt.Fprintln(os.Stderr, "SwypikOS:", err)
 		if desktopGUI == "true" {

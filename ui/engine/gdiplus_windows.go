@@ -46,6 +46,9 @@ var (
 	procGdipGetImageGraphicsContext       = gdiplus.NewProc("GdipGetImageGraphicsContext")
 	procGdipDisposeImage                  = gdiplus.NewProc("GdipDisposeImage")
 	procGdipResetWorldTransform           = gdiplus.NewProc("GdipResetWorldTransform")
+	procGdipScaleWorldTransform           = gdiplus.NewProc("GdipScaleWorldTransform")
+	procGdipSaveGraphics                  = gdiplus.NewProc("GdipSaveGraphics")
+	procGdipRestoreGraphics               = gdiplus.NewProc("GdipRestoreGraphics")
 	procGdiFlush                          = syscall.NewLazyDLL("gdi32.dll").NewProc("GdiFlush")
 	procGdipDrawPath                      = gdiplus.NewProc("GdipDrawPath")
 )
@@ -272,7 +275,9 @@ func (c canvas) arc(cx, cy, w, h, degrees float32, stroke uintptr, fillFrom, fil
 }
 
 func (c canvas) arcOn(g uintptr, cx, cy, w, h, degrees float32, stroke uintptr, fillFrom, fillTo uintptr) {
-	defer procGdipResetWorldTransform.Call(g)
+	var state uint32
+	procGdipSaveGraphics.Call(g, uintptr(unsafe.Pointer(&state)))
+	defer procGdipRestoreGraphics.Call(g, uintptr(state))
 	procGdipTranslateWorldTransform.Call(g, f32(cx), f32(cy), 0)
 	procGdipRotateWorldTransform.Call(g, f32(degrees), 0)
 	p := newPath()

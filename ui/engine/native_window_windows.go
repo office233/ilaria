@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"hash/fnv"
 	"runtime"
+	"runtime/debug"
 	"strings"
 	"sync/atomic"
 	"syscall"
@@ -703,6 +704,7 @@ func (app *ShellApp) render(memDC uintptr, cr rect, v desktop.View) {
 type wallpaper struct {
 	dc, bmp, old uintptr
 	key          wallKey
+	w, h         int32 // bitmap size (down-sampled)
 }
 
 // wallKey captures everything the static layer depends on.
@@ -720,20 +722,30 @@ func (app *ShellApp) dropWallpaper() {
 	app.wall = wallpaper{}
 }
 
+// wallScale is the down-sampling factor of the cached static layer. Its
+// content (background, ambient light, arcs, soft shadows) is blurry by
+// design, so a quarter-resolution layer looks the same and uses 1/16 of the
+// memory of a full-screen bitmap.
+const wallScale = 4
+
 func (app *ShellApp) drawWallpaper(target uintptr, w, h int32, l layout, mode chatMode) {
 	key := wallKey{w, h, app.expanded, mode == chatOverlay, l.showDeck, l.showTop}
 	if app.wall.dc == 0 || app.wall.key != key {
 		app.dropWallpaper()
+		sw, sh := (w+wallScale-1)/wallScale, (h+wallScale-1)/wallScale
 		dc, _, _ := procCreateCompatibleDC.Call(target)
-		bi := bitmapInfoHeader{Size: 40, Width: w, Height: -h, Planes: 1, BitCount: 32}
+		bi := bitmapInfoHeader{Size: 40, Width: sw, Height: -sh, Planes: 1, BitCount: 32}
 		var bits uintptr
 		bmp, _, _ := procCreateDIBSection.Call(target, uintptr(unsafe.Pointer(&bi)), 0, uintptr(unsafe.Pointer(&bits)), 0, 0)
 		if dc == 0 || bmp == 0 {
 			return
 		}
 		old, _, _ := procSelectObject.Call(dc, bmp)
-		release := bindSurface(dc, bits, w, h)
+		release := bindSurface(dc, bits, sw, sh)
 		defer release()
+		if s, ok := surfaces[dc]; ok {
+			procGdipScaleWorldTransform.Call(s.g, f32(1.0/wallScale), f32(1.0/wallScale), 0)
+		}
 		c := canvas{dc}
 		c.round(rect{0, 0, w, h}, 0, argb(theme.Background, 255))
 		fw, fh := float32(w), float32(h)
@@ -742,31 +754,42 @@ func (app *ShellApp) drawWallpaper(target uintptr, w, h int32, l layout, mode ch
 		c.ambient(rect{w / 2, h / 2, w/2 + w*65/100, h/2 + h*65/100}, theme.AmbientRose>>8, uint8(theme.AmbientRose&0xFF))
 		c.arc(0.25*fw, 0.82*fh, 1.1*fw, 0.7*fh, -19, hexa(theme.ArcStroke), hexa(theme.ArcFrom), hexa(theme.ArcTo))
 		c.arc(fw, 0.4*fh, 1.1*fw, 0.7*fh, 32, hexa(theme.ArcStroke), hexa(theme.ArcFrom), hexa(theme.ArcTo))
-		// Static glass containers: shadows and bodies change only on resize.
+		// Soft shadows of the static glass containers.
 		if l.showTop {
 			r := l.capsule
 			c.shadow(r, r.height()/2, app.s(18), app.s(50), -app.s(18), hexa(theme.ShadowSoft))
 			c.shadow(r, r.height()/2, app.s(3), app.s(8), 0, hexa(0x6063960A))
-			c.grad2(r, r.height()/2, 120, hexa(theme.CapsuleFrom), hexa(theme.CapsuleTo))
-			c.stroke(r, r.height()/2, argb(0xFFFFFF, 255), 1)
 		}
-		r := l.main
-		c.shadow(r, app.s(22), app.s(25), app.s(80), -app.s(26), hexa(theme.ShadowMain))
-		c.grad2(r, app.s(22), 120, hexa(theme.MainFrom), hexa(theme.MainTo))
-		c.stroke(r, app.s(22), argb(0xFFFFFF, 255), 1)
-		c.round(l.content, app.s(17), hexa(theme.Content))
+		c.shadow(l.main, app.s(22), app.s(25), app.s(80), -app.s(26), hexa(theme.ShadowMain))
 		if l.showDeck {
-			d := l.deck
-			c.shadow(d, app.s(17), app.s(18), app.s(50), -app.s(18), hexa(theme.ShadowSoft))
-			c.grad2(d, app.s(17), 135, hexa(0xFFFFFFDB), hexa(0xFFFFFF80))
-			c.stroke(d, app.s(17), argb(0xFFFFFF, 255), 1)
+			c.shadow(l.deck, app.s(17), app.s(18), app.s(50), -app.s(18), hexa(theme.ShadowSoft))
 		}
 		if mode != chatOverlay {
-			app.omniBody(c, l.omni)
+			app.omniShadow(c, l.omni)
 		}
-		app.wall = wallpaper{dc: dc, bmp: bmp, old: old, key: key}
+		app.wall = wallpaper{dc: dc, bmp: bmp, old: old, key: key, w: sw, h: sh}
 	}
-	procBitBlt.Call(target, 0, 0, uintptr(w), uintptr(h), app.wall.dc, 0, 0, srcCopy)
+	procSetStretchBltMode.Call(target, 4) // HALFTONE: smooth up-sampling
+	procStretchBlt.Call(target, 0, 0, uintptr(w), uintptr(h), app.wall.dc, 0, 0, uintptr(app.wall.w), uintptr(app.wall.h), srcCopy)
+	// Crisp glass bodies are drawn at full resolution on top.
+	c := canvas{target}
+	if l.showTop {
+		r := l.capsule
+		c.grad2(r, r.height()/2, 120, hexa(theme.CapsuleFrom), hexa(theme.CapsuleTo))
+		c.stroke(r, r.height()/2, argb(0xFFFFFF, 255), 1)
+	}
+	r := l.main
+	c.grad2(r, app.s(22), 120, hexa(theme.MainFrom), hexa(theme.MainTo))
+	c.stroke(r, app.s(22), argb(0xFFFFFF, 255), 1)
+	c.round(l.content, app.s(17), hexa(theme.Content))
+	if l.showDeck {
+		d := l.deck
+		c.grad2(d, app.s(17), 135, hexa(0xFFFFFFDB), hexa(0xFFFFFF80))
+		c.stroke(d, app.s(17), argb(0xFFFFFF, 255), 1)
+	}
+	if mode != chatOverlay {
+		app.omniGlass(c, l.omni)
+	}
 }
 
 func (app *ShellApp) paintCapsule(hdc uintptr, r rect, v desktop.View) {
@@ -946,7 +969,13 @@ type bitmapInfoHeader struct {
 	_                            [4]byte // one RGBQUAD, unused for 32bpp
 }
 
-var procCreateDIBSection = gdi32.NewProc("CreateDIBSection")
+var (
+	procCreateDIBSection  = gdi32.NewProc("CreateDIBSection")
+	procStretchBlt        = gdi32.NewProc("StretchBlt")
+	procSetStretchBltMode = gdi32.NewProc("SetStretchBltMode")
+	procEmptyWorkingSet   = syscall.NewLazyDLL("psapi.dll").NewProc("EmptyWorkingSet")
+	procGetCurrentProcess = kernel32.NewProc("GetCurrentProcess")
+)
 
 type item struct {
 	r     rect
@@ -1357,9 +1386,18 @@ func (app *ShellApp) paintOmnibar(hdc uintptr, l layout, v desktop.View, mode ch
 }
 
 func (app *ShellApp) omniBody(c canvas, r rect) {
+	app.omniShadow(c, r)
+	app.omniGlass(c, r)
+}
+
+func (app *ShellApp) omniShadow(c canvas, r rect) {
 	rad := app.s(36)
 	c.shadow(r, rad, app.s(12), app.s(32), 0, hexa(theme.ShadowOmni))
 	c.shadow(r, rad, app.s(2), app.s(7), 0, hexa(0x8582BE15))
+}
+
+func (app *ShellApp) omniGlass(c canvas, r rect) {
+	rad := app.s(36)
 	c.grad2(r, rad, 115, hexa(theme.OmniFrom), hexa(theme.OmniTo))
 	c.stroke(r, rad, hexa(0xFFFFFF70), float32(app.s(5)))
 	c.stroke(r, rad, argb(0xFFFFFF, 255), 1)
@@ -1473,6 +1511,7 @@ func (app *ShellApp) warmFonts(dpi int32) {
 			<-done
 		}
 		app.report(fmt.Sprintf("Fonts warmed in %s", time.Since(started).Round(time.Millisecond)))
+		debug.FreeOSMemory() // return start-up garbage (index load, warm-up) to Windows
 		app.ready.Store(true)
 		app.Notify()
 	}()
@@ -1530,6 +1569,13 @@ func wndProc(hwnd syscall.Handle, message uint32, wParam, lParam uintptr) uintpt
 		procEndPaint.Call(uintptr(hwnd), uintptr(unsafe.Pointer(&ps)))
 		return 0
 	case wmSize:
+		if wParam == 1 { // SIZE_MINIMIZED: nothing to draw; give RAM back to Windows
+			app.dropWallpaper()
+			debug.FreeOSMemory()
+			proc, _, _ := procGetCurrentProcess.Call()
+			procEmptyWorkingSet.Call(proc)
+			return 0
+		}
 		app.invalidate()
 		return 0
 	case wmSetFocus:

@@ -17,7 +17,6 @@ var fontFiles embed.FS
 var (
 	procAddFontMemResourceEx    = gdi32.NewProc("AddFontMemResourceEx")
 	procRemoveFontMemResourceEx = gdi32.NewProc("RemoveFontMemResourceEx")
-	fontData                    [][]byte // kept alive while the fonts are registered
 )
 
 // loadEmbeddedFonts registers the embedded faces and returns a release func.
@@ -29,8 +28,7 @@ func loadEmbeddedFonts() func() {
 		if err != nil || len(data) == 0 {
 			continue
 		}
-		fontData = append(fontData, data)
-		var count uint32
+		var count uint32 // Windows copies the font; the slice is garbage afterwards
 		h, _, _ := procAddFontMemResourceEx.Call(uintptr(unsafe.Pointer(&data[0])), uintptr(len(data)), 0, uintptr(unsafe.Pointer(&count)))
 		if h != 0 {
 			handles = append(handles, h)

@@ -46,6 +46,10 @@ device-broker, policy database, or another SwypikOS authority service.
 The broker never derives authority from the guest's symbol or capability string.
 Those strings only select requirements already present in an approved plan.
 
+`PolicyResolver` provides the first concrete implementation. A host grant must be
+registered against an exact `(logical capability, target, symbol)` tuple. There
+are no wildcard rules; changing any member of that tuple produces a denial.
+
 ## Executor boundary
 
 `Executor` is a trusted host adapter abstraction, not a generic dynamic loader.
@@ -60,6 +64,10 @@ It receives:
 An executor implementation should map approved targets to pre-registered native
 adapters. It must not load arbitrary libraries or infer extra authority from guest
 strings.
+
+`AdapterRegistry` implements that rule directly: adapters are registered against
+an exact `(target, symbol, ABI, ABI version)` tuple. Unknown or modified symbols
+never reach an adapter.
 
 ## Replay model
 

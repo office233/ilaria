@@ -1,8 +1,11 @@
 name: e2e
 
 on:
-  pull_request:
-    branches: [main]
+  # Smoke-ul lovește intenționat producția, deci nu rulează pe PR-uri: un PR
+  # nu poate schimba încă swypik.com și ar fi blocat de starea live precedentă.
+  workflow_run:
+    workflows: ["Deploy production"]
+    types: [completed]
   workflow_dispatch:
     inputs:
       base_url:
@@ -12,6 +15,7 @@ on:
 
 jobs:
   smoke:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:

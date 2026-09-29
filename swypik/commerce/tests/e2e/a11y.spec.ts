@@ -11,14 +11,21 @@ test.describe.configure({ retries: 2 });
 const PAGES = [
   { name: 'home', url: '/' },
   { name: 'explore', url: '/explore' },
-  { name: 'product-list', url: '/categorii' },
+  { name: 'product-list', url: '/categories' },
   { name: 'help', url: '/help' },
 ];
 
 for (const p of PAGES) {
   test(`a11y smoke: ${p.name} has no serious/critical violations`, async ({ page }) => {
-    const resp = await page.goto(p.url, { waitUntil: 'networkidle', timeout: 30000 });
+    // Pagina poate păstra conexiuni de analytics/feed deschise; `networkidle`
+    // nu este un criteriu valid de readiness pentru producția Swypik și făcea
+    // smoke-ul să expire deși DOM-ul era deja interactiv.
+    const resp = await page.goto(p.url, { waitUntil: 'domcontentloaded', timeout: 30000 });
     expect(resp?.status(), `HTTP for ${p.url}`).toBeLessThan(400);
+    await expect(page.locator('body')).toBeVisible();
+    // Nu măsurăm contrastul în mijlocul animațiilor de intrare (cookie banner,
+    // skeleton-uri): opacitatea intermediară produce culori compozite false.
+    await page.waitForTimeout(500);
 
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])

@@ -73,7 +73,9 @@
 
   --brand: 139 92 246;
   --brand-hover: 167 139 250;
-  --brand-fg: 255 255 255;
+  /* Violet-500 + alb = ~4.23:1 la text mic, sub WCAG AA. Păstrăm
+     culoarea brandului și folosim foreground-ul dark pentru >= 4.5:1. */
+  --brand-fg: 13 13 13;
   --brand-soft: 46 16 101;
   --brand-soft-fg: 221 214 254;
   --accent: 244 114 182;

@@ -29,6 +29,11 @@ vi.mock("@/lib/shop/checkout", () => {
   return { PaymentInProgressError, createOrReuseCheckout: (c: unknown) => createOrReuseCheckout(c) };
 });
 
+const shopPaymentsConfigured = vi.fn(() => true);
+vi.mock("@/lib/shop/payments-config", () => ({
+  shopPaymentsConfigured: () => shopPaymentsConfigured(),
+}));
+
 import { POST } from "@/app/api/checkout/create-intent/route";
 import { PricingError } from "@/lib/shop/pricing";
 import { PaymentInProgressError } from "@/lib/shop/checkout";
@@ -59,6 +64,7 @@ beforeEach(() => {
   getOrCreateCart.mockResolvedValue({ cartId: "cart-1", userId: "user-1", anonToken: null, currency: "RON" });
   createOrReuseCheckout.mockResolvedValue(RESULT);
   isUserFraudBlocked.mockResolvedValue(false);
+  shopPaymentsConfigured.mockReturnValue(true);
 });
 
 describe("POST /api/checkout/create-intent", () => {
@@ -146,5 +152,14 @@ describe("POST /api/checkout/create-intent", () => {
     const res = await POST(req({}));
     expect(res.status).toBe(503);
     expect((await res.json()).code).toBe("payments_unavailable");
+  });
+
+  it("fails closed before touching the cart when payments are not configured", async () => {
+    shopPaymentsConfigured.mockReturnValue(false);
+    const res = await POST(req({}));
+    expect(res.status).toBe(503);
+    expect((await res.json()).code).toBe("payments_unavailable");
+    expect(getOrCreateCart).not.toHaveBeenCalled();
+    expect(createOrReuseCheckout).not.toHaveBeenCalled();
   });
 });

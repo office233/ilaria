@@ -69,6 +69,47 @@ strings.
 an exact `(target, symbol, ABI, ABI version)` tuple. Unknown or modified symbols
 never reach an adapter.
 
+## Control Kernel integration
+
+`KernelBroker` binds a broker execution to an existing Control Kernel lease/fence
+and durable side-effect `Intent`:
+
+1. while the node is `PREPARING`, `KernelBroker.Prepare` validates request/plan
+   and writes a `swyp.foreign.call` intent keyed by the host `execution_id` and
+   request content hash;
+2. while the same leased node is `EXECUTING`, `ExecutePrepared` revalidates the
+   lease and approved plan, resolves authority, then transitions the intent to
+   `STARTED` immediately before invoking the adapter;
+3. a valid adapter result is durably recorded as `RESULT` with a SHA-256 result
+   hash;
+4. any adapter or result-contract failure after `STARTED` is marked `UNCERTAIN`
+   because an external effect may already exist;
+5. `CommitResult` delegates to Control Kernel and therefore succeeds only after
+   independent verification and the node transition to `COMMITTING`.
+
+Capability denial happens before `STARTED`, leaving only a `PREPARED` intent and
+therefore no claimed external reality. Stale lease/fence tokens are rejected
+before authority resolution or adapter execution.
+
+## Chameleon MMIO adapter
+
+The first concrete authority-backed adapter is intentionally narrow:
+
+```text
+foreign C fn swyp_mmio_write(address:u64, value:u64) -> void
+    capability hw_mmio_write;
+```
+
+`ChameleonMMIOResolver` accepts only the exact logical capability, target and
+symbol above. It mints a short-lived cryptographic `chameleon.CapabilityToken`
+for an explicit host-configured register allowlist. The token stays inside the
+host-only `Grant` and never enters Swyp JSON.
+
+`RegisterChameleonMMIOAdapter` installs only the fixed `swyp_mmio_write` adapter;
+there is no generic loader. It decodes two `u64` wire values, rejects values that
+do not fit the Chameleon uint32 hardware ABI, then calls `WriteMMIO`, which
+cryptographically verifies register scope, write permission and token expiry.
+
 ## Replay model
 
 Swyp requests are content-addressed, so identical semantic calls intentionally

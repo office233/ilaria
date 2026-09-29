@@ -124,3 +124,67 @@ def test_trainer_runs_resumes_and_exports_ternary_imc(tmp_path):
     assert model.cfg.ternary and model.cfg.n_kv_heads == 2
     log = [_json.loads(line) for line in (out / "training.log").read_text().splitlines()]
     assert log[-1]["val_loss"] < math.log(40) - 0.5, log  # clearly better than uniform guessing
+
+
+@pytest.mark.parametrize("ternary", [False, True])
+def test_chunked_loss_equals_full_cross_entropy_with_same_gradients(ternary):
+    model = tiny(ternary=ternary)
+    x = torch.randint(0, 64, (3, 11))
+    y = torch.randint(0, 64, (3, 11))
+    full = F.cross_entropy(model(x).reshape(-1, 64), y.reshape(-1))
+    full.backward()
+    want = {n: p.grad.clone() for n, p in model.named_parameters()}
+    model.zero_grad()
+    chunked = model(x, y, loss_chunk_tokens=5)   # 33 tokens -> 7 chunks, last one partial
+    chunked.backward()
+    assert torch.allclose(full, chunked, atol=1e-5)
+    for n, p in model.named_parameters():
+        assert torch.allclose(want[n], p.grad, atol=1e-5), n
+
+
+def _tiny_stream(tmp_path):
+    import json as _json
+
+    import numpy as np
+    rng = np.random.default_rng(0)
+    tokens = np.tile(np.arange(4, 36, dtype="<u2"), 400) ^ rng.integers(0, 2, 12800, dtype="<u2")
+    prefix = tmp_path / "stream"
+    tokens.tofile(str(prefix) + ".bin")
+    (tmp_path / "stream.json").write_text(_json.dumps({"dtype": "uint16", "vocab_size": 40, "eos_id": 3}))
+    return prefix
+
+
+TINY_ARGS = ["--arch", "imc", "--ternary", "--embed-dim", "32", "--heads", "4", "--kv-heads", "2",
+             "--layers", "2", "--ffn-dim", "48", "--ctx", "16", "--max-seq-len", "16", "--batch", "4",
+             "--warmup", "4", "--lr", "3e-3", "--min-lr", "3e-4", "--eval-iters", "2", "--precision", "fp32"]
+
+
+def test_two_process_ddp_with_chunked_loss_trains_and_saves_once(tmp_path):
+    import json as _json
+    import socket
+    import subprocess
+    prefix, out = _tiny_stream(tmp_path), tmp_path / "run"
+    trainer = os.path.join(os.path.dirname(os.path.abspath(__file__)), "train_ilaria.py")
+    args = [trainer, "--data", str(prefix), "--out", str(out), "--chunked-loss", "--accum", "2",
+            "--steps", "30", "--eval-every", "15"] + TINY_ARGS
+    with socket.socket() as sock:
+        sock.bind(("127.0.0.1", 0))
+        port = sock.getsockname()[1]
+    env = dict(os.environ, USE_LIBUV="0", OMP_NUM_THREADS="1", MKL_NUM_THREADS="1", CUDA_VISIBLE_DEVICES="",
+               WORLD_SIZE="2", MASTER_ADDR="127.0.0.1", MASTER_PORT=str(port))
+    workers = [subprocess.Popen([sys.executable] + args, env=dict(env, RANK=str(r), LOCAL_RANK=str(r)),
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True) for r in range(2)]
+    try:
+        outputs = [w.communicate(timeout=600) for w in workers]
+    finally:
+        for w in workers:
+            if w.poll() is None:
+                w.kill()
+    for w, (so, se) in zip(workers, outputs):
+        assert w.returncode == 0, se[-3000:]
+    assert "DONE" in outputs[0][0] and outputs[1][0] == ""
+    ck = torch.load(out / "checkpoint.pt", map_location="cpu", weights_only=True)
+    assert ck["signature"]["world_size"] == 2 and ck["tokens_seen"] == 30 * 2 * 2 * 4 * 16
+    log = [_json.loads(line) for line in (out / "training.log").read_text().splitlines()]
+    assert len(log) == 2 and log[-1]["val_loss"] < math.log(40) - 0.5, log
+    assert load_imc(str(out / "imc.pt")).cfg.ternary

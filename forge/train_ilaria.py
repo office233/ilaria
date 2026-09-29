@@ -20,6 +20,7 @@ Design choices (all deliberate for a GTX 1660 Ti, 6 GB, no bf16):
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import math
 import os
@@ -190,6 +191,8 @@ def main():
                     help="compute precision: auto (bf16 on H100/Ampere, else fp16), bf16, fp16, fp32")
     ap.add_argument("--compile", action="store_true", help="use torch.compile for maximum H100 kernel fusion")
     ap.add_argument("--grad-checkpoint", action="store_true", help="enable gradient checkpointing to save VRAM")
+    ap.add_argument("--chunked-loss", action="store_true",
+                    help="imc: cross-entropy in chunks with recomputed logits, never materializing [tokens, vocab]")
     args = ap.parse_args()
     try:
         validate_training_args(args)
@@ -197,13 +200,30 @@ def main():
             raise ValueError("--resume and --init-from are mutually exclusive")
         if args.stop_after < 0:
             raise ValueError("--stop-after must be non-negative")
+        if args.chunked_loss and args.arch != "imc":
+            raise ValueError("--chunked-loss applies only to --arch imc")
     except ValueError as exc:
         ap.error(str(exc))
 
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    # torchrun sets these; a plain launch is a world of one. Every rank reads a
+    # different random slice of the stream; rank 0 alone evaluates, logs and saves.
+    world = int(os.environ.get("WORLD_SIZE", "1"))
+    rank = int(os.environ.get("RANK", "0"))
+    local_rank = int(os.environ.get("LOCAL_RANK", "0"))
+    master = rank == 0
+    if not master:
+        sys.stdout = open(os.devnull, "w")
+
+    device = "cuda" if torch.cuda.is_available() and torch.cuda.device_count() > 0 else "cpu"
     if device == "cuda":
+        if local_rank >= torch.cuda.device_count():
+            ap.error(f"LOCAL_RANK {local_rank} but only {torch.cuda.device_count()} CUDA device(s) are visible")
+        torch.cuda.set_device(local_rank)
         torch.backends.cuda.matmul.allow_tf32 = True
         torch.backends.cudnn.allow_tf32 = True
+    if world > 1:
+        import torch.distributed as dist
+        dist.init_process_group("nccl" if device == "cuda" and os.name != "nt" else "gloo")
 
     # Precision resolution
     if args.precision == "auto":
@@ -224,7 +244,7 @@ def main():
 
     random.seed(args.seed)
     torch.manual_seed(args.seed)
-    rng = np.random.default_rng(args.seed)
+    rng = np.random.default_rng(args.seed if world == 1 else [args.seed, rank])
 
     data, meta = load_stream(args.data)
     try:
@@ -271,6 +291,8 @@ def main():
                                    file_sha256(args.data + ".bin"),
                                    file_sha256(tok_src) if tok_src else None)
     signature["stream_format"] = {k: meta[k] for k in ("dtype", "vocab_size", "eos_id")}
+    if world > 1:
+        signature["world_size"] = world   # absent for one process: single-GPU checkpoints still resume
     best_nxtf_sha256 = None
     ck = None
     if args.init_from:
@@ -281,6 +303,9 @@ def main():
 
     # Save reference to raw model for checkpointing/saving before compilation
     raw_model = model
+    if world > 1:
+        from torch.nn.parallel import DistributedDataParallel
+        model = DistributedDataParallel(model, device_ids=[local_rank] if device == "cuda" else None)
     if args.compile:
         print("[forge] compiling model with torch.compile...")
         model = torch.compile(model)
@@ -295,22 +320,25 @@ def main():
                 ap.error("best NXTF export is missing or differs from the checkpoint; restore the matching run directory")
         print(f"[forge] resumed from {args.resume} @ step {start_step}")
         del ck
+        if world > 1:
+            # The checkpoint holds rank 0's sampler state; give every rank its own again.
+            rng = np.random.default_rng([args.seed, rank, start_step])
 
     os.makedirs(args.out, exist_ok=True)
-    if args.resume and math.isfinite(best_val):
+    if master and args.resume and math.isfinite(best_val):
         best_destination = os.path.join(args.out, best_name)
         if os.path.realpath(best_source) != os.path.realpath(best_destination):
             import shutil
             with open(best_source, "rb") as src, atomic_binary_writer(best_destination) as dst:
                 shutil.copyfileobj(src, dst)
-    if tok_src and os.path.exists(tok_src):
+    if master and tok_src and os.path.exists(tok_src):
         import shutil
         tok_dst = os.path.join(args.out, "tokenizer.json")
         if os.path.abspath(tok_src) != os.path.abspath(tok_dst):
             with atomic_binary_writer(tok_dst) as dst, open(tok_src, "rb") as src:
                 shutil.copyfileobj(src, dst)
 
-    log = open(os.path.join(args.out, "training.log"), "a")
+    log = open(os.path.join(args.out, "training.log"), "a") if master else None
     model.train()
     t0 = time.time()
     tokens_this_run = 0
@@ -323,18 +351,24 @@ def main():
             g["lr"] = lr
         opt.zero_grad(set_to_none=True)
         loss_acc = 0.0
-        for _ in range(args.accum):
+        for micro in range(args.accum):
             x, y = batch_windows(train_data, args.ctx, args.batch, rng, device)
-            with torch.autocast("cuda", dtype=autocast_dtype or torch.float16, enabled=use_amp):
-                logits = model(x)
-                loss = F.cross_entropy(logits.view(-1, logits.size(-1)), y.view(-1)) / args.accum
-            if use_scaler:
-                scaler.scale(loss).backward()
-            else:
-                loss.backward()
+            # Gradients are all-reduced once per optimizer step, on the last micro-batch.
+            sync = world == 1 or micro == args.accum - 1
+            with (contextlib.nullcontext() if sync else model.no_sync()):
+                with torch.autocast("cuda", dtype=autocast_dtype or torch.float16, enabled=use_amp):
+                    if args.chunked_loss:
+                        loss = model(x, y) / args.accum
+                    else:
+                        logits = model(x)
+                        loss = F.cross_entropy(logits.view(-1, logits.size(-1)), y.view(-1)) / args.accum
+                if use_scaler:
+                    scaler.scale(loss).backward()
+                else:
+                    loss.backward()
             loss_acc += loss.item()
-            tokens_seen += x.numel()
-            tokens_this_run += x.numel()
+            tokens_seen += x.numel() * world
+            tokens_this_run += x.numel() * world
 
         if use_scaler:
             scaler.unscale_(opt)
@@ -350,10 +384,12 @@ def main():
             print(f"step {step:6d} | loss {loss_acc:.4f} | lr {lr:.2e} | gn {gn:.2f} | "
                   f"{tokens_this_run/max(el,1e-9):,.0f} tok/s | {el/60:.1f} min")
         do_eval = (step + 1) % args.eval_every == 0 or step + 1 == args.steps
-        if do_eval:
+        if master and do_eval:
             # Fixed validation windows, independent of the training RNG and eval cadence.
             eval_rng = np.random.default_rng(np.random.SeedSequence([args.seed, 1]))
-            val = evaluate(model, val_data, args.ctx, args.batch, device, args.eval_iters, eval_rng, autocast_dtype)
+            # Under DDP the wrapper's forward is collective, so rank 0 evaluates the bare model.
+            val = evaluate(model if world == 1 else raw_model, val_data, args.ctx, args.batch, device,
+                           args.eval_iters, eval_rng, autocast_dtype)
             if not math.isfinite(val):
                 raise RuntimeError("non-finite validation loss; previous checkpoint was preserved")
             improved = val < best_val
@@ -370,13 +406,20 @@ def main():
         # A pause between evaluations saves resume state WITHOUT adding an eval
         # or changing which models qualify as best. Both files are individually
         # atomic; the hash detects mismatched publication after interruption.
-        if do_eval or step + 1 == stop_step:
+        if master and (do_eval or step + 1 == stop_step):
             with atomic_binary_writer(os.path.join(args.out, "checkpoint.pt")) as checkpoint:
                 torch.save(make_checkpoint(raw_model, opt, scaler, rng, step + 1,
                                            best_val, tokens_seen, signature, best_nxtf_sha256), checkpoint)
+        if world > 1 and (do_eval or step + 1 == stop_step):
+            dist.barrier()   # nobody runs ahead while rank 0 evaluates and saves
 
-    log.close()
+    if master:
+        log.close()
 
+    if world > 1:
+        dist.destroy_process_group()
+    if not master:
+        return
     # Sanity sample straight from the forge (greedy, token ids only — the
     # organism decodes; Go owns the tokenizer).
     ids = raw_model.generate_greedy([meta["eos_id"]], 30)

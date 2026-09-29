@@ -25,6 +25,7 @@ from dataclasses import asdict, dataclass
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import torch.utils.checkpoint
 
 from ilaria_model import linear
 
@@ -158,6 +159,10 @@ class Block(nn.Module):
         return x + self.ffn(self.ffn_norm(x))
 
 
+def _ce_sum(h: torch.Tensor, emb: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
+    return F.cross_entropy((h @ emb.t()).float(), targets, reduction="sum")
+
+
 class ImcTransformer(nn.Module):
     def __init__(self, cfg: ImcConfig):
         super().__init__()
@@ -170,14 +175,31 @@ class ImcTransformer(nn.Module):
     def enable_gradient_checkpointing(self, enable: bool = True) -> None:
         self.gradient_checkpointing = enable
 
-    def forward(self, ids: torch.Tensor) -> torch.Tensor:
+    def hidden(self, ids: torch.Tensor) -> torch.Tensor:
         x = self.TokenEmb[ids]
         for blk in self.blocks:
             if self.gradient_checkpointing and self.training:
                 x = torch.utils.checkpoint.checkpoint(blk, x, use_reentrant=False)
             else:
                 x = blk(x)
-        return self.final_norm(x) @ self.TokenEmb.t()
+        return self.final_norm(x)
+
+    def forward(self, ids: torch.Tensor, targets: torch.Tensor | None = None,
+                loss_chunk_tokens: int = 8192) -> torch.Tensor:
+        """Logits, or with targets the mean cross-entropy computed chunk by
+        chunk: each chunk's logits are recomputed in backward instead of kept,
+        so the full [tokens, vocab] matrix never exists. Going through
+        forward keeps DDP gradient hooks and torch.compile in the path."""
+        h = self.hidden(ids)
+        if targets is None:
+            return h @ self.TokenEmb.t()
+        h, t = h.reshape(-1, h.shape[-1]), targets.reshape(-1)
+        total = h.new_zeros((), dtype=torch.float32)
+        for s in range(0, t.numel(), loss_chunk_tokens):
+            total = total + torch.utils.checkpoint.checkpoint(
+                _ce_sum, h[s:s + loss_chunk_tokens], self.TokenEmb, t[s:s + loss_chunk_tokens],
+                use_reentrant=False)
+        return total / t.numel()
 
     def param_count(self) -> int:
         return sum(p.numel() for p in self.parameters())

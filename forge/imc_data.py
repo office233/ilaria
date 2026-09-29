@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import itertools
 import json
 import os
 import random
@@ -176,9 +177,17 @@ def write_stream(raw: dict[str, Path], counts: dict[str, int], tok, out: Path, s
 
 def build(out: Path, tokens: int, vocab_size: int, tokenizer_sample_chars: int, seed: int,
           mix: Iterable[Source] = MIX, stream: Callable[[Source], Iterable[str]] = hf_stream,
-          keep_raw: bool = False) -> dict:
+          keep_raw: bool = False, tokenizer: Path | None = None, skip: dict[str, int] | None = None) -> dict:
+    """tokenizer: reuse an existing tokenizer.json instead of training one (a
+    continuation stream must share its token ids). skip: documents to pass
+    over at the start of each source, e.g. the documents_by_source of an
+    earlier build, so the new stream does not repeat it."""
     mix = list(mix)
     check_mix(mix)
+    skip = dict(skip or {})
+    unknown = set(skip) - {s.name for s in mix}
+    if unknown:
+        raise ValueError(f"skip names unknown sources: {sorted(unknown)}")
     out.mkdir(parents=True, exist_ok=True)
     if any(out.iterdir()):
         raise FileExistsError(f"{out} is not empty")
@@ -186,14 +195,22 @@ def build(out: Path, tokens: int, vocab_size: int, tokenizer_sample_chars: int, 
     raw, counts = {}, {}
     for src in mix:
         raw[src.name] = out / "raw" / f"{src.name}.jsonl"
-        stats = collect(src, int(tokens * src.share * src.chars_per_token), stream, raw[src.name])
+        n_skip = skip.get(src.name, 0)
+        skipping = (lambda s, n=n_skip: itertools.islice(stream(s), n, None)) if n_skip else stream
+        stats = collect(src, int(tokens * src.share * src.chars_per_token), skipping, raw[src.name])
         counts[src.name] = stats["documents"]
         print(f"[imc-data] {src.name}: {stats['documents']:,} documents, {stats['characters']:,} characters", flush=True)
-    tok = train_tokenizer(raw, mix, vocab_size, tokenizer_sample_chars)
+    if tokenizer is not None:
+        from tokenizers import Tokenizer
+        tok = Tokenizer.from_file(str(tokenizer))
+    else:
+        tok = train_tokenizer(raw, mix, vocab_size, tokenizer_sample_chars)
     tok.save(str(out / "tokenizer.json"))
     print(f"[imc-data] tokenizer: {tok.get_vocab_size():,} tokens", flush=True)
     meta = write_stream(raw, counts, tok, out, seed)
     meta["mix"] = {s.name: {"dataset": s.dataset, "config": s.config, "share": s.share} for s in mix}
+    meta["documents_by_source"] = counts
+    meta["skipped_by_source"] = {s.name: skip.get(s.name, 0) for s in mix}
     (out / "stream.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
     if not keep_raw:
         for path in raw.values():
@@ -211,8 +228,11 @@ def main() -> None:
     ap.add_argument("--tokenizer-sample-chars", type=int, default=2_000_000_000)
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--keep-raw", action="store_true", help="keep the downloaded JSONL documents")
+    ap.add_argument("--tokenizer", default="", help="reuse this tokenizer.json (continuation streams must share ids)")
+    ap.add_argument("--skip", default="", help='JSON {"source": documents} to pass over at the start of each source')
     a = ap.parse_args()
-    build(Path(a.out), a.tokens, a.vocab_size, a.tokenizer_sample_chars, a.seed, keep_raw=a.keep_raw)
+    build(Path(a.out), a.tokens, a.vocab_size, a.tokenizer_sample_chars, a.seed, keep_raw=a.keep_raw,
+          tokenizer=Path(a.tokenizer) if a.tokenizer else None, skip=json.loads(a.skip) if a.skip else None)
 
 
 if __name__ == "__main__":

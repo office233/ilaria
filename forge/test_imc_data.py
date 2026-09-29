@@ -90,3 +90,29 @@ def test_build_is_deterministic_and_refuses_a_used_directory(tmp_path):
         run(tmp_path, "a")
     assert json.loads((tmp_path / "a" / "stream.json").read_text())["mix"]["web"]["share"] == 0.75
     assert not (tmp_path / "a" / "raw").exists()
+
+
+def test_continuation_reuses_tokenizer_skips_used_documents_and_concatenates(tmp_path):
+    from tokenizers import Tokenizer
+    from concat_streams import concat
+    first = run(tmp_path, "first")
+    assert first["documents_by_source"]["web"] > 0
+    second = build(tmp_path / "second", tokens=4000, vocab_size=300, tokenizer_sample_chars=20000, seed=8,
+                   mix=MINI, stream=fake_stream, keep_raw=True,
+                   tokenizer=tmp_path / "first" / "tokenizer.json", skip=first["documents_by_source"])
+    a = Tokenizer.from_file(str(tmp_path / "first" / "tokenizer.json")).get_vocab()
+    b = Tokenizer.from_file(str(tmp_path / "second" / "tokenizer.json")).get_vocab()
+    assert a == b and second["eos_id"] == first["eos_id"]
+    for name, used in first["documents_by_source"].items():
+        docs = list(read_docs(tmp_path / "second" / "raw" / f"{name}.jsonl"))
+        assert docs[0].startswith(f"{name} doc {used}:"), docs[0][:40]
+    assert second["skipped_by_source"] == first["documents_by_source"]
+    merged = concat([str(tmp_path / "first" / "stream"), str(tmp_path / "second" / "stream")], str(tmp_path / "all"))
+    data, _ = load_stream(str(tmp_path / "all"))
+    assert len(data) == first["tokens"] + second["tokens"] == merged["tokens"]
+
+
+def test_skip_rejects_unknown_sources(tmp_path):
+    with pytest.raises(ValueError):
+        build(tmp_path / "x", tokens=4000, vocab_size=300, tokenizer_sample_chars=20000, seed=1,
+              mix=MINI, stream=fake_stream, skip={"nope": 3})

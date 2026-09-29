@@ -45,9 +45,15 @@ json.dump(m, open(f"{d}/stream.json", "w"), indent=2)
 print("[imc-24h] stream tokens:", f"{m['tokens']:,}", m["tokens_by_source"])
 EOF
 
+# Every stage trains on 256 x 1024 = 262,144 tokens per step. IMC-125M fits
+# 64 sequences per micro-batch on 96 GB; IMC-250M does not (its backward ran
+# out of memory at 64), so it uses 32 x 8.
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 COMMON=(--data "$L/data/stream" --arch imc --ctx 1024 --max-seq-len 1024 --dropout 0
-        --batch 64 --accum 4 --wd 0.1 --precision bf16 --compile --eval-every 250 --eval-iters 20)
-TOKENS_PER_STEP=$((64 * 4 * 1024))
+        --wd 0.1 --precision bf16 --compile --eval-every 250 --eval-iters 20)
+SMALL=(--batch 64 --accum 4)
+LARGE=(--batch 32 --accum 8)
+TOKENS_PER_STEP=$((256 * 1024))
 
 train() {  # name, extra args...
   local name=$1; shift
@@ -62,14 +68,14 @@ train() {  # name, extra args...
 
 # ---- 2. e1: the ternary-vs-bf16 control at 125M, 1B tokens each ------------
 E1_STEPS=$((1000000000 / TOKENS_PER_STEP))
-train e1-125m-bf16 --preset imc-125m --steps "$E1_STEPS" --warmup 200 --lr 6e-4 --min-lr 6e-5
-train e1-125m-ternary --preset imc-125m --ternary --steps "$E1_STEPS" --warmup 200 --lr 1.5e-3 --min-lr 1.5e-4
+train e1-125m-bf16 "${SMALL[@]}" --preset imc-125m --steps "$E1_STEPS" --warmup 200 --lr 6e-4 --min-lr 6e-5
+train e1-125m-ternary "${SMALL[@]}" --preset imc-125m --ternary --steps "$E1_STEPS" --warmup 200 --lr 1.5e-3 --min-lr 1.5e-4
 
 # ---- 3. main: IMC-250M ternary until the deadline ---------------------------
 if [ ! -f "$D/plan.json" ]; then
   log "measuring IMC-250M ternary speed"
   rm -rf "$L/speed"
-  python -u forge/train_ilaria.py "${COMMON[@]}" --out "$L/speed" --preset imc-250m --ternary \
+  python -u forge/train_ilaria.py "${COMMON[@]}" --out "$L/speed" "${LARGE[@]}" --preset imc-250m --ternary \
       --steps 60 --warmup 10 --lr 1.5e-3 --min-lr 1.5e-4 --eval-every 1000 2>&1 | tee "$L/speed.log"
   python - "$L/speed.log" "$START" "$DEADLINE_HOURS" "$TOKENS_PER_STEP" "$D/plan.json" <<'EOF'
 import json, re, sys, time
@@ -83,5 +89,5 @@ print("[imc-24h] plan:", open(plan).read())
 EOF
 fi
 MAIN_STEPS=$(python -c "import json;print(json.load(open('$D/plan.json'))['steps'])")
-train main-250m-ternary --preset imc-250m --ternary --steps "$MAIN_STEPS" --warmup 500 --lr 1.5e-3 --min-lr 1.5e-4
+train main-250m-ternary "${LARGE[@]}" --preset imc-250m --ternary --steps "$MAIN_STEPS" --warmup 500 --lr 1.5e-3 --min-lr 1.5e-4
 log "all stages done"

@@ -27,6 +27,7 @@ on:
 permissions:
   id-token: write
   contents: read
+  actions: read
 
 concurrency:
   group: deploy-production
@@ -52,6 +53,19 @@ jobs:
           for s in $SERVICES; do case "$s" in video-worker|cron-worker|platform-api) ;; *) echo "serviciu nepermis: $s"; exit 1 ;; esac; done
           [[ "$MAX_MIG" =~ ^[0-9]{1,2}$ ]] || { echo "max_migrations invalid"; exit 1; }
           [[ "$FLAGS" =~ ^[A-Z0-9_\ ]*$ ]] || { echo "flags invalid"; exit 1; }
+
+      - name: Refuză deploy dacă CI nu este verde pentru commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          green=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/workflows/ci.yml/runs?head_sha=${SHA}&event=push&per_page=20" \
+            --jq '[.workflow_runs[] | select(.status == "completed" and .conclusion == "success")] | length')
+          if [ "$green" -lt 1 ]; then
+            echo "::error::Deploy refuzat: commitul $SHA nu are un CI push complet și verde."
+            exit 1
+          fi
 
       - name: Login Azure (OIDC, fără secret)
         uses: azure/login@v2

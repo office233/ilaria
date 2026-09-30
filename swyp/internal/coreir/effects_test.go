@@ -205,7 +205,7 @@ func TestPureCoreIRBackwardCompatibilityAndRegistry(t *testing.T) {
 	if err != nil || !ok || value != 7 {
 		t.Fatalf("legacy pure execution changed: %+v %v", result, err)
 	}
-	want := []string{"clock.read", "fs.read", "fs.write", "model.infer", "net.connect", "net.fetch", "process.exec", "rng.sample", "tool.call"}
+	want := []string{"clock.read", "fs.read", "fs.write", "io.stderr", "io.stdout", "model.infer", "net.connect", "net.fetch", "process.exec", "rng.sample", "tool.call"}
 	got := CanonicalEffectRegistry()
 	if len(got) != len(want) {
 		t.Fatalf("effect registry mismatch: %v", got)

@@ -1,0 +1,8 @@
+{"id": "anchor-001", "test_prompt": "On a held-out checksum case, expected and actual digests match. Recall the baseline action."}
+{"id": "anchor-002", "test_prompt": "A second manifest omits the mandatory version. Recall the baseline action."}
+{"id": "anchor-003", "test_prompt": "Another job arrives after its deadline. Recall the stable action."}
+{"id": "anchor-004", "test_prompt": "A later artifact has a declared hash different from its bytes. Recall the action."}
+{"id": "anchor-005", "test_prompt": "A held-out request tries to write with read-only authority. Recall the action."}
+{"id": "anchor-006", "test_prompt": "Another LOCAL_PRIVATE example reaches global export. Recall the stable action."}
+{"id": "anchor-007", "test_prompt": "A later candidate reports infinite validation loss. Recall the action."}
+{"id": "anchor-008", "test_prompt": "A held-out tool call returns failure despite a success prediction. Recall the action."}

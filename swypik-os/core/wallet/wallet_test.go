@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	resourcepolicy "swypik-os/core/resource"
 )
 
 func TestCryptographicWallet(t *testing.T) {
@@ -61,5 +63,20 @@ func TestWalletPersistence(t *testing.T) {
 	}
 	if w2.GetBalance() != 123.45 {
 		t.Errorf("balance mismatch after reload: %.2f != 123.45", w2.GetBalance())
+	}
+}
+
+func TestPhoneWalletHistoryIsBounded(t *testing.T) {
+	t.Setenv("SWYPIK_RESOURCE_PROFILE", "phone")
+	w, err := NewWallet()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < 300; i++ {
+		w.CreditReward(1)
+	}
+	want := resourcepolicy.ForProfile(resourcepolicy.ProfilePhone).MaxWalletTransactions
+	if got := len(w.Transactions); got != want {
+		t.Fatalf("transactions=%d want %d", got, want)
 	}
 }

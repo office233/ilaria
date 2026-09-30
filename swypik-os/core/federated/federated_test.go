@@ -34,6 +34,9 @@ func TestFederatedLearningAndPoC(t *testing.T) {
 
 	// 3. Test Federated Aggregator & Byzantine Poisoning Filter
 	aggregator := NewFederatedAggregator(1)
+	if err := aggregator.RegisterNodeKey(trainer.nodeID, trainer.PublicKey()); err != nil {
+		t.Fatalf("Failed to register node key: %v", err)
+	}
 
 	// Valid submission from Worker 1
 	accepted, reason := aggregator.SubmitDelta(delta)
@@ -43,6 +46,9 @@ func TestFederatedLearningAndPoC(t *testing.T) {
 
 	// Valid submission from Worker 2 (RTX 3080)
 	trainer2 := NewLocalTrainer("worker_rtx_3080_node", 50.0)
+	if err := aggregator.RegisterNodeKey(trainer2.nodeID, trainer2.PublicKey()); err != nil {
+		t.Fatalf("Failed to register worker 2 key: %v", err)
+	}
 	delta2, _ := trainer2.ComputeMicroBatch(1, "transformer.lora_a", 32)
 	accepted, _ = aggregator.SubmitDelta(delta2)
 	if !accepted {
@@ -52,12 +58,18 @@ func TestFederatedLearningAndPoC(t *testing.T) {
 	// Malicious Byzantine Poisoning Attack:
 	// Rogue node attempts to inject massive destabilizing gradients (+50.0)
 	trainerRogue := NewLocalTrainer("rogue_cheat_node", 10.0)
+	if err := aggregator.RegisterNodeKey(trainerRogue.nodeID, trainerRogue.PublicKey()); err != nil {
+		t.Fatalf("Failed to register rogue key: %v", err)
+	}
 	maliciousDelta, _ := trainerRogue.ComputeMicroBatch(1, "transformer.lora_a", 32)
 	for i := range maliciousDelta.Values {
 		maliciousDelta.Values[i] = 50.0 // Massive gradient perturbation
 	}
-	// Recompute proof so PoC check passes, but norm filter must catch it
+	// Recompute proof so PoC check passes, and sign so norm filter must catch it
 	maliciousDelta.ProofHash = calculateProofHash(maliciousDelta.NodeID, maliciousDelta.RoundID, maliciousDelta.LayerName, maliciousDelta.ProofNonce, maliciousDelta.Values)
+	if err := maliciousDelta.Sign(trainerRogue.privateKey()); err != nil {
+		t.Fatalf("Failed to sign malicious delta: %v", err)
+	}
 
 	acceptedMalicious, reasonMalicious := aggregator.SubmitDelta(maliciousDelta)
 	if acceptedMalicious {
@@ -113,8 +125,9 @@ func TestFederatedLearningAndPoC(t *testing.T) {
 
 	// Penalize rogue peer
 	mesh.PenalizePeer(peer1.NodeID, 0.4)
-	if peer1.Reputation != 0.6 {
-		t.Errorf("Expected peer reputation to decay to 0.6, got: %.2f", peer1.Reputation)
+	peersAfter := mesh.GetPeers()
+	if len(peersAfter) != 1 || peersAfter[0].Reputation != 0.6 {
+		t.Errorf("Expected peer reputation to decay to 0.6, got: %.2f", peersAfter[0].Reputation)
 	}
 }
 

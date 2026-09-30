@@ -59,6 +59,14 @@ const (
 	BusUSB      BusKind = "USB"
 	BusPlatform BusKind = "PLATFORM"
 	BusStorage  BusKind = "STORAGE"
+	BusCAN      BusKind = "CAN"
+	BusUART     BusKind = "UART"
+	BusI2C      BusKind = "I2C"
+	BusSPI      BusKind = "SPI"
+	BusGPIO     BusKind = "GPIO"
+	BusModbus   BusKind = "MODBUS"
+	BusEthernet BusKind = "ETHERNET"
+	BusBLE      BusKind = "BLUETOOTH_LE"
 )
 
 type DeviceKind string
@@ -74,6 +82,30 @@ const (
 	DevicePower   DeviceKind = "POWER"
 	DeviceCompute DeviceKind = "COMPUTE"
 )
+
+// PlatformClass describes the operational device class of the host. It is
+// deliberately coarse and carries no model/serial identity. Automotive means
+// infotainment/compute-domain policy only; it never grants actuator authority.
+type PlatformClass string
+
+const (
+	PlatformUnknown     PlatformClass = "unknown"
+	PlatformWorkstation PlatformClass = "workstation"
+	PlatformMobile      PlatformClass = "mobile"
+	PlatformAutomotive  PlatformClass = "automotive"
+	PlatformRobot       PlatformClass = "robot"
+	PlatformAppliance   PlatformClass = "appliance"
+	PlatformEmbedded    PlatformClass = "embedded"
+)
+
+func validPlatformClass(class PlatformClass) bool {
+	switch class {
+	case "", PlatformUnknown, PlatformWorkstation, PlatformMobile, PlatformAutomotive, PlatformRobot, PlatformAppliance, PlatformEmbedded:
+		return true
+	default:
+		return false
+	}
+}
 
 type FirmwareDescriptor struct {
 	Kind    FirmwareKind `json:"kind"`
@@ -128,6 +160,7 @@ type DeviceGraph struct {
 
 type HardwareManifest struct {
 	SchemaVersion string               `json:"schema_version"`
+	DeviceClass   PlatformClass        `json:"device_class,omitempty"`
 	Architecture  Architecture         `json:"architecture"`
 	ABI           string               `json:"abi"`
 	Endianness    Endianness           `json:"endianness"`
@@ -162,6 +195,9 @@ func (m HardwareManifest) Validate() error {
 	}
 	if strings.TrimSpace(string(m.Architecture)) == "" {
 		return errors.New("hardware architecture is required")
+	}
+	if !validPlatformClass(m.DeviceClass) {
+		return fmt.Errorf("unsupported hardware device class %q", m.DeviceClass)
 	}
 	if strings.TrimSpace(m.ABI) == "" {
 		return errors.New("hardware ABI is required")

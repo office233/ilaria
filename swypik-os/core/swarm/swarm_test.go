@@ -1,9 +1,21 @@
 package swarm
 
 import (
+	"context"
+	"sync"
 	"testing"
 	"time"
+
+	resourcepolicy "swypik-os/core/resource"
 )
+
+type fixedSignalSource struct {
+	signals resourcepolicy.RuntimeSignals
+}
+
+func (s fixedSignalSource) Sample(context.Context) (resourcepolicy.RuntimeSignals, error) {
+	return s.signals, nil
+}
 
 func TestSwarmDaemonLifecycle(t *testing.T) {
 	t.Setenv("SWYPIK_STATE_DIR", t.TempDir())
@@ -31,6 +43,119 @@ func TestSwarmDaemonLifecycle(t *testing.T) {
 	d.Stop()
 	d.Stop()
 	d.Stop()
+}
+
+func TestAdaptiveSignalSourceAddsAvailableGPUThermalTelemetry(t *testing.T) {
+	source := adaptiveSignalSource{
+		base: fixedSignalSource{signals: resourcepolicy.RuntimeSignals{
+			BatteryPercent:    -1,
+			MemoryLoadPercent: 42,
+			ThermalCelsius:    -1,
+		}},
+		thermal: func() (int, bool) { return 79, true },
+	}
+	signals, err := source.Sample(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if signals.ThermalCelsius != 79 || signals.MemoryLoadPercent != 42 {
+		t.Fatalf("signals=%+v", signals)
+	}
+}
+
+func TestAdaptiveSignalSourcePreservesUnknownThermalWhenUnavailable(t *testing.T) {
+	source := adaptiveSignalSource{
+		base:    fixedSignalSource{signals: resourcepolicy.RuntimeSignals{ThermalCelsius: -1}},
+		thermal: func() (int, bool) { return 0, false },
+	}
+	signals, err := source.Sample(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if signals.ThermalCelsius != -1 {
+		t.Fatalf("thermal=%d want unknown", signals.ThermalCelsius)
+	}
+}
+
+func TestSwarmEnabledIdleDoesNoSyntheticCompute(t *testing.T) {
+	t.Setenv("SWYPIK_STATE_DIR", t.TempDir())
+	d := NewDaemon(SwarmConfig{Enabled: true, TrainingEnabled: true})
+	defer d.Stop()
+
+	time.Sleep(50 * time.Millisecond)
+	if got := d.GetStatus().RealHashRate; got != 0 {
+		t.Fatalf("idle swarm reported fabricated hashrate: %v", got)
+	}
+}
+
+func TestStoppedSwarmCannotRestartAdaptiveMonitor(t *testing.T) {
+	t.Setenv("SWYPIK_STATE_DIR", t.TempDir())
+	d := NewDaemon(SwarmConfig{Enabled: true, TrainingEnabled: true})
+	d.Stop()
+
+	if !d.stopped.Load() {
+		t.Fatal("daemon did not record terminal stopped state")
+	}
+	d.Toggle()
+	if !d.GetStatus().Enabled {
+		t.Fatal("toggle after Stop changed terminal daemon state")
+	}
+	d.mu.RLock()
+	cancel, done := d.governorCancel, d.governorDone
+	d.mu.RUnlock()
+	if cancel != nil || done != nil {
+		t.Fatal("toggle after Stop restarted adaptive resource monitor")
+	}
+	if _, _, err := d.ExecuteTrainingMicroBatchContext(context.Background(), 1); err == nil || err.Error() != "daemon stopped" {
+		t.Fatalf("training after Stop err=%v want daemon stopped", err)
+	}
+}
+
+type swarmTransitionSink struct {
+	mu    sync.Mutex
+	items []resourcepolicy.Transition
+}
+
+func (s *swarmTransitionSink) RecordResourceTransition(transition resourcepolicy.Transition) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.items = append(s.items, transition)
+	return nil
+}
+
+func TestSwarmAcceptsInjectedResourceAuthorityWithoutOwningItsLifecycle(t *testing.T) {
+	d := NewDaemon(SwarmConfig{Enabled: false, TrainingEnabled: false})
+	sink := &swarmTransitionSink{}
+	if err := d.SetResourceTransitionSink(sink); err != nil {
+		t.Fatal(err)
+	}
+	status := d.GetStatus()
+	if status.ResourceBudget.MaxWorkers < 1 || status.ResourceBudget.MaxCPUPercent < 1 || status.ResourceAuditError != "" {
+		t.Fatalf("resource status=%+v", status)
+	}
+	sink.mu.Lock()
+	count := len(sink.items)
+	sink.mu.Unlock()
+	if count != 1 {
+		t.Fatalf("initial resource authority transitions=%d want 1", count)
+	}
+	d.Stop()
+	if err := d.SetResourceTransitionSink(sink); err == nil || err.Error() != "daemon stopped" {
+		t.Fatalf("authority attachment after Stop err=%v", err)
+	}
+}
+
+func TestSwarmDisabledDefersTrainerAndHardwareWork(t *testing.T) {
+	t.Setenv("SWYPIK_STATE_DIR", t.TempDir())
+	d := NewDaemon(SwarmConfig{Enabled: false, TrainingEnabled: false})
+	defer d.Stop()
+	if d.trainer != nil {
+		t.Fatal("disabled swarm eagerly allocated trainer")
+	}
+	status := d.GetStatus()
+	if status.HasGPU || status.VRAMMB != 0 || status.LocalTflops != 0 {
+		t.Fatalf("disabled swarm eagerly probed hardware: %+v", status)
+	}
 }
 
 func TestSwarmGPUAutoDetection(t *testing.T) {

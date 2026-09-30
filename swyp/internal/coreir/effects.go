@@ -26,6 +26,8 @@ var effectRegistryV1 = map[string]struct{}{
 	"clock.read":   {},
 	"fs.read":      {},
 	"fs.write":     {},
+	"io.stderr":    {},
+	"io.stdout":    {},
 	"model.infer":  {},
 	"net.connect":  {},
 	"net.fetch":    {},
@@ -33,6 +35,18 @@ var effectRegistryV1 = map[string]struct{}{
 	"rng.sample":   {},
 	"tool.call":    {},
 }
+
+const (
+	EffectClockRead   = "clock.read"
+	EffectFSRead      = "fs.read"
+	EffectFSWrite     = "fs.write"
+	EffectIOStdout    = "io.stdout"
+	EffectIOStderr    = "io.stderr"
+	EffectRNGSample   = "rng.sample"
+	EffectNetConnect  = "net.connect"
+	EffectNetFetch    = "net.fetch"
+	EffectProcessExec = "process.exec"
+)
 
 func knownEffect(effect string) bool {
 	_, ok := effectRegistryV1[effect]

@@ -139,3 +139,45 @@ func TestProcessRun(t *testing.T) {
 		t.Fatal("process.run must only exist when a runner is provided")
 	}
 }
+
+func TestShortNameAliasesRejection(t *testing.T) {
+	for _, p := range []string{"ENV~1", "GIT~1/config", "a/GIT~1/hooks/x"} {
+		if err := validRelativePath(p); err == nil {
+			t.Errorf("validRelativePath accepted short-name path %q", p)
+		}
+	}
+	for _, p := range []string{"file~backup.txt", "normal.txt", "src/main.go", "a/backup~file.go"} {
+		if err := validRelativePath(p); err != nil {
+			t.Errorf("validRelativePath rejected valid path %q: %v", p, err)
+		}
+	}
+
+	root := t.TempDir()
+	tools := WorkspaceTools(root, nil)
+	readTool := toolByName(t, tools, "workspace.read")
+	writeTool := toolByName(t, tools, "workspace.write")
+	listTool := toolByName(t, tools, "workspace.list")
+
+	for _, p := range []string{"ENV~1", "GIT~1/config", "a/GIT~1/hooks/x"} {
+		if _, err := call(t, readTool, `{"path":"`+p+`"}`); err == nil {
+			t.Errorf("workspace.read accepted short name %q", p)
+		}
+		if _, err := call(t, writeTool, `{"path":"`+p+`","content":"test"}`); err == nil {
+			t.Errorf("workspace.write accepted short name %q", p)
+		}
+	}
+	if _, err := call(t, listTool, `{"path":"GIT~1"}`); err == nil {
+		t.Error("workspace.list accepted short name GIT~1")
+	}
+
+	if _, err := call(t, writeTool, `{"path":"file~backup.txt","content":"backup text"}`); err != nil {
+		t.Fatalf("failed to write file~backup.txt: %v", err)
+	}
+	res, err := call(t, readTool, `{"path":"file~backup.txt"}`)
+	if err != nil {
+		t.Fatalf("failed to read file~backup.txt: %v", err)
+	}
+	if !strings.Contains(res["content"].(string), "backup text") {
+		t.Fatalf("unexpected content for file~backup.txt: %+v", res)
+	}
+}

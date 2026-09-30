@@ -1,0 +1,81 @@
+component ComputeFabric {
+    capability gpu.compute;
+    capability artifact.read_signed;
+    capability artifact.write_candidate;
+    capability scheduler.lease;
+    state jobs: TrainingJobs;
+    invariant "workers have no implicit user-data capability";
+    invariant "candidate results never directly mutate production weights";
+}
+
+record TrainingJob {
+    field job_id: string;
+    field round_id: u64;
+    field model_version: string;
+    field architecture_hash: string;
+    field tokenizer_hash: string;
+    field dataset_shard_hash: string;
+    field rights_provenance_id: string;
+    field recipe_hash: string;
+    field seed: u64;
+    field job_type: string;
+    field parameter_ids: string_list;
+    field min_vram_mb: u64;
+    field max_vram_mb: u64;
+    field max_wall_seconds: u64;
+    field max_power_watts: u64;
+    field max_bandwidth_bytes: u64;
+    field result_schema: string;
+    field verifier_policy: string;
+}
+
+record CandidateDelta {
+    field job_id: string;
+    field round_id: u64;
+    field artifact_hash: string;
+    field checkpoint_before_hash: string;
+    field checkpoint_after_hash: string;
+    field recipe_hash: string;
+    field hardware_class: string;
+    field tokens_trained: u64;
+    field training_metrics: string_map;
+    field sentinel_results: string_map;
+}
+
+effect ExecuteTrainingShard {
+    capability gpu.compute;
+    capability artifact.read_signed;
+    capability artifact.write_candidate;
+    requires "job manifest, dataset shard and model artifact are signed";
+    ensures "result is content-addressed and candidate-only";
+}
+
+contract TrainingWorkerIsolation {
+    requires "job uses curated Ilaria data";
+    requires "worker scratch is capability-scoped";
+    ensures "user home, personal hippocampus and secrets are inaccessible";
+}
+
+task TrainCortexShard {
+    capability gpu.compute;
+    effect training.execute_shard;
+    verify TrainingCandidate;
+    timeout_seconds 3600;
+}
+
+agent IlariaTrainingWorker {
+    capability gpu.compute;
+    capability artifact.read_signed;
+    capability artifact.write_candidate;
+    forbid user.files;
+    forbid user.secrets;
+    forbid personal.hippocampus;
+}
+
+verify TrainingCandidate {
+    check finite;
+    check artifact_hash;
+    check round_freshness;
+    check sentinel;
+    check outlier_filter;
+}

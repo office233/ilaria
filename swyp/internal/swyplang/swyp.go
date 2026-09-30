@@ -10,6 +10,8 @@ import (
 	"text/scanner"
 	"time"
 	"unicode"
+
+	"swyp-lang/internal/sourcefront"
 )
 
 type token struct {
@@ -41,6 +43,8 @@ type function struct {
 type Program struct {
 	functions map[string]function
 	core      bool // Opt-in parser mode; legacy backends must reject it.
+	module    string
+	uses      []string
 }
 type parser struct {
 	core      bool
@@ -66,16 +70,23 @@ func ParseCore(filename, source string) (*Program, error) {
 
 func parseSource(filename, source string, core bool) (program *Program, err error) {
 	if len(source) > 1_048_576 {
-		return nil, fmt.Errorf("%s: source exceeds 1 MiB limit", filename)
+		return nil, diagnosticForFile(DiagnosticSourceTooLarge, filename, "source exceeds 1 MiB limit")
+	}
+	preamble, parseBody, preambleErr := sourcefront.ParsePreamble(filename, source)
+	if preambleErr != nil {
+		if e, ok := preambleErr.(*sourcefront.Error); ok {
+			return nil, diagnosticAt(DiagnosticModulePreamble, e.Position, "%s", e.Message)
+		}
+		return nil, preambleErr
 	}
 	var s scanner.Scanner
-	s.Init(strings.NewReader(source))
+	s.Init(strings.NewReader(parseBody))
 	s.Filename = filename
 	s.Mode = scanner.ScanIdents | scanner.ScanInts | scanner.ScanFloats | scanner.ScanStrings | scanner.ScanComments | scanner.SkipComments
 	var lexical error
 	s.Error = func(s *scanner.Scanner, message string) {
 		if lexical == nil {
-			lexical = failure(s.Position, "%s", message)
+			lexical = diagnosticAt(DiagnosticLexicalError, s.Position, "%s", message)
 		}
 	}
 	p := &parser{core: core}
@@ -96,15 +107,15 @@ func parseSource(filename, source string, core bool) (program *Program, err erro
 			}
 		}
 	}()
-	program = &Program{functions: map[string]function{}, core: core}
+	program = &Program{functions: map[string]function{}, core: core, module: preamble.Module, uses: append([]string(nil), preamble.Uses...)}
 	for p.peek() != "<eof>" {
 		p.expect("fn")
 		name := p.identifier()
-		if name == "print" || name == "arg" || name == "clock" {
-			p.bad("%s is a reserved built-in", name)
+		if name == "print" || name == "eprint" || name == "arg" || name == "clock" {
+			p.badCode(DiagnosticReservedIdentifier, "%s is a reserved built-in", name)
 		}
 		if _, exists := program.functions[name]; exists {
-			p.bad("duplicate function %q", name)
+			p.badCode(DiagnosticDuplicateFunction, "duplicate function %q", name)
 		}
 		p.expect("(")
 		f := function{pos: p.tokens[p.at-1].pos}
@@ -113,7 +124,7 @@ func parseSource(filename, source string, core bool) (program *Program, err erro
 			for {
 				n := p.identifier()
 				if seen[n] {
-					p.bad("duplicate parameter %q", n)
+					p.badCode(DiagnosticDuplicateParameter, "duplicate parameter %q", n)
 				}
 				seen[n] = true
 				f.params = append(f.params, n)
@@ -137,23 +148,47 @@ func parseSource(filename, source string, core bool) (program *Program, err erro
 	}
 	main, ok := program.functions["main"]
 	if !ok {
-		p.bad("missing fn main()")
+		p.badCode(DiagnosticMissingMain, "missing fn main()")
 	}
 	if len(main.params) != 0 {
-		p.bad("main must have no parameters")
+		p.badCode(DiagnosticInvalidMain, "main must have no parameters")
 	}
 	return program, nil
 }
+
+// ModuleName returns the optional namespace declared by the shared Swyp source
+// preamble. Empty means the source is an unqualified compatibility module.
+func (p *Program) ModuleName() string {
+	if p == nil {
+		return ""
+	}
+	return p.module
+}
+
+// Uses returns a detached ordered list of logical module dependencies. Import
+// resolution is intentionally a separate compiler stage; parsing never performs
+// ambient filesystem or network access.
+func (p *Program) Uses() []string {
+	if p == nil {
+		return nil
+	}
+	return append([]string(nil), p.uses...)
+}
 func (p *parser) typeName(allowVoid bool) string {
 	name := p.peek()
-	if name != "number" && name != "bool" && name != "string" && !(allowVoid && name == "void") && !(p.core && (name == "i64" || name == "f64")) {
-		p.bad("expected type number, bool, or string")
+	if name != "number" && name != "bool" && name != "string" && !(allowVoid && name == "void") && !(p.core && (name == "i64" || name == "u64" || name == "f64" || name == "ieee64" || name == "bytes")) {
+		p.badCode(DiagnosticInvalidType, "expected type number, bool, or string")
 	}
 	p.at++
 	return name
 }
-func (p *parser) peek() string           { return p.tokens[p.at].text }
-func (p *parser) bad(f string, a ...any) { panic(failure(p.tokens[p.at].pos, f, a...)) }
+func (p *parser) peek() string { return p.tokens[p.at].text }
+func (p *parser) bad(f string, a ...any) {
+	p.badCode(DiagnosticParseError, f, a...)
+}
+func (p *parser) badCode(code, f string, a ...any) {
+	panic(diagnosticAt(code, p.tokens[p.at].pos, f, a...))
+}
 func (p *parser) take(s string) bool {
 	if p.peek() == s {
 		p.at++
@@ -163,19 +198,19 @@ func (p *parser) take(s string) bool {
 }
 func (p *parser) expect(s string) {
 	if !p.take(s) {
-		p.bad("expected %q, got %q", s, p.peek())
+		p.badCode(DiagnosticUnexpectedToken, "expected %q, got %q", s, p.peek())
 	}
 }
 func (p *parser) identifier() string {
 	t := p.peek()
 	for i, c := range t {
 		if c != '_' && !unicode.IsLetter(c) && !(i > 0 && unicode.IsDigit(c)) {
-			p.bad("expected identifier, got %q", t)
+			p.badCode(DiagnosticExpectedIdentifier, "expected identifier, got %q", t)
 		}
 	}
 	switch t {
 	case "fn", "let", "if", "else", "while", "return", "true", "false":
-		p.bad("reserved word %q cannot be an identifier", t)
+		p.badCode(DiagnosticReservedIdentifier, "reserved word %q cannot be an identifier", t)
 	}
 	p.at++
 	return t
@@ -187,7 +222,7 @@ func (p *parser) block() []*stmt {
 	var body []*stmt
 	for p.peek() != "}" {
 		if p.peek() == "<eof>" {
-			p.bad("expected closing brace")
+			p.badCode(DiagnosticUnexpectedToken, "expected closing brace")
 		}
 		body = append(body, p.statement())
 	}
@@ -253,7 +288,7 @@ func (p *parser) statement() *stmt {
 		}
 		p.tailDepth = saved
 		if p.tailUsed != used && (s.other == nil || p.peek() != "}") {
-			p.bad("a bare result expression is only allowed at the end of a function or of both branches of its final if/else")
+			p.badCode(DiagnosticParseError, "a bare result expression is only allowed at the end of a function or of both branches of its final if/else")
 		}
 	case p.take("while"):
 		s.kind = "while"
@@ -281,25 +316,56 @@ func (p *parser) statement() *stmt {
 
 var precedence = map[string]int{"||": 1, "&&": 2, "==": 3, "!=": 3, "<": 4, "<=": 4, ">": 4, ">=": 4, "+": 5, "-": 5, "*": 6, "/": 6, "%": 6}
 
+var corePrecedence = map[string]int{
+	"||": 1,
+	"&&": 2,
+	"|":  3,
+	"^":  4,
+	"&":  5,
+	"==": 6, "!=": 6,
+	"<": 7, "<=": 7, ">": 7, ">=": 7,
+	"<<": 8, ">>": 8,
+	"+": 9, "-": 9,
+	"*": 10, "/": 10, "%": 10,
+}
+
 func (p *parser) enter() {
 	p.depth++
 	if p.depth > 256 {
-		p.bad("syntax nesting limit exceeded")
+		p.badCode(DiagnosticSyntaxNestingLimit, "syntax nesting limit exceeded")
 	}
 }
 func (p *parser) operator() (string, int) {
+	table := precedence
+	if p.core {
+		table = corePrecedence
+	}
 	t := p.peek()
 	if p.at+1 < len(p.tokens) {
 		next := p.tokens[p.at+1]
 		current := p.tokens[p.at]
 		if next.pos.Offset == current.pos.Offset+len(t) {
 			pair := t + next.text
-			if _, ok := precedence[pair]; ok {
+			if _, ok := table[pair]; ok {
 				return pair, 2
 			}
 		}
 	}
 	return t, 1
+}
+func (p *parser) precedence(op string) (int, bool) {
+	if p.core {
+		v, ok := corePrecedence[op]
+		return v, ok
+	}
+	v, ok := precedence[op]
+	return v, ok
+}
+func (p *parser) unaryPrecedence() int {
+	if p.core {
+		return 11
+	}
+	return 7
 }
 func (p *parser) expression(min int) *expr {
 	p.enter()
@@ -308,9 +374,9 @@ func (p *parser) expression(min int) *expr {
 	var e *expr
 	switch {
 	case p.take("-"):
-		e = &expr{kind: "unary", name: "-", args: []*expr{p.expression(7)}, pos: t.pos}
+		e = &expr{kind: "unary", name: "-", args: []*expr{p.expression(p.unaryPrecedence())}, pos: t.pos}
 	case p.take("!"):
-		e = &expr{kind: "unary", name: "!", args: []*expr{p.expression(7)}, pos: t.pos}
+		e = &expr{kind: "unary", name: "!", args: []*expr{p.expression(p.unaryPrecedence())}, pos: t.pos}
 	case p.take("("):
 		e = p.expression(0)
 		p.expect(")")
@@ -322,7 +388,7 @@ func (p *parser) expression(min int) *expr {
 		if strings.HasPrefix(t.text, "\"") {
 			v, err := strconv.Unquote(t.text)
 			if err != nil {
-				p.bad("invalid string")
+				p.badCode(DiagnosticInvalidLiteral, "invalid string")
 			}
 			p.at++
 			e = &expr{kind: "literal", value: v, pos: t.pos}
@@ -349,7 +415,7 @@ func (p *parser) expression(min int) *expr {
 	e = boundedExpression(e)
 	for {
 		op, n := p.operator()
-		prec, ok := precedence[op]
+		prec, ok := p.precedence(op)
 		if !ok || prec < min {
 			break
 		}
@@ -370,7 +436,7 @@ func boundedExpression(e *expr) *expr {
 		}
 	}
 	if e.depth > 256 {
-		panic(failure(e.pos, "expression nesting limit exceeded"))
+		panic(diagnosticAt(DiagnosticSyntaxNestingLimit, e.pos, "expression nesting limit exceeded"))
 	}
 	return e
 }
@@ -392,6 +458,7 @@ func (s *scope) find(name string) (*scope, bool) {
 type runtime struct {
 	program      *Program
 	out          io.Writer
+	errOut       io.Writer
 	steps, depth int
 	args         []float64
 	started      time.Time
@@ -402,6 +469,10 @@ func (p *Program) Run(out io.Writer, budget int) (err error) {
 	return p.RunArgs(out, budget, nil)
 }
 func (p *Program) RunArgs(out io.Writer, budget int, args []float64) (err error) {
+	return p.RunArgsIO(out, out, budget, args)
+}
+
+func (p *Program) RunArgsIO(out, errOut io.Writer, budget int, args []float64) (err error) {
 	if p.core {
 		return fmt.Errorf("core source requires the CoreIR execution pipeline")
 	}
@@ -422,7 +493,7 @@ func (p *Program) RunArgs(out io.Writer, budget int, args []float64) (err error)
 			return fmt.Errorf("arguments must be finite numbers")
 		}
 	}
-	r := &runtime{program: p, out: out, steps: budget, args: args, started: time.Now()}
+	r := &runtime{program: p, out: out, errOut: errOut, steps: budget, args: args, started: time.Now()}
 	r.call("main", nil, scanner.Position{Filename: "<entry>"})
 	return nil
 }
@@ -453,6 +524,12 @@ func (r *runtime) call(name string, args []any, pos scanner.Position) any {
 	if name == "print" {
 		if _, err := fmt.Fprintln(r.out, args...); err != nil {
 			panic(failure(pos, "output failed: %v", err))
+		}
+		return nil
+	}
+	if name == "eprint" {
+		if _, err := fmt.Fprintln(r.errOut, args...); err != nil {
+			panic(failure(pos, "error output failed: %v", err))
 		}
 		return nil
 	}

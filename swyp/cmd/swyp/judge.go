@@ -50,10 +50,7 @@ func judge(ctx context.Context, input io.Reader, output io.Writer) (err error) {
 		if err == nil || emitted {
 			return
 		}
-		var d *coreir.Diagnostic
-		if !errors.As(err, &d) {
-			d = &coreir.Diagnostic{Code: "invalid_input", Message: err.Error()}
-		}
+		d := compilerDiagnostic(err)
 		summary, hint := "ERROR "+d.Message, judgeHint(source, d.Message)
 		if hint != "" {
 			summary += " -- hint: " + hint

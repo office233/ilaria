@@ -307,7 +307,7 @@ func (e *Engine) crawl(ctx context.Context, seed string, limit int, client *http
 				report.Errors = append(report.Errors, raw+": unsupported charset")
 				continue
 			}
-			p = extract(r, pageURL)
+			p = extractLimit(r, pageURL, e.activeTextLimit())
 		case "text/plain":
 			r, cerr := charset.NewReader(bytes.NewReader(res.body), res.header.Get("Content-Type"))
 			if cerr != nil {
@@ -315,7 +315,7 @@ func (e *Engine) crawl(ctx context.Context, seed string, limit int, client *http
 				continue
 			}
 			b, _ := io.ReadAll(r)
-			p.Text = clip(strings.Join(strings.Fields(string(b)), " "), MaxTextBytes)
+			p.Text = compactLocalText(b, e.activeTextLimit())
 		default:
 			report.Skipped++
 			continue

@@ -1,0 +1,101 @@
+{
+  "schema_version": 1,
+  "policy": "manual-rights-review-required-v1",
+  "evidence": {
+    "filename": "data_rights_evidence.json",
+    "sha256": "402e38f56c25af1dbb0c4fdc74993f766215d630be71074876f32c559056391e",
+    "source_lock_sha256": "c7a7305dc9cc72958b1cf787a234f68a64df746ac2f63e19c29b392743ae3e5f",
+    "git_source_lock_filename": "git_sources.lock.json",
+    "git_source_lock_sha256": "f643020c68764eda809c3f316cf7027ee23bc60aad847eacad54e0dacbb7996f"
+  },
+  "sources": {
+    "tinystories": {
+      "status": "REVIEW_REQUIRED",
+      "commercial_use_approved": false,
+      "review_ref": "",
+      "declared_license": "CDLA-Sharing-1.0",
+      "evidence_ref": "data_rights_evidence.json#tinystories",
+      "note": "No production-training approval is asserted by this registry yet."
+    },
+    "wiki_ro": {
+      "status": "REVIEW_REQUIRED",
+      "commercial_use_approved": false,
+      "review_ref": "",
+      "declared_license": "CC-BY-SA-3.0 + GFDL (dataset card)",
+      "evidence_ref": "data_rights_evidence.json#wiki_ro",
+      "note": "License and attribution obligations must be reviewed before production training."
+    },
+    "wiki_en": {
+      "status": "REVIEW_REQUIRED",
+      "commercial_use_approved": false,
+      "review_ref": "",
+      "declared_license": "CC-BY-SA-3.0 + GFDL (dataset card)",
+      "evidence_ref": "data_rights_evidence.json#wiki_en",
+      "note": "License and attribution obligations must be reviewed before production training."
+    },
+    "fineweb2_ro": {
+      "status": "REVIEW_REQUIRED",
+      "commercial_use_approved": false,
+      "review_ref": "",
+      "declared_license": "ODC-By-1.0",
+      "evidence_ref": "data_rights_evidence.json#fineweb2_ro",
+      "note": "Dataset-level and underlying-content rights must be reviewed before production training."
+    },
+    "fineweb_edu": {
+      "status": "REVIEW_REQUIRED",
+      "commercial_use_approved": false,
+      "review_ref": "",
+      "declared_license": "ODC-By-1.0",
+      "evidence_ref": "data_rights_evidence.json#fineweb_edu",
+      "note": "Dataset-level and underlying-content rights must be reviewed before production training."
+    },
+    "freertos_kernel": {
+      "status": "REVIEW_REQUIRED",
+      "commercial_use_approved": false,
+      "review_ref": "",
+      "declared_license": "MIT",
+      "evidence_ref": "data_rights_evidence.json#freertos_kernel",
+      "note": "Candidate embedded OS/hardware corpus. Scope, notices and external-port boundaries require review."
+    },
+    "freebsd_licensed_tree": {
+      "status": "REVIEW_REQUIRED",
+      "commercial_use_approved": false,
+      "review_ref": "",
+      "declared_license": "BSD-2-Clause collection with file-level exceptions",
+      "evidence_ref": "data_rights_evidence.json#freebsd_licensed_tree",
+      "note": "Candidate OS/driver corpus. Only per-file allowlisted BSD-like material may be ingested."
+    },
+    "golang_go": {
+      "status": "REVIEW_REQUIRED",
+      "commercial_use_approved": false,
+      "review_ref": "",
+      "declared_license": "BSD-3-Clause",
+      "evidence_ref": "data_rights_evidence.json#golang_go",
+      "note": "Candidate code/tool corpus pinned to an exact upstream revision; provenance exclusions require review."
+    },
+    "python_cpython": {
+      "status": "REVIEW_REQUIRED",
+      "commercial_use_approved": false,
+      "review_ref": "",
+      "declared_license": "PSF-2.0 with file-level exceptions",
+      "evidence_ref": "data_rights_evidence.json#python_cpython",
+      "note": "Candidate code/tool corpus. Other-license components require file-level classification."
+    },
+    "rust_lang": {
+      "status": "REVIEW_REQUIRED",
+      "commercial_use_approved": false,
+      "review_ref": "",
+      "declared_license": "Apache-2.0 OR MIT with file-level third-party exceptions",
+      "evidence_ref": "data_rights_evidence.json#rust_lang",
+      "note": "Candidate code/tool corpus. license-metadata.json must drive a file-level allowlist."
+    },
+    "zephyr": {
+      "status": "REVIEW_REQUIRED",
+      "commercial_use_approved": false,
+      "review_ref": "",
+      "declared_license": "Apache-2.0",
+      "evidence_ref": "data_rights_evidence.json#zephyr",
+      "note": "Candidate device/code corpus. Per-file SPDX/REUSE filtering and attribution/notice obligations must be reviewed before production training."
+    }
+  }
+}

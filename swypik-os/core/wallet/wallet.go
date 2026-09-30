@@ -14,6 +14,8 @@ import (
 	"swypik-os/internal/storage"
 	"sync"
 	"time"
+
+	resourcepolicy "swypik-os/core/resource"
 )
 
 // Transaction represents a cryptographically signed value transfer.
@@ -34,6 +36,19 @@ type Wallet struct {
 	Address      string
 	Balance      float64
 	Transactions []Transaction
+}
+
+func (w *Wallet) appendTransaction(tx Transaction) {
+	limit := resourcepolicy.Default().MaxWalletTransactions
+	if limit < 1 {
+		limit = 1
+	}
+	if len(w.Transactions) < limit {
+		w.Transactions = append(w.Transactions, tx)
+		return
+	}
+	copy(w.Transactions, w.Transactions[1:])
+	w.Transactions[limit-1] = tx
 }
 
 type walletPersistedData struct {
@@ -174,7 +189,7 @@ func (w *Wallet) CreditReward(amount float64) {
 		return
 	}
 	w.Balance += amount
-	w.Transactions = append(w.Transactions, Transaction{
+	w.appendTransaction(Transaction{
 		ID:        fmt.Sprintf("tx_reward_%d", time.Now().UnixNano()),
 		From:      "swp_swarm_network_genesis",
 		To:        w.Address,
@@ -182,11 +197,6 @@ func (w *Wallet) CreditReward(amount float64) {
 		Timestamp: time.Now(),
 		Signature: "PROOF_OF_WORK_VERIFIED",
 	})
-	if len(w.Transactions) > 1000 {
-		retained := make([]Transaction, 1000)
-		copy(retained, w.Transactions[len(w.Transactions)-1000:])
-		w.Transactions = retained
-	}
 }
 
 // SignTransfer creates and signs a real transfer transaction with Ed25519.
@@ -221,12 +231,7 @@ func (w *Wallet) SignTransfer(to string, amount float64) (*Transaction, error) {
 		Signature: sigHex,
 	}
 
-	w.Transactions = append(w.Transactions, tx)
-	if len(w.Transactions) > 1000 {
-		retained := make([]Transaction, 1000)
-		copy(retained, w.Transactions[len(w.Transactions)-1000:])
-		w.Transactions = retained
-	}
+	w.appendTransaction(tx)
 	return &tx, nil
 }
 

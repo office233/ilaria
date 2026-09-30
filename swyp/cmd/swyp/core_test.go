@@ -58,6 +58,20 @@ func TestCoreCLIExactValuesAndVerifiedContracts(t *testing.T) {
 		t.Fatal(b.String(), err)
 	}
 	b.Reset()
+	if err := coreCommand("core-run", []string{"-profile", "fast", "-entry", "next", source, "9007199254740993"}, &b); err != nil {
+		t.Fatal(err)
+	}
+	var fastResult struct {
+		Status  string `json:"status"`
+		Profile string `json:"profile"`
+		Result  struct {
+			Value coreir.Literal `json:"value"`
+		} `json:"result"`
+	}
+	if err := json.Unmarshal(b.Bytes(), &fastResult); err != nil || fastResult.Status != "ok" || fastResult.Profile != "fast" || fastResult.Result.Value.Value != "9007199254740994" {
+		t.Fatal(b.String(), err)
+	}
+	b.Reset()
 	if err := coreCommand("verify", []string{"-contract", contract, source}, &b); err != nil {
 		t.Fatal(err)
 	}
@@ -130,7 +144,7 @@ func TestCoreCLIRejectsInvalidInputsWithJSON(t *testing.T) {
 	source := coreFixture(t, "program.swyp", coreCLISource)
 	for _, args := range [][]string{
 		nil, {"-entry", "next", source}, {"-entry", "next", source, "1.5"}, {"-entry", "next", source, "9223372036854775808"},
-		{"-entry", "next", "-steps", "0", source, "1"}, {"-entry", "next", "-timeout", "0s", source, "1"}, {"-entry", "next", source, "1", "2"},
+		{"-entry", "next", "-steps", "0", source, "1"}, {"-entry", "next", "-timeout", "0s", source, "1"}, {"-entry", "next", "-profile", "warp", source, "1"}, {"-entry", "next", source, "1", "2"},
 	} {
 		var b bytes.Buffer
 		if err := coreCommand("core-run", args, &b); err == nil {

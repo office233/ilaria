@@ -9,6 +9,9 @@ Execution is deterministic and never calls a model.
 ## Pipelines
 
 ```
+shared source preamble ── module/use metadata ──┬─ executable/Core parser
+                                               └─ declarative component parser
+
                         ┌─ run          AST interpreter (step + call-depth budgets)
 .swyp ── Parse ── Check ┼─ build/emit-c C source → GCC native executable
   (legacy scalar)       ├─ web          offline HTML/JS runner
@@ -27,6 +30,12 @@ spec/contract ── synthesis search ── candidate .swyp ── verify ─�
 
 - **Legacy scalar language** (`internal/swyplang/swyp.go`, `check.go`): `number` is
   float64; used by the interpreter, C and JS backends.
+- **Shared source frontend** (`internal/sourcefront`): owns the version-1
+  `module`/`use` preamble shared by executable and declarative Swyp. It records
+  logical dependencies without acquiring ambient authority. `swyp module-graph`
+  resolves them through an explicit filesystem root, verifies declared module
+  identity/cycles/bounds and content-addresses every source. Declaration parsing
+  and symbol linking remain split until later M1 migration slices.
 - **Semantic Core** (`core_lower.go`, `internal/coreir`): explicit `i64`/`f64`
   types, a mutable-slot CFG IR with a verifier, loader limits (1 MiB, 64
   functions, unknown fields rejected). Effect ABI v1 adds closed effect names,
@@ -43,6 +52,8 @@ spec/contract ── synthesis search ── candidate .swyp ── verify ─�
 
 | Surface | Producer | Consumer |
 |---|---|---|
+| source module/use metadata | `internal/sourcefront` | executable/Core + component parsers |
+| module graph JSON v1 | `swyp module-graph -root DIR` | future typed HIR/linker, build tooling |
 | coreir JSON v1 | `swyp ir` | `core-exec`, external tools |
 | Contract JSON v1 | hand-written / generator | `verify`, `synth -contract` |
 | Verify report JSON | `swyp verify` | agents (status, counterexample, hashes) |

@@ -68,6 +68,11 @@ Ilaria may WRITE CODE. Ilaria does not get unrestricted kernel authority.
 
 Every install produces a canonical, signed Hardware Manifest.
 
+The manifest also carries one coarse operational `device_class` (`workstation`,
+`mobile`, `automotive`, `robot`, `appliance`, `embedded`, or `unknown`). Resource
+policy consumes this class only as a tightening input; it is not proof that a
+specific peripheral exists and it grants no device-control capability.
+
 Minimum identity:
 - architecture / ABI / endianness;
 - firmware/boot environment;
@@ -255,7 +260,7 @@ The first verified implementation slices now exist:
   Driver ABI v1, Ilaria Synthesizer boundary, deterministic verifier, Ed25519
   verifier attestations, durable adaptation journal, canary/rollback and
   adversarial tests;
-- `../swypik-kernel` — first-party kernel/platform seed with portable
+- `../kernel` — first-party kernel/platform seed with portable
   x86_64/ARM64/RISC-V contracts, capability table, bounded IPC, canonical
   DeviceGraph wire format and an x86_64 PE32+ UEFI seed artifact;
 - `core/controlkernel` — independently verified durable authority-plane

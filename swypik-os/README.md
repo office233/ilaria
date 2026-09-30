@@ -48,7 +48,8 @@ It never closes other running SwypikOS sessions.
 
 ## Run with Ilaria
 
-SwypikOS now lives inside the Ilaria repository, next to Ilaria. From the Ilaria root:
+SwypikOS and Ilaria are sibling products in the Nexus workspace. From the
+workspace root:
 
 ```powershell
 powershell -File swypik-os\scripts\start-with-ilaria.ps1        # CUDA when nvidia-smi is present

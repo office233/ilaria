@@ -1,0 +1,36 @@
+{
+  "format": "ilaria-git-source-lock-v1",
+  "source_lock_sha256": "f643020c68764eda809c3f316cf7027ee23bc60aad847eacad54e0dacbb7996f",
+  "sources": {
+    "freertos_kernel": {
+      "commit": "8be86d4a24fd4091f8f4192018423ab590f408db",
+      "ref": "main",
+      "url": "https://github.com/FreeRTOS/FreeRTOS-Kernel.git"
+    },
+    "freebsd_licensed_tree": {
+      "commit": "52b2056849e4f77581594b9ca21ac3feb60429c3",
+      "ref": "main",
+      "url": "https://github.com/freebsd/freebsd-src.git"
+    },
+    "golang_go": {
+      "commit": "f91ce18c4db84c9f0fe271d1832f9cee91b58aa9",
+      "ref": "master",
+      "url": "https://github.com/golang/go.git"
+    },
+    "python_cpython": {
+      "commit": "115c297fdcc7d0fab41ed0e5c08f1b9cbec35976",
+      "ref": "main",
+      "url": "https://github.com/python/cpython.git"
+    },
+    "rust_lang": {
+      "commit": "ea6bb45b74c24a026dab4187b1550e97b6985c8a",
+      "ref": "master",
+      "url": "https://github.com/rust-lang/rust.git"
+    },
+    "zephyr": {
+      "commit": "f0bdf59a0b7d1b4dadbec339662d764cba78138a",
+      "ref": "main",
+      "url": "https://github.com/zephyrproject-rtos/zephyr.git"
+    }
+  }
+}

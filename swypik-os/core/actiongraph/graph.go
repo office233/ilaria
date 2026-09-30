@@ -7,6 +7,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	resourcepolicy "swypik-os/core/resource"
 )
 
 // CompactionTier denotes the progressive context degradation tier.
@@ -66,15 +68,18 @@ type Checkpoint struct {
 
 // CyclicActionGraph implements Pregel Bulk Synchronous Parallel execution.
 type CyclicActionGraph struct {
-	mu          sync.RWMutex
-	nodes       map[string]NodeFunc
-	edges       map[string][]string // source -> targets
-	state       map[string]interface{}
-	mailboxes   map[string][]GraphMessage
-	checkpoints []*Checkpoint
-	maxTokens   int
-	tokenUsage  int
-	activeTier  CompactionTier
+	mu             sync.RWMutex
+	nodes          map[string]NodeFunc
+	edges          map[string][]string // source -> targets
+	state          map[string]interface{}
+	mailboxes      map[string][]GraphMessage
+	nextMailboxes  map[string][]GraphMessage
+	checkpoints    []*Checkpoint
+	maxTokens      int
+	tokenUsage     int
+	activeTier     CompactionTier
+	maxWorkers     int
+	maxCheckpoints int
 }
 
 // NewCyclicActionGraph initializes the Pregel BSP action graph.
@@ -83,15 +88,19 @@ func NewCyclicActionGraph(maxTokens int) *CyclicActionGraph {
 		maxTokens = 100000 // 100k token window default
 	}
 
+	policy := resourcepolicy.Default()
 	return &CyclicActionGraph{
-		nodes:       make(map[string]NodeFunc),
-		edges:       make(map[string][]string),
-		state:       make(map[string]interface{}),
-		mailboxes:   make(map[string][]GraphMessage),
-		checkpoints: make([]*Checkpoint, 0),
-		maxTokens:   maxTokens,
-		tokenUsage:  0,
-		activeTier:  TierNone,
+		nodes:          make(map[string]NodeFunc),
+		edges:          make(map[string][]string),
+		state:          make(map[string]interface{}),
+		mailboxes:      make(map[string][]GraphMessage),
+		nextMailboxes:  make(map[string][]GraphMessage),
+		checkpoints:    make([]*Checkpoint, 0, policy.MaxGraphCheckpoints),
+		maxTokens:      maxTokens,
+		tokenUsage:     0,
+		activeTier:     TierNone,
+		maxWorkers:     policy.MaxBackgroundWorkers,
+		maxCheckpoints: policy.MaxGraphCheckpoints,
 	}
 }
 
@@ -101,6 +110,7 @@ func (g *CyclicActionGraph) RegisterNode(id string, fn NodeFunc) {
 	defer g.mu.Unlock()
 	g.nodes[id] = fn
 	g.mailboxes[id] = make([]GraphMessage, 0)
+	g.nextMailboxes[id] = make([]GraphMessage, 0)
 }
 
 // AddEdge routes messages from a source node to one or more destination nodes.
@@ -143,16 +153,23 @@ func (g *CyclicActionGraph) Step(superstep int) (completed bool, err error) {
 	}
 
 	// 3. Clear existing mailboxes for next superstep
-	nextMailboxes := make(map[string][]GraphMessage)
 	for id := range g.nodes {
-		nextMailboxes[id] = make([]GraphMessage, 0)
+		g.nextMailboxes[id] = g.nextMailboxes[id][:0]
 	}
 
-	// 4. Execute active nodes concurrently within superstep
+	// 4. Execute active nodes concurrently within superstep. Keep goroutine
+	// count bounded by the resource profile instead of spawning one goroutine
+	// per active node and blocking most of them on a semaphore.
 	var outMu sync.Mutex
 	var wg sync.WaitGroup
 	var execErrors []error
-
+	workers := g.maxWorkers
+	if workers < 1 {
+		workers = 1
+	}
+	if workers > len(activeTasks) {
+		workers = len(activeTasks)
+	}
 	graphCtx := &GraphContext{
 		Superstep:   superstep,
 		SharedState: g.state,
@@ -161,34 +178,40 @@ func (g *CyclicActionGraph) Step(superstep int) (completed bool, err error) {
 		MaxTokens:   g.maxTokens,
 	}
 
-	for _, task := range activeTasks {
+	jobs := make(chan nodeTask)
+	for i := 0; i < workers; i++ {
 		wg.Add(1)
-		go func(t nodeTask) {
+		go func() {
 			defer wg.Done()
-			outMsgs, nodeErr := t.nodeFunc(graphCtx, t.inbox)
-			if nodeErr != nil {
+			for t := range jobs {
+				outMsgs, nodeErr := t.nodeFunc(graphCtx, t.inbox)
+				if nodeErr != nil {
+					outMu.Lock()
+					execErrors = append(execErrors, fmt.Errorf("node '%s' failed: %w", t.id, nodeErr))
+					outMu.Unlock()
+					continue
+				}
+
+				// Route output messages to target nodes.
 				outMu.Lock()
-				execErrors = append(execErrors, fmt.Errorf("node '%s' failed: %w", t.id, nodeErr))
+				targets := g.edges[t.id]
+				for _, targetID := range targets {
+					g.nextMailboxes[targetID] = append(g.nextMailboxes[targetID], outMsgs...)
+				}
 				outMu.Unlock()
-				return
 			}
-
-			// Route output messages to target nodes
-			outMu.Lock()
-			targets := g.edges[t.id]
-			for _, targetID := range targets {
-				nextMailboxes[targetID] = append(nextMailboxes[targetID], outMsgs...)
-			}
-			outMu.Unlock()
-		}(task)
+		}()
 	}
-
+	for _, task := range activeTasks {
+		jobs <- task
+	}
+	close(jobs)
 	wg.Wait()
 	if len(execErrors) > 0 {
 		return false, execErrors[0]
 	}
 
-	g.mailboxes = nextMailboxes
+	g.mailboxes, g.nextMailboxes = g.nextMailboxes, g.mailboxes
 
 	// 5. Transactional Checkpoint: Save superstep state
 	g.saveCheckpoint(superstep)
@@ -254,7 +277,11 @@ func (g *CyclicActionGraph) ApplyTextCompaction(rawText string) string {
 	case TierMicrocompact:
 		// Replace output with SHA-256 digest + 1-line status
 		h := sha256.Sum256([]byte(rawText))
-		return fmt.Sprintf("[MICROCOMPACT: sha256=%s, bytes=%d, lines=%d]", hex.EncodeToString(h[:8]), len(rawText), len(strings.Split(rawText, "\n")))
+		lines := 0
+		if rawText != "" {
+			lines = strings.Count(rawText, "\n") + 1
+		}
+		return fmt.Sprintf("[MICROCOMPACT: sha256=%s, bytes=%d, lines=%d]", hex.EncodeToString(h[:8]), len(rawText), lines)
 
 	case TierContextCollapse, TierAutoCompact:
 		// Ultra-condensed state
@@ -278,17 +305,25 @@ func (g *CyclicActionGraph) saveCheckpoint(superstep int) {
 	for k, v := range g.state {
 		snap[k] = v
 	}
+	now := time.Now()
 	cp := &Checkpoint{
-		ID:        fmt.Sprintf("chkpt_%d_%d", superstep, time.Now().UnixNano()),
+		ID:        fmt.Sprintf("chkpt_%d_%d", superstep, now.UnixNano()),
 		Superstep: superstep,
 		State:     snap,
-		Timestamp: time.Now(),
+		Timestamp: now,
 	}
 	g.checkpoints = append(g.checkpoints, cp)
-	if len(g.checkpoints) > 50 {
-		retained := make([]*Checkpoint, 30)
-		copy(retained, g.checkpoints[len(g.checkpoints)-30:])
-		g.checkpoints = retained
+	limit := g.maxCheckpoints
+	if limit < 1 {
+		limit = 1
+	}
+	if len(g.checkpoints) > limit {
+		drop := len(g.checkpoints) - limit
+		copy(g.checkpoints, g.checkpoints[drop:])
+		for i := limit; i < len(g.checkpoints); i++ {
+			g.checkpoints[i] = nil
+		}
+		g.checkpoints = g.checkpoints[:limit]
 	}
 }
 

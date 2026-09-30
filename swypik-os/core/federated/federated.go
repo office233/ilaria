@@ -1,15 +1,25 @@
 package federated
 
 import (
+	"crypto/ed25519"
+	crand "crypto/rand"
 	"crypto/sha256"
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
+	"io"
 	"math"
 	"math/rand"
+	"strconv"
 	"sync"
 	"time"
+
+	resourcepolicy "swypik-os/core/resource"
 )
+
+// MaxTFLOPSPerDelta defines the maximum accepted computation (in TFLOPS) credited for a single
+// micro-batch delta. Capped at 100.0 TFLOPS to accommodate high-end GPU clusters while preventing unbounded reward spoofing.
+const MaxTFLOPSPerDelta = 100.0
 
 // WeightDelta represents a gradient update computed on a node's local GPU.
 type WeightDelta struct {
@@ -23,6 +33,7 @@ type WeightDelta struct {
 	ProofHash      string    `json:"proof_hash"`
 	IsPoisonous    bool      `json:"is_poisonous"`
 	Timestamp      time.Time `json:"timestamp"`
+	Signature      []byte    `json:"signature,omitempty"`
 }
 
 // ModelCheckpoint represents the consolidated, global state of Ilaria's neural weights.
@@ -42,9 +53,12 @@ type LocalTrainer struct {
 	maxGPUPercent float64
 	currentLoss   float64
 	completedRuns int64
+	pubKey        ed25519.PublicKey
+	privKey       ed25519.PrivateKey
+	maxParamCount int
 }
 
-// NewLocalTrainer creates an on-device training engine.
+// NewLocalTrainer creates an on-device training engine with a generated ed25519 key pair.
 func NewLocalTrainer(nodeID string, maxGPUPercent float64) *LocalTrainer {
 	if nodeID == "" {
 		nodeID = "swypik_worker_default"
@@ -53,19 +67,66 @@ func NewLocalTrainer(nodeID string, maxGPUPercent float64) *LocalTrainer {
 		maxGPUPercent = 35.0 // Default 35% background GPU utilization
 	}
 
+	pub, priv, err := ed25519.GenerateKey(crand.Reader)
+	if err != nil {
+		pub = nil
+		priv = nil
+	}
+
 	return &LocalTrainer{
 		nodeID:        nodeID,
 		maxGPUPercent: maxGPUPercent,
 		currentLoss:   1.84, // Initial cross-entropy loss
+		pubKey:        pub,
+		privKey:       priv,
+		maxParamCount: resourcepolicy.Default().MaxTrainingDeltaParams,
 	}
 }
 
-// ComputeMicroBatch executes forward-backward pass and generates verified WeightDelta with Proof-of-Compute.
+// SetMaxGPUPercent updates the cooperative accelerator ceiling used by the
+// current simulator and future real kernels. Runtime resource pressure may only
+// lower this value for a work unit; callers remain responsible for enforcing
+// their configured upper bound.
+func (t *LocalTrainer) SetMaxGPUPercent(maxGPUPercent float64) {
+	if maxGPUPercent <= 0 {
+		maxGPUPercent = 1
+	}
+	if maxGPUPercent > 100 {
+		maxGPUPercent = 100
+	}
+	t.mu.Lock()
+	t.maxGPUPercent = maxGPUPercent
+	t.mu.Unlock()
+}
+
+// PublicKey returns a copy of the trainer's ed25519 public key.
+func (t *LocalTrainer) PublicKey() ed25519.PublicKey {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+	return append(ed25519.PublicKey(nil), t.pubKey...)
+}
+
+// privateKey returns a copy of the trainer's ed25519 private key.
+func (t *LocalTrainer) privateKey() ed25519.PrivateKey {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+	return append(ed25519.PrivateKey(nil), t.privKey...)
+}
+
+// SetKeyPair assigns an ed25519 public/private key pair to the trainer.
+func (t *LocalTrainer) SetKeyPair(pub ed25519.PublicKey, priv ed25519.PrivateKey) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	t.pubKey = append(ed25519.PublicKey(nil), pub...)
+	t.privKey = append(ed25519.PrivateKey(nil), priv...)
+}
+
+// ComputeMicroBatch executes forward-backward pass and generates verified WeightDelta with Proof-of-Compute and ed25519 signature.
 func (t *LocalTrainer) ComputeMicroBatch(roundID int, layerName string, paramCount int) (*WeightDelta, error) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	if roundID < 0 || layerName == "" || paramCount > 1000000 {
+	if roundID < 0 || layerName == "" || paramCount > t.maxParamCount {
 		return nil, fmt.Errorf("invalid training parameters")
 	}
 	if paramCount <= 0 {
@@ -91,7 +152,7 @@ func (t *LocalTrainer) ComputeMicroBatch(roundID int, layerName string, paramCou
 	var nonce uint64 = uint64(time.Now().UnixNano())
 	proofHash := calculateProofHash(t.nodeID, roundID, layerName, nonce, deltas)
 
-	return &WeightDelta{
+	delta := &WeightDelta{
 		NodeID:         t.nodeID,
 		RoundID:        roundID,
 		LayerName:      layerName,
@@ -102,22 +163,87 @@ func (t *LocalTrainer) ComputeMicroBatch(roundID int, layerName string, paramCou
 		ProofHash:      proofHash,
 		IsPoisonous:    false,
 		Timestamp:      time.Now(),
-	}, nil
+	}
+
+	// 3. Cryptographically sign the canonical fields if key is configured
+	if len(t.privKey) == ed25519.PrivateKeySize {
+		if err := delta.Sign(t.privKey); err != nil {
+			return nil, fmt.Errorf("failed to sign weight delta: %w", err)
+		}
+	}
+
+	return delta, nil
+}
+
+// CanonicalDeltaMessage computes a deterministic cryptographic digest over canonical fields of a delta.
+func CanonicalDeltaMessage(delta *WeightDelta) []byte {
+	if delta == nil {
+		return nil
+	}
+	h := sha256.New()
+	// Strings are length-prefixed and floats hashed by their exact bits, so no
+	// two distinct deltas share a message (no delimiter or rounding ambiguity).
+	var b [8]byte
+	writeUint := func(v uint64) {
+		binary.LittleEndian.PutUint64(b[:], v)
+		h.Write(b[:])
+	}
+	writeString := func(s string) {
+		writeUint(uint64(len(s)))
+		h.Write([]byte(s))
+	}
+	writeString(delta.NodeID)
+	writeUint(uint64(int64(delta.RoundID)))
+	writeString(delta.LayerName)
+	writeUint(math.Float64bits(delta.Loss))
+	writeUint(math.Float64bits(delta.TFLOPSComputed))
+	writeUint(delta.ProofNonce)
+	writeString(delta.ProofHash)
+	writeUint(uint64(len(delta.Values)))
+	for _, v := range delta.Values {
+		writeUint(math.Float64bits(v))
+	}
+	return h.Sum(nil)
+}
+
+// Sign signs the delta's canonical fields with the given ed25519 private key.
+func (d *WeightDelta) Sign(privKey ed25519.PrivateKey) error {
+	if d == nil {
+		return fmt.Errorf("cannot sign nil weight delta")
+	}
+	if len(privKey) != ed25519.PrivateKeySize {
+		return fmt.Errorf("invalid ed25519 private key length: %d", len(privKey))
+	}
+	d.Signature = ed25519.Sign(privKey, CanonicalDeltaMessage(d))
+	return nil
+}
+
+// VerifySignature validates the delta's ed25519 signature against the expected node public key.
+func (d *WeightDelta) VerifySignature(pubKey ed25519.PublicKey) bool {
+	if d == nil || len(d.Signature) != ed25519.SignatureSize || len(pubKey) != ed25519.PublicKeySize {
+		return false
+	}
+	return ed25519.Verify(pubKey, CanonicalDeltaMessage(d), d.Signature)
 }
 
 func calculateProofHash(nodeID string, roundID int, layer string, nonce uint64, values []float64) string {
 	h := sha256.New()
-	h.Write([]byte(fmt.Sprintf("%s:%d:%s:", nodeID, roundID, layer)))
+	_, _ = io.WriteString(h, nodeID)
+	_, _ = io.WriteString(h, ":")
+	var decimal [24]byte
+	n := strconv.AppendInt(decimal[:0], int64(roundID), 10)
+	_, _ = h.Write(n)
+	_, _ = io.WriteString(h, ":")
+	_, _ = io.WriteString(h, layer)
+	_, _ = io.WriteString(h, ":")
 
-	nonceBytes := make([]byte, 8)
-	binary.LittleEndian.PutUint64(nonceBytes, nonce)
-	h.Write(nonceBytes)
+	var raw [8]byte
+	binary.LittleEndian.PutUint64(raw[:], nonce)
+	_, _ = h.Write(raw[:])
 
 	for _, v := range values {
-		bits := math.Float64bits(v)
-		vBytes := make([]byte, 8)
-		binary.LittleEndian.PutUint64(vBytes, bits)
-		h.Write(vBytes)
+		binary.LittleEndian.PutUint64(raw[:], math.Float64bits(v))
+		_, _ = h.Write(raw[:])
 	}
 
 	return hex.EncodeToString(h.Sum(nil))
@@ -134,11 +260,13 @@ func VerifyProofOfCompute(delta *WeightDelta) bool {
 
 // FederatedAggregator aggregates distributed gradient deltas using Byzantine-robust Federated Averaging.
 type FederatedAggregator struct {
-	mu             sync.RWMutex
-	currentRound   int
-	model          *ModelCheckpoint
-	pendingDeltas  []*WeightDelta
-	rewardPerTflop float64 // SWP coins rewarded per TFLOP computed
+	mu               sync.RWMutex
+	currentRound     int
+	model            *ModelCheckpoint
+	pendingDeltas    []*WeightDelta
+	rewardPerTflop   float64 // SWP coins rewarded per TFLOP computed
+	keyRegistry      map[string]ed25519.PublicKey
+	maxPendingDeltas int
 }
 
 // NewFederatedAggregator initializes the parameter server & aggregator.
@@ -157,9 +285,11 @@ func NewFederatedAggregator(initialRound int) *FederatedAggregator {
 	}
 
 	return &FederatedAggregator{
-		currentRound:   initialRound,
-		pendingDeltas:  make([]*WeightDelta, 0),
-		rewardPerTflop: 0.10, // 0.10 SWP per TFLOP
+		currentRound:     initialRound,
+		pendingDeltas:    make([]*WeightDelta, 0),
+		rewardPerTflop:   0.10, // 0.10 SWP per TFLOP
+		keyRegistry:      make(map[string]ed25519.PublicKey),
+		maxPendingDeltas: resourcepolicy.Default().MaxPendingDeltas,
 		model: &ModelCheckpoint{
 			Version:      fmt.Sprintf("ilaria-v1.%d", initialRound),
 			RoundID:      initialRound,
@@ -171,12 +301,42 @@ func NewFederatedAggregator(initialRound int) *FederatedAggregator {
 	}
 }
 
+// RegisterNodeKey registers an authorized ed25519 public key for a node in the key registry.
+func (fa *FederatedAggregator) RegisterNodeKey(nodeID string, pubKey ed25519.PublicKey) error {
+	fa.mu.Lock()
+	defer fa.mu.Unlock()
+	if nodeID == "" {
+		return fmt.Errorf("nodeID cannot be empty")
+	}
+	if len(pubKey) != ed25519.PublicKeySize {
+		return fmt.Errorf("invalid ed25519 public key size: %d", len(pubKey))
+	}
+	fa.keyRegistry[nodeID] = append(ed25519.PublicKey(nil), pubKey...)
+	return nil
+}
+
 // SubmitDelta receives and validates a node's gradient submission.
 func (fa *FederatedAggregator) SubmitDelta(delta *WeightDelta) (accepted bool, reason string) {
 	fa.mu.Lock()
 	defer fa.mu.Unlock()
 
-	// 1. Proof-of-Compute verification
+	if delta == nil {
+		return false, "REJECTED_NIL_DELTA"
+	}
+
+	// 1. Ed25519 Signature & Node Key Registry Verification
+	pubKey, registered := fa.keyRegistry[delta.NodeID]
+	if !registered {
+		return false, "REJECTED_UNKNOWN_NODE"
+	}
+	if len(delta.Values) == 0 || len(delta.Values) > resourcepolicy.Default().MaxTrainingDeltaParams {
+		return false, "REJECTED_DELTA_SIZE"
+	}
+	if !delta.VerifySignature(pubKey) {
+		return false, "REJECTED_INVALID_SIGNATURE"
+	}
+
+	// 2. Proof-of-Compute verification
 	if !VerifyProofOfCompute(delta) {
 		return false, "REJECTED_INVALID_PROOF_OF_COMPUTE"
 	}
@@ -184,18 +344,25 @@ func (fa *FederatedAggregator) SubmitDelta(delta *WeightDelta) (accepted bool, r
 	if delta.RoundID != fa.currentRound {
 		return false, "REJECTED_WRONG_ROUND"
 	}
-	if _, exists := fa.model.Weights[delta.LayerName]; !exists {
+	_, exists := fa.model.Weights[delta.LayerName]
+	if !exists {
 		return false, "REJECTED_UNKNOWN_LAYER"
+	}
+	if fa.maxPendingDeltas > 0 && len(fa.pendingDeltas) >= fa.maxPendingDeltas {
+		return false, "REJECTED_ROUND_FULL"
 	}
 	if delta.Loss < 0 || math.IsNaN(delta.Loss) || math.IsInf(delta.Loss, 0) || delta.TFLOPSComputed < 0 || math.IsNaN(delta.TFLOPSComputed) || math.IsInf(delta.TFLOPSComputed, 0) {
 		return false, "REJECTED_INVALID_METRICS"
+	}
+	if delta.TFLOPSComputed > MaxTFLOPSPerDelta {
+		return false, "REJECTED_EXCESSIVE_TFLOPS"
 	}
 	for _, pending := range fa.pendingDeltas {
 		if pending.NodeID == delta.NodeID && pending.LayerName == delta.LayerName {
 			return false, "REJECTED_DUPLICATE_DELTA"
 		}
 	}
-	// 2. Anti-Poisoning Filter: Euclidean Norm Check (Byzantine Robustness)
+	// 3. Anti-Poisoning Filter: Euclidean Norm Check (Byzantine Robustness)
 	// If a rogue node submits extreme gradients (> 5.0 norm) to corrupt Ilaria, reject and flag as poisonous
 	var normSq float64
 	for _, v := range delta.Values {
@@ -210,6 +377,9 @@ func (fa *FederatedAggregator) SubmitDelta(delta *WeightDelta) (accepted bool, r
 
 	snapshot := *delta
 	snapshot.Values = append([]float64(nil), delta.Values...)
+	if delta.Signature != nil {
+		snapshot.Signature = append([]byte(nil), delta.Signature...)
+	}
 	fa.pendingDeltas = append(fa.pendingDeltas, &snapshot)
 	return true, "ACCEPTED"
 }
@@ -273,15 +443,25 @@ func (fa *FederatedAggregator) AggregateRound() (*ModelCheckpoint, float64, erro
 	fa.model.Timestamp = time.Now()
 
 	// Clear round buffer
-	fa.pendingDeltas = make([]*WeightDelta, 0)
+	for i := range fa.pendingDeltas {
+		fa.pendingDeltas[i] = nil
+	}
+	fa.pendingDeltas = fa.pendingDeltas[:0]
 
 	return cloneCheckpoint(fa.model), totalTflops, nil
 }
 
 // CalculateReward calculates the SWP Coin incentive for a validated node contribution.
+// TFLOPS is capped at MaxTFLOPSPerDelta to ensure rewards are strictly bounded.
 func (fa *FederatedAggregator) CalculateReward(tflops float64) float64 {
 	fa.mu.RLock()
 	defer fa.mu.RUnlock()
+	if tflops <= 0 || math.IsNaN(tflops) || math.IsInf(tflops, 0) {
+		return 0.0
+	}
+	if tflops > MaxTFLOPSPerDelta {
+		tflops = MaxTFLOPSPerDelta
+	}
 	return math.Round(tflops*fa.rewardPerTflop*1000) / 1000
 }
 

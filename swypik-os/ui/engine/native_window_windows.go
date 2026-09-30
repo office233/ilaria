@@ -17,6 +17,7 @@ import (
 	"time"
 	"unsafe"
 
+	resourcepolicy "swypik-os/core/resource"
 	"swypik-os/ui/desktop"
 	"swypik-os/ui/theme"
 )
@@ -79,45 +80,64 @@ var railTop = []navItem{{desktop.TabHome, "grid", ""}, {desktop.TabFiles, "folde
 var railMid = []navItem{{desktop.TabAgent, "terminal", ""}, {desktop.TabCompute, "spark", ""}}
 
 type ShellApp struct {
-	ctl          *desktop.Controller
-	hwnd         atomic.Uintptr // read by Notify from any goroutine
-	edit         syscall.Handle
-	dpi          int32
-	fonts        map[fontKey]syscall.Handle
-	editBrush    uintptr
-	scroll       [desktop.TabCount]int32
-	maxScroll    [desktop.TabCount]int32
-	stick        [desktop.TabCount]bool
-	chatScroll   int32
-	chatMax      int32
-	chatStick    bool
-	hits         []hit
-	hover        int
-	promptKey    string
-	promptAt     time.Time
-	heights      map[uint64]int32
-	view         desktop.View
-	lifecycle    func(string)
-	layout       layout
-	placeholder  string
-	minute       int
-	ready        atomic.Bool // fonts warmed; until then paint only the background
-	wall         wallpaper
-	paints       int
-	expanded     bool // workspace-expanded: hide capsule, pills and deck
-	chatExpanded bool
-	fullscreen   bool
-	savedStyle   uintptr
-	savedRect    rect
-	category     int
-	editRect     rect
-	focused      bool
+	ctl                   *desktop.Controller
+	hwnd                  atomic.Uintptr // read by Notify from any goroutine
+	edit                  syscall.Handle
+	dpi                   int32
+	fonts                 map[fontKey]syscall.Handle
+	editBrush             uintptr
+	scroll                [desktop.TabCount]int32
+	maxScroll             [desktop.TabCount]int32
+	stick                 [desktop.TabCount]bool
+	chatScroll            int32
+	chatMax               int32
+	chatStick             bool
+	hits                  []hit
+	hover                 int
+	promptKey             string
+	promptAt              time.Time
+	heights               map[uint64]int32
+	view                  desktop.View
+	lifecycle             func(string)
+	layout                layout
+	placeholder           string
+	minute                int
+	ready                 atomic.Bool // fonts warmed; until then paint only the background
+	wall                  wallpaper
+	paints                int
+	expanded              bool // workspace-expanded: hide capsule, pills and deck
+	chatExpanded          bool
+	fullscreen            bool
+	savedStyle            uintptr
+	savedRect             rect
+	category              int
+	editRect              rect
+	focused               bool
+	timerMS               uintptr
+	backDC                uintptr
+	backBmp               uintptr
+	backOldBmp            uintptr
+	backBits              uintptr
+	backW                 int32
+	backH                 int32
+	backRelease           func()
+	releaseIdleBackbuffer bool
+	lastPaint             time.Time
 }
 
 var globalApp *ShellApp
 
 func NewShellApp(ctl *desktop.Controller) *ShellApp {
-	app := &ShellApp{ctl: ctl, hover: -1, heights: map[uint64]int32{}, dpi: 96, fonts: map[fontKey]syscall.Handle{}, chatStick: true}
+	policy := resourcepolicy.Default()
+	app := &ShellApp{
+		ctl:                   ctl,
+		hover:                 -1,
+		heights:               map[uint64]int32{},
+		dpi:                   96,
+		fonts:                 map[fontKey]syscall.Handle{},
+		chatStick:             true,
+		releaseIdleBackbuffer: policy.Profile != resourcepolicy.ProfilePerformance,
+	}
 	app.stick[desktop.TabAgent] = true
 	return app
 }
@@ -142,6 +162,96 @@ func (app *ShellApp) Notify() {
 func (app *ShellApp) s(v int32) int32 { return v * app.dpi / 96 }
 func (app *ShellApp) handle() uintptr { return app.hwnd.Load() }
 func (app *ShellApp) invalidate()     { procInvalidateRect.Call(app.handle(), 0, 0) }
+
+func (app *ShellApp) dropBackbuffer() {
+	if app.backRelease != nil {
+		app.backRelease()
+		app.backRelease = nil
+	}
+	if app.backDC != 0 && app.backOldBmp != 0 {
+		procSelectObject.Call(app.backDC, app.backOldBmp)
+	}
+	if app.backBmp != 0 {
+		procDeleteObject.Call(app.backBmp)
+	}
+	if app.backDC != 0 {
+		procDeleteDC.Call(app.backDC)
+	}
+	app.backDC, app.backBmp, app.backOldBmp, app.backBits = 0, 0, 0, 0
+	app.backW, app.backH = 0, 0
+}
+
+func (app *ShellApp) ensureBackbuffer(target uintptr, w, h int32) bool {
+	if app.backDC != 0 && app.backBmp != 0 && app.backW == w && app.backH == h {
+		return true
+	}
+	app.dropBackbuffer()
+	memDC, _, _ := procCreateCompatibleDC.Call(target)
+	if memDC == 0 {
+		return false
+	}
+	bi := bitmapInfoHeader{Size: 40, Width: w, Height: -h, Planes: 1, BitCount: 32}
+	var bits uintptr
+	bmp, _, _ := procCreateDIBSection.Call(target, uintptr(unsafe.Pointer(&bi)), 0, uintptr(unsafe.Pointer(&bits)), 0, 0)
+	if bmp == 0 {
+		procDeleteDC.Call(memDC)
+		return false
+	}
+	oldBmp, _, _ := procSelectObject.Call(memDC, bmp)
+	app.backDC = memDC
+	app.backBmp = bmp
+	app.backOldBmp = oldBmp
+	app.backBits = bits
+	app.backW, app.backH = w, h
+	app.backRelease = bindSurface(memDC, bits, w, h)
+	return true
+}
+
+func (app *ShellApp) desiredTimerMS() uintptr {
+	if app.view.Live || app.view.ChatBusy ||
+		(app.view.Prompt != nil && time.Since(app.promptAt) < approvalDwell+400*time.Millisecond) {
+		return 250
+	}
+	if app.releaseIdleBackbuffer && app.backDC != 0 && !app.lastPaint.IsZero() {
+		const keepWarm = 2 * time.Second
+		remaining := keepWarm - time.Since(app.lastPaint)
+		if remaining > 0 {
+			ms := remaining.Milliseconds()
+			if ms < 250 {
+				ms = 250
+			}
+			return uintptr(ms)
+		}
+		return 250
+	}
+	now := time.Now()
+	nextMinute := now.Truncate(time.Minute).Add(time.Minute)
+	ms := time.Until(nextMinute).Milliseconds()
+	if ms < 1000 {
+		ms = 1000
+	}
+	if ms > 60000 {
+		ms = 60000
+	}
+	return uintptr(ms)
+}
+
+func (app *ShellApp) updateTimer() {
+	hwnd := app.handle()
+	if hwnd == 0 {
+		return
+	}
+	desired := app.desiredTimerMS()
+	if desired == app.timerMS {
+		return
+	}
+	if app.timerMS != 0 {
+		procKillTimer.Call(hwnd, 1)
+	}
+	if timer, _, _ := procSetTimer.Call(hwnd, 1, desired, 0); timer != 0 {
+		app.timerMS = desired
+	}
+}
 
 // ---------------------------------------------------------------- layout
 
@@ -402,6 +512,11 @@ type measureKey struct {
 // which also resets the cache (resetFonts). Only the UI thread measures.
 var measureCache = map[measureKey][2]int32{}
 
+const (
+	maxMeasureCacheEntries = 2048
+	maxHeightCacheEntries  = 512
+)
+
 func measureBox(hdc uintptr, font syscall.Handle, width int32, s string, flags uintptr) (int32, int32) {
 	if s == "" {
 		return 0, 0
@@ -411,7 +526,7 @@ func measureBox(hdc uintptr, font syscall.Handle, width int32, s string, flags u
 	if v, ok := measureCache[key]; ok {
 		return v[0], v[1]
 	}
-	if len(measureCache) > 20000 {
+	if len(measureCache) >= maxMeasureCacheEntries {
 		measureCache = map[measureKey][2]int32{}
 	}
 	procSelectObject.Call(hdc, uintptr(font))
@@ -458,7 +573,7 @@ func (app *ShellApp) blockGeometry(hdc uintptr, b desktop.Block, colW int32) (h,
 	if app.blockIcon(b) != "" && total < app.s(30)+2*pad {
 		total = app.s(30) + 2*pad
 	}
-	if len(app.heights) > 4000 {
+	if len(app.heights) >= maxHeightCacheEntries {
 		app.heights = map[uint64]int32{}
 	}
 	app.heights[sum] = total
@@ -618,32 +733,15 @@ func (app *ShellApp) paint(target uintptr) {
 	if w <= 0 || h <= 0 {
 		return
 	}
-	memDC, _, _ := procCreateCompatibleDC.Call(target)
-	// A top-down 32-bit DIB section: GDI+ blends directly in memory. A
-	// device-dependent bitmap would force a pixel read-back for every
-	// translucent shape (measured: seconds per frame instead of milliseconds).
-	bi := bitmapInfoHeader{Size: 40, Width: w, Height: -h, Planes: 1, BitCount: 32}
-	var bits uintptr
-	bmp, _, _ := procCreateDIBSection.Call(target, uintptr(unsafe.Pointer(&bi)), 0, uintptr(unsafe.Pointer(&bits)), 0, 0)
-	if memDC == 0 || bmp == 0 {
-		if bmp != 0 {
-			procDeleteObject.Call(bmp)
-		}
-		if memDC != 0 {
-			procDeleteDC.Call(memDC)
-		}
+	if !app.ensureBackbuffer(target, w, h) {
 		return
 	}
-	oldBmp, _, _ := procSelectObject.Call(memDC, bmp)
-	release := bindSurface(memDC, bits, w, h)
-	app.render(memDC, cr, app.ctl.View())
-	release()
+	app.render(app.backDC, cr, app.ctl.View())
 	procGdiFlush.Call()
-	procBitBlt.Call(target, 0, 0, uintptr(w), uintptr(h), memDC, 0, 0, srcCopy)
-	procSelectObject.Call(memDC, oldBmp)
-	procDeleteObject.Call(bmp)
-	procDeleteDC.Call(memDC)
+	procBitBlt.Call(target, 0, 0, uintptr(w), uintptr(h), app.backDC, 0, 0, srcCopy)
 	app.placeEdit()
+	app.lastPaint = time.Now()
+	app.updateTimer()
 }
 
 // render draws one frame of v into memDC (a 32-bit DIB section).
@@ -656,6 +754,7 @@ func (app *ShellApp) render(memDC uintptr, cr rect, v desktop.View) {
 	if key := app.promptKeyOf(v.Prompt); key != app.promptKey {
 		app.promptKey, app.promptAt = key, time.Now()
 	}
+	app.updateTimer()
 	placeholder := v.Placeholder
 	mode := app.chatModeFor(v)
 	if mode != chatHidden {
@@ -1464,7 +1563,13 @@ func (app *ShellApp) warmFonts(dpi int32) {
 	}
 	jobs = append(jobs, job{10, 400, mono}, job{11, 400, mono})
 	const sample = "AĂÂBCDEFGHIÎJKLMNOPQRSȘTȚUVWXYZ aăâbcdefghiîjklmnopqrsștțuvwxyz 0123456789 .,:;!?…„”/()-·↗"
-	const workers = 4
+	workers := resourcepolicy.Default().MaxBackgroundWorkers
+	if workers < 1 {
+		workers = 1
+	}
+	if workers > len(jobs) {
+		workers = len(jobs)
+	}
 	done := make(chan struct{}, workers)
 	for i := 0; i < workers; i++ {
 		go func(part int) {
@@ -1571,6 +1676,7 @@ func wndProc(hwnd syscall.Handle, message uint32, wParam, lParam uintptr) uintpt
 	case wmSize:
 		if wParam == 1 { // SIZE_MINIMIZED: nothing to draw; give RAM back to Windows
 			app.dropWallpaper()
+			app.dropBackbuffer()
 			debug.FreeOSMemory()
 			proc, _, _ := procGetCurrentProcess.Call()
 			procEmptyWorkingSet.Call(proc)
@@ -1596,11 +1702,16 @@ func wndProc(hwnd syscall.Handle, message uint32, wParam, lParam uintptr) uintpt
 		app.invalidate()
 		return 0
 	case wmTimer:
+		if app.releaseIdleBackbuffer && app.backDC != 0 && !app.view.Live && !app.view.ChatBusy &&
+			!app.lastPaint.IsZero() && time.Since(app.lastPaint) >= 2*time.Second {
+			app.dropBackbuffer()
+		}
 		minute := time.Now().Minute()
 		if app.view.Live || app.view.ChatBusy || minute != app.minute || (app.view.Prompt != nil && time.Since(app.promptAt) < approvalDwell+400*time.Millisecond) {
 			app.minute = minute
 			app.invalidate()
 		}
+		app.updateTimer()
 		return 0
 	case wmMouseMove:
 		x, y := loword(lParam), hiword(lParam)
@@ -1759,13 +1870,13 @@ func (app *ShellApp) Run() error {
 	defer func() {
 		app.hwnd.Store(0)
 		procKillTimer.Call(hwnd, 1)
+		app.timerMS = 0
+		app.dropBackbuffer()
 		if ok, _, _ := procIsWindow.Call(hwnd); ok != 0 {
 			procDestroyWindow.Call(hwnd)
 		}
 	}()
-	if t, _, err := procSetTimer.Call(hwnd, 1, 300, 0); t == 0 {
-		return fmt.Errorf("SetTimer failed: %v", err)
-	}
+	app.updateTimer()
 	procSetWindowPos.Call(hwnd, 0, uintptr(app.s(80)), uintptr(app.s(60)), uintptr(app.s(1280)), uintptr(app.s(820)), swpNoZOrder|swpNoActivate)
 	procShowWindow.Call(hwnd, swShowMaximized)
 	procUpdateWindow.Call(hwnd)

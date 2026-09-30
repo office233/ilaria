@@ -1,0 +1,78 @@
+{
+  "format": "imc-125m-inventory-lanes-v1",
+  "sources": {
+    "freertos_kernel": {
+      "rules": [
+        {
+          "default": true,
+          "lane": "os_hardware_drivers_standards"
+        }
+      ]
+    },
+    "golang_go": {
+      "rules": [
+        {
+          "default": true,
+          "lane": "code"
+        }
+      ]
+    },
+    "python_cpython": {
+      "rules": [
+        {
+          "default": true,
+          "lane": "code"
+        }
+      ]
+    },
+    "rust_lang": {
+      "rules": [
+        {
+          "default": true,
+          "lane": "code"
+        }
+      ]
+    },
+    "wiki_en": {
+      "rules": [
+        {
+          "lane": "mathematics",
+          "path_globs": [
+            "mathematics/**"
+          ]
+        },
+        {
+          "lane": "science_technical_reasoning",
+          "path_globs": [
+            "science_technical_reasoning/**"
+          ]
+        },
+        {
+          "default": true,
+          "lane": "general_knowledge"
+        }
+      ]
+    },
+    "zephyr": {
+      "rules": [
+        {
+          "lane": "os_hardware_drivers_standards",
+          "path_globs": [
+            "arch/**",
+            "boards/**",
+            "drivers/**",
+            "dts/**",
+            "include/zephyr/**",
+            "kernel/**",
+            "soc/**",
+            "subsys/**"
+          ]
+        },
+        {
+          "default": true,
+          "lane": "code"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,48 @@
+model IMC1B {
+    architecture "ilaria-microcortex-v1";
+    tokenizer "ilarialex-65k";
+    weights ternary;
+    storage tritpack20;
+    compute rgba32;
+}
+
+expert ThalamusRouter : IMC1B {
+    specialty cognition.routing;
+    benchmark "myriad-router-v1";
+}
+
+dataset MyriadRoutingV1 {
+    require provenance;
+    require commercial_compatible;
+    forbid secrets;
+    forbid user_private_data;
+    forbid benchmark_leak;
+}
+
+train ThalamusRouter on MyriadRoutingV1 {
+    cohort 512;
+    optimizer isx;
+    local_steps 128;
+}
+
+component Hippocampus {
+    capability memory.read;
+    capability memory.write;
+    state episodes: EpisodicStore;
+    invariant "personal memory is local by default";
+    invariant "global training has no implicit access to personal memory";
+}
+
+effect ExecuteTrainingShard {
+    capability gpu.compute;
+    capability artifact.write;
+    requires "dataset shard is signed and content-addressed";
+    ensures "result is candidate-only until independently verified";
+}
+
+verify CandidateDelta {
+    check finite;
+    check hash;
+    check sentinel;
+    check outlier_filter;
+}

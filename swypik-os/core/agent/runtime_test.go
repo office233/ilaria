@@ -83,6 +83,39 @@ func TestApprovalBeforeExecutionAndImmutableSnapshot(t *testing.T) {
 		t.Fatal("replayed approval", err)
 	}
 }
+
+func TestStatusSnapshotOmitsHeavyObservationsAndBoundsEvents(t *testing.T) {
+	manager := &Manager{
+		current: &execution{run: Run{
+			ID:     "run-1",
+			Goal:   "inspect",
+			Status: "awaiting_approval",
+			Approval: &Approval{
+				ID:        "approval-1",
+				Tool:      "workspace.read",
+				Arguments: json.RawMessage(`{"path":"a.txt"}`),
+			},
+			Observations: []Observation{{
+				Tool:   "workspace.read",
+				Output: json.RawMessage(`{"content":"large-output"}`),
+			}},
+		}},
+	}
+	for i := 0; i < 40; i++ {
+		manager.current.run.Events = append(manager.current.run.Events, Event{Sequence: i + 1, Kind: "step", Message: "x"})
+	}
+	status := manager.StatusSnapshot()
+	if status == nil || status.ID != "run-1" || len(status.Events) != 32 {
+		t.Fatalf("status=%+v", status)
+	}
+	if status.Events[0].Sequence != 9 || status.Events[31].Sequence != 40 {
+		t.Fatalf("event window=%d..%d", status.Events[0].Sequence, status.Events[31].Sequence)
+	}
+	status.Approval.Arguments[0] = '['
+	if got := string(manager.current.run.Approval.Arguments); got != `{"path":"a.txt"}` {
+		t.Fatalf("status snapshot aliases approval arguments: %q", got)
+	}
+}
 func TestConcurrentApprovalIsAtMostOnce(t *testing.T) {
 	m, calls := fixture(t, Limits{}, false)
 	_, _ = m.Start("inspect")

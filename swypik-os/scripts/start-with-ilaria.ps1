@@ -21,7 +21,10 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $swypik = Split-Path -Parent $PSScriptRoot
-if (-not $IlariaRoot) { $IlariaRoot = Split-Path -Parent $swypik }
+if (-not $IlariaRoot) {
+    $workspaceRoot = Split-Path -Parent $swypik
+    $IlariaRoot = Join-Path $workspaceRoot 'ilaria'
+}
 if (-not $Model) { $Model = Join-Path $IlariaRoot 'data\forge\bitnet-2b4t\bitnet.nxtf' }
 if (-not $Tokenizer) { $Tokenizer = Join-Path $IlariaRoot 'data\pretrained\bitnet-b1.58-2B-4T\tokenizer.json' }
 foreach ($required in @($Model, $Tokenizer)) {

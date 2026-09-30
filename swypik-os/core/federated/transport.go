@@ -1,10 +1,12 @@
 package federated
 
 import (
-	"encoding/json"
+	"crypto/sha256"
 	"fmt"
 	"sync"
 	"time"
+
+	resourcepolicy "swypik-os/core/resource"
 )
 
 // P2PMessageType denotes the wire protocol packet category.
@@ -47,6 +49,8 @@ type TransportMesh struct {
 	localGPU     string
 	peers        map[string]*PeerNode
 	packetStream chan P2PPacket
+	maxPeers     int
+	inspectMax   int
 }
 
 // NewTransportMesh initializes the P2P transport layer.
@@ -58,33 +62,69 @@ func NewTransportMesh(localID string, gpuModel string) *TransportMesh {
 		gpuModel = "CUDA Direct / Metal Compute Node"
 	}
 
+	policy := resourcepolicy.Default()
 	return &TransportMesh{
 		localID:      localID,
 		localGPU:     gpuModel,
-		peers:        make(map[string]*PeerNode),
-		packetStream: make(chan P2PPacket, 256),
+		peers:        make(map[string]*PeerNode, min(policy.MaxResidentPeers, 64)),
+		packetStream: make(chan P2PPacket, policy.P2PInspectionQueue),
+		maxPeers:     policy.MaxResidentPeers,
+		inspectMax:   policy.P2PInspectionPayloadMax,
 	}
 }
 
+// DefaultInitialReputation is the default trust score assigned to newly connected peers.
+const DefaultInitialReputation = 1.0
+
 // RegisterPeer adds or updates a known peer in the P2P routing table.
+// Existing reputation is preserved for known peers, and internal copies are maintained
+// to prevent data races with concurrent PenalizePeer calls.
 func (tm *TransportMesh) RegisterPeer(peer *PeerNode) {
+	if peer == nil {
+		return
+	}
 	tm.mu.Lock()
 	defer tm.mu.Unlock()
-	peer.LastSeen = time.Now()
-	if peer.Reputation <= 0 {
-		peer.Reputation = 1.0 // Initial full reputation
+
+	cp := *peer
+	cp.LastSeen = time.Now()
+
+	if existing, ok := tm.peers[peer.NodeID]; ok {
+		// Retain existing reputation for known peers
+		cp.Reputation = existing.Reputation
+	} else if cp.Reputation <= 0 {
+		cp.Reputation = DefaultInitialReputation
 	}
-	tm.peers[peer.NodeID] = peer
+	if _, exists := tm.peers[peer.NodeID]; !exists && len(tm.peers) >= tm.maxPeers {
+		oldestID := ""
+		var oldest time.Time
+		for id, candidate := range tm.peers {
+			if oldestID == "" || candidate.LastSeen.Before(oldest) {
+				oldestID, oldest = id, candidate.LastSeen
+			}
+		}
+		if oldestID != "" {
+			delete(tm.peers, oldestID)
+		}
+	}
+
+	tm.peers[peer.NodeID] = &cp
 }
 
 // BroadcastGradient sends a local weight delta across connected peers.
 func (tm *TransportMesh) BroadcastGradient(delta *WeightDelta) (int, error) {
+	if delta == nil {
+		return 0, fmt.Errorf("nil weight delta")
+	}
 	tm.mu.RLock()
 	defer tm.mu.RUnlock()
-
-	payload, err := json.Marshal(delta)
-	if err != nil {
-		return 0, fmt.Errorf("failed serializing weight delta: %w", err)
+	digest := sha256.Sum256(CanonicalDeltaMessage(delta))
+	payload := []byte(fmt.Sprintf(
+		"delta sha256:%x round:%d layer:%s values:%d",
+		digest[:], delta.RoundID, delta.LayerName, len(delta.Values),
+	))
+	if tm.inspectMax > 0 && len(payload) > tm.inspectMax {
+		payload = payload[:tm.inspectMax]
 	}
 
 	packet := P2PPacket{
@@ -126,14 +166,28 @@ func (tm *TransportMesh) PenalizePeer(nodeID string, penalty float64) {
 	}
 }
 
-// GetPeers returns the snapshot of all active P2P training peers.
+// GetPeers returns a snapshot copy of all active P2P training peers.
 func (tm *TransportMesh) GetPeers() []*PeerNode {
 	tm.mu.RLock()
 	defer tm.mu.RUnlock()
 
 	list := make([]*PeerNode, 0, len(tm.peers))
 	for _, p := range tm.peers {
-		list = append(list, p)
+		cp := *p
+		list = append(list, &cp)
 	}
 	return list
+}
+
+// GetPeer returns a snapshot copy of a peer by nodeID if present.
+func (tm *TransportMesh) GetPeer(nodeID string) (*PeerNode, bool) {
+	tm.mu.RLock()
+	defer tm.mu.RUnlock()
+
+	p, ok := tm.peers[nodeID]
+	if !ok {
+		return nil, false
+	}
+	cp := *p
+	return &cp, true
 }

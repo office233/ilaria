@@ -22,10 +22,16 @@ func coreType(name string, fallback coreir.Type, pos scanner.Position) coreir.Ty
 		return fallback
 	case "number", "f64":
 		return coreir.F64
+	case "ieee64":
+		return coreir.IEEE64
 	case "i64":
 		return coreir.I64
+	case "u64":
+		return coreir.U64
 	case "bool":
 		return coreir.Bool
+	case "bytes":
+		return coreir.Bytes
 	case "void":
 		return coreir.Void
 	default:
@@ -90,7 +96,7 @@ func (p *Program) CoreIR(entry string) (module coreir.Module, err error) {
 			if e == nil {
 				return
 			}
-			if e.kind == "call" {
+			if e.kind == "call" && e.name != "print" && e.name != "eprint" && e.name != "clock" && e.name != "random" && e.name != "write_file" && e.name != "read_file" && e.name != "tcp_connect" && e.name != "http_fetch" && e.name != "process_exec" && e.name != "bytes_len" && e.name != "bytes_get" {
 				visit(e.name, e.pos)
 			}
 			for _, a := range e.args {
@@ -137,9 +143,10 @@ func (p *Program) CoreIR(entry string) (module coreir.Module, err error) {
 		signatures[name] = sig
 	}
 	module.Version = coreir.Version
+	arena := coreByteArena{offsets: map[string]uint32{}}
 	for _, name := range order {
 		f, sig := p.functions[name], signatures[name]
-		b := coreBuilder{f: coreir.Function{Name: name, Params: sig.params, Result: sig.result}, signatures: signatures}
+		b := coreBuilder{f: coreir.Function{Name: name, Params: sig.params, Result: sig.result}, signatures: signatures, arena: &arena}
 		b.current = b.newBlock(f.pos)
 		env := &coreScope{slots: map[string]int{}}
 		for _, param := range sig.params {
@@ -155,6 +162,8 @@ func (p *Program) CoreIR(entry string) (module coreir.Module, err error) {
 		}
 		module.Functions = append(module.Functions, b.f)
 	}
+	module.Data = append([]byte(nil), arena.data...)
+	inferCoreEffects(&module)
 	if err := module.Validate(); err != nil {
 		return coreir.Module{}, err
 	}
@@ -164,11 +173,127 @@ func (p *Program) CoreIR(entry string) (module coreir.Module, err error) {
 type coreBuilder struct {
 	f                     coreir.Function
 	signatures            map[string]coreSignature
+	arena                 *coreByteArena
 	current, instructions int
 }
 
+type coreByteArena struct {
+	data    []byte
+	offsets map[string]uint32
+}
+
+func (a *coreByteArena) intern(text string, pos scanner.Position) coreir.Value {
+	if a == nil {
+		coreFail(pos, "core byte arena is unavailable")
+	}
+	if a.offsets == nil {
+		a.offsets = map[string]uint32{}
+	}
+	if offset, ok := a.offsets[text]; ok {
+		v, err := coreir.ByteSpan(offset, uint32(len(text)))
+		if err != nil {
+			coreFail(pos, "%v", err)
+		}
+		return v
+	}
+	if len(a.data)+len(text) > coreir.MaxByteArenaBytes {
+		coreFail(pos, "core byte arena exceeds %d bytes", coreir.MaxByteArenaBytes)
+	}
+	offset := uint32(len(a.data))
+	a.data = append(a.data, []byte(text)...)
+	a.offsets[text] = offset
+	v, err := coreir.ByteSpan(offset, uint32(len(text)))
+	if err != nil {
+		coreFail(pos, "%v", err)
+	}
+	return v
+}
+
+func (b *coreBuilder) addEffect(effect, capability string) {
+	for _, existing := range b.f.Effects {
+		if existing == effect {
+			return
+		}
+	}
+	b.f.EffectVersion = coreir.EffectVersion
+	b.f.Effects = append(b.f.Effects, effect)
+	b.f.RequiredCapabilities = append(b.f.RequiredCapabilities, coreir.CapabilityRequirement{
+		Name: capability, Effect: effect,
+	})
+}
+
+func inferCoreEffects(module *coreir.Module) {
+	if module == nil {
+		return
+	}
+	byName := make(map[string]int, len(module.Functions))
+	for i := range module.Functions {
+		byName[module.Functions[i].Name] = i
+	}
+	for round := 0; round <= len(module.Functions); round++ {
+		changed := false
+		for fi := range module.Functions {
+			f := &module.Functions[fi]
+			effects := make(map[string]bool, len(f.Effects))
+			caps := make(map[coreir.CapabilityRequirement]bool, len(f.RequiredCapabilities))
+			for _, effect := range f.Effects {
+				effects[effect] = true
+			}
+			for _, cap := range f.RequiredCapabilities {
+				caps[cap] = true
+			}
+			for _, block := range f.Blocks {
+				for _, ins := range block.Instructions {
+					if ins.Op != "call" {
+						continue
+					}
+					ci, ok := byName[ins.Callee]
+					if !ok {
+						continue
+					}
+					callee := module.Functions[ci]
+					for _, effect := range callee.Effects {
+						if !effects[effect] {
+							effects[effect] = true
+							changed = true
+						}
+					}
+					for _, cap := range callee.RequiredCapabilities {
+						if !caps[cap] {
+							caps[cap] = true
+							changed = true
+						}
+					}
+				}
+			}
+			f.Effects = f.Effects[:0]
+			for effect := range effects {
+				f.Effects = append(f.Effects, effect)
+			}
+			sort.Strings(f.Effects)
+			f.RequiredCapabilities = f.RequiredCapabilities[:0]
+			for cap := range caps {
+				f.RequiredCapabilities = append(f.RequiredCapabilities, cap)
+			}
+			sort.Slice(f.RequiredCapabilities, func(i, j int) bool {
+				a, c := f.RequiredCapabilities[i], f.RequiredCapabilities[j]
+				if a.Effect != c.Effect {
+					return a.Effect < c.Effect
+				}
+				return a.Name < c.Name
+			})
+			if len(f.Effects) != 0 {
+				f.EffectVersion = coreir.EffectVersion
+			}
+		}
+		if !changed {
+			return
+		}
+	}
+}
+
 func (b *coreBuilder) slot(t coreir.Type, pos scanner.Position) int {
-	if t != coreir.I64 && t != coreir.F64 && t != coreir.Bool {
+	if t != coreir.I64 && t != coreir.U64 && t != coreir.F64 && t != coreir.IEEE64 && t != coreir.Bool && t != coreir.Bytes {
 		coreFail(pos, "void or unsupported value")
 	}
 	if len(b.f.Slots) >= coreir.MaxSlots {
@@ -288,9 +413,33 @@ func (b *coreBuilder) hint(e *expr, env *coreScope) coreir.Type {
 		if _, ok := e.value.(bool); ok {
 			return coreir.Bool
 		}
+		if _, ok := e.value.(string); ok {
+			return coreir.Bytes
+		}
 	case "variable":
 		return b.f.Slots[env.lookup(e.name, e.pos)]
 	case "call":
+		if e.name == "print" || e.name == "eprint" {
+			return coreir.Void
+		}
+		if e.name == "clock" || e.name == "random" {
+			return coreir.U64
+		}
+		if e.name == "read_file" {
+			return coreir.Bytes
+		}
+		if e.name == "tcp_connect" {
+			return coreir.Bool
+		}
+		if e.name == "http_fetch" {
+			return coreir.Bytes
+		}
+		if e.name == "process_exec" {
+			return coreir.U64
+		}
+		if e.name == "bytes_len" || e.name == "bytes_get" {
+			return coreir.U64
+		}
 		return b.signatures[e.name].result
 	case "unary":
 		if e.name == "!" {
@@ -324,23 +473,143 @@ func (b *coreBuilder) expr(e *expr, env *coreScope, want coreir.Type) int {
 			return b.constant(coreir.Bool, strconv.FormatBool(x), e.pos)
 		case float64:
 			t := coreir.F64
-			if want == coreir.I64 {
-				t = coreir.I64
+			if want == coreir.I64 || want == coreir.U64 || want == coreir.F64 || want == coreir.IEEE64 {
+				t = want
 			}
 			text := e.lexeme
 			if text == "" {
 				text = strconv.FormatFloat(x, 'g', -1, 64)
 			}
-			if t == coreir.I64 {
+			if t == coreir.I64 || t == coreir.U64 {
 				text = strings.ReplaceAll(text, "_", "")
 			}
 			return b.constant(t, text, e.pos)
+		case string:
+			v := b.arena.intern(x, e.pos)
+			literal := v.Literal()
+			dest := b.slot(coreir.Bytes, e.pos)
+			b.emit(coreir.Instruction{Op: "const", Dest: dest, Constant: &literal, Location: coreLocation(e.pos)})
+			return dest
 		default:
-			coreFail(e.pos, "core v1 does not support strings")
+			coreFail(e.pos, "core v1 does not support literal type %T", e.value)
 		}
 	case "variable":
 		return env.lookup(e.name, e.pos)
 	case "call":
+		if e.name == "bytes_len" {
+			if len(e.args) != 1 {
+				coreFail(e.pos, "Core bytes_len expects exactly one bytes argument")
+			}
+			view := b.expression(e.args[0], env, coreir.Bytes)
+			dest := b.slot(coreir.U64, e.pos)
+			b.emit(coreir.Instruction{Op: "bytes.len", Dest: dest, Args: []int{view}, Location: coreLocation(e.pos)})
+			return dest
+		}
+		if e.name == "bytes_get" {
+			if len(e.args) != 2 {
+				coreFail(e.pos, "Core bytes_get expects bytes and u64 arguments")
+			}
+			view := b.expression(e.args[0], env, coreir.Bytes)
+			index := b.expression(e.args[1], env, coreir.U64)
+			dest := b.slot(coreir.U64, e.pos)
+			b.emit(coreir.Instruction{Op: "bytes.get", Dest: dest, Args: []int{view, index}, MayTrap: true, Location: coreLocation(e.pos)})
+			return dest
+		}
+		if e.name == "clock" {
+			if len(e.args) != 0 {
+				coreFail(e.pos, "Core clock expects no arguments")
+			}
+			b.addEffect(coreir.EffectClockRead, "clock_read")
+			dest := b.slot(coreir.U64, e.pos)
+			b.emit(coreir.Instruction{Op: "clock.read", Dest: dest, Args: nil, MayTrap: true, Location: coreLocation(e.pos)})
+			return dest
+		}
+		if e.name == "random" {
+			if len(e.args) != 0 {
+				coreFail(e.pos, "Core random expects no arguments")
+			}
+			b.addEffect(coreir.EffectRNGSample, "rng_sample")
+			dest := b.slot(coreir.U64, e.pos)
+			b.emit(coreir.Instruction{Op: "rng.sample", Dest: dest, Args: nil, MayTrap: true, Location: coreLocation(e.pos)})
+			return dest
+		}
+		if e.name == "write_file" {
+			if len(e.args) != 2 {
+				coreFail(e.pos, "Core write_file expects path bytes and data bytes")
+			}
+			path := b.expression(e.args[0], env, coreir.Bytes)
+			data := b.expression(e.args[1], env, coreir.Bytes)
+			b.addEffect(coreir.EffectFSWrite, "workspace_write")
+			b.emit(coreir.Instruction{Op: "fs.write", Dest: -1, Args: []int{path, data}, MayTrap: true, Location: coreLocation(e.pos)})
+			return -1
+		}
+		if e.name == "read_file" {
+			if len(e.args) != 1 {
+				coreFail(e.pos, "Core read_file expects one path bytes argument")
+			}
+			path := b.expression(e.args[0], env, coreir.Bytes)
+			b.addEffect(coreir.EffectFSRead, "workspace_read")
+			dest := b.slot(coreir.Bytes, e.pos)
+			b.emit(coreir.Instruction{Op: "fs.read", Dest: dest, Args: []int{path}, MayTrap: true, Location: coreLocation(e.pos)})
+			return dest
+		}
+		if e.name == "tcp_connect" {
+			if len(e.args) != 2 {
+				coreFail(e.pos, "Core tcp_connect expects IPv4 bytes and u64 port")
+			}
+			host := b.expression(e.args[0], env, coreir.Bytes)
+			port := b.expression(e.args[1], env, coreir.U64)
+			b.addEffect(coreir.EffectNetConnect, "network_connect")
+			dest := b.slot(coreir.Bool, e.pos)
+			b.emit(coreir.Instruction{Op: "net.connect", Dest: dest, Args: []int{host, port}, MayTrap: true, Location: coreLocation(e.pos)})
+			return dest
+		}
+		if e.name == "http_fetch" {
+			if len(e.args) != 3 {
+				coreFail(e.pos, "Core http_fetch expects IPv4 bytes, u64 port and path bytes")
+			}
+			host := b.expression(e.args[0], env, coreir.Bytes)
+			port := b.expression(e.args[1], env, coreir.U64)
+			path := b.expression(e.args[2], env, coreir.Bytes)
+			b.addEffect(coreir.EffectNetFetch, "network_fetch")
+			dest := b.slot(coreir.Bytes, e.pos)
+			b.emit(coreir.Instruction{Op: "net.fetch", Dest: dest, Args: []int{host, port, path}, MayTrap: true, Location: coreLocation(e.pos)})
+			return dest
+		}
+		if e.name == "process_exec" {
+			if len(e.args) != 6 {
+				coreFail(e.pos, "Core process_exec expects executable bytes, u64 argc and four explicit bytes argv slots")
+			}
+			executable := b.expression(e.args[0], env, coreir.Bytes)
+			argc := b.expression(e.args[1], env, coreir.U64)
+			argv0 := b.expression(e.args[2], env, coreir.Bytes)
+			argv1 := b.expression(e.args[3], env, coreir.Bytes)
+			argv2 := b.expression(e.args[4], env, coreir.Bytes)
+			argv3 := b.expression(e.args[5], env, coreir.Bytes)
+			b.addEffect(coreir.EffectProcessExec, "process_exec")
+			dest := b.slot(coreir.U64, e.pos)
+			b.emit(coreir.Instruction{Op: "process.exec", Dest: dest, Args: []int{executable, argc, argv0, argv1, argv2, argv3}, MayTrap: true, Location: coreLocation(e.pos)})
+			return dest
+		}
+		if e.name == "print" || e.name == "eprint" {
+			if len(e.args) != 1 {
+				coreFail(e.pos, "Core %s expects exactly one scalar argument", e.name)
+			}
+			arg := b.expression(e.args[0], env, "")
+			op := "io.stdout"
+			effect := coreir.EffectIOStdout
+			capability := "stdout_write"
+			if e.name == "eprint" {
+				op = "io.stderr"
+				effect = coreir.EffectIOStderr
+				capability = "stderr_write"
+			}
+			b.addEffect(effect, capability)
+			b.emit(coreir.Instruction{
+				Op: op, Dest: -1, Args: []int{arg}, MayTrap: true, Location: coreLocation(e.pos),
+			})
+			return -1
+		}
 		sig, ok := b.signatures[e.name]
 		if !ok || len(e.args) != len(sig.params) {
 			coreFail(e.pos, "unknown call or incorrect arity for %s", e.name)
@@ -375,7 +644,7 @@ func (b *coreBuilder) expr(e *expr, env *coreScope, want coreir.Type) int {
 		op := "neg"
 		if e.name == "!" {
 			op = "not"
-		} else if t != coreir.I64 && t != coreir.F64 {
+		} else if t != coreir.I64 && t != coreir.U64 && t != coreir.F64 && t != coreir.IEEE64 {
 			coreFail(e.pos, "negation requires a number")
 		}
 		dest := b.slot(t, e.pos)
@@ -405,30 +674,45 @@ func (b *coreBuilder) expr(e *expr, env *coreScope, want coreir.Type) int {
 		if t == "" {
 			t = b.hint(e.args[1], env)
 		}
-		if t != coreir.I64 && t != coreir.F64 {
+		if t != coreir.I64 && t != coreir.U64 && t != coreir.F64 && t != coreir.IEEE64 {
 			t = want
 		}
-		if t != coreir.I64 && t != coreir.F64 {
+		if t != coreir.I64 && t != coreir.U64 && t != coreir.F64 && t != coreir.IEEE64 {
 			t = coreir.F64
 		}
 		// Numeric context types untyped literals, never a differently typed value.
 		left := b.expr(e.args[0], env, t)
 		right := b.expr(e.args[1], env, t)
 		lt, rt := b.valueType(left, e.pos), b.valueType(right, e.pos)
-		ops := map[string]string{"+": "add", "-": "sub", "*": "mul", "/": "div", "%": "rem", "==": "eq", "!=": "ne", "<": "lt", "<=": "le", ">": "gt", ">=": "ge"}
+		ops := map[string]string{
+			"+": "add", "-": "sub", "*": "mul", "/": "div", "%": "rem",
+			"&": "band", "|": "bor", "^": "bxor", "<<": "shl", ">>": "shr",
+			"==": "eq", "!=": "ne", "<": "lt", "<=": "le", ">": "gt", ">=": "ge",
+		}
 		op := ops[e.name]
 		if op == "" {
 			coreFail(e.pos, "unsupported operator %s", e.name)
 		}
-		result, trap := lt, true
+		result, trap := lt, lt != coreir.IEEE64
 		if op == "eq" || op == "ne" {
 			result, trap = coreir.Bool, false
 		} else {
-			if lt != rt || (lt != coreir.I64 && lt != coreir.F64) {
+			if lt != rt || (lt != coreir.I64 && lt != coreir.U64 && lt != coreir.F64 && lt != coreir.IEEE64) {
 				coreFail(e.pos, "numeric operands must have the same type")
 			}
 			if op == "lt" || op == "le" || op == "gt" || op == "ge" {
 				result, trap = coreir.Bool, false
+			} else if lt == coreir.U64 {
+				switch op {
+				case "add", "sub", "mul", "band", "bor", "bxor":
+					trap = false
+				case "div", "rem", "shl", "shr":
+					trap = true
+				default:
+					coreFail(e.pos, "operator %s is not valid for u64", e.name)
+				}
+			} else if op == "band" || op == "bor" || op == "bxor" || op == "shl" || op == "shr" {
+				coreFail(e.pos, "bitwise operators require u64")
 			}
 		}
 		dest := b.slot(result, e.pos)

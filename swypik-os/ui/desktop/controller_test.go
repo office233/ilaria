@@ -105,6 +105,29 @@ func TestChatShowsReplyAndErrors(t *testing.T) {
 	waitFor(t, "error", func(v View) bool { return !v.Busy && hasBlock(v, KindError, "HTTP 503") }, f.c)
 }
 
+func TestPhoneProfileBoundsDesktopRetention(t *testing.T) {
+	t.Setenv("SWYPIK_RESOURCE_PROFILE", "phone")
+	c := New(Deps{})
+	if c.maxHistory != 20 {
+		t.Fatalf("maxHistory=%d want 20", c.maxHistory)
+	}
+	if c.maxLogBlocks > 80 {
+		t.Fatalf("maxLogBlocks=%d want <=80", c.maxLogBlocks)
+	}
+	c.mu.Lock()
+	for i := 0; i < 100; i++ {
+		c.addHistoryLocked("cmd")
+		c.addLocked(TabAgent, Block{Kind: KindInfo, Body: "x"})
+	}
+	c.mu.Unlock()
+	if len(c.history) != 20 {
+		t.Fatalf("history=%d want 20", len(c.history))
+	}
+	if len(c.logs[TabAgent]) != c.maxLogBlocks {
+		t.Fatalf("agent logs=%d want %d", len(c.logs[TabAgent]), c.maxLogBlocks)
+	}
+}
+
 func TestAgentWriteNeedsApproval(t *testing.T) {
 	f := newFixture(t)
 	f.backend.replies = []string{
@@ -220,6 +243,23 @@ func TestDescribeEditShowsDiff(t *testing.T) {
 	title, body := DescribeApproval("workspace.edit", []byte(`{"path":"a.go","old":"x := 1","new":"x := 2","expected_sha256":"`+strings.Repeat("a", 64)+`"}`))
 	if title != "Editează a.go" || body != "- x := 1\n+ x := 2" {
 		t.Fatalf("%q %q", title, body)
+	}
+}
+
+func TestDescribeApprovalCaseInsensitiveCommand(t *testing.T) {
+	title, body := DescribeApproval("process.run", []byte(`{"COMMAND":"del /q x"}`))
+	if title != "Rulează o comandă în workspace" || body != "del /q x" {
+		t.Fatalf("expected command 'del /q x', got title=%q body=%q", title, body)
+	}
+
+	title, body = DescribeApproval("workspace.read", []byte(`{"PATH":"src/main.go"}`))
+	if title != "Citește src/main.go" || body != "" {
+		t.Fatalf("expected 'Citește src/main.go', got title=%q body=%q", title, body)
+	}
+
+	title, body = DescribeApproval("workspace.write", []byte(`{"PATH":"new.txt","CONTENT":"hello world"}`))
+	if title != "Creează new.txt" || body != "hello world" {
+		t.Fatalf("expected 'Creează new.txt' with body 'hello world', got title=%q body=%q", title, body)
 	}
 }
 

@@ -1,0 +1,15 @@
+{
+  "format": "imc-125m-curriculum-v1",
+  "policy": "exact-token-budget-v1",
+  "boundary_policy": "replace-final-lane-token-with-eos-v1",
+  "target_mix_ppm": {
+    "general_knowledge": 300000,
+    "code": 220000,
+    "mathematics": 145000,
+    "science_technical_reasoning": 105000,
+    "os_hardware_drivers_standards": 100000,
+    "agent_tool_trajectories": 80000,
+    "romanian_multilingual": 0,
+    "world_device_trajectories": 50000
+  }
+}

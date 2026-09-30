@@ -1,6 +1,7 @@
 package notifications
 
 import (
+	"fmt"
 	"testing"
 )
 
@@ -32,5 +33,19 @@ func TestNotificationBroker(t *testing.T) {
 	}
 	if summary == "" {
 		t.Errorf("Expected non-empty summary")
+	}
+}
+
+func TestPhoneNotificationQueuesAreBounded(t *testing.T) {
+	t.Setenv("SWYPIK_RESOURCE_PROFILE", "phone")
+	b := NewBroker()
+	if b.maxQueue != 40 {
+		t.Fatalf("maxQueue=%d want 40", b.maxQueue)
+	}
+	for i := 0; i < 100; i++ {
+		b.Ingest("photos", "friend", fmt.Sprintf("update-%d", i), "body")
+	}
+	if got := len(b.digestQueue); got != 40 {
+		t.Fatalf("digest queue=%d want 40", got)
 	}
 }

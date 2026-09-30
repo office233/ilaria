@@ -13,7 +13,10 @@ import (
 	"time"
 
 	"swypik-os/core/autogenesis"
+	"swypik-os/core/devicesynth"
 	"swypik-os/core/hal"
+	resourcepolicy "swypik-os/core/resource"
+	controlkernelcontract "swypik-os/generated/controlkernel"
 )
 
 // PlatformType identifies the physical form-factor and operational domain of the host.
@@ -29,24 +32,26 @@ const (
 
 // TargetEnvironment captures everything the installer discovers on the target machine.
 type TargetEnvironment struct {
-	PlatformType       PlatformType `json:"platform_type"`
-	OS                 string       `json:"os"`
-	Arch               string       `json:"arch"`
-	CPUCount           int          `json:"cpu_count"`
-	DetectedBuses      []string     `json:"detected_buses"`
-	DetectedPeripherals []string    `json:"detected_peripherals"`
-	PreservedUserData  []string     `json:"preserved_user_data"`
-	ProbeTimestamp     time.Time    `json:"probe_timestamp"`
+	PlatformType        PlatformType                 `json:"platform_type"`
+	OS                  string                       `json:"os"`
+	Arch                string                       `json:"arch"`
+	CPUCount            int                          `json:"cpu_count"`
+	DetectedBuses       []string                     `json:"detected_buses"`
+	DetectedPeripherals []string                     `json:"detected_peripherals"`
+	PreservedUserData   []string                     `json:"preserved_user_data"`
+	ProbeTimestamp      time.Time                    `json:"probe_timestamp"`
+	HardwareManifest    devicesynth.HardwareManifest `json:"hardware_manifest"`
 }
 
 // AdaptationPlan outlines the precise self-configuration steps synthesized by the AI.
 type AdaptationPlan struct {
-	TargetProfile       string   `json:"target_profile"`
-	ServicesToActivate  []string `json:"services_to_activate"`
-	DriversToSynthesize []string `json:"drivers_to_synthesize"`
-	SafetyGovernorMode  string   `json:"safety_governor_mode"`
-	StorageMB           float64  `json:"storage_mb"`
-	EstimatedDeploySec  int      `json:"estimated_deploy_sec"`
+	TargetProfile       string                               `json:"target_profile"`
+	ServicesToActivate  []string                             `json:"services_to_activate"`
+	DriversToSynthesize []string                             `json:"drivers_to_synthesize"`
+	SafetyGovernorMode  string                               `json:"safety_governor_mode"`
+	StorageMB           float64                              `json:"storage_mb"`
+	EstimatedDeploySec  int                                  `json:"estimated_deploy_sec"`
+	ResourcePolicy      controlkernelcontract.ResourcePolicy `json:"resource_policy"`
 }
 
 // InstallerEngine probes a target and writes deployment metadata. It does not
@@ -77,6 +82,10 @@ func (i *InstallerEngine) ProbeTarget(ctx context.Context) (*TargetEnvironment, 
 	profile, err := i.halMgr.Scan(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("HAL probe error: %w", err)
+	}
+	hardwareManifest, err := hardwareManifestFromHAL(profile)
+	if err != nil {
+		return nil, fmt.Errorf("hardware manifest: %w", err)
 	}
 
 	platform := PlatformPC
@@ -133,6 +142,7 @@ func (i *InstallerEngine) ProbeTarget(ctx context.Context) (*TargetEnvironment, 
 		DetectedPeripherals: peripherals,
 		PreservedUserData:   preserved,
 		ProbeTimestamp:      time.Now(),
+		HardwareManifest:    hardwareManifest,
 	}, nil
 }
 
@@ -143,6 +153,22 @@ func (i *InstallerEngine) GenerateAdaptationPlan(env *TargetEnvironment) *Adapta
 		DriversToSynthesize: make([]string, 0),
 		StorageMB:           18.5,
 		EstimatedDeploySec:  3,
+		// External callers may construct TargetEnvironment manually. Until a
+		// validated manifest-derived policy replaces this value, stay on the
+		// smallest existing envelope rather than emitting an all-zero contract.
+		ResourcePolicy: resourcepolicy.ForDeviceClass(
+			resourcepolicy.ForProfile(resourcepolicy.ProfilePhone),
+			devicesynth.PlatformUnknown,
+		).Contract(),
+	}
+	if env != nil {
+		facts, detectErr := resourcepolicy.DetectHardwareFacts()
+		if detectErr != nil {
+			facts = resourcepolicy.HardwareFacts{OS: env.OS, Arch: env.Arch, LogicalCPUs: env.CPUCount}
+		}
+		if selection, selectionErr := resourcepolicy.SelectionFromManifest(env.HardwareManifest, facts); selectionErr == nil {
+			plan.ResourcePolicy = selection.Policy.Contract()
+		}
 	}
 
 	switch env.PlatformType {

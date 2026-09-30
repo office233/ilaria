@@ -129,3 +129,13 @@ func TestNativeUnsupported(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestLegacyNativeRejectsRandomExplicitly(t *testing.T) {
+	p, err := Parse("rng.swyp", `fn main(){print(random());}`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := p.EmitC(); err == nil || !strings.Contains(err.Error(), "Core standalone process backend") {
+		t.Fatalf("error=%v", err)
+	}
+}

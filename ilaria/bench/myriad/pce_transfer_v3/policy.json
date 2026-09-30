@@ -1,0 +1,35 @@
+{
+  "anchor_lr": 0.003,
+  "anchor_pretrain_steps": 220,
+  "anchor_replay_ratio": 0.25,
+  "eval_every": 20,
+  "max_anchor_accuracy_drop": 0.125,
+  "min_improvement": 0.0001,
+  "patience_evals": 5,
+  "policy": "pce-transfer-v3-policy-v3",
+  "schema_version": 1,
+  "selection_objective": "natural-plus-worst-penalty",
+  "sleep_lr": 0.0015,
+  "sleep_steps": 520,
+  "test_status": "sealed",
+  "train_prompt_views": 4,
+  "tuning_seeds": [
+    7,
+    11,
+    19,
+    23,
+    31,
+    37
+  ],
+  "validation_gate": {
+    "max_known_anchor_drop": 0.125,
+    "min_mean_nll_advantage": 0.4,
+    "min_positive_accuracy_fraction": 0.6666666667,
+    "min_positive_nll_fraction": 1.0,
+    "min_seeds": 6,
+    "require_all_early_stopped": true,
+    "require_no_negative_accuracy": false
+  },
+  "validation_views": 3,
+  "worst_view_penalty_weight": 0.25
+}

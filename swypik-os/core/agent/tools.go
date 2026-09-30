@@ -14,23 +14,29 @@ import (
 	"swypik-os/internal/safepath"
 )
 
-type listArguments struct {
+// ListArgs are the arguments for workspace.list.
+type ListArgs struct {
 	Path string `json:"path"`
 }
 
+// SearchArgs are the arguments for search.query.
+type SearchArgs struct {
+	Query string `json:"query"`
+}
+
 func validateList(raw json.RawMessage) error {
-	var args listArguments
+	var args ListArgs
 	if err := DecodeObject(raw, &args, 4096); err != nil {
 		return err
 	}
 	if strings.HasPrefix(args.Path, "/") || strings.ContainsRune(args.Path, 0) || filepath.IsAbs(args.Path) || filepath.VolumeName(args.Path) != "" || strings.ContainsAny(args.Path, ":\\") {
 		return fmt.Errorf("workspace-relative forward-slash path required")
 	}
-	if len(args.Path) > 512 {
+	if len(args.Path) > maxPathLength {
 		return fmt.Errorf("path too long")
 	}
 	for _, part := range strings.Split(strings.ReplaceAll(args.Path, "\\", "/"), "/") {
-		if part != "." && strings.HasPrefix(part, ".") {
+		if (part != "." && strings.HasPrefix(part, ".")) || part == ".." || shortName83Pattern.MatchString(part) {
 			return fmt.Errorf("hidden directories and traversal are unavailable")
 		}
 	}
@@ -55,10 +61,13 @@ func ReadOnlyTools(root string) []Tool {
 			if err := validateList(raw); err != nil {
 				return nil, err
 			}
-			var args listArguments
+			var args ListArgs
 			_ = json.Unmarshal(raw, &args)
 			path, err := safepath.ResolveRelative(root, args.Path)
 			if err != nil {
+				return nil, err
+			}
+			if err := checkCanonicalRelative(root, path); err != nil {
 				return nil, err
 			}
 			dir, err := os.Open(path)
@@ -87,7 +96,7 @@ func ReadOnlyTools(root string) []Tool {
 				if err := ctx.Err(); err != nil {
 					return nil, err
 				}
-				if strings.HasPrefix(e.Name(), ".") || e.Type()&os.ModeSymlink != 0 {
+				if strings.HasPrefix(e.Name(), ".") || shortName83Pattern.MatchString(e.Name()) || e.Type()&os.ModeSymlink != 0 {
 					continue
 				}
 				if len(result.Entries) == 32 {

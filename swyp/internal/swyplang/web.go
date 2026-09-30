@@ -103,6 +103,12 @@ func (j *javascript) expression(e *expr, env *nativeScope) string {
 				rhs += "," + strings.Join(args, ",")
 			}
 			rhs += ")"
+		case "eprint":
+			rhs = "eprintAt(" + pos
+			if len(args) > 0 {
+				rhs += "," + strings.Join(args, ",")
+			}
+			rhs += ")"
 		case "clock":
 			rhs = "clockAt(" + pos + ")"
 		case "arg":
@@ -139,7 +145,8 @@ function swypRun(args, write) {
  function tick(pos){if(--steps<0)fail(pos,'execution step limit exceeded');}
  function finite(x,pos){if(!Number.isFinite(x))fail(pos,'non-finite numeric result');return x;}
  function divide(x,y,mod,pos){if(y===0)fail(pos,mod?'remainder by zero':'division by zero');return mod?x%y:x/y;}
- function printAt(pos,...values){tick(pos);write(values.map(String).join(' '));}
+function printAt(pos,...values){tick(pos);write(values.map(String).join(' '));}
+function eprintAt(pos,...values){tick(pos);console.error(...values);}
  function clockAt(pos){tick(pos);return (performance.now()-started)/1000;}
  function argAt(pos,i){tick(pos);if(!Number.isInteger(i)||i<0||i>=args.length)fail(pos,'argument index out of range');return finite(args[i],pos);}
  if(!Array.isArray(args)||args.some(x=>typeof x!=='number'||!Number.isFinite(x)))fail('arguments','expected finite numbers');

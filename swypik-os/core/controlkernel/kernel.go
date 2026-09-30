@@ -63,6 +63,10 @@ func OpenKernel(journalPath string, options ...Option) (*Kernel, error) {
 		_ = store.Close()
 		return nil, fmt.Errorf("rebuild control-kernel projection: %w", err)
 	}
+	// The durable event log lives on disk. After replay, the Projection is the
+	// active in-memory state, so retaining every historical Event as well would
+	// duplicate memory indefinitely on long-running devices.
+	store.DisableEventRetention()
 	k := &Kernel{
 		store:      store,
 		projection: projection,
@@ -273,13 +277,16 @@ func (k *Kernel) dependenciesSatisfiedLocked(nodeID string) bool {
 	return true
 }
 
-func transitionRequiresLease(from NodeState) bool {
+func transitionRequiresLease(from, to NodeState) bool {
 	switch from {
-	case NodeLeased, NodePreparing, NodeExecuting, NodeVerifying, NodeCommitting:
+	case NodeLeased, NodePreparing, NodeExecuting, NodeVerifying, NodeCommitting, NodeUncertain, NodeReconciling:
 		return true
-	default:
-		return false
 	}
+	switch to {
+	case NodeUncertain, NodeReconciling:
+		return true
+	}
+	return false
 }
 
 // TransitionNode persists one validated state transition. READY->LEASED is
@@ -303,9 +310,21 @@ func (k *Kernel) TransitionNode(nodeID string, to NodeState, token LeaseToken) e
 	if (to == NodeReady) && !k.dependenciesSatisfiedLocked(nodeID) {
 		return fmt.Errorf("%w: node %q dependencies are not satisfied", ErrConflict, nodeID)
 	}
-	if transitionRequiresLease(node.State) {
-		if _, err := k.validateLeaseLocked(nodeID, token); err != nil {
-			return err
+	if transitionRequiresLease(node.State, to) {
+		if token.LeaseID != "" {
+			if _, err := k.validateLeaseLocked(nodeID, token); err != nil {
+				return err
+			}
+		} else {
+			if to == NodeOperatorRequired {
+				// Escalation to the operator is the explicit safety valve: it
+				// halts automation and is allowed even while a lease is live
+				// (see TestQAA3UnresolvedExternalRealityCannotTerminalize).
+			} else if k.hasLiveLeaseLocked(nodeID) {
+				return fmt.Errorf("%w: authorizing lease is still live", ErrConflict)
+			} else if node.State != NodeUncertain && node.State != NodeReconciling {
+				return ErrStaleLease
+			}
 		}
 	}
 	if node.State == NodeVerifying && to == NodeCommitting && !k.hasPassedVerificationForCurrentAttemptLocked(nodeID) {
@@ -322,6 +341,13 @@ func (k *Kernel) TransitionNode(nodeID string, to NodeState, token LeaseToken) e
 	}
 	if (to == NodeFailed || to == NodeCancelled || to == NodeBlocked) && k.hasUnresolvedExternalIntentLocked(nodeID) {
 		return fmt.Errorf("%w: node %q has unresolved external side effect; reconcile or escalate to OPERATOR_REQUIRED", ErrConflict, nodeID)
+	}
+	if node.State == NodeReconciling && to == NodeSucceeded {
+		hasPassed := k.hasPassedVerificationLocked(nodeID)
+		intentCount, allCommitted := k.nodeIntentStatsLocked(nodeID)
+		if !hasPassed && (intentCount == 0 || !allCommitted) {
+			return fmt.Errorf("%w: node %q reconciling to succeeded requires passed verification or committed intents", ErrConflict, nodeID)
+		}
 	}
 	if (node.State == NodeCommitting || node.State == NodeReconciling) && to == NodeSucceeded && !k.allIntentsCommittedLocked(nodeID) {
 		return fmt.Errorf("%w: node %q has uncommitted side-effect intent", ErrConflict, nodeID)
@@ -1166,6 +1192,39 @@ func (k *Kernel) allIntentsCommittedLocked(nodeID string) bool {
 		}
 	}
 	return true
+}
+
+func (k *Kernel) hasLiveLeaseLocked(nodeID string) bool {
+	lease, ok := k.projection.Leases[nodeID]
+	if !ok || lease.Released {
+		return false
+	}
+	return k.now().UTC().Before(lease.ExpiresAt)
+}
+
+// hasPassedVerificationLocked reports whether the node's most recent attempt
+// (the last lease recorded for it, live, expired or released) has a PASSED
+// verification. A pass from an older attempt never authorizes reconciliation.
+func (k *Kernel) hasPassedVerificationLocked(nodeID string) bool {
+	lease, ok := k.projection.Leases[nodeID]
+	if !ok || lease.AttemptID == "" {
+		return false
+	}
+	return k.hasPassedVerificationForAttemptLocked(nodeID, lease.AttemptID, lease.ID, lease.Fence)
+}
+
+func (k *Kernel) nodeIntentStatsLocked(nodeID string) (int, bool) {
+	count := 0
+	allCommitted := true
+	for _, intent := range k.projection.Intents {
+		if intent.NodeID == nodeID {
+			count++
+			if intent.State != IntentCommitted {
+				allCommitted = false
+			}
+		}
+	}
+	return count, allCommitted
 }
 
 func (k *Kernel) Task(id string) (Task, bool) {

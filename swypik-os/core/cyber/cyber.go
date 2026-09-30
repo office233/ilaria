@@ -13,6 +13,7 @@ import (
 	"swypik-os/core/autogenesis"
 	"swypik-os/core/evidence"
 	"swypik-os/core/hal"
+	resourcepolicy "swypik-os/core/resource"
 )
 
 // PhysicalActionType denotes the exact physical actuation domain.
@@ -56,12 +57,12 @@ type ActuationResult struct {
 
 // SafetyGovernor enforces physical limits, rate limiting, and hard real-time E-Stops.
 type SafetyGovernor struct {
-	mu           sync.RWMutex
-	eStopActive  int32 // atomic boolean: 1 = active, 0 = clear
-	maxJointDeg  float64
-	minJointDeg  float64
-	minTempC     float64
-	maxTempC     float64
+	mu          sync.RWMutex
+	eStopActive int32 // atomic boolean: 1 = active, 0 = clear
+	maxJointDeg float64
+	minJointDeg float64
+	minTempC    float64
+	maxTempC    float64
 }
 
 func NewSafetyGovernor() *SafetyGovernor {
@@ -120,12 +121,13 @@ func (g *SafetyGovernor) Validate(cmd *PhysicalCommand) error {
 // Orchestrator parses intents and applies them to an in-memory simulation.
 // It never performs device I/O.
 type Orchestrator struct {
-	mu           sync.RWMutex
-	halMgr       *hal.Manager
-	synth        *autogenesis.Synthesizer
-	safety       *SafetyGovernor
+	mu            sync.RWMutex
+	halMgr        *hal.Manager
+	synth         *autogenesis.Synthesizer
+	safety        *SafetyGovernor
 	lastTelemetry map[string]float64
-	history      []*ActuationResult
+	history       []*ActuationResult
+	maxHistory    int
 }
 
 // NewOrchestrator creates the central cyber-physical brain.
@@ -137,10 +139,15 @@ func NewOrchestrator(halMgr *hal.Manager, synth *autogenesis.Synthesizer) *Orche
 		synth = autogenesis.NewSynthesizer("")
 	}
 
+	policy := resourcepolicy.Default()
+	maxHistory := policy.MaxChatHistoryMessages
+	if maxHistory < 20 {
+		maxHistory = 20
+	}
 	return &Orchestrator{
-		halMgr:        halMgr,
-		synth:         synth,
-		safety:        NewSafetyGovernor(),
+		halMgr: halMgr,
+		synth:  synth,
+		safety: NewSafetyGovernor(),
 		// The simulation starts parked and idle; there is no camera to report on.
 		lastTelemetry: map[string]float64{
 			"vehicle_speed_kmh":    0.0,
@@ -151,7 +158,8 @@ func NewOrchestrator(halMgr *hal.Manager, synth *autogenesis.Synthesizer) *Orche
 			"appliance_relay_1":    0.0,
 			"appliance_power_w":    0.0,
 		},
-		history: make([]*ActuationResult, 0),
+		history:    make([]*ActuationResult, 0, min(maxHistory, 16)),
+		maxHistory: maxHistory,
 	}
 }
 
@@ -165,12 +173,12 @@ func (o *Orchestrator) DispatchIntent(ctx context.Context, naturalPrompt string)
 	if strings.Contains(lower, "reset estop") || strings.Contains(lower, "armeaza") || strings.Contains(lower, "rearmeaza") {
 		o.safety.ResetEStop()
 		return &ActuationResult{
-			Command: &PhysicalCommand{Action: "RESET_ESTOP", RawPrompt: clean},
-			Success: true,
-			Evidence: evidence.Simulated,
+			Command:         &PhysicalCommand{Action: "RESET_ESTOP", RawPrompt: clean},
+			Success:         true,
+			Evidence:        evidence.Simulated,
 			FeedbackMessage: "SIMULATION: software E-Stop latch cleared. No hardware safety circuit is connected.",
 			ExecutionTimeMs: time.Since(start).Milliseconds(),
-			Timestamp: time.Now(),
+			Timestamp:       time.Now(),
 		}, nil
 	}
 
@@ -201,11 +209,11 @@ func (o *Orchestrator) DispatchIntent(ctx context.Context, naturalPrompt string)
 	defer o.mu.Unlock()
 
 	result := &ActuationResult{
-		Command:         cmd,
-		Success:         true,
-		Evidence:        evidence.Simulated,
-		Telemetry:       make(map[string]float64),
-		Timestamp:       time.Now(),
+		Command:   cmd,
+		Success:   true,
+		Evidence:  evidence.Simulated,
+		Telemetry: make(map[string]float64),
+		Timestamp: time.Now(),
 	}
 
 	switch cmd.Action {
@@ -301,10 +309,7 @@ func (o *Orchestrator) DispatchIntent(ctx context.Context, naturalPrompt string)
 	}
 
 	result.ExecutionTimeMs = time.Since(start).Milliseconds()
-	o.history = append(o.history, result)
-	if len(o.history) > 200 {
-		o.history = o.history[len(o.history)-200:]
-	}
+	o.appendHistoryLocked(result)
 	return result, nil
 }
 
@@ -330,7 +335,7 @@ func (o *Orchestrator) parseCommand(clean string, lower string) (*PhysicalComman
 	}
 
 	// 2. Vehicle Climate
-	if (strings.Contains(lower, "clima") || strings.Contains(lower, "temperature") || strings.Contains(lower, "temperatura") || (strings.Contains(lower, "grade") && !strings.Contains(lower, "robot") && !strings.Contains(lower, "brat"))) {
+	if strings.Contains(lower, "clima") || strings.Contains(lower, "temperature") || strings.Contains(lower, "temperatura") || (strings.Contains(lower, "grade") && !strings.Contains(lower, "robot") && !strings.Contains(lower, "brat")) {
 		re := regexp.MustCompile(`(\d+(?:\.\d+)?)`)
 		matches := re.FindStringSubmatch(clean)
 		temp := 21.0
@@ -469,11 +474,24 @@ func (o *Orchestrator) TriggerEStop() *ActuationResult {
 		ExecutionTimeMs: 0,
 		Timestamp:       time.Now(),
 	}
-	o.history = append(o.history, res)
-	if len(o.history) > 200 {
-		o.history = o.history[len(o.history)-200:]
-	}
+	o.appendHistoryLocked(res)
 	return res
+}
+
+func (o *Orchestrator) appendHistoryLocked(result *ActuationResult) {
+	if result == nil {
+		return
+	}
+	limit := o.maxHistory
+	if limit <= 0 {
+		limit = 100
+	}
+	if len(o.history) < limit {
+		o.history = append(o.history, result)
+		return
+	}
+	copy(o.history, o.history[1:])
+	o.history[limit-1] = result
 }
 
 // GetTelemetrySnapshot returns a copy of the simulation state. None of it was

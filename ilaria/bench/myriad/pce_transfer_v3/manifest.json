@@ -1,0 +1,12 @@
+{
+  "anchor_count": 8,
+  "anchors_test_sha256": "8f2fd5b8263628f733da7e7102145f89384d9fd4976a85b2f50a940370b8837c",
+  "anchors_trainval_sha256": "df817ae0a505f7b528c559d421f7c3b08c44f8e06a300b318d886a7fb09d6eb1",
+  "benchmark": "pce-transfer-v3",
+  "policy_sha256": "4b8665dab8199ffd80f334ab0431361930497cee2a99adfdec7ad1a80ff68de5",
+  "schema_version": 2,
+  "skill_count": 16,
+  "skills_test_sha256": "3f5cb3824f9c1d399b340394b63bd78eb673d7fe605ea82ef8f45f4926ee776c",
+  "skills_trainval_sha256": "b3d3168f89ed239fffc7e6e3b0f3faa6d0d3ef36c67333aa457899940c00b417",
+  "test_status": "sealed"
+}

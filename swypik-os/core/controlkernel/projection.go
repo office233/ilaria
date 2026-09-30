@@ -10,19 +10,20 @@ import (
 const controlStream = "control"
 
 const (
-	eventTaskCreated          = "task.created"
-	eventTaskTopologyFrozen   = "task.topology_frozen"
-	eventNodeAdded            = "node.added"
-	eventEdgeAdded            = "edge.added"
-	eventNodeTransitioned     = "node.transitioned"
-	eventAttemptRecorded      = "attempt.recorded"
-	eventLeaseGranted         = "lease.granted"
-	eventLeaseRenewed         = "lease.renewed"
-	eventLeaseReleased        = "lease.released"
-	eventIntentPrepared       = "intent.prepared"
-	eventIntentRebound        = "intent.rebound"
-	eventIntentStateChanged   = "intent.state_changed"
-	eventVerificationRecorded = "verification.recorded"
+	eventTaskCreated           = "task.created"
+	eventTaskTopologyFrozen    = "task.topology_frozen"
+	eventNodeAdded             = "node.added"
+	eventEdgeAdded             = "edge.added"
+	eventNodeTransitioned      = "node.transitioned"
+	eventAttemptRecorded       = "attempt.recorded"
+	eventLeaseGranted          = "lease.granted"
+	eventLeaseRenewed          = "lease.renewed"
+	eventLeaseReleased         = "lease.released"
+	eventIntentPrepared        = "intent.prepared"
+	eventIntentRebound         = "intent.rebound"
+	eventIntentStateChanged    = "intent.state_changed"
+	eventVerificationRecorded  = "verification.recorded"
+	eventResourceStateRecorded = "resource.state_recorded"
 )
 
 type taskTopologyFrozenPayload struct {
@@ -69,16 +70,18 @@ type intentReboundPayload struct {
 // Projection is the rebuildable query model. It is never persisted separately
 // in M1; the event journal remains the only source of truth.
 type Projection struct {
-	Sequence      uint64
-	Tasks         map[string]Task
-	Nodes         map[string]Node
-	Edges         map[string]Edge
-	Attempts      map[string]Attempt
-	Leases        map[string]Lease
-	MaxFence      map[string]uint64
-	Intents       map[string]Intent
-	IntentKeys    map[string]string
-	Verifications map[string]Verification
+	Sequence         uint64
+	Tasks            map[string]Task
+	Nodes            map[string]Node
+	Edges            map[string]Edge
+	Attempts         map[string]Attempt
+	Leases           map[string]Lease
+	MaxFence         map[string]uint64
+	Intents          map[string]Intent
+	IntentKeys       map[string]string
+	Verifications    map[string]Verification
+	ResourceState    ResourceState
+	HasResourceState bool
 }
 
 func NewProjection() *Projection {
@@ -352,6 +355,24 @@ func (p *Projection) Apply(event Event) error {
 			return fmt.Errorf("duplicate verification %q", verification.ID)
 		}
 		p.Verifications[verification.ID] = verification
+
+	case eventResourceStateRecorded:
+		var state ResourceState
+		if err := decodePayload(event.Data, &state); err != nil {
+			return err
+		}
+		if err := validateResourceState(state); err != nil {
+			return err
+		}
+		expectedRevision := uint64(1)
+		if p.HasResourceState {
+			expectedRevision = p.ResourceState.Revision + 1
+		}
+		if state.Revision != expectedRevision {
+			return fmt.Errorf("resource state revision expected %d, got %d", expectedRevision, state.Revision)
+		}
+		p.ResourceState = cloneResourceState(state)
+		p.HasResourceState = true
 
 	default:
 		return fmt.Errorf("unknown event type %q", event.Type)

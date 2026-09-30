@@ -128,9 +128,11 @@ func (a *Adapter) IngestAnalog(channel int, signal SignalType, rawValue float64,
 	if spiked {
 		a.recentSpikes = append(a.recentSpikes, event)
 		if len(a.recentSpikes) > 100 {
-			kept := make([]SpikeEvent, 50)
-			copy(kept, a.recentSpikes[len(a.recentSpikes)-50:])
-			a.recentSpikes = kept
+			copy(a.recentSpikes, a.recentSpikes[len(a.recentSpikes)-50:])
+			for i := 50; i < len(a.recentSpikes); i++ {
+				a.recentSpikes[i] = SpikeEvent{}
+			}
+			a.recentSpikes = a.recentSpikes[:50]
 		}
 	}
 
@@ -238,4 +240,3 @@ func (a *Adapter) SynthesizeModbusFrame(slaveID byte, startAddr uint16, register
 
 	return frame
 }
-

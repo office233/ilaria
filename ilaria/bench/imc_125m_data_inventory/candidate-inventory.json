@@ -1,0 +1,790 @@
+{
+  "counting": {
+    "eos_tokens_per_document": 1,
+    "estimate_bytes_per_token_max": 4.0,
+    "estimate_bytes_per_token_min": 3.2,
+    "mode": "estimated",
+    "tokenizer_sha256": null
+  },
+  "curriculum": {
+    "file_sha256": "b51e5fcddcb08317c3b0bced28185427ae54817b5860c6391d1e03538b9b1a4e",
+    "identity_sha256": "3ac9c6e0a36e85151e543dfbff09c8ea319b1566b6dd77d981cab8c8f34a4432",
+    "target_tokens": 1000000000
+  },
+  "dedup": {
+    "identity": "NFKC-casefold-whitespace-sha256-v1",
+    "ownership": "lexicographic-source-first-v1"
+  },
+  "format": "ilaria-corpus-inventory-v1",
+  "inputs": [
+    {
+      "manifest_sha256": "6e1558c1f17b8869c32e326cb9706db372530676d154cd9dbc02581c4d2a8960",
+      "revision": "8be86d4a24fd4091f8f4192018423ab590f408db",
+      "shards": [
+        {
+          "bytes": 14735672,
+          "documents": 636,
+          "filename": "freertos_kernel-00000.jsonl",
+          "sha256": "5f4f91e5f93ac817c5f17599be93998c4d86e7a6d67d122406011ef9aecf3e92"
+        }
+      ],
+      "source": "freertos_kernel"
+    },
+    {
+      "manifest_sha256": "728fa13acd16b2f307cffb076a8722dfc50353a7788b6f3267817dbfed274b97",
+      "revision": "f91ce18c4db84c9f0fe271d1832f9cee91b58aa9",
+      "shards": [
+        {
+          "bytes": 64122476,
+          "documents": 10000,
+          "filename": "golang_go-00000.jsonl",
+          "sha256": "e68c9377c13432445d2ecff6510e51cb5a0d957b216d27008649ce4996cb9aad"
+        },
+        {
+          "bytes": 97294,
+          "documents": 59,
+          "filename": "golang_go-00001.jsonl",
+          "sha256": "6cff132f51a635f526ec28ac7ddd339a2a2c0378e8f47f3e01be6e03de048e99"
+        }
+      ],
+      "source": "golang_go"
+    },
+    {
+      "manifest_sha256": "a4e167f6db3683331fd34dad268c1b8363dfc6c9e66f5d59764bccae4927cf63",
+      "revision": "115c297fdcc7d0fab41ed0e5c08f1b9cbec35976",
+      "shards": [
+        {
+          "bytes": 107658386,
+          "documents": 5393,
+          "filename": "python_cpython-00000.jsonl",
+          "sha256": "11386a900982fa124d323ea1cb39513e7edc730ccb0e90706be5acd74d2ad77f"
+        }
+      ],
+      "source": "python_cpython"
+    },
+    {
+      "manifest_sha256": "49f9e506d34ef8e36f15303a5b5b7a3984387cb96feb00fb7894cd2fe72d5b19",
+      "revision": "ea6bb45b74c24a026dab4187b1550e97b6985c8a",
+      "shards": [
+        {
+          "bytes": 116443675,
+          "documents": 10000,
+          "filename": "rust_lang-00000.jsonl",
+          "sha256": "7d56608ef61c2d4175c3cc99a909ff816502889e813d72f518db8e363a90dbb7"
+        },
+        {
+          "bytes": 35825380,
+          "documents": 10000,
+          "filename": "rust_lang-00001.jsonl",
+          "sha256": "23461ca9f7d2d66d8168cca4057fb3e486ba2c22999d50e4020c367c0788cb53"
+        },
+        {
+          "bytes": 9732542,
+          "documents": 10000,
+          "filename": "rust_lang-00002.jsonl",
+          "sha256": "2dcf81f7760d81108c084374ee885104968d789694cf48487f5b8af0c8caa19d"
+        },
+        {
+          "bytes": 19103194,
+          "documents": 10000,
+          "filename": "rust_lang-00003.jsonl",
+          "sha256": "361a65dd22ad25a985602c51b8f4d02ea716ba02ad68aa477d4b119eb3b4a426"
+        },
+        {
+          "bytes": 740633,
+          "documents": 798,
+          "filename": "rust_lang-00004.jsonl",
+          "sha256": "09859ab2234702d6dbec2f75533ff1c7adff6436fc3ae7cde424f2fea4c163c9"
+        }
+      ],
+      "source": "rust_lang"
+    },
+    {
+      "manifest_sha256": "6094d1dba6588fc46fa0c25ca4d91167bbfbc25c0e6058bd74f5238af62e8c1b",
+      "revision": "b04c8d1ceb2f5cd4588862100d08de323dccfbaa",
+      "shards": [
+        {
+          "bytes": 35866428,
+          "documents": 20046,
+          "filename": "wiki_en-00000.jsonl",
+          "sha256": "0d18eb697c9ebc60f314bb47832ff089dc1499d9936918f70862f54b869feef3"
+        },
+        {
+          "bytes": 34800957,
+          "documents": 20000,
+          "filename": "wiki_en-00001.jsonl",
+          "sha256": "c3ab478d6076e9745386dd77f0553afb3c65819c8ad8cc43bbd9c88544b3e7f5"
+        },
+        {
+          "bytes": 31295185,
+          "documents": 20003,
+          "filename": "wiki_en-00002.jsonl",
+          "sha256": "bcbe07b4e9a0015832d113e005155b90507c3ad2246cce42947a53a32b343eca"
+        },
+        {
+          "bytes": 30805602,
+          "documents": 20000,
+          "filename": "wiki_en-00003.jsonl",
+          "sha256": "c445f33763ffcb1f3e6e2b1d911a002ef78dbc47ec80ddde96c505dbf60ca4bc"
+        },
+        {
+          "bytes": 30961723,
+          "documents": 20000,
+          "filename": "wiki_en-00004.jsonl",
+          "sha256": "da3b67be656423cb59a7da92c1118f2e11df3c725f95df869d399746402f0ea4"
+        },
+        {
+          "bytes": 30950663,
+          "documents": 20001,
+          "filename": "wiki_en-00005.jsonl",
+          "sha256": "c3c1098a5261704baca28e20c5c2591799763297eb045d480dcdf3a425c9c260"
+        },
+        {
+          "bytes": 30910294,
+          "documents": 20000,
+          "filename": "wiki_en-00006.jsonl",
+          "sha256": "b17e03d1d80ff89fa6ea1f19b25a666d969534742eb3aafdeba1b8f2aebcbc3a"
+        },
+        {
+          "bytes": 30772997,
+          "documents": 20007,
+          "filename": "wiki_en-00007.jsonl",
+          "sha256": "f455805b43cf8e2ee9152c3d740c055045f97a58d13082a17dd9eb2b39144644"
+        },
+        {
+          "bytes": 30930766,
+          "documents": 20004,
+          "filename": "wiki_en-00008.jsonl",
+          "sha256": "672f86131ef77776eaaeee2dd627779b0ed63bc392388f503e0e8657fd78bb8b"
+        },
+        {
+          "bytes": 31700517,
+          "documents": 20000,
+          "filename": "wiki_en-00009.jsonl",
+          "sha256": "105d0b04262132d75f709307feb8f209ad8e827c4de403934f645b25578046e6"
+        },
+        {
+          "bytes": 30576986,
+          "documents": 20002,
+          "filename": "wiki_en-00010.jsonl",
+          "sha256": "3191fd3139df05bb0f65ae5b7fc655f1f476c153cb913d68c4b5f327b53f5c72"
+        },
+        {
+          "bytes": 30651394,
+          "documents": 20000,
+          "filename": "wiki_en-00011.jsonl",
+          "sha256": "a41ffaea0e66de84fc76ea2dddeecf52420b4e4b58e2a232116665e031ef3dd2"
+        },
+        {
+          "bytes": 30684047,
+          "documents": 20002,
+          "filename": "wiki_en-00012.jsonl",
+          "sha256": "08bae052857d59bc69879522f69164fdc3bbf60bec6c53d7d9cb0748ca45b9c2"
+        },
+        {
+          "bytes": 30745479,
+          "documents": 20000,
+          "filename": "wiki_en-00013.jsonl",
+          "sha256": "21a13ed88c039f26296f7e44141be2f1fe1b58a07c13372a34bdd71833c04a7c"
+        },
+        {
+          "bytes": 30627067,
+          "documents": 20003,
+          "filename": "wiki_en-00014.jsonl",
+          "sha256": "ebe32af8a57fb38652cc5f12e46b50b494ac6d9e56fde76077368686699313e5"
+        },
+        {
+          "bytes": 30658070,
+          "documents": 20000,
+          "filename": "wiki_en-00015.jsonl",
+          "sha256": "760b3f2220143dfb5c92611868910d0e31b0221f9697275043be7d1e32adfcff"
+        },
+        {
+          "bytes": 31144467,
+          "documents": 20020,
+          "filename": "wiki_en-00016.jsonl",
+          "sha256": "bac3e52ee296a9c6038db1360114f714e5bc353ab71acc7314062e78a677a30e"
+        },
+        {
+          "bytes": 10282047,
+          "documents": 6791,
+          "filename": "wiki_en-00017.jsonl",
+          "sha256": "7ae5ade0514cc519219eabc742bd3a04bfef0496c8223f694df0254c7ee2fcc2"
+        },
+        {
+          "bytes": 30728901,
+          "documents": 20000,
+          "filename": "wiki_en-00018.jsonl",
+          "sha256": "64fee433fad56c641ae81762401544ba8998c24a98f81d0906459068fb83b8ad"
+        },
+        {
+          "bytes": 30723767,
+          "documents": 20002,
+          "filename": "wiki_en-00019.jsonl",
+          "sha256": "31572e8bbcb41ced139f98d878b539b19191b6f88e25972491675c6ee1b3ebdf"
+        },
+        {
+          "bytes": 30514806,
+          "documents": 20000,
+          "filename": "wiki_en-00020.jsonl",
+          "sha256": "66ce607f54e1ac385529bc5beebdd8e13672e4de6c2293d0173c511421ebb4d0"
+        },
+        {
+          "bytes": 30423091,
+          "documents": 20004,
+          "filename": "wiki_en-00021.jsonl",
+          "sha256": "e549585460ee7d3fcb22ea1a46215e35e70bc8effb11ed9aa527a6f0937ec243"
+        },
+        {
+          "bytes": 31071131,
+          "documents": 20006,
+          "filename": "wiki_en-00022.jsonl",
+          "sha256": "540f9ef98bf40f07431928cf7f9fa297756a6db20a452b03c97bd48a622de48b"
+        },
+        {
+          "bytes": 31000581,
+          "documents": 20003,
+          "filename": "wiki_en-00023.jsonl",
+          "sha256": "2ba1fdf182d9a8150650c1bde168a642205cf18123fd036a794b2f5746102bd5"
+        },
+        {
+          "bytes": 30731563,
+          "documents": 20001,
+          "filename": "wiki_en-00024.jsonl",
+          "sha256": "093165464d35bde25b596755a8a6a8f8e9d1daaaf94486849340102a154f2171"
+        },
+        {
+          "bytes": 30887809,
+          "documents": 20001,
+          "filename": "wiki_en-00025.jsonl",
+          "sha256": "0e77a94732c11c33add2ead69eb1cb1a0b6a6da50c921e2afc38d72893f99e86"
+        },
+        {
+          "bytes": 30608096,
+          "documents": 20001,
+          "filename": "wiki_en-00026.jsonl",
+          "sha256": "a40fbcf58da831dcba17713331f53454853f8046c5748ca764c80002e9ebcc89"
+        },
+        {
+          "bytes": 30302154,
+          "documents": 20002,
+          "filename": "wiki_en-00027.jsonl",
+          "sha256": "21c99c40352a9d21d5ab69b2418d290797daef59d5ab4890c49c43a0525821d2"
+        },
+        {
+          "bytes": 30405610,
+          "documents": 20001,
+          "filename": "wiki_en-00028.jsonl",
+          "sha256": "1d61856089afc67b494e60235012b76efb457bbabf1ebe51e8035e6f75b372d4"
+        },
+        {
+          "bytes": 30638171,
+          "documents": 20004,
+          "filename": "wiki_en-00029.jsonl",
+          "sha256": "0cce71ee21c08f01fdc1f1ce0aa516cbbdcce110174ee46a31ddd3779aa9f0e2"
+        },
+        {
+          "bytes": 30484016,
+          "documents": 20006,
+          "filename": "wiki_en-00030.jsonl",
+          "sha256": "a27118a239590dc0d98ac6c8e6b4cb05490eca4053b39464cb16a9baa61240ca"
+        },
+        {
+          "bytes": 30591793,
+          "documents": 20000,
+          "filename": "wiki_en-00031.jsonl",
+          "sha256": "c0915acc2f94db7d3e49c3b97036c4be6784e576f0fa964c242285ac4eeebcd7"
+        },
+        {
+          "bytes": 30973819,
+          "documents": 20003,
+          "filename": "wiki_en-00032.jsonl",
+          "sha256": "d80044292ac8473bbdf7649edc6eb82b6cb77deb619694d70ec2d25a9b911be5"
+        },
+        {
+          "bytes": 30359385,
+          "documents": 20001,
+          "filename": "wiki_en-00033.jsonl",
+          "sha256": "e055c392c722f93810d5f718a79bd9caecec47f489c31b3303ceeeac96bb9636"
+        },
+        {
+          "bytes": 30514529,
+          "documents": 20004,
+          "filename": "wiki_en-00034.jsonl",
+          "sha256": "2c3e23f6627ec48c60e98deffa3f7a70d0adc6edbd82a2933d001318aa6f0d8f"
+        },
+        {
+          "bytes": 30148398,
+          "documents": 20002,
+          "filename": "wiki_en-00035.jsonl",
+          "sha256": "4af91b9767cb1bc7b949d48c39ea34ec2c8100ff586e19a2f732841684f8f7cd"
+        },
+        {
+          "bytes": 29145592,
+          "documents": 20014,
+          "filename": "wiki_en-00036.jsonl",
+          "sha256": "48414453cad6177acb52b7278696eb70a37c929752aef0ac23eb6c85be0cd442"
+        },
+        {
+          "bytes": 29813451,
+          "documents": 20000,
+          "filename": "wiki_en-00037.jsonl",
+          "sha256": "67dd419e7833c291479d7c342d870f40ccf9a6d8d52d798cfbd5dd76a70e844b"
+        },
+        {
+          "bytes": 30777288,
+          "documents": 20001,
+          "filename": "wiki_en-00038.jsonl",
+          "sha256": "038ab89f569b54bba95423fa89f71b446e0c02fe7f84587ef67bb2b428a2a4ac"
+        },
+        {
+          "bytes": 30014104,
+          "documents": 20002,
+          "filename": "wiki_en-00039.jsonl",
+          "sha256": "1b2ca046d690d5c8ec182f1b19cedb992e1a4eeadc72f0a74b45e2b39f26f35a"
+        },
+        {
+          "bytes": 18065177,
+          "documents": 11940,
+          "filename": "wiki_en-00040.jsonl",
+          "sha256": "8d9449c7c9e02fa5564b35a81f41ad5859a902d64ad910dc37cc0b0ea8c30737"
+        },
+        {
+          "bytes": 30231065,
+          "documents": 20008,
+          "filename": "wiki_en-00041.jsonl",
+          "sha256": "01e538a2aeff33d7d6199e19e2ffe98453ed5f61da76a3921ff7e7f3e1eb58ae"
+        },
+        {
+          "bytes": 30268559,
+          "documents": 20001,
+          "filename": "wiki_en-00042.jsonl",
+          "sha256": "3d22b528694107af4c62ab4838335666484abbc4b2e11593e31c48e4241cf9ef"
+        },
+        {
+          "bytes": 29974076,
+          "documents": 20005,
+          "filename": "wiki_en-00043.jsonl",
+          "sha256": "fcb073e71d797285f4f8afcb74b93c583f3cbcf70e8b3fa0a9e1973562b1cbdc"
+        },
+        {
+          "bytes": 30023506,
+          "documents": 20002,
+          "filename": "wiki_en-00044.jsonl",
+          "sha256": "3cad2d95e3fbe249cad901e5141f804bc18b97835ebd830929e4e1b050230958"
+        },
+        {
+          "bytes": 29932585,
+          "documents": 20000,
+          "filename": "wiki_en-00045.jsonl",
+          "sha256": "a597331bd9c7b1e81b4426d68150e2d72ffe54c1833bde93cf6f29a2e4e837ce"
+        },
+        {
+          "bytes": 30469729,
+          "documents": 20001,
+          "filename": "wiki_en-00046.jsonl",
+          "sha256": "89775c7090ffb2f8e41c029ffaffbe70abb953164cb066f4351692a99610b39d"
+        },
+        {
+          "bytes": 30271449,
+          "documents": 20000,
+          "filename": "wiki_en-00047.jsonl",
+          "sha256": "f586a2a5b3020891ef5644bde2097bb09526af83e4b4531dc83622f947deeacb"
+        },
+        {
+          "bytes": 7902759,
+          "documents": 5323,
+          "filename": "wiki_en-00048.jsonl",
+          "sha256": "e8a328846f14ed67d412b5ea6c7922499ccb737a7234ce3ea035f844aace0a67"
+        }
+      ],
+      "source": "wiki_en"
+    },
+    {
+      "manifest_sha256": "4cbbc9c8601509f62f5b727b1b372a9089994e1b42a205d991a73d0d787a53b9",
+      "revision": "f0bdf59a0b7d1b4dadbec339662d764cba78138a",
+      "shards": [
+        {
+          "bytes": 69866037,
+          "documents": 10000,
+          "filename": "zephyr-00000.jsonl",
+          "sha256": "3b2bd1d350d2e8f1eea732db64761db5d4c8d0c551210e2fe237212d84c06959"
+        },
+        {
+          "bytes": 44202698,
+          "documents": 3417,
+          "filename": "zephyr-00001.jsonl",
+          "sha256": "a865a9ffc8438ffd0e38d5cf59f47815894d79490fd64170d1e2bbac64120d0a"
+        }
+      ],
+      "source": "zephyr"
+    }
+  ],
+  "inventory_sha256": "2d0ca2bee30c00db4649debabf85087d8dae003a963b9784f3b5ead5e6fa0723",
+  "lane_rules": {
+    "file_sha256": "7ca05abc5d996f09ca7825f77e38ae5e008059352cf11c68ba952bdf398199cf",
+    "identity_sha256": "8e32ab76a3b088e84b25e66b50ebc02f3d54f2c0f12b60027171a9a75e308c3e"
+  },
+  "lanes": {
+    "agent_tool_trajectories": {
+      "approved": {
+        "documents": 0,
+        "duplicate_text_bytes_removed": 0,
+        "duplicates_removed": 0,
+        "estimated_tokens_max": 0,
+        "estimated_tokens_min": 0,
+        "text_bytes": 0
+      },
+      "approved_best_case_deficit_tokens": 80000000,
+      "approved_conservative_deficit_tokens": 80000000,
+      "candidate": {
+        "documents": 0,
+        "duplicate_text_bytes_removed": 0,
+        "duplicates_removed": 0,
+        "estimated_tokens_max": 0,
+        "estimated_tokens_min": 0,
+        "text_bytes": 0
+      },
+      "candidate_best_case_deficit_tokens": 80000000,
+      "candidate_conservative_deficit_tokens": 80000000,
+      "quota_tokens": 80000000
+    },
+    "code": {
+      "approved": {
+        "documents": 0,
+        "duplicate_text_bytes_removed": 0,
+        "duplicates_removed": 0,
+        "estimated_tokens_max": 0,
+        "estimated_tokens_min": 0,
+        "text_bytes": 0
+      },
+      "approved_best_case_deficit_tokens": 220000000,
+      "approved_conservative_deficit_tokens": 220000000,
+      "candidate": {
+        "documents": 56305,
+        "duplicate_text_bytes_removed": 0,
+        "duplicates_removed": 0,
+        "estimated_tokens_max": 103019377,
+        "estimated_tokens_min": 82426763,
+        "text_bytes": 329481830
+      },
+      "candidate_best_case_deficit_tokens": 116980623,
+      "candidate_conservative_deficit_tokens": 137573237,
+      "quota_tokens": 220000000
+    },
+    "general_knowledge": {
+      "approved": {
+        "documents": 0,
+        "duplicate_text_bytes_removed": 0,
+        "duplicates_removed": 0,
+        "estimated_tokens_max": 0,
+        "estimated_tokens_min": 0,
+        "text_bytes": 0
+      },
+      "approved_best_case_deficit_tokens": 300000000,
+      "approved_conservative_deficit_tokens": 300000000,
+      "candidate": {
+        "documents": 923103,
+        "duplicate_text_bytes_removed": 200691,
+        "duplicates_removed": 1046,
+        "estimated_tokens_max": 372524738,
+        "estimated_tokens_min": 298204411,
+        "text_bytes": 1189125229
+      },
+      "candidate_best_case_deficit_tokens": 0,
+      "candidate_conservative_deficit_tokens": 1795589,
+      "quota_tokens": 300000000
+    },
+    "mathematics": {
+      "approved": {
+        "documents": 0,
+        "duplicate_text_bytes_removed": 0,
+        "duplicates_removed": 0,
+        "estimated_tokens_max": 0,
+        "estimated_tokens_min": 0,
+        "text_bytes": 0
+      },
+      "approved_best_case_deficit_tokens": 145000000,
+      "approved_conservative_deficit_tokens": 145000000,
+      "candidate": {
+        "documents": 5564,
+        "duplicate_text_bytes_removed": 103,
+        "duplicates_removed": 2,
+        "estimated_tokens_max": 2251274,
+        "estimated_tokens_min": 1802132,
+        "text_bytes": 7186270
+      },
+      "candidate_best_case_deficit_tokens": 142748726,
+      "candidate_conservative_deficit_tokens": 143197868,
+      "quota_tokens": 145000000
+    },
+    "os_hardware_drivers_standards": {
+      "approved": {
+        "documents": 0,
+        "duplicate_text_bytes_removed": 0,
+        "duplicates_removed": 0,
+        "estimated_tokens_max": 0,
+        "estimated_tokens_min": 0,
+        "text_bytes": 0
+      },
+      "approved_best_case_deficit_tokens": 100000000,
+      "approved_conservative_deficit_tokens": 100000000,
+      "candidate": {
+        "documents": 13998,
+        "duplicate_text_bytes_removed": 0,
+        "duplicates_removed": 0,
+        "estimated_tokens_max": 37037818,
+        "estimated_tokens_min": 29633054,
+        "text_bytes": 118476223
+      },
+      "candidate_best_case_deficit_tokens": 62962182,
+      "candidate_conservative_deficit_tokens": 70366946,
+      "quota_tokens": 100000000
+    },
+    "romanian_multilingual": {
+      "approved": {
+        "documents": 0,
+        "duplicate_text_bytes_removed": 0,
+        "duplicates_removed": 0,
+        "estimated_tokens_max": 0,
+        "estimated_tokens_min": 0,
+        "text_bytes": 0
+      },
+      "approved_best_case_deficit_tokens": 0,
+      "approved_conservative_deficit_tokens": 0,
+      "candidate": {
+        "documents": 0,
+        "duplicate_text_bytes_removed": 0,
+        "duplicates_removed": 0,
+        "estimated_tokens_max": 0,
+        "estimated_tokens_min": 0,
+        "text_bytes": 0
+      },
+      "candidate_best_case_deficit_tokens": 0,
+      "candidate_conservative_deficit_tokens": 0,
+      "quota_tokens": 0
+    },
+    "science_technical_reasoning": {
+      "approved": {
+        "documents": 0,
+        "duplicate_text_bytes_removed": 0,
+        "duplicates_removed": 0,
+        "estimated_tokens_max": 0,
+        "estimated_tokens_min": 0,
+        "text_bytes": 0
+      },
+      "approved_best_case_deficit_tokens": 105000000,
+      "approved_conservative_deficit_tokens": 105000000,
+      "candidate": {
+        "documents": 14496,
+        "duplicate_text_bytes_removed": 4927,
+        "duplicates_removed": 6,
+        "estimated_tokens_max": 6209328,
+        "estimated_tokens_min": 4970362,
+        "text_bytes": 19823462
+      },
+      "candidate_best_case_deficit_tokens": 98790672,
+      "candidate_conservative_deficit_tokens": 100029638,
+      "quota_tokens": 105000000
+    },
+    "world_device_trajectories": {
+      "approved": {
+        "documents": 0,
+        "duplicate_text_bytes_removed": 0,
+        "duplicates_removed": 0,
+        "estimated_tokens_max": 0,
+        "estimated_tokens_min": 0,
+        "text_bytes": 0
+      },
+      "approved_best_case_deficit_tokens": 50000000,
+      "approved_conservative_deficit_tokens": 50000000,
+      "candidate": {
+        "documents": 0,
+        "duplicate_text_bytes_removed": 0,
+        "duplicates_removed": 0,
+        "estimated_tokens_max": 0,
+        "estimated_tokens_min": 0,
+        "text_bytes": 0
+      },
+      "candidate_best_case_deficit_tokens": 50000000,
+      "candidate_conservative_deficit_tokens": 50000000,
+      "quota_tokens": 50000000
+    }
+  },
+  "policy": "exclusive-lane-global-normalized-dedup-v1",
+  "rights_registry_sha256": "0c1020c4c49ffd1e90e6e844ff635e66750351f14871557b7ea9cc5676c8771c",
+  "sources": {
+    "freertos_kernel": {
+      "commercial_use_approved": false,
+      "lanes": {
+        "os_hardware_drivers_standards": {
+          "documents": 636,
+          "duplicate_text_bytes_removed": 0,
+          "duplicates_removed": 0,
+          "estimated_tokens_max": 4437439,
+          "estimated_tokens_min": 3550079,
+          "text_bytes": 14197769
+        }
+      },
+      "revision": "8be86d4a24fd4091f8f4192018423ab590f408db",
+      "rights_status": "REVIEW_REQUIRED",
+      "stats": {
+        "documents": 636,
+        "duplicate_text_bytes_removed": 0,
+        "duplicates_removed": 0,
+        "estimated_tokens_max": 4437439,
+        "estimated_tokens_min": 3550079,
+        "text_bytes": 14197769
+      }
+    },
+    "golang_go": {
+      "commercial_use_approved": false,
+      "lanes": {
+        "code": {
+          "documents": 10059,
+          "duplicate_text_bytes_removed": 0,
+          "duplicates_removed": 0,
+          "estimated_tokens_max": 18028400,
+          "estimated_tokens_min": 14424732,
+          "text_bytes": 57658690
+        }
+      },
+      "revision": "f91ce18c4db84c9f0fe271d1832f9cee91b58aa9",
+      "rights_status": "REVIEW_REQUIRED",
+      "stats": {
+        "documents": 10059,
+        "duplicate_text_bytes_removed": 0,
+        "duplicates_removed": 0,
+        "estimated_tokens_max": 18028400,
+        "estimated_tokens_min": 14424732,
+        "text_bytes": 57658690
+      }
+    },
+    "python_cpython": {
+      "commercial_use_approved": false,
+      "lanes": {
+        "code": {
+          "documents": 5393,
+          "duplicate_text_bytes_removed": 0,
+          "duplicates_removed": 0,
+          "estimated_tokens_max": 32220988,
+          "estimated_tokens_min": 25777869,
+          "text_bytes": 103089903
+        }
+      },
+      "revision": "115c297fdcc7d0fab41ed0e5c08f1b9cbec35976",
+      "rights_status": "REVIEW_REQUIRED",
+      "stats": {
+        "documents": 5393,
+        "duplicate_text_bytes_removed": 0,
+        "duplicates_removed": 0,
+        "estimated_tokens_max": 32220988,
+        "estimated_tokens_min": 25777869,
+        "text_bytes": 103089903
+      }
+    },
+    "rust_lang": {
+      "commercial_use_approved": false,
+      "lanes": {
+        "code": {
+          "documents": 40798,
+          "duplicate_text_bytes_removed": 0,
+          "duplicates_removed": 0,
+          "estimated_tokens_max": 52565913,
+          "estimated_tokens_min": 42060890,
+          "text_bytes": 168080366
+        }
+      },
+      "revision": "ea6bb45b74c24a026dab4187b1550e97b6985c8a",
+      "rights_status": "REVIEW_REQUIRED",
+      "stats": {
+        "documents": 40798,
+        "duplicate_text_bytes_removed": 0,
+        "duplicates_removed": 0,
+        "estimated_tokens_max": 52565913,
+        "estimated_tokens_min": 42060890,
+        "text_bytes": 168080366
+      }
+    },
+    "wiki_en": {
+      "commercial_use_approved": false,
+      "lanes": {
+        "general_knowledge": {
+          "documents": 923103,
+          "duplicate_text_bytes_removed": 200691,
+          "duplicates_removed": 1046,
+          "estimated_tokens_max": 372524738,
+          "estimated_tokens_min": 298204411,
+          "text_bytes": 1189125229
+        },
+        "mathematics": {
+          "documents": 5564,
+          "duplicate_text_bytes_removed": 103,
+          "duplicates_removed": 2,
+          "estimated_tokens_max": 2251274,
+          "estimated_tokens_min": 1802132,
+          "text_bytes": 7186270
+        },
+        "science_technical_reasoning": {
+          "documents": 14496,
+          "duplicate_text_bytes_removed": 4927,
+          "duplicates_removed": 6,
+          "estimated_tokens_max": 6209328,
+          "estimated_tokens_min": 4970362,
+          "text_bytes": 19823462
+        }
+      },
+      "revision": "b04c8d1ceb2f5cd4588862100d08de323dccfbaa",
+      "rights_status": "REVIEW_REQUIRED",
+      "stats": {
+        "documents": 943163,
+        "duplicate_text_bytes_removed": 205721,
+        "duplicates_removed": 1054,
+        "estimated_tokens_max": 380985339,
+        "estimated_tokens_min": 304976904,
+        "text_bytes": 1216134961
+      }
+    },
+    "zephyr": {
+      "commercial_use_approved": false,
+      "lanes": {
+        "code": {
+          "documents": 55,
+          "duplicate_text_bytes_removed": 0,
+          "duplicates_removed": 0,
+          "estimated_tokens_max": 204078,
+          "estimated_tokens_min": 163273,
+          "text_bytes": 652871
+        },
+        "os_hardware_drivers_standards": {
+          "documents": 13362,
+          "duplicate_text_bytes_removed": 0,
+          "duplicates_removed": 0,
+          "estimated_tokens_max": 32600379,
+          "estimated_tokens_min": 26082976,
+          "text_bytes": 104278454
+        }
+      },
+      "revision": "f0bdf59a0b7d1b4dadbec339662d764cba78138a",
+      "rights_status": "REVIEW_REQUIRED",
+      "stats": {
+        "documents": 13417,
+        "duplicate_text_bytes_removed": 0,
+        "duplicates_removed": 0,
+        "estimated_tokens_max": 32804457,
+        "estimated_tokens_min": 26246249,
+        "text_bytes": 104931325
+      }
+    }
+  },
+  "totals": {
+    "documents": 1013466,
+    "duplicate_text_bytes_removed": 205721,
+    "duplicates_removed": 1054,
+    "estimated_tokens_max": 521042533,
+    "estimated_tokens_min": 417036720,
+    "raw_documents": 1014520,
+    "raw_text_bytes": 1664298735,
+    "text_bytes": 1664093014
+  }
+}

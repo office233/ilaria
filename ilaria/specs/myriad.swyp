@@ -1,0 +1,243 @@
+model IMC1B {
+    architecture "ilaria-microcortex-v1";
+    tokenizer "ilarialex-65k";
+    weights ternary;
+    storage tritpack20;
+    compute rgba32;
+}
+
+record CorticalRequest {
+    field protocol_version: u64;
+    field task_id: string;
+    field parent_task_id: string;
+    field initiator: string;
+    field language: string;
+    field modality: string;
+    field goal: string;
+    field privacy_class: string;
+    field domain_signature: string;
+    field evidence_refs: string_list;
+    field hippocampus_refs: string_list;
+    field working_memory_summary: string;
+    field tool_observations: string_list;
+    field constraints: string_list;
+    field desired_output_schema: string;
+    field deadline_unix_ms: i64;
+    field compute_budget: u64;
+    field confidence_requirement: u64;
+    field requested_role: string;
+}
+
+record CorticalResponse {
+    field protocol_version: u64;
+    field task_id: string;
+    field expert_id: string;
+    field expert_version: string;
+    field hypothesis: string;
+    field claims: string_list;
+    field evidence_refs: string_list;
+    field contradictions: string_list;
+    field uncertainty_ppm: u64;
+    field confidence_ppm: u64;
+    field next_expert_suggestions: string_list;
+    field verification_requirements: string_list;
+    field proposed_swyp_plan: string;
+    field latent_summary: string;
+    field compute_cost: u64;
+    field runtime_metrics: string_map;
+}
+
+record ExpertGenome {
+    field expert_id: string;
+    field architecture_version: string;
+    field parameter_count: u64;
+    field tokenizer_hash: string;
+    field genesis_checkpoint_hash: string;
+    field weights_hash: string;
+    field genesis_seed: u64;
+    field specialty_ontology_id: string;
+    field curriculum_manifest_hash: string;
+    field training_recipe_hash: string;
+    field synaptic_growth_policy: string;
+    field context_policy: string;
+    field protocol_version: u64;
+    field trust_role: string;
+    field parent_expert_ids: string_list;
+}
+
+record WorldEvent {
+    field protocol_version: u64;
+    field event_id: string;
+    field timestamp_delta_ms: i64;
+    field device_class: string;
+    field device_model_hash: string;
+    field source_namespace: string;
+    field observation_type: string;
+    field features: string_map;
+    field previous_action: string;
+    field action: string;
+    field result: string;
+    field verifier: string;
+    field confidence_ppm: u64;
+    field privacy_class: string;
+}
+
+record ExperienceCapsule {
+    field protocol_version: u64;
+    field capsule_id: string;
+    field source_cell_id: string;
+    field source_expert_id: string;
+    field ancestry_hash: string;
+    field domain: string;
+    field observation_schema: string;
+    field world_event_hash: string;
+    field abstract_state: string;
+    field action_or_hypothesis: string;
+    field result: string;
+    field reward_ppm: u64;
+    field verifier_type: string;
+    field verifier_evidence_hash: string;
+    field privacy_class: string;
+    field provenance_refs: string_list;
+    field replay_recipe: string;
+    field parameter_delta_hash: string;
+    field created_unix_ms: i64;
+    field signer_key_id: string;
+    field signature: string;
+}
+
+record ReplayExample {
+    field protocol_version: u64;
+    field capsule_hash: string;
+    field ancestry_hash: string;
+    field domain: string;
+    field prompt: string;
+    field target: string;
+    field verifier_evidence_hash: string;
+}
+
+record PCEReplayArtifact {
+    field format: string;
+    field protocol_version: u64;
+    field artifact_sha256: string;
+    field capsule_hash: string;
+    field ancestry_hash: string;
+    field domain: string;
+    field decision_prompt: string;
+    field action_target: string;
+    field verifier_evidence_hash: string;
+    field signer_key_id: string;
+}
+
+record ConnectomeEdge {
+    field protocol_version: u64;
+    field source_expert_id: string;
+    field target_expert_id: string;
+    field domain_signature: string;
+    field successful_handoffs: u64;
+    field failed_handoffs: u64;
+    field verified_gain_ppm: u64;
+    field latency_micros: u64;
+    field compute_cost: u64;
+    field last_expert_version: string;
+    field trust_ppm: u64;
+}
+
+record SynapseObservation {
+    field protocol_version: u64;
+    field source_expert_id: string;
+    field target_expert_id: string;
+    field domain_signature: string;
+    field verified_success: bool;
+    field verified_gain_ppm: u64;
+    field latency_micros: u64;
+    field compute_cost: u64;
+    field target_expert_version: string;
+    field verifier_evidence_ref: string;
+}
+
+expert ThalamusRouter : IMC1B {
+    specialty cognition.routing;
+    benchmark "myriad-router-v1";
+}
+
+expert GeneralCortex : IMC1B {
+    specialty cognition.general;
+    benchmark "myriad-general-v1";
+}
+
+expert CodeCortex : IMC1B {
+    specialty cognition.code;
+    benchmark "myriad-code-v1";
+}
+
+expert ReasoningCortex : IMC1B {
+    specialty cognition.reasoning;
+    benchmark "myriad-reasoning-v1";
+}
+
+expert DeviceCortex : IMC1B {
+    specialty cognition.device;
+    benchmark "myriad-device-v1";
+}
+
+dataset MyriadCuratedV1 {
+    require provenance;
+    require commercial_compatible;
+    forbid secrets;
+    forbid user_private_data;
+    forbid benchmark_leak;
+}
+
+train ThalamusRouter on MyriadCuratedV1 {
+    cohort 512;
+    optimizer isx;
+    local_steps 128;
+}
+
+train GeneralCortex on MyriadCuratedV1 {
+    cohort 1024;
+    optimizer isx;
+    local_steps 128;
+}
+
+train CodeCortex on MyriadCuratedV1 {
+    cohort 1024;
+    optimizer isx;
+    local_steps 128;
+}
+
+train ReasoningCortex on MyriadCuratedV1 {
+    cohort 1024;
+    optimizer isx;
+    local_steps 128;
+}
+
+train DeviceCortex on MyriadCuratedV1 {
+    cohort 1024;
+    optimizer isx;
+    local_steps 128;
+}
+
+component Hippocampus {
+    capability memory.read;
+    capability memory.write;
+    state episodes: EpisodicStore;
+    invariant "personal episodic memory remains local by default";
+    invariant "global training has no implicit access to personal memory";
+}
+
+component CorticalConnectome {
+    capability registry.read;
+    capability connectome.write_verified;
+    state edges: InterCortexSynapses;
+    invariant "only verifier-backed outcomes may strengthen inter-cortex edges";
+}
+
+verify ExpertPromotion {
+    check specialty_benchmark;
+    check frozen_regression;
+    check calibration;
+    check provenance;
+    check no_private_training_data;
+}

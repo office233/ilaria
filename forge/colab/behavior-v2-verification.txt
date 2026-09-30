@@ -1,7 +1,0 @@
-region "Cell 17 output":
-      - generic "Show/hide output":
-        - button "Show/hide output"
-      - generic "Code cell output actions":
-        - button "Code cell output actions"
-      - iframe:
-        - generic: "VERIFIED: behavior v2, 100 steps, 420 finite tensors, pilot lineage confirmed Validation: {'en': 1.151071668554458} { \"checkpoint.pt\": \"9f5d6a877d398296d752ce030a7815a4a57f678576a9a4a80af927af968551e1\", \"adapter-step100.json\": \"99481d85a495caf964de8fd0ebfdf1a8d645f6fd33457bcbe171acf6a1cf81e4\", \"adapter-step100.safetensors\": \"4dd69c47fa74122b9423b67b235278dfd2de7fe2b167cfabdae566e08bfd637e\" }"

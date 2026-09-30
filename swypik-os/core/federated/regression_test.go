@@ -8,6 +8,9 @@ import (
 func TestAggregatorOwnsSnapshots(t *testing.T) {
 	agg := NewFederatedAggregator(1)
 	trainer := NewLocalTrainer("test-node", 35)
+	if err := agg.RegisterNodeKey(trainer.nodeID, trainer.PublicKey()); err != nil {
+		t.Fatal(err)
+	}
 	delta, err := trainer.ComputeMicroBatch(1, "transformer.lora_a", 32)
 	if err != nil {
 		t.Fatal(err)

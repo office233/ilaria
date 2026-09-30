@@ -23,6 +23,7 @@ const (
 
 type Module struct {
 	Version   int        `json:"version"`
+	Data      []byte     `json:"data,omitempty"`
 	Functions []Function `json:"functions"`
 }
 type Parameter struct {
@@ -148,6 +149,9 @@ func (m Module) Validate() error {
 	if m.Version != Version || len(m.Functions) == 0 || len(m.Functions) > MaxFunctions {
 		return bad("unsupported version or function count")
 	}
+	if len(m.Data) > MaxByteArenaBytes {
+		return bad(fmt.Sprintf("byte arena exceeds %d bytes", MaxByteArenaBytes))
+	}
 	functions := map[string]Function{}
 	for _, f := range m.Functions {
 		if f.Name == "" || len(f.Name) > 128 {
@@ -161,17 +165,21 @@ func (m Module) Validate() error {
 	total := 0
 	for _, f := range m.Functions {
 		fail := func(s string) error { return bad(f.Name + ": " + s) }
-		if !f.Result.scalar() && f.Result != Void {
+		if !f.Result.storable() && f.Result != Void {
 			return fail("unsupported result type")
 		}
 		if err := validateFunctionEffects(f); err != nil {
 			return fail(err.Error())
 		}
+		effectSet := make(map[string]bool, len(f.Effects))
+		for _, effect := range f.Effects {
+			effectSet[effect] = true
+		}
 		if len(f.Slots) > MaxSlots || len(f.Blocks) == 0 || len(f.Blocks) > MaxBlocks || len(f.Params) > len(f.Slots) || len(f.Params) > 16 {
 			return fail("invalid slots, parameters or blocks")
 		}
 		for _, t := range f.Slots {
-			if !t.scalar() {
+			if !t.storable() {
 				return fail("invalid slot type")
 			}
 		}
@@ -210,7 +218,15 @@ func (m Module) Validate() error {
 					if len(ins.Args) != 0 || ins.Constant == nil {
 						return fail("invalid constant")
 					}
-					_, err = ParseValue(ins.Constant.Type, ins.Constant.Value)
+					var constant Value
+					constant, err = ParseValue(ins.Constant.Type, ins.Constant.Value)
+					if err == nil && ins.Constant.Type == Bytes {
+						offset, length, _ := constant.ByteSpan()
+						end := uint64(offset) + uint64(length)
+						if uint64(offset) > uint64(len(m.Data)) || end > uint64(len(m.Data)) {
+							err = diagnostic("invalid_bytespan", fmt.Sprintf("bytes constant %d:%d is outside module arena of %d bytes", offset, length, len(m.Data)))
+						}
+					}
 					result = ins.Constant.Type
 				case "move":
 					if len(types) != 1 {
@@ -231,6 +247,84 @@ func (m Module) Validate() error {
 						}
 					}
 					result, trap = callee.Result, true
+				case "io.stdout", "io.stderr":
+					if len(types) != 1 || !types[0].scalar() {
+						return fail(ins.Op + " requires one scalar operand")
+					}
+					required := EffectIOStdout
+					if ins.Op == "io.stderr" {
+						required = EffectIOStderr
+					}
+					if !effectSet[required] {
+						return fail(fmt.Sprintf("%s requires declared effect %q", ins.Op, required))
+					}
+					result, trap = Void, true
+				case "clock.read":
+					if len(types) != 0 {
+						return fail("clock.read requires no operands")
+					}
+					if !effectSet[EffectClockRead] {
+						return fail(fmt.Sprintf("clock.read requires declared effect %q", EffectClockRead))
+					}
+					result, trap = U64, true
+				case "rng.sample":
+					if len(types) != 0 {
+						return fail("rng.sample requires no operands")
+					}
+					if !effectSet[EffectRNGSample] {
+						return fail(fmt.Sprintf("rng.sample requires declared effect %q", EffectRNGSample))
+					}
+					result, trap = U64, true
+				case "fs.write":
+					if len(types) != 2 || types[0] != Bytes || types[1] != Bytes {
+						return fail("fs.write requires path bytes and data bytes")
+					}
+					if !effectSet[EffectFSWrite] {
+						return fail(fmt.Sprintf("fs.write requires declared effect %q", EffectFSWrite))
+					}
+					result, trap = Void, true
+				case "fs.read":
+					if len(types) != 1 || types[0] != Bytes {
+						return fail("fs.read requires path bytes")
+					}
+					if !effectSet[EffectFSRead] {
+						return fail(fmt.Sprintf("fs.read requires declared effect %q", EffectFSRead))
+					}
+					result, trap = Bytes, true
+				case "net.connect":
+					if len(types) != 2 || types[0] != Bytes || types[1] != U64 {
+						return fail("net.connect requires IPv4 bytes and u64 port")
+					}
+					if !effectSet[EffectNetConnect] {
+						return fail(fmt.Sprintf("net.connect requires declared effect %q", EffectNetConnect))
+					}
+					result, trap = Bool, true
+				case "net.fetch":
+					if len(types) != 3 || types[0] != Bytes || types[1] != U64 || types[2] != Bytes {
+						return fail("net.fetch requires IPv4 bytes, u64 port and path bytes")
+					}
+					if !effectSet[EffectNetFetch] {
+						return fail(fmt.Sprintf("net.fetch requires declared effect %q", EffectNetFetch))
+					}
+					result, trap = Bytes, true
+				case "process.exec":
+					if len(types) != 6 || types[0] != Bytes || types[1] != U64 || types[2] != Bytes || types[3] != Bytes || types[4] != Bytes || types[5] != Bytes {
+						return fail("process.exec requires executable bytes, u64 argc and four explicit bytes argv slots")
+					}
+					if !effectSet[EffectProcessExec] {
+						return fail(fmt.Sprintf("process.exec requires declared effect %q", EffectProcessExec))
+					}
+					result, trap = U64, true
+				case "bytes.len":
+					if len(types) != 1 || types[0] != Bytes {
+						return fail("bytes.len requires one bytes operand")
+					}
+					result = U64
+				case "bytes.get":
+					if len(types) != 2 || types[0] != Bytes || types[1] != U64 {
+						return fail("bytes.get requires bytes and u64 operands")
+					}
+					result, trap = U64, true
 				default:
 					result, trap, err = resultType(ins.Op, types)
 				}

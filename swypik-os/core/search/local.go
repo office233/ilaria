@@ -12,7 +12,10 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+	"unicode"
 	"unicode/utf8"
+
+	resourcepolicy "swypik-os/core/resource"
 )
 
 // LocalReport summarizes one IndexDirectory pass.
@@ -75,11 +78,16 @@ func (e *Engine) IndexDirectory(ctx context.Context, root string, maxFiles int) 
 	if err != nil || !info.IsDir() {
 		return report, fmt.Errorf("not a directory: %s", abs)
 	}
-	if maxFiles <= 0 || maxFiles > MaxDocuments {
-		maxFiles = 5000
+	if maxFiles <= 0 {
+		maxFiles = resourcepolicy.Default().SearchMaxFiles
 	}
-	seen := map[string]bool{}
-	var batch []Document
+	if maxFiles > e.activeDocumentLimit() {
+		maxFiles = e.activeDocumentLimit()
+	} else if maxFiles > MaxDocuments {
+		maxFiles = MaxDocuments
+	}
+	seen := make(map[string]bool, min(maxFiles, 1024))
+	batch := make([]Document, 0, 100)
 	flush := func() error {
 		n, err := e.UpsertMany(batch)
 		report.Indexed += n
@@ -131,7 +139,7 @@ func (e *Engine) IndexDirectory(ctx context.Context, root string, maxFiles int) 
 			report.Skipped++
 			return nil
 		}
-		text := clip(strings.Join(strings.Fields(string(data)), " "), MaxTextBytes)
+		text := compactLocalText(data, e.activeTextLimit())
 		if text == "" {
 			report.Skipped++
 			return nil
@@ -167,4 +175,50 @@ func (e *Engine) IndexDirectory(ctx context.Context, root string, maxFiles int) 
 		}
 	}
 	return report, nil
+}
+
+// compactLocalText collapses Unicode whitespace in one pass directly from the
+// validated UTF-8 byte slice and stops once the index text budget is full. This
+// avoids materializing string(data), []string fields and a second joined copy
+// for every indexed file.
+func compactLocalText(data []byte, limit int) string {
+	if limit <= 0 || len(data) == 0 {
+		return ""
+	}
+	var b strings.Builder
+	if len(data) < limit {
+		b.Grow(len(data))
+	} else {
+		b.Grow(limit)
+	}
+	pendingSpace := false
+	started := false
+	for len(data) > 0 {
+		r, n := utf8.DecodeRune(data)
+		if r == utf8.RuneError && n == 1 {
+			break // caller validates UTF-8; fail closed if reused independently.
+		}
+		data = data[n:]
+		if unicode.IsSpace(r) {
+			if started {
+				pendingSpace = true
+			}
+			continue
+		}
+		runeBytes := utf8.RuneLen(r)
+		needed := runeBytes
+		if pendingSpace {
+			needed++
+		}
+		if b.Len()+needed > limit {
+			break
+		}
+		if pendingSpace {
+			b.WriteByte(' ')
+			pendingSpace = false
+		}
+		b.WriteRune(r)
+		started = true
+	}
+	return b.String()
 }

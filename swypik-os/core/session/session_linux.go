@@ -19,14 +19,16 @@ import (
 	"swypik-os/core/network"
 	"syscall"
 	"time"
+
+	resourcepolicy "swypik-os/core/resource"
 )
 
 type Status struct {
-	OS      string         `json:"os"`
-	UID     int            `json:"uid"`
-	Network network.Status `json:"network"`
-	Indexed int            `json:"indexed"`
-	Run     *agent.Run     `json:"run"`
+	OS      string           `json:"os"`
+	UID     int              `json:"uid"`
+	Network network.Status   `json:"network"`
+	Indexed int              `json:"indexed"`
+	Run     *agent.RunStatus `json:"run"`
 }
 type Client struct{ http *http.Client }
 
@@ -160,13 +162,41 @@ func Run(ctx context.Context, socket, fbPath string) error {
 	keys := make(chan key, 64)
 	readKeys(ctx, keys)
 	updates := make(chan update, 8)
+	pollWake := make(chan struct{}, 1)
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
+	kickPoll := func() {
+		select {
+		case pollWake <- struct{}{}:
+		default:
+		}
+	}
 	poll := func() {
 		go func() {
-			ticker := time.NewTicker(time.Second)
-			defer ticker.Stop()
+			base := resourcepolicy.Default().StatusPollInterval
+			maxInterval := 6 * base
+			if maxInterval > time.Minute {
+				maxInterval = time.Minute
+			}
+			timer := time.NewTimer(0)
+			defer timer.Stop()
+			interval := base
 			for {
+				select {
+				case <-ctx.Done():
+					return
+				case <-pollWake:
+					if !timer.Stop() {
+						select {
+						case <-timer.C:
+						default:
+						}
+					}
+					interval = base
+					timer.Reset(0)
+					continue
+				case <-timer.C:
+				}
 				var status Status
 				probe, cancel := context.WithTimeout(ctx, 2*time.Second)
 				err := client.Request(probe, "/v1/status", nil, &status)
@@ -176,11 +206,13 @@ func Run(ctx context.Context, socket, fbPath string) error {
 				case <-ctx.Done():
 					return
 				}
-				select {
-				case <-ticker.C:
-				case <-ctx.Done():
-					return
+				if interval < maxInterval {
+					interval *= 2
+					if interval > maxInterval {
+						interval = maxInterval
+					}
 				}
+				timer.Reset(interval)
 			}
 		}()
 	}
@@ -310,6 +342,7 @@ func Run(ctx context.Context, socket, fbPath string) error {
 				} else {
 					output = u.output
 				}
+				kickPoll()
 			} else if u.err == nil {
 				state = *u.status
 			}
@@ -320,6 +353,7 @@ func Run(ctx context.Context, socket, fbPath string) error {
 				input = ""
 				output = ""
 				clearPending()
+				kickPoll()
 				if page == "FILES" && !busy {
 					request("/v1/files", nil)
 				}

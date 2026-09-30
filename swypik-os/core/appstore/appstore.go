@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+
+	resourcepolicy "swypik-os/core/resource"
 )
 
 // AppPackage represents a sovereign, native AI-driven application.
@@ -21,14 +23,16 @@ type AppPackage struct {
 
 // Store coordinates sovereign app distribution and on-demand AI app generation.
 type Store struct {
-	mu   sync.RWMutex
-	apps map[string]*AppPackage
+	mu      sync.RWMutex
+	apps    map[string]*AppPackage
+	maxApps int
 }
 
 // NewStore initializes the sovereign AI App Store catalog.
 func NewStore() *Store {
 	s := &Store{
-		apps: make(map[string]*AppPackage),
+		apps:    make(map[string]*AppPackage),
+		maxApps: resourcepolicy.Default().MaxAppCatalogEntries,
 	}
 	s.seedDefaultApps()
 	return s
@@ -153,6 +157,9 @@ func (s *Store) GenerateOnDemand(name, description, category string) *AppPackage
 
 	slug := strings.ToLower(strings.ReplaceAll(name, " ", "."))
 	id := fmt.Sprintf("custom.ai.%s", slug)
+	if _, exists := s.apps[id]; !exists && len(s.apps) >= s.maxApps {
+		return nil
+	}
 
 	app := &AppPackage{
 		ID:          id,

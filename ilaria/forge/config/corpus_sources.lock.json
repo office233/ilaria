@@ -1,0 +1,31 @@
+{
+  "format": "ilaria-corpus-source-lock-v1",
+  "source_lock_sha256": "c7a7305dc9cc72958b1cf787a234f68a64df746ac2f63e19c29b392743ae3e5f",
+  "sources": {
+    "fineweb2_ro": {
+      "config": "ron_Latn",
+      "provider": "HuggingFaceFW/fineweb-2",
+      "revision": "af9c13333eb981300149d5ca60a8e9d659b276b9"
+    },
+    "fineweb_edu": {
+      "config": "sample-10BT",
+      "provider": "HuggingFaceFW/fineweb-edu",
+      "revision": "87f09149ef4734204d70ed1d046ddc9ca3f2b8f9"
+    },
+    "tinystories": {
+      "config": null,
+      "provider": "roneneldan/TinyStories",
+      "revision": "f54c09fd23315a6f9c86f9dc80f725de7d8f9c64"
+    },
+    "wiki_en": {
+      "config": "20231101.en",
+      "provider": "wikimedia/wikipedia",
+      "revision": "b04c8d1ceb2f5cd4588862100d08de323dccfbaa"
+    },
+    "wiki_ro": {
+      "config": "20231101.ro",
+      "provider": "wikimedia/wikipedia",
+      "revision": "b04c8d1ceb2f5cd4588862100d08de323dccfbaa"
+    }
+  }
+}

@@ -105,6 +105,24 @@ type Run struct {
 	Summary      string        `json:"summary,omitempty"`
 	Error        string        `json:"error,omitempty"`
 }
+
+// RunStatus is the lightweight polling projection of a run. It deliberately
+// excludes Observations because tool arguments/outputs can be large and status
+// UIs do not need to copy or transmit them on every refresh.
+type RunStatus struct {
+	ID             string    `json:"id"`
+	Goal           string    `json:"goal,omitempty"`
+	Status         string    `json:"status"`
+	StartedAt      time.Time `json:"started_at"`
+	Deadline       time.Time `json:"deadline"`
+	AttemptedSteps int       `json:"attempted_steps"`
+	Resumes        int       `json:"resumes"`
+	Recovery       string    `json:"recovery,omitempty"`
+	Approval       *Approval `json:"approval,omitempty"`
+	Events         []Event   `json:"events,omitempty"`
+	Summary        string    `json:"summary,omitempty"`
+	Error          string    `json:"error,omitempty"`
+}
 type Limits struct {
 	MaxSteps       int           `json:"max_steps"`
 	Duration       time.Duration `json:"duration"`
@@ -334,6 +352,39 @@ func (m *Manager) Snapshot() *Run {
 	}
 	r := copyRun(m.current.run)
 	return &r
+}
+
+func (m *Manager) StatusSnapshot() *RunStatus {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.current == nil {
+		return nil
+	}
+	r := &m.current.run
+	status := &RunStatus{
+		ID:             r.ID,
+		Goal:           r.Goal,
+		Status:         r.Status,
+		StartedAt:      r.StartedAt,
+		Deadline:       r.Deadline,
+		AttemptedSteps: r.AttemptedSteps,
+		Resumes:        r.Resumes,
+		Recovery:       r.Recovery,
+		Summary:        r.Summary,
+		Error:          r.Error,
+	}
+	if r.Approval != nil {
+		a := *r.Approval
+		a.Arguments = append(json.RawMessage(nil), a.Arguments...)
+		status.Approval = &a
+	}
+	const maxStatusEvents = 32
+	start := 0
+	if len(r.Events) > maxStatusEvents {
+		start = len(r.Events) - maxStatusEvents
+	}
+	status.Events = append([]Event(nil), r.Events[start:]...)
+	return status
 }
 func cloneObservations(in []Observation) []Observation {
 	out := append([]Observation{}, in...)

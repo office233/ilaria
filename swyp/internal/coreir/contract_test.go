@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"math"
 	"math/rand"
+	"strings"
 	"testing"
 	"time"
 )
@@ -182,6 +183,60 @@ func TestContractFloatSamplingAndSubnormalBounds(t *testing.T) {
 	r, err := Verify(context.Background(), e, c, DefaultVerifyOptions())
 	if err != nil || r.Status != "tested" || r.Exhaustive {
 		t.Fatal(r, err)
+	}
+}
+
+func TestContractIEEE64RequiresFiniteSamplingBounds(t *testing.T) {
+	m := Module{Version: 1, Functions: []Function{{
+		Name:   "identity",
+		Params: []Parameter{{Name: "x", Type: IEEE64}},
+		Result: IEEE64,
+		Slots:  []Type{IEEE64},
+		Blocks: []Block{{Terminator: Terminator{Op: "return", Value: 0}}},
+	}}}
+	e, err := Prepare(m)
+	if err != nil {
+		t.Fatal(err)
+	}
+	c := Contract{
+		Version:  1,
+		Entry:    "identity",
+		Inputs:   []Domain{{Name: "x", Type: IEEE64, Min: "-1", Max: "1"}},
+		Ensures:  []Predicate{predOp("eq", predVar("result"), predVar("x"))},
+		MaxSteps: 100,
+	}
+	r, err := Verify(context.Background(), e, c, DefaultVerifyOptions())
+	if err != nil || r.Status != "tested" {
+		t.Fatalf("finite ieee64 contract: %+v %v", r, err)
+	}
+	c.Inputs[0].Max = "Inf"
+	if _, err := Verify(context.Background(), e, c, DefaultVerifyOptions()); err == nil || !strings.Contains(err.Error(), "bounds must be finite") {
+		t.Fatalf("non-finite ieee64 contract bound accepted: %v", err)
+	}
+}
+
+func TestContractU64SmallDomainEnumeratesExactly(t *testing.T) {
+	m := Module{Version: 1, Functions: []Function{{
+		Name:   "identity",
+		Params: []Parameter{{Name: "x", Type: U64}},
+		Result: U64,
+		Slots:  []Type{U64},
+		Blocks: []Block{{Terminator: Terminator{Op: "return", Value: 0}}},
+	}}}
+	e, err := Prepare(m)
+	if err != nil {
+		t.Fatal(err)
+	}
+	c := Contract{
+		Version:  1,
+		Entry:    "identity",
+		Inputs:   []Domain{{Name: "x", Type: U64, Min: "18446744073709551613", Max: "18446744073709551615"}},
+		Ensures:  []Predicate{predOp("eq", predVar("result"), predVar("x"))},
+		MaxSteps: 100,
+	}
+	r, err := Verify(context.Background(), e, c, DefaultVerifyOptions())
+	if err != nil || r.Status != "exhaustive" || r.CasesChecked != 3 || r.DomainSize != "3" {
+		t.Fatalf("u64 verification=%+v err=%v", r, err)
 	}
 }
 func FuzzContractDecodeAndVerify(f *testing.F) {

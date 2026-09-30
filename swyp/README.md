@@ -12,11 +12,14 @@ intent → contract → candidate → verification → pinned source → determi
 ## Quick start
 
 ```powershell
-Set-Location 'D:\nexus\swyp'
+Set-Location .\swyp
 go test ./...
 go build -o bin/swyp.exe ./cmd/swyp        # or: scripts\build-local.ps1, then swyp.cmd
 
 .\bin\swyp.exe run examples/swyp/hello.swyp
+.\bin\swyp.exe build -profile fast -o app.exe examples/swyp/compute.swyp
+.\bin\swyp.exe core-run -profile fast -entry sum_to examples/swyp/semantic-core.swyp 100
+.\bin\swyp.exe core-build -entry sum_to -profile fast -cpu native -lto -strip -o sum.exe examples/swyp/semantic-core.swyp
 .\bin\swyp.exe verify -contract examples/swyp/contracts/square.i64.json examples/swyp/semantic-core.swyp
 .\bin\swyp.exe synth -contract examples/swyp/contracts/square.i64.json -o bin/square.swyp examples/swyp/synthesis-contract-square.json
 .\bin\swyp.exe compile --target stv2 -o bin/sum.swypb examples/swyp/sum.stv2.swyp
@@ -30,7 +33,7 @@ Output files must not already exist; Swyp never overwrites.
 | Area | Status | Docs |
 |---|---|---|
 | Scalar language: functions, `let`, `if`/`while`, `number`/`bool`/`string` | Tested; AST interpreter, C (GCC) and offline HTML/JS backends | [SWYP_LANG](docs/SWYP_LANG.md) |
-| Semantic Core: checked `i64`, finite `f64`, typed JSON IR, fuel-bounded executor | Tested (M1a) | [SEMANTIC_CORE](docs/SEMANTIC_CORE.md) |
+| Semantic Core: checked `i64`, finite `f64`, typed JSON IR, exact `safe` executor + zero-allocation `fast` embedded profile | Tested; small Core frames can execute with 0 heap allocations | [SEMANTIC_CORE](docs/SEMANTIC_CORE.md), [PERFORMANCE](docs/PERFORMANCE.md) |
 | Contracts: `verify` → `exhaustive` / `tested` / `counterexample` / `unknown` / `timeout` | Tested on finite domains; no SMT proofs | [SEMANTIC_CORE](docs/SEMANTIC_CORE.md) |
 | Synthesis: enumerative search with counterexample refinement (`synth`, `synth -contract`) | Tested; grammar is `x`, constants, `+ - *` | [CONTRACT_SYNTHESIS](docs/CONTRACT_SYNTHESIS.md) |
 | STV2 VM + SWYPB modules: compile once, run without source or toolchain | Tested, fuzzed; safe-integer subset only | [STV2_ISA](docs/STV2_ISA.md), [SWYPB_FORMAT](docs/SWYPB_FORMAT.md) |
@@ -38,6 +41,9 @@ Output files must not already exist; Swyp never overwrites.
 | Ilaria (Nexus) `swyp` tool calling `swyp judge` | On Nexus branch `agent/swyp-judge-tool`, tested against a real Swyp build; not yet run with the live model | below |
 | Legacy Nexus worker (`swyp worker`, `bridge/nexus`) | Adapter tested, not registered | [bridge/nexus](bridge/nexus/README.md) |
 | Natural-language `draft` / `expand` / `repair` via Ilaria | Fixture-tested only; never run against a live model | [SWYP_LANG](docs/SWYP_LANG.md) |
+| Components/models/experts/datasets/training manifests | Declarative parser + semantic validation + canonical JSON compiler | [COMPONENTS](docs/COMPONENTS.md) |
+| Semantic Core native AOT | Checked i64/finite-f64/ieee64 Core IR to C11/GCC; safe + fast profiles, optional native CPU/LTO/strip | [SEMANTIC_CORE](docs/SEMANTIC_CORE.md), [PERFORMANCE](docs/PERFORMANCE.md) |
+| Compute numeric type | Explicit `ieee64` hardware IEEE-754 semantics for near-native numeric kernels; strict `f64` remains unchanged | [PERFORMANCE](docs/PERFORMANCE.md) |
 
 ## Closed loop with Ilaria
 
@@ -51,15 +57,19 @@ ERROR candidate.swyp:1:39: expected identifier, got ";"
 ```
 
 Nexus exposes it to the model as the `swyp` tool
-(from the Nexus root: `go run ./cmd/ilaria-chat -swyp "D:\nexus\swyp\bin\swyp.exe" ...`). The model
+(from the `ilaria/` module: `go run ./cmd/ilaria-chat -swyp "..\swyp\bin\swyp.exe" ...`). The model
 writes `CALL swyp: {"source":"fn square(x: i64) -> i64 { return x * x; }","contract":{...}}`,
 reads the verdict and repairs on FAIL. The candidate never runs natively; it runs
 only in the fuel-bounded core interpreter.
 
 Direction and milestones: [ROADMAP](docs/ROADMAP.md). How the pieces fit:
 [ARCHITECTURE](docs/ARCHITECTURE.md). Local build and validation:
-[DEVELOPMENT](docs/DEVELOPMENT.md). Earlier reports and measurements live in
+[DEVELOPMENT](docs/DEVELOPMENT.md). Native/AOT performance:
+[PERFORMANCE](docs/PERFORMANCE.md). Earlier reports and measurements live in
 [docs/history](docs/history).
+
+The long-term self-hosting and Ilaria/SwypikOS migration target is defined in
+[SWYP_1_0_MASTER_PLAN](docs/SWYP_1_0_MASTER_PLAN.md).
 
 ## Layout
 

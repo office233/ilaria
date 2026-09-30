@@ -5,11 +5,22 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"math"
+	"sort"
 	"sync"
 	"time"
 )
+
+// MaxInvoicesCapacity is the maximum number of concurrent invoices retained by the settlement engine.
+const MaxInvoicesCapacity = 200
+
+// InvoiceTTL is how long a generated payment challenge stays payable.
+const InvoiceTTL = 10 * time.Minute
+
+// ErrCapacityExceeded is returned when all capacity is occupied by unexpired settled invoices.
+var ErrCapacityExceeded = errors.New("invoice capacity exceeded")
 
 // Invoice represents a Lightning Network micro-payment invoice.
 type Invoice struct {
@@ -88,33 +99,47 @@ func (se *SettlementEngine) GenerateChallenge(amountSats int64, description stri
 		Description: description,
 		Settled:     false,
 		CreatedAt:   time.Now(),
-		ExpiresAt:   time.Now().Add(10 * time.Minute),
+		ExpiresAt:   time.Now().Add(InvoiceTTL),
 	}
 
-	se.invoices[paymentHash] = inv
-	if len(se.invoices) > 200 {
+	// Ensure capacity before admitting new invoice
+	if len(se.invoices) >= MaxInvoicesCapacity {
 		now := time.Now()
-		// First pass: evict expired or already settled invoices (except current)
+		// 1. Evict expired invoices first
 		for k, v := range se.invoices {
-			if k != paymentHash && (v.Settled || now.After(v.ExpiresAt)) {
+			if now.After(v.ExpiresAt) {
 				delete(se.invoices, k)
-				if len(se.invoices) <= 200 {
+			}
+		}
+		// 2. Evict unsettled invoices oldest-first
+		if len(se.invoices) >= MaxInvoicesCapacity {
+			type unsettledEntry struct {
+				hash      string
+				createdAt time.Time
+			}
+			unsettled := make([]unsettledEntry, 0, len(se.invoices))
+			for k, v := range se.invoices {
+				if !v.Settled {
+					unsettled = append(unsettled, unsettledEntry{hash: k, createdAt: v.CreatedAt})
+				}
+			}
+			sort.Slice(unsettled, func(i, j int) bool {
+				return unsettled[i].createdAt.Before(unsettled[j].createdAt)
+			})
+			for _, entry := range unsettled {
+				delete(se.invoices, entry.hash)
+				if len(se.invoices) < MaxInvoicesCapacity {
 					break
 				}
 			}
 		}
-		// Second pass if still above threshold: evict oldest
-		if len(se.invoices) > 200 {
-			for k := range se.invoices {
-				if k != paymentHash {
-					delete(se.invoices, k)
-					if len(se.invoices) <= 200 {
-						break
-					}
-				}
-			}
+		// 3. NEVER evict settled unexpired invoices; refuse new challenge if still at capacity
+		if len(se.invoices) >= MaxInvoicesCapacity {
+			return nil, "", fmt.Errorf("%w: capacity of %d reached with live settled invoices", ErrCapacityExceeded, MaxInvoicesCapacity)
 		}
 	}
+
+	se.invoices[paymentHash] = inv
 	// 3. Mint Macaroon
 	mac := hmac.New(sha256.New, se.rootKey)
 	caveat := fmt.Sprintf("payment_hash=%s", paymentHash)

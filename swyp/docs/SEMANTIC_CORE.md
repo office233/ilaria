@@ -52,6 +52,9 @@ fn sum_to(n: i64) -> i64 {
 fn half(x: f64) -> f64 {
     return x / 2;
 }
+fn half_ieee(x: ieee64) -> ieee64 {
+    return x / 2;
+}
 fn main() {}
 ```
 
@@ -69,34 +72,67 @@ NaN, infinity, non-finite arithmetic results and zero divisors are rejected.
 Each floating operation has an explicit rounding boundary; no reassociation or
 fused multiply-add optimization is introduced.
 
+`ieee64` is the explicit compute-oriented IEEE-754 binary64 type. It permits
+NaN and infinities, follows hardware comparison semantics (all ordered
+comparisons with NaN are false), and floating zero divisors produce the IEEE
+result rather than a Swyp trap. It is emitted as ordinary C `double` arithmetic
+without `-ffast-math`; `-ffp-contract=off` remains enabled. Use it only when
+the algorithm is designed for IEEE non-finite behavior. Contract input ranges
+for `ieee64` must still have finite endpoints so deterministic sampling remains
+well-defined.
+
 Function parameters require annotations. Numeric literals use an expected
 numeric type when available, otherwise f64. A local `let i = 0` is therefore f64;
 use `let i: i64 = 0` for an integer loop. Local types do not change on assignment.
 Unannotated non-void function results default to f64; annotate i64/bool results.
-There are no numeric casts or implicit mixed i64/f64 arithmetic conversions in
+There are no numeric casts or implicit mixed `i64`/`f64`/`ieee64`
+arithmetic conversions in
 v1. Arithmetic and ordering require matching numeric types. Cross-type scalar
 equality compares unequal, matching the existing heterogeneous scalar policy.
+
+The first memory-ABI foundation is the opaque Core type `bytes`. A `bytes`
+value is one 64-bit descriptor, not a native pointer: high 32 bits are an arena
+offset and low 32 bits are a length. `offset + length` may not wrap the 32-bit
+arena address space. The guest cannot create `bytes` with a literal or arithmetic
+operation, and there is no dereference opcode yet. It can only transport an
+already-authorized descriptor through parameters, `move`, calls and returns.
+`Run`, `RunFast` and `RunTurbo` preserve the descriptor identically. Direct
+native backends reject any `bytes` signature/slot until an explicit native byte
+arena and data-section contract exists, preventing an opaque descriptor from
+silently becoming a raw host address.
 
 Supported: booleans, typed parameters and locals, lexical shadowing, mutation,
 if/else, while, early return, pure function calls and bounded recursion. Logical
 `&&` and `||` are compiled into branches, so their right sides remain lazy.
 
-The source frontend remains pure-only. Effect/capability semantics are currently
-IR-first so existing source syntax and pure programs remain unchanged. See
+Core source supports explicit process effects for `print`, `eprint` and `clock`;
+the normal Core executor still refuses host effects and requires the standalone
+process backend/capability boundary. Pure programs remain unchanged. See
 [EFFECTS_CAPABILITIES](EFFECTS_CAPABILITIES.md).
 
 `Program.CoreIR(entry)` selects that function and its transitive callees.
 Unrelated functions are not included or claimed as checked by this operation.
 Every statement in the selected functions is checked, including dead statements
-after return. Strings and calls to `print`, `arg`, `clock` or host services in
-the selected call graph are rejected. This allows a pure helper to be selected
-from a legacy file whose unselected main prints its result.
+after return. Arbitrary strings, filesystem/network/process services and other
+unsupported host calls remain rejected. `print`, `eprint` and `clock` lower to
+explicit capability-gated effects. This still allows a pure helper to be selected
+from a file whose unrelated functions contain process effects.
 
 `ParseCore` is explicitly separate from `Parse`. Existing `run`, `check`,
 `build`, `web`, `synth`, STV2 and SWYPB behavior is unchanged. The legacy checker,
 interpreter and emitters reject a core-mode Program rather than silently treating
-an i64 program as float64. Core source currently runs through `core-run` or
-exported IR, not through the old native/JavaScript/STV2 backends.
+an i64 program as float64. Core source can run through `core-run`, export JSON IR,
+or compile AOT:
+
+```powershell
+swyp core-build -entry sum_to -profile fast -cpu portable -o sum.exe program.swyp
+```
+
+`safe` AOT preserves Core's function/instruction/terminator fuel boundaries.
+`fast` keeps execution bounded but charges fuel only at loop backedges and
+recursive call cycles. Both preserve each type's declared semantics: checked
+`i64`, strict finite `f64`, and hardware-style `ieee64`. `-cpu native`
+additionally asks GCC to tune for the current CPU; portable remains the default.
 
 ## 3. IR and execution model
 
@@ -105,8 +141,9 @@ module contains named functions, typed parameter and local slots, basic blocks,
 ordered instructions and explicit terminators. Optional function metadata uses
 Effect ABI v1 (`effect_version`, `effects`, `required_capabilities`) with a closed
 effect registry and canonical ordering. This is a **mutable-slot CFG IR, not
-SSA**. It does not yet perform liveness analysis, register allocation, spilling
-or optimization. Short-circuiting and control flow are explicit.
+SSA**. It does not yet perform liveness analysis or a Swyp-owned register
+allocator. Native AOT delegates those low-level optimizations to the host C
+compiler after Core validation. Short-circuiting and control flow are explicit.
 
 Instructions include constants, moves, pure calls, typed arithmetic, comparison
 and boolean negation. Source locations and checked `may_trap` annotations are

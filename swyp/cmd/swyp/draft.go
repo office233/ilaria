@@ -11,18 +11,15 @@ import (
 	"time"
 )
 
-const draftInstructions = `Generate only a complete Swyp Lang 0.2 program, without Markdown or explanation.
-Swyp syntax: fn main() { let x = 1; print(x); } Functions use fn name(x: number) -> number { return x * x; }.
-Types: number (finite float64), bool, string, void. Annotations may be inferred. Variables have fixed types.
-Operators: + - * / % == != < <= > >= ! && ||. if condition { } else { }; while condition { }; assignment x = x + 1;.
-Builtins: print(values...), arg(index) reads numeric CLI arguments, clock() returns seconds for interval timing.
-No arrays, imports, filesystem, HTTP, email, model-training libraries, or string interpolation. Do not invent APIs.
-If the task needs unavailable capabilities, reply UNSUPPORTED: followed by the missing capability.
+func draftInstructions() string {
+	return `Generate only a complete Swyp program for the source surface described below, without Markdown or explanation.
+` + generationLanguageSpec() + `If the task needs unavailable capabilities, reply UNSUPPORTED: followed by the missing capability.
 No automatic execution occurs. The user's task follows:
 `
+}
 
 func verifiedDraft(ctx context.Context, backend ilaria.Backend, prompt string) (string, error) {
-	reply, err := backend.Chat(ctx, draftInstructions+prompt, nil)
+	reply, err := backend.Chat(ctx, draftInstructions()+prompt, nil)
 	if err != nil {
 		return "", err
 	}
@@ -66,7 +63,8 @@ func draftCommand(args []string) error {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
 	defer cancel()
-	source, err := verifiedDraft(ctx, ilaria.NewLocalBackend("http://127.0.0.1:8091"), string(prompt))
+	backend, _ := configuredIlariaBackend()
+	source, err := verifiedDraft(ctx, backend, string(prompt))
 	if err != nil {
 		return err
 	}

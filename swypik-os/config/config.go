@@ -35,13 +35,22 @@ type Config struct {
 	RewardPerTflop float64
 }
 
+// EnvFileVar is the environment variable naming an explicit .env file path.
+const EnvFileVar = "SWYPIK_ENV_FILE"
+
 // Load reads .env (if present) and overlays process environment variables.
 func Load(envPaths ...string) *Config {
 	configOnce.Do(func() {
-		// 1. Try default locations for .env
+		// Try explicit locations for .env:
+		// - caller-provided paths
+		// - path specified by the SWYPIK_ENV_FILE environment variable
+		// - directory of the running executable (os.Executable)
+		// CWD is never checked implicitly.
 		candidates := append([]string{}, envPaths...)
-		candidates = append(candidates, ".env")
-		if exe, err := os.Executable(); err == nil {
+		if envFile := os.Getenv(EnvFileVar); strings.TrimSpace(envFile) != "" {
+			candidates = append(candidates, strings.TrimSpace(envFile))
+		}
+		if exe, err := os.Executable(); err == nil && exe != "" {
 			candidates = append(candidates, filepath.Join(filepath.Dir(exe), ".env"))
 		}
 

@@ -26,3 +26,14 @@ func TestAppStore(t *testing.T) {
 		t.Errorf("custom AI app invalid: %+v", custom)
 	}
 }
+
+func TestGeneratedAppCatalogIsBounded(t *testing.T) {
+	store := NewStore()
+	store.maxApps = len(store.apps) + 1
+	if got := store.GenerateOnDemand("One", "first", "Test"); got == nil {
+		t.Fatal("first generated app rejected")
+	}
+	if got := store.GenerateOnDemand("Two", "second", "Test"); got != nil {
+		t.Fatalf("catalog exceeded cap: %+v", got)
+	}
+}

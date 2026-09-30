@@ -1,4 +1,4 @@
-# Swyp Lang 0.5
+# Swyp Lang 0.14 experimental
 
 Version 0.5 supports a separate `validation` array in synthesis specifications.
 The engine refines candidates using failing points and enforces one total
@@ -11,9 +11,12 @@ Version 0.4 adds `swyp synth -o new.swyp spec.json`: bounded deterministic
 arithmetic synthesis from examples with no LLM calls. See [the status report](history/NON_LLM_STATUS.md)
 for tested capabilities, restrictions and reproducible evaluation.
 
-The native backend now batches execution-budget checks while preserving error
-behavior. See [the optimization measurements](history/SWYP_OPTIMIZATION_ASSESSMENT.md)
-for the before/after comparison with C, C++, Go and Python.
+The native backend has two explicit profiles. `safe` preserves operation-level
+fuel accounting and batches checks without changing observed failure boundaries.
+`fast` is the AOT compute profile: it keeps finite-float checks,
+division/remainder traps and call-depth limits, but accounts execution budget at
+function entries and loop backedges and compiles with `-O3`. Exact safe-profile
+fuel counts are therefore not portable to `fast`.
 
 Swyp Lang is our experimental language, previously called Syra in the research proposal. Files use `.swyp`. Version 0.2 adds static checking, native compilation through C/GCC, numeric command-line inputs, interval timing, and an optional Ilaria draft-generation command.
 
@@ -64,6 +67,48 @@ fn main() {
 - String concatenation works in the interpreter and is explicitly rejected by the native backend. Native immutable strings support passing, returning, equality and printing, including embedded NUL bytes.
 - CLI `check`, `run` and `build` validate the whole program, including unreachable branches: names, arity, types, and return coverage. This is not proof that intended behavior is correct.
 
+### Stable diagnostics
+
+Parser/checker failures now carry a machine-readable diagnostic code and source
+location while preserving the existing human-readable `file:line:column:
+message` text. The source diagnostic contract is versioned independently as
+`diagnostic_schema_version: 1`; `swyp language-manifest` publishes the complete
+canonical code registry so editors, agents and build systems do not need to
+classify compiler failures by matching English text. Core/model-facing JSON
+commands preserve these source codes and locations in their existing
+`diagnostic` envelope.
+
+### Module preamble (M1 foundation)
+
+Executable/Core sources and declarative component sources now share one common
+preamble syntax:
+
+```text
+module app.control;
+use platform.protocols;
+use platform.security;
+```
+
+`module` is optional and may appear once; `use` declarations are ordered,
+bounded and duplicate-rejected. The common frontend preserves original source
+offsets/line numbers when handing the declaration body to the existing parsers.
+At this stage `use` is **logical dependency metadata only**: parsing never
+performs ambient filesystem/network access and does not yet link imported
+symbols. Deterministic dependency resolution is available separately through an
+explicit module root:
+
+```powershell
+.\bin\swyp.exe module-graph -root .\modules app\main.swyp
+```
+
+Logical module `a.b` resolves only to `<root>/a/b.swyp`. The resolver verifies
+that the loaded file declares the requested module name, bounds source/module
+counts, rejects dependency cycles, prevents resolved paths from escaping the
+explicit root after symlink resolution, and records a SHA-256 for every exact
+source. The graph step validates dependency identity only; qualified symbol
+linking is intentionally deferred to the typed HIR rather than implemented as
+an unqualified legacy-parser merge.
+
 `print(...)` writes space-separated values and a newline. Native numbers use 17 significant digits; interpreter formatting uses Go's default. Compare numeric values rather than assuming byte-identical floating-point text. Void calls cannot be stored or used as values.
 
 `arg(index)` reads finite numeric CLI arguments from index zero. Invalid indices fail. `clock()` returns seconds for interval measurement; its origin is unspecified. Windows uses QueryPerformanceCounter. The untested non-Windows C fallback uses wall-clock time and is subject to clock adjustments.
@@ -76,7 +121,7 @@ Interpreter budget: 1,000,000 steps by default, configurable with `-steps`. Nati
 .\bin\swyp.exe draft -prompt examples/swyp/draft-task.txt -o examples/swyp/my-draft.swyp
 ```
 
-This calls the existing local Ilaria service on `127.0.0.1:8091` with a compact language specification and the chosen task text. It parses and type-checks the reply, then writes a new source file. It neither overwrites files nor automatically compiles or executes the result. Unsupported requests, invalid source, Markdown responses, and unavailable models produce errors.
+This calls the configured Ilaria service with a language specification generated from the compiler's current capability metadata and the chosen task text. `SWYP_ILARIA_ENDPOINT` selects the endpoint and defaults to `http://127.0.0.1:8091`; authenticated HTTPS uses `SWYP_ILARIA_TOKEN`. It parses and type-checks the reply, then writes a new source file. It neither overwrites files nor automatically compiles or executes the result. Unsupported requests, invalid source, Markdown responses, and unavailable models produce errors. `swyp language-manifest` prints the machine-readable compiler capability surface used to keep AI tooling aligned with the actual language version.
 
 The real service refused connections during this session. Controlled backend tests passed, but successful generation with a real model remains unverified. No model was downloaded, substituted, or trained. The adapter sends only its instructions and the task text, not the whole repository.
 
@@ -96,4 +141,8 @@ Native parity tests compile temporary programs with GCC, explicitly skipping if 
 
 The new `web -o new.html file.swyp` target produces a scalar runner, not a declarative UI framework. The generated program runs in a worker with Stop, a 10-second timeout and a 1,000-line output limit. The JavaScript core was tested under Node 24; visual browser testing was blocked by the in-app browser's file-URL policy. Browser rendering, worker behavior and controls are not yet end-to-end verified.
 
-Remaining gaps include arrays, structs, modules, declarative UI, network/filesystem APIs, concurrency, resource ownership, foreign-library adapters, tensors, and production tooling. SwypikOS has not been migrated.
+Remaining language gaps include arrays/slices, structs/enums, modules/imports,
+declarative UI, structured concurrency, resource ownership, foreign-library
+adapters, tensors, and production tooling. Capability-gated native filesystem
+and narrow network process effects exist in the Semantic Core standalone
+backends; they are not ambient legacy-scalar APIs. SwypikOS has not been migrated.

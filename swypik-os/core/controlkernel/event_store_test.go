@@ -228,3 +228,31 @@ func TestEventStoreHashChainSurvivesReplay(t *testing.T) {
 		t.Fatalf("replay changed event chain: %#v", replayed)
 	}
 }
+
+func TestDisableEventRetentionStopsResidentJournalGrowth(t *testing.T) {
+	path := testJournalPath(t)
+	store, err := OpenEventStore(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer store.Close()
+	if _, err := store.Append("test", 0, testEvent("test.first", map[string]int{"n": 1})); err != nil {
+		t.Fatal(err)
+	}
+	if len(store.Events()) != 1 {
+		t.Fatal("expected replay event before retention is disabled")
+	}
+	store.DisableEventRetention()
+	if got := len(store.Events()); got != 0 {
+		t.Fatalf("resident events=%d want 0 after disable", got)
+	}
+	if _, err := store.Append("test", 1, testEvent("test.second", map[string]int{"n": 2})); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(store.Events()); got != 0 {
+		t.Fatalf("resident events grew to %d after disable", got)
+	}
+	if seq := store.Sequence("test"); seq != 2 {
+		t.Fatalf("sequence=%d want 2", seq)
+	}
+}

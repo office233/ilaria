@@ -4,6 +4,8 @@ import (
 	"io"
 	"net/url"
 	"strings"
+	"unicode"
+	"unicode/utf8"
 
 	"golang.org/x/net/html"
 	"golang.org/x/net/html/atom"
@@ -40,10 +42,16 @@ func robotsDirectives(content string) (noindex, nofollow bool) {
 	return
 }
 
-// extract tokenizes real-world HTML the way browsers tolerate it: unquoted
-// attributes, bare "<" and "&", unclosed tags and missing </script> are
-// accepted. Input must already be decoded to UTF-8.
 func extract(r io.Reader, pageURL *url.URL) page {
+	return extractLimit(r, pageURL, MaxTextBytes)
+}
+
+// extractLimit is the resource-aware HTML extractor. Input must already be
+// decoded to UTF-8.
+func extractLimit(r io.Reader, pageURL *url.URL, textLimit int) page {
+	if textLimit <= 0 || textLimit > MaxTextBytes {
+		textLimit = MaxTextBytes
+	}
 	z := html.NewTokenizer(io.LimitReader(r, 4<<20))
 	var p page
 	var text, title strings.Builder
@@ -59,7 +67,7 @@ func extract(r io.Reader, pageURL *url.URL) page {
 		}
 		return false
 	}
-	for text.Len() < 4*MaxTextBytes {
+	for text.Len() < 4*textLimit {
 		tt := z.Next()
 		switch tt {
 		case html.ErrorToken:
@@ -126,7 +134,43 @@ func extract(r io.Reader, pageURL *url.URL) page {
 		}
 	}
 done:
-	p.Title = clip(strings.Join(strings.Fields(title.String()), " "), 512)
-	p.Text = clip(strings.Join(strings.Fields(text.String()), " "), MaxTextBytes)
+	p.Title = compactStringText(title.String(), 512)
+	p.Text = compactStringText(text.String(), textLimit)
 	return p
+}
+
+func compactStringText(s string, limit int) string {
+	if limit <= 0 || s == "" {
+		return ""
+	}
+	var b strings.Builder
+	if len(s) < limit {
+		b.Grow(len(s))
+	} else {
+		b.Grow(limit)
+	}
+	pendingSpace := false
+	started := false
+	for _, r := range s {
+		if unicode.IsSpace(r) {
+			if started {
+				pendingSpace = true
+			}
+			continue
+		}
+		needed := utf8.RuneLen(r)
+		if pendingSpace {
+			needed++
+		}
+		if b.Len()+needed > limit {
+			break
+		}
+		if pendingSpace {
+			b.WriteByte(' ')
+		}
+		pendingSpace = false
+		b.WriteRune(r)
+		started = true
+	}
+	return b.String()
 }

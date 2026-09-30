@@ -6,6 +6,7 @@ import (
 	"errors"
 	"strings"
 	"testing"
+	"time"
 
 	"swypik-os/ui/desktop"
 )
@@ -19,6 +20,47 @@ func TestNativeMessageOutcomes(t *testing.T) {
 	}
 	if _, err := nativeMessageResult(^uintptr(0), errors.New("bad")); err == nil {
 		t.Fatal("-1 must be an error")
+	}
+}
+
+func TestAdaptiveTimerIsQuietWhenIdle(t *testing.T) {
+	app := NewShellApp(nil)
+	idle := app.desiredTimerMS()
+	if idle < 1000 || idle > 60000 {
+		t.Fatalf("idle timer=%dms", idle)
+	}
+	app.view.Live = true
+	if got := app.desiredTimerMS(); got != 250 {
+		t.Fatalf("live timer=%dms want 250", got)
+	}
+	app.view.Live = false
+	app.view.Prompt = &desktop.Prompt{ID: "p"}
+	app.promptAt = time.Now()
+	if got := app.desiredTimerMS(); got != 250 {
+		t.Fatalf("approval dwell timer=%dms want 250", got)
+	}
+}
+
+func TestPhoneProfileSchedulesIdleBackbufferRelease(t *testing.T) {
+	t.Setenv("SWYPIK_RESOURCE_PROFILE", "phone")
+	app := NewShellApp(nil)
+	app.backDC = 1
+	app.lastPaint = time.Now()
+	if !app.releaseIdleBackbuffer {
+		t.Fatal("phone profile must release idle full-screen backbuffer")
+	}
+	if got := app.desiredTimerMS(); got < 250 || got > 2000 {
+		t.Fatalf("idle backbuffer release timer=%dms", got)
+	}
+}
+
+func TestPerformanceProfileKeepsBackbufferWarm(t *testing.T) {
+	t.Setenv("SWYPIK_RESOURCE_PROFILE", "performance")
+	app := NewShellApp(nil)
+	app.backDC = 1
+	app.lastPaint = time.Now()
+	if app.releaseIdleBackbuffer {
+		t.Fatal("performance profile unexpectedly releases idle backbuffer")
 	}
 }
 

@@ -1,0 +1,216 @@
+{
+  "version": 1,
+  "declarations": [
+    {
+      "kind": "component",
+      "name": "ComputeFabric",
+      "capabilities": [
+        "gpu.compute",
+        "artifact.read_signed",
+        "artifact.write_candidate",
+        "scheduler.lease"
+      ],
+      "states": [
+        {
+          "name": "jobs",
+          "type": "TrainingJobs"
+        }
+      ],
+      "invariants": [
+        "workers have no implicit user-data capability",
+        "candidate results never directly mutate production weights"
+      ]
+    },
+    {
+      "kind": "record",
+      "name": "TrainingJob",
+      "fields": [
+        {
+          "name": "job_id",
+          "type": "string"
+        },
+        {
+          "name": "round_id",
+          "type": "u64"
+        },
+        {
+          "name": "model_version",
+          "type": "string"
+        },
+        {
+          "name": "architecture_hash",
+          "type": "string"
+        },
+        {
+          "name": "tokenizer_hash",
+          "type": "string"
+        },
+        {
+          "name": "dataset_shard_hash",
+          "type": "string"
+        },
+        {
+          "name": "rights_provenance_id",
+          "type": "string"
+        },
+        {
+          "name": "recipe_hash",
+          "type": "string"
+        },
+        {
+          "name": "seed",
+          "type": "u64"
+        },
+        {
+          "name": "job_type",
+          "type": "string"
+        },
+        {
+          "name": "parameter_ids",
+          "type": "string_list"
+        },
+        {
+          "name": "min_vram_mb",
+          "type": "u64"
+        },
+        {
+          "name": "max_vram_mb",
+          "type": "u64"
+        },
+        {
+          "name": "max_wall_seconds",
+          "type": "u64"
+        },
+        {
+          "name": "max_power_watts",
+          "type": "u64"
+        },
+        {
+          "name": "max_bandwidth_bytes",
+          "type": "u64"
+        },
+        {
+          "name": "result_schema",
+          "type": "string"
+        },
+        {
+          "name": "verifier_policy",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "kind": "record",
+      "name": "CandidateDelta",
+      "fields": [
+        {
+          "name": "job_id",
+          "type": "string"
+        },
+        {
+          "name": "round_id",
+          "type": "u64"
+        },
+        {
+          "name": "artifact_hash",
+          "type": "string"
+        },
+        {
+          "name": "checkpoint_before_hash",
+          "type": "string"
+        },
+        {
+          "name": "checkpoint_after_hash",
+          "type": "string"
+        },
+        {
+          "name": "recipe_hash",
+          "type": "string"
+        },
+        {
+          "name": "hardware_class",
+          "type": "string"
+        },
+        {
+          "name": "tokens_trained",
+          "type": "u64"
+        },
+        {
+          "name": "training_metrics",
+          "type": "string_map"
+        },
+        {
+          "name": "sentinel_results",
+          "type": "string_map"
+        }
+      ]
+    },
+    {
+      "kind": "effect",
+      "name": "ExecuteTrainingShard",
+      "capabilities": [
+        "gpu.compute",
+        "artifact.read_signed",
+        "artifact.write_candidate"
+      ],
+      "requires": [
+        "job manifest, dataset shard and model artifact are signed"
+      ],
+      "ensures": [
+        "result is content-addressed and candidate-only"
+      ]
+    },
+    {
+      "kind": "contract",
+      "name": "TrainingWorkerIsolation",
+      "requires": [
+        "job uses curated Ilaria data",
+        "worker scratch is capability-scoped"
+      ],
+      "ensures": [
+        "user home, personal hippocampus and secrets are inaccessible"
+      ]
+    },
+    {
+      "kind": "task",
+      "name": "TrainCortexShard",
+      "capabilities": [
+        "gpu.compute"
+      ],
+      "effects": [
+        "training.execute_shard"
+      ],
+      "verifiers": [
+        "TrainingCandidate"
+      ],
+      "properties": {
+        "timeout_seconds": 3600
+      }
+    },
+    {
+      "kind": "agent",
+      "name": "IlariaTrainingWorker",
+      "capabilities": [
+        "gpu.compute",
+        "artifact.read_signed",
+        "artifact.write_candidate"
+      ],
+      "forbids": [
+        "user.files",
+        "user.secrets",
+        "personal.hippocampus"
+      ]
+    },
+    {
+      "kind": "verify",
+      "name": "TrainingCandidate",
+      "checks": [
+        "finite",
+        "artifact_hash",
+        "round_freshness",
+        "sentinel",
+        "outlier_filter"
+      ]
+    }
+  ]
+}

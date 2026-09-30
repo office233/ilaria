@@ -1,0 +1,16 @@
+{"id": "v3-veh-01", "test_prompt": "QN7-442 returns on Argo-M below 38C while iris remains normal. Select the learned diagnostic action."}
+{"id": "v3-veh-02", "test_prompt": "On Nova-R, PF3-118 follows lift-off and rail sigma is nominal. Choose the verified first diagnostic step."}
+{"id": "v3-dev-01", "test_prompt": "A Vela-8 controller passes config access yet J6 times out with rho enabled. Select the learned recovery."}
+{"id": "v3-dev-02", "test_prompt": "Cinder-Q3 again freezes at L5 with violet armed. Choose the previously verified action."}
+{"id": "v3-code-01", "test_prompt": "When SYP-713 is caused by late lowering of witness Orion, select the verified repair."}
+{"id": "v3-code-02", "test_prompt": "ARC-552 returns in a module with the same segment ordering fault. Select the verified fix."}
+{"id": "v3-code-03", "test_prompt": "For VMX-209 involving sable and pearl, choose the verified token sequence."}
+{"id": "v3-math-01", "test_prompt": "When Nemi is present in a Tau expression, select the learned first transformation."}
+{"id": "v3-math-02", "test_prompt": "For an Iota expression marked Pavo, select the learned preprocessing rule."}
+{"id": "v3-ops-01", "test_prompt": "Quill-5 reaches AMBER while healthy except for an epoch delta of two. Select the verified recovery."}
+{"id": "v3-ops-02", "test_prompt": "Shard R4 is refused by Axiom with only a nonce-version mismatch. Select the verified repair."}
+{"id": "v3-mobile-01", "test_prompt": "To avoid GLASS on Mira after suspend, choose the verified sensor resume order."}
+{"id": "v3-mobile-02", "test_prompt": "For Leto N3 drops involving mist and reed, select the verified ordering."}
+{"id": "v3-robot-01", "test_prompt": "CAL-801 returns on Kora-2 with the marker sequence reversed. Choose the verified calibration order."}
+{"id": "v3-robot-02", "test_prompt": "At low speed Silex-6 again raises PATH-33. Select the learned odometry fusion sequence."}
+{"id": "v3-sec-01", "test_prompt": "For Umbra A6 attestation failure, choose the verified nonce and measurement sequence."}

@@ -5,6 +5,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	resourcepolicy "swypik-os/core/resource"
 )
 
 // PriorityLevel defines the cognitive importance of an alert.
@@ -35,15 +37,25 @@ type Broker struct {
 	digestQueue     []Notification
 	spamNeutralized int64
 	vipSenders      map[string]bool
+	maxQueue        int
 }
 
 // NewBroker initializes a cognitive notification broker.
 func NewBroker() *Broker {
+	policy := resourcepolicy.Default()
+	maxQueue := policy.MaxChatHistoryMessages * 2
+	if maxQueue < 40 {
+		maxQueue = 40
+	}
+	if maxQueue > 200 {
+		maxQueue = 200
+	}
 	return &Broker{
-		urgentQueue:     make([]Notification, 0),
-		digestQueue:     make([]Notification, 0),
+		urgentQueue:     make([]Notification, 0, min(maxQueue, 16)),
+		digestQueue:     make([]Notification, 0, min(maxQueue, 16)),
 		vipSenders:      make(map[string]bool),
 		spamNeutralized: 0, // Baseline neutralized
+		maxQueue:        maxQueue,
 	}
 }
 
@@ -109,17 +121,15 @@ func (b *Broker) Ingest(source, sender, title, body string) Notification {
 
 	if priority == PriorityUrgent {
 		b.urgentQueue = append(b.urgentQueue, notif)
-		if len(b.urgentQueue) > 200 {
-			retained := make([]Notification, 200)
-			copy(retained, b.urgentQueue[len(b.urgentQueue)-200:])
-			b.urgentQueue = retained
+		if len(b.urgentQueue) > b.maxQueue {
+			copy(b.urgentQueue, b.urgentQueue[len(b.urgentQueue)-b.maxQueue:])
+			b.urgentQueue = b.urgentQueue[:b.maxQueue]
 		}
 	} else {
 		b.digestQueue = append(b.digestQueue, notif)
-		if len(b.digestQueue) > 200 {
-			retained := make([]Notification, 200)
-			copy(retained, b.digestQueue[len(b.digestQueue)-200:])
-			b.digestQueue = retained
+		if len(b.digestQueue) > b.maxQueue {
+			copy(b.digestQueue, b.digestQueue[len(b.digestQueue)-b.maxQueue:])
+			b.digestQueue = b.digestQueue[:b.maxQueue]
 		}
 	}
 

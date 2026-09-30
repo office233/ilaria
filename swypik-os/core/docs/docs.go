@@ -2,9 +2,11 @@ package docs
 
 import (
 	"fmt"
-	"strings"
 	"sync"
 	"time"
+	"unicode"
+
+	resourcepolicy "swypik-os/core/resource"
 )
 
 // Document represents an AI-assisted text document.
@@ -18,14 +20,16 @@ type Document struct {
 
 // Manager coordinates document editing and intelligent synthesis.
 type Manager struct {
-	mu   sync.RWMutex
-	docs map[string]*Document
+	mu               sync.RWMutex
+	docs             map[string]*Document
+	maxDocumentBytes int
 }
 
 // NewManager creates an initialized AI Docs manager.
 func NewManager() *Manager {
 	m := &Manager{
-		docs: make(map[string]*Document),
+		docs:             make(map[string]*Document),
+		maxDocumentBytes: resourcepolicy.Default().MaxDocumentBytes,
 	}
 	m.seedDefaultDoc()
 	return m
@@ -49,7 +53,7 @@ All legacy web bloatware has been permanently excised.
 		ID:        "doc_welcome",
 		Title:     "SwypikOS Executive Report",
 		Content:   content,
-		WordCount: len(strings.Fields(content)),
+		WordCount: countWords(content),
 		UpdatedAt: time.Now(),
 	}
 	m.docs[doc.ID] = doc
@@ -77,8 +81,30 @@ func (m *Manager) AppendText(id string, text string) error {
 		return fmt.Errorf("document not found: %s", id)
 	}
 
+	if len(doc.Content)+1+len(text) > m.maxDocumentBytes {
+		return fmt.Errorf("document size limit (%d bytes) reached", m.maxDocumentBytes)
+	}
 	doc.Content += "\n" + text
-	doc.WordCount = len(strings.Fields(doc.Content))
+	// Append always inserts a newline, so word boundaries cannot merge across
+	// the old/new content boundary. Count only the new text instead of rescanning
+	// the entire resident document on every edit.
+	doc.WordCount += countWords(text)
 	doc.UpdatedAt = time.Now()
 	return nil
+}
+
+func countWords(s string) int {
+	count := 0
+	inWord := false
+	for _, r := range s {
+		if unicode.IsSpace(r) {
+			inWord = false
+			continue
+		}
+		if !inWord {
+			count++
+			inWord = true
+		}
+	}
+	return count
 }

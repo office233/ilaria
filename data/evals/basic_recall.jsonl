@@ -1,7 +1,0 @@
-{"input": "ce face câinele?", "must_not_equal_input": true, "expected_contains": ["aleargă", "parc"]}
-{"input": "unde doarme pisica?", "must_not_equal_input": true, "expected_contains": ["canapea", "doarme"]}
-{"input": "cine se joacă afară?", "must_not_equal_input": true, "expected_contains": ["copilul", "mingea"]}
-{"input": "what stores episodic memories?", "must_not_equal_input": true, "expected_contains": ["hippocampus"]}
-{"input": "where do neurons fire?", "must_not_equal_input": true, "expected_contains": ["together", "wire"]}
-{"input": "when does memory consolidate?", "must_not_equal_input": true, "expected_contains": ["sleep"]}
-{"input": "what plans and decides?", "must_not_equal_input": true, "expected_contains": ["prefrontal", "cortex"]}

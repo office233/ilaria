@@ -70,9 +70,8 @@ func (e *Engine) EvaluateContext(eventDescription string) *ZeroClickAction {
 
 	e.actions = append(e.actions, action)
 	if len(e.actions) > 100 {
-		retained := make([]ZeroClickAction, 100)
-		copy(retained, e.actions[len(e.actions)-100:])
-		e.actions = retained
+		copy(e.actions, e.actions[len(e.actions)-100:])
+		e.actions = e.actions[:100]
 	}
 	return &e.actions[len(e.actions)-1]
 }

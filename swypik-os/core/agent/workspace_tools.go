@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"unicode/utf8"
 
@@ -25,21 +26,77 @@ const (
 	maxReadableFile = 4 << 20
 	maxReadChars    = 9000
 	maxToolOutput   = 10 * 1024
+	maxPathLength   = 512
 )
 
-type pathArguments struct {
-	Path string `json:"path"`
+// shortName83Pattern matches Windows 8.3 short-name aliases (1-6 chars + "~" + 1-6 digits + optional "." + 1-3 chars).
+var shortName83Pattern = regexp.MustCompile(`(?i)^[^.~]{1,6}~\d{1,6}(\.[^.~]{1,3})?$`)
+
+// ReadArgs are the arguments for workspace.read.
+type ReadArgs struct {
+	Path      string `json:"path"`
+	StartLine int    `json:"start_line"`
+	MaxLines  int    `json:"max_lines"`
+}
+
+// WriteArgs are the arguments for workspace.write.
+type WriteArgs struct {
+	Path           string `json:"path"`
+	Content        string `json:"content"`
+	ExpectedSHA256 string `json:"expected_sha256"`
+}
+
+// EditArgs are the arguments for workspace.edit.
+type EditArgs struct {
+	Path           string `json:"path"`
+	Old            string `json:"old"`
+	New            string `json:"new"`
+	ExpectedSHA256 string `json:"expected_sha256"`
+}
+
+// RunArgs are the arguments for process.run.
+type RunArgs struct {
+	Command string `json:"command"`
 }
 
 // validRelativePath accepts forward-slash workspace-relative paths without
-// traversal or hidden components (".git", ".env").
+// traversal, hidden components (".git", ".env"), or 8.3 short-name aliases.
 func validRelativePath(p string) error {
-	if p == "" || len(p) > 512 || strings.HasPrefix(p, "/") || strings.ContainsRune(p, 0) || filepath.IsAbs(p) || filepath.VolumeName(p) != "" || strings.ContainsAny(p, ":\\") {
+	if p == "" || len(p) > maxPathLength || strings.HasPrefix(p, "/") || strings.ContainsRune(p, 0) || filepath.IsAbs(p) || filepath.VolumeName(p) != "" || strings.ContainsAny(p, ":\\") {
 		return fmt.Errorf("workspace-relative forward-slash path required")
 	}
 	for _, part := range strings.Split(p, "/") {
-		if part == ".." || (part != "." && strings.HasPrefix(part, ".")) {
-			return fmt.Errorf("hidden paths and traversal are unavailable")
+		if part == ".." || (part != "." && strings.HasPrefix(part, ".")) || shortName83Pattern.MatchString(part) {
+			return fmt.Errorf("hidden paths, short-name aliases and traversal are unavailable")
+		}
+	}
+	return nil
+}
+
+// checkCanonicalRelative verifies that canonicalPath lies within root and
+// contains no hidden components or short-name aliases when computed relative to root.
+func checkCanonicalRelative(root, canonicalPath string) error {
+	canonicalRoot, err := safepath.Canonical(root)
+	if err != nil {
+		return fmt.Errorf("workspace is unavailable: %w", err)
+	}
+	if expanded, err := filepath.EvalSymlinks(canonicalPath); err == nil {
+		canonicalPath = expanded
+	}
+	absTarget, err := filepath.Abs(canonicalPath)
+	if err != nil {
+		return fmt.Errorf("target path is invalid: %w", err)
+	}
+	rel, err := filepath.Rel(canonicalRoot, absTarget)
+	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) || filepath.IsAbs(rel) {
+		return fmt.Errorf("path is outside workspace")
+	}
+	if rel == "." {
+		return nil
+	}
+	for _, part := range strings.Split(filepath.ToSlash(rel), "/") {
+		if (part != "." && strings.HasPrefix(part, ".")) || shortName83Pattern.MatchString(part) {
+			return fmt.Errorf("hidden paths and short-name aliases are unavailable")
 		}
 	}
 	return nil
@@ -99,6 +156,12 @@ func resolveForWrite(root, rel string) (string, error) {
 	if !safepath.WithinExisting(existing, root) {
 		return "", fmt.Errorf("path is outside workspace")
 	}
+	// Check the deepest existing ancestor before creating anything, so a
+	// link into a hidden directory (e.g. alias -> .git) cannot get new
+	// subdirectories created inside it before the write is rejected.
+	if err := checkCanonicalRelative(root, existing); err != nil {
+		return "", err
+	}
 	if err := os.MkdirAll(filepath.Join(root, parent), 0700); err != nil {
 		return "", fmt.Errorf("cannot create directory")
 	}
@@ -106,9 +169,17 @@ func resolveForWrite(root, rel string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	if err := checkCanonicalRelative(root, dir); err != nil {
+		return "", err
+	}
 	target := filepath.Join(dir, filepath.Base(clean))
-	if info, err := os.Lstat(target); err == nil && (!info.Mode().IsRegular() || info.Mode()&os.ModeSymlink != 0) {
-		return "", fmt.Errorf("target is not a regular file")
+	if info, err := os.Lstat(target); err == nil {
+		if !info.Mode().IsRegular() || info.Mode()&os.ModeSymlink != 0 {
+			return "", fmt.Errorf("target is not a regular file")
+		}
+		if err := checkCanonicalRelative(root, target); err != nil {
+			return "", err
+		}
 	}
 	return target, nil
 }
@@ -116,6 +187,9 @@ func resolveForWrite(root, rel string) (string, error) {
 func readText(root, rel string) (string, []byte, error) {
 	path, err := safepath.ResolveRelative(root, rel)
 	if err != nil {
+		return "", nil, err
+	}
+	if err := checkCanonicalRelative(root, path); err != nil {
 		return "", nil, err
 	}
 	info, err := os.Stat(path)
@@ -170,11 +244,7 @@ func WorkspaceTools(root string, run RunFunc) []Tool {
 	tools = append(tools, Tool{
 		Spec: Spec{Name: "workspace.read", Description: "Read a UTF-8 text file in the workspace. Returns numbered lines and the file sha256 needed to modify it.", Arguments: `{"path":"dir/file.go","start_line":1,"max_lines":200}; start_line and max_lines optional`},
 		Validate: func(raw json.RawMessage) error {
-			var a struct {
-				Path      string `json:"path"`
-				StartLine int    `json:"start_line"`
-				MaxLines  int    `json:"max_lines"`
-			}
+			var a ReadArgs
 			if err := DecodeObject(raw, &a, 4096); err != nil {
 				return err
 			}
@@ -184,11 +254,7 @@ func WorkspaceTools(root string, run RunFunc) []Tool {
 			return validRelativePath(a.Path)
 		},
 		Execute: func(ctx context.Context, raw json.RawMessage) (json.RawMessage, error) {
-			var a struct {
-				Path      string `json:"path"`
-				StartLine int    `json:"start_line"`
-				MaxLines  int    `json:"max_lines"`
-			}
+			var a ReadArgs
 			_ = json.Unmarshal(raw, &a)
 			_, data, err := readText(root, a.Path)
 			if err != nil {
@@ -226,15 +292,10 @@ func WorkspaceTools(root string, run RunFunc) []Tool {
 			})
 		},
 	})
-	type writeArgs struct {
-		Path           string `json:"path"`
-		Content        string `json:"content"`
-		ExpectedSHA256 string `json:"expected_sha256"`
-	}
 	tools = append(tools, Tool{
 		Spec: Spec{Name: "workspace.write", Description: "Create a new file, or replace an existing file whose current sha256 you pass (from workspace.read). Rejects stale content.", Arguments: `{"path":"dir/file.go","content":"...","expected_sha256":""}; expected_sha256 empty only for new files`},
 		Validate: func(raw json.RawMessage) error {
-			var a writeArgs
+			var a WriteArgs
 			if err := DecodeObject(raw, &a, MaxArgumentBytes); err != nil {
 				return err
 			}
@@ -244,7 +305,7 @@ func WorkspaceTools(root string, run RunFunc) []Tool {
 			return validRelativePath(a.Path)
 		},
 		Execute: func(ctx context.Context, raw json.RawMessage) (json.RawMessage, error) {
-			var a writeArgs
+			var a WriteArgs
 			_ = json.Unmarshal(raw, &a)
 			target, err := resolveForWrite(root, a.Path)
 			if err != nil {
@@ -274,16 +335,10 @@ func WorkspaceTools(root string, run RunFunc) []Tool {
 			}{a.Path, !exists, len(a.Content), digest([]byte(a.Content))})
 		},
 	})
-	type editArgs struct {
-		Path           string `json:"path"`
-		Old            string `json:"old"`
-		New            string `json:"new"`
-		ExpectedSHA256 string `json:"expected_sha256"`
-	}
 	tools = append(tools, Tool{
 		Spec: Spec{Name: "workspace.edit", Description: "Replace exactly one occurrence of old text with new text in an existing file. Pass the sha256 from workspace.read.", Arguments: `{"path":"dir/file.go","old":"exact existing text","new":"replacement","expected_sha256":"..."}`},
 		Validate: func(raw json.RawMessage) error {
-			var a editArgs
+			var a EditArgs
 			if err := DecodeObject(raw, &a, MaxArgumentBytes); err != nil {
 				return err
 			}
@@ -293,7 +348,7 @@ func WorkspaceTools(root string, run RunFunc) []Tool {
 			return validRelativePath(a.Path)
 		},
 		Execute: func(ctx context.Context, raw json.RawMessage) (json.RawMessage, error) {
-			var a editArgs
+			var a EditArgs
 			_ = json.Unmarshal(raw, &a)
 			target, data, err := readText(root, a.Path)
 			if err != nil {
@@ -332,13 +387,10 @@ func WorkspaceTools(root string, run RunFunc) []Tool {
 		},
 	})
 	if run != nil {
-		type runArgs struct {
-			Command string `json:"command"`
-		}
 		tools = append(tools, Tool{
 			Spec: Spec{Name: "process.run", Description: "Run one command line in the workspace directory with the user's permissions and a scrubbed allowlisted environment (for example: go test ./...). This is process hardening, not a filesystem/network sandbox. Output is truncated to the last 10 KiB.", Arguments: `{"command":"go test ./..."}`},
 			Validate: func(raw json.RawMessage) error {
-				var a runArgs
+				var a RunArgs
 				if err := DecodeObject(raw, &a, 4096); err != nil {
 					return err
 				}
@@ -348,7 +400,7 @@ func WorkspaceTools(root string, run RunFunc) []Tool {
 				return nil
 			},
 			Execute: func(ctx context.Context, raw json.RawMessage) (json.RawMessage, error) {
-				var a runArgs
+				var a RunArgs
 				_ = json.Unmarshal(raw, &a)
 				out, err := run(ctx, a.Command, root)
 				if cerr := ctx.Err(); cerr != nil {
@@ -358,7 +410,7 @@ func WorkspaceTools(root string, run RunFunc) []Tool {
 				if err != nil {
 					status = "failed: " + err.Error()
 				}
-				out = strings.ToValidUTF8(out, "�")
+				out = strings.ToValidUTF8(out, "\uFFFD")
 				return fitJSON(maxToolOutput-1024, func(budget int) interface{} {
 					return struct {
 						Command string `json:"command"`

@@ -2,7 +2,10 @@ package ilaria
 
 import (
 	"context"
+	"fmt"
 	"testing"
+
+	resourcepolicy "swypik-os/core/resource"
 )
 
 func TestUnconfiguredEngineFailsExplicitly(t *testing.T) {
@@ -34,5 +37,26 @@ func TestProcessPromptRecordsExchange(t *testing.T) {
 	e.ClearHistory()
 	if len(e.GetHistory()) != 0 {
 		t.Fatal("history not cleared")
+	}
+}
+
+func TestPhoneProfileBoundsChatHistory(t *testing.T) {
+	t.Setenv("SWYPIK_RESOURCE_PROFILE", "phone")
+	e := NewEngine()
+	e.SetBackend(testBackend{})
+	for i := 0; i < 25; i++ {
+		if _, err := e.ProcessPromptContext(context.Background(), fmt.Sprintf("prompt-%d", i)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	h := e.GetHistory()
+	want := resourcepolicy.ForProfile(resourcepolicy.ProfilePhone).MaxChatHistoryMessages
+	if len(h) != want {
+		t.Fatalf("history=%d want %d", len(h), want)
+	}
+	oldestPrompt := 25 - want/2
+	wantOldest := fmt.Sprintf("prompt-%d", oldestPrompt)
+	if h[0].Text != wantOldest {
+		t.Fatalf("oldest retained prompt=%q want %q", h[0].Text, wantOldest)
 	}
 }

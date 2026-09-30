@@ -1,1 +1,0 @@
-{"retrieved":"2026-09-21T21:58:32.0470994Z","url":"https://api.platform.opentargets.org/api/v4/graphql","body":{"data":{"search":{"hits":[{"id":"ENSG00000073756","name":"PTGS2","entity":"target"},{"id":"ENSG00000273129","name":"PACERR","entity":"target"}]}}}}

@@ -464,6 +464,23 @@ func TestHardwareManifestRejectsInvalidTopology(t *testing.T) {
 	}
 }
 
+func TestHardwareManifestRejectsUnknownPlatformClass(t *testing.T) {
+	manifest := HardwareManifest{
+		SchemaVersion: HardwareManifestSchemaV1,
+		DeviceClass:   PlatformClass("spaceship"),
+		Architecture:  ArchARM64,
+		ABI:           "aapcs64",
+		Endianness:    EndianLittle,
+		Graph: DeviceGraph{
+			SchemaVersion: DeviceGraphSchemaV1,
+			Devices:       []DeviceNode{},
+		},
+	}
+	if err := manifest.Validate(); err == nil {
+		t.Fatal("unsupported platform class was accepted")
+	}
+}
+
 func TestManifestDoesNotSerializeRawSerial(t *testing.T) {
 	rawSerial := "SUPER-SECRET-SERIAL-123"
 	manifest, _ := verifierFixture(t)

@@ -60,16 +60,17 @@ type eventHashInput struct {
 // held for the lifetime of the store so expected-sequence CAS cannot be bypassed
 // by a second cooperating process.
 type EventStore struct {
-	mu        sync.Mutex
-	path      string
-	file      *os.File
-	lock      *os.File
-	closed    bool
-	failed    error
-	streamSeq map[string]uint64
-	journal   uint64
-	headHash  string
-	events    []Event
+	mu           sync.Mutex
+	path         string
+	file         *os.File
+	lock         *os.File
+	closed       bool
+	failed       error
+	streamSeq    map[string]uint64
+	journal      uint64
+	headHash     string
+	events       []Event
+	retainEvents bool
 }
 
 // OpenEventStore opens or creates a journal. Only a physically incomplete last
@@ -104,10 +105,11 @@ func OpenEventStore(path string) (*EventStore, error) {
 		return nil, fmt.Errorf("journal must be a regular file")
 	}
 	s := &EventStore{
-		path:      path,
-		file:      f,
-		lock:      lock,
-		streamSeq: make(map[string]uint64),
+		path:         path,
+		file:         f,
+		lock:         lock,
+		streamSeq:    make(map[string]uint64),
+		retainEvents: true,
 	}
 	if err := s.loadAndRepairTail(); err != nil {
 		_ = f.Close()
@@ -247,7 +249,9 @@ func (s *EventStore) applyBatchBody(body []byte, offset int64) error {
 	s.streamSeq = tempSeq
 	s.journal = tempJournal
 	s.headHash = tempHead
-	s.events = append(s.events, cloneEvents(batch.Events)...)
+	if s.retainEvents {
+		s.events = append(s.events, cloneEvents(batch.Events)...)
+	}
 	return nil
 }
 
@@ -342,7 +346,9 @@ func (s *EventStore) Append(stream string, expectedSeq uint64, events ...Event) 
 	s.streamSeq[stream] = seq
 	s.journal = journalSeq
 	s.headHash = head
-	s.events = append(s.events, cloneEvents(prepared)...)
+	if s.retainEvents {
+		s.events = append(s.events, cloneEvents(prepared)...)
+	}
 	return cloneEvents(prepared), nil
 }
 
@@ -404,6 +410,20 @@ func (s *EventStore) Events() []Event {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return cloneEvents(s.events)
+}
+
+// DisableEventRetention releases the replay snapshot and prevents future
+// append operations from duplicating durable journal events in RAM. The journal
+// file remains the source of truth; callers that need a long-lived in-memory
+// state should maintain a projection instead.
+func (s *EventStore) DisableEventRetention() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for i := range s.events {
+		s.events[i].Data = nil
+	}
+	s.events = nil
+	s.retainEvents = false
 }
 
 func (s *EventStore) Close() error {

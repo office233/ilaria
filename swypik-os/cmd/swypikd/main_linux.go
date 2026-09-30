@@ -17,11 +17,13 @@ import (
 
 	"swypik-os/core/agent"
 	"swypik-os/core/ilaria"
+	resourcepolicy "swypik-os/core/resource"
 	"swypik-os/core/search"
 	"swypik-os/core/service"
 )
 
 func main() {
+	resourcepolicy.ApplyRuntime(resourcepolicy.Default())
 	socket := flag.String("socket", "/run/swypik/control.sock", "Private Unix socket")
 	root := flag.String("workspace", "/home/swypik/Workspace", "Explicit workspace")
 	index := flag.String("index", "/var/lib/swypik/index.jsonl", "Search index path (append-only log)")

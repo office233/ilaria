@@ -1,6 +1,9 @@
 package coreir
 
-import "fmt"
+import (
+	"fmt"
+	"math"
+)
 
 // Contract v1 describes scalar functions. Effect metadata may describe a
 // brokered effect profile, but verification never executes those host effects.
@@ -74,6 +77,9 @@ func (c Contract) validate(e *Executable) ([]interval, error) {
 		high, err := ParseValue(d.Type, d.Max)
 		if err != nil {
 			return nil, bad(err.Error())
+		}
+		if d.Type == IEEE64 && (math.IsNaN(low.f) || math.IsInf(low.f, 0) || math.IsNaN(high.f) || math.IsInf(high.f, 0)) {
+			return nil, bad("ieee64 contract bounds must be finite")
 		}
 		le, _ := Apply("le", low, high)
 		if !le.b {

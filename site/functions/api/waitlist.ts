@@ -10,6 +10,35 @@ type WaitlistPayload = {
 };
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const MAX_BODY_BYTES = 4096;
+
+async function readPayload(request: Request): Promise<unknown> {
+  if (!request.body) throw new Error("empty_body");
+  const reader = request.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      size += value.byteLength;
+      if (size > MAX_BODY_BYTES) {
+        await reader.cancel().catch(() => undefined);
+        throw new Error("body_too_large");
+      }
+      chunks.push(value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+  const bytes = new Uint8Array(size);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes));
+}
 
 function json(data: unknown, status = 200): Response {
   return new Response(JSON.stringify(data), {
@@ -31,30 +60,40 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   }
 
   const contentType = request.headers.get("content-type") ?? "";
-  if (!contentType.toLowerCase().includes("application/json")) {
+  if (contentType.split(";", 1)[0]?.trim().toLowerCase() !== "application/json") {
     return json({ error: "Expected a JSON request." }, 415);
   }
 
   const contentLength = Number(request.headers.get("content-length") ?? "0");
-  if (Number.isFinite(contentLength) && contentLength > 4096) {
+  if (Number.isFinite(contentLength) && contentLength > MAX_BODY_BYTES) {
     return json({ error: "Request is too large." }, 413);
   }
 
   let body: WaitlistPayload;
 
   try {
-    body = await request.json<WaitlistPayload>();
-  } catch {
+    const parsed = await readPayload(request);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return json({ error: "Invalid request." }, 400);
+    }
+    body = parsed as WaitlistPayload;
+  } catch (error) {
+    if (error instanceof Error && error.message === "body_too_large") {
+      return json({ error: "Request is too large." }, 413);
+    }
     return json({ error: "Invalid request." }, 400);
   }
 
-  const honeypot = String(body.company ?? "").trim();
+  if (body.company !== undefined && typeof body.company !== "string") {
+    return json({ error: "Invalid request." }, 400);
+  }
+  const honeypot = typeof body.company === "string" ? body.company.trim() : "";
   if (honeypot) {
     return json({ ok: true });
   }
 
-  const email = String(body.email ?? "").trim().toLowerCase();
-  const source = String(body.source ?? "homepage").trim().slice(0, 64);
+  const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+  const source = typeof body.source === "string" ? body.source.trim().slice(0, 64) : "homepage";
   const consent = body.consent === true;
 
   if (!consent) {
@@ -65,10 +104,15 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     return json({ error: "Enter a valid email address." }, 400);
   }
 
-  const insert = await env.DB.prepare(
-    "INSERT OR IGNORE INTO waitlist (id, email, source, consent_at) VALUES (?1, ?2, ?3, CURRENT_TIMESTAMP)"
-  ).bind(crypto.randomUUID(), email, source || "homepage").run();
+  try {
+    const insert = await env.DB.prepare(
+      "INSERT OR IGNORE INTO waitlist (id, email, source, consent_at) VALUES (?1, ?2, ?3, CURRENT_TIMESTAMP)"
+    ).bind(crypto.randomUUID(), email, source || "homepage").run();
 
-  const existing = insert.meta.changes === 0;
-  return json({ ok: true, existing }, existing ? 200 : 201);
+    if (!insert.success) throw new Error("waitlist_unavailable");
+    const existing = insert.meta.changes === 0;
+    return json({ ok: true, existing }, existing ? 200 : 201);
+  } catch {
+    return json({ error: "The launch list is unavailable. Please try again later." }, 503);
+  }
 };

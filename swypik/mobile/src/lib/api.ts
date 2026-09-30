@@ -1,6 +1,19 @@
 export type Video = { id: string; url: string; description: string; creator: string };
 export type Product = { id: string; title: string; price: number; image: string | null };
-export const API_ORIGIN = 'https://swypik.com';
+export function resolveApiOrigin(value?: string): string {
+  const configured = value || 'https://swypik.com';
+  try {
+    const url = new URL(configured);
+    if (configured !== configured.trim() || /[\\\s]/.test(configured) ||
+        configured.includes('?') || configured.includes('#') || url.protocol !== 'https:' ||
+        url.username || url.password || url.pathname !== '/' || !url.hostname.includes('.') ||
+        url.hostname.includes('*')) throw new Error();
+    return url.origin;
+  } catch {
+    throw new Error('EXPO_PUBLIC_API_ORIGIN trebuie să fie o origine HTTPS validă.');
+  }
+}
+export const API_ORIGIN = resolveApiOrigin(process.env.EXPO_PUBLIC_API_ORIGIN);
 // Next.js routes still live on the web origin; api.swypik.com currently serves a different API.
 export function httpsMedia(value: unknown): string | null {
   if (typeof value !== 'string') return null;
@@ -34,7 +47,8 @@ export function parseProducts(value: unknown): { products: Product[]; currency: 
   return { products, currency: typeof data.currency === 'string' ? data.currency : 'RON' };
 }
 export async function readApi(path: '/api/explore/feed?limit=12' | '/api/products?mode=video&limit=12', signal: AbortSignal, webPreview = false): Promise<unknown> {
-  const response = await fetch(webPreview ? '/preview?kind=' + (path.startsWith('/api/explore') ? 'feed' : 'products') : API_ORIGIN + path, { signal, credentials: 'omit', headers: { Accept: 'application/json' } });
+  const response = await fetch(webPreview ? '/preview?kind=' + (path.startsWith('/api/explore') ? 'feed' : 'products') : API_ORIGIN + path, { signal, credentials: 'omit', redirect: 'error', cache: 'no-store', headers: { Accept: 'application/json' } });
+  if (response.redirected) throw new Error('Serverul a redirecționat cererea către o adresă neașteptată.');
   if (!response.ok) throw new Error(response.status === 429 ? 'Prea multe cereri. Încearcă din nou mai târziu.' : `Swypik nu răspunde momentan (${response.status}).`);
   if (!response.headers.get('content-type')?.includes('application/json')) throw new Error('Serverul nu a returnat datele așteptate.');
   return response.json();

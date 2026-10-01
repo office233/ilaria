@@ -42,6 +42,15 @@ Thumbs.db
 .claude/settings.local.json
 .claude/worktrees/
 .superpowers/
+# Downloaded local compiler/tool distributions are not project source.
+/.tools/
+/_conversatii-claude/
+
+# Local credentials; sanitized examples remain reviewable.
+.env
+.env.*
+!.env.example
+!.env.template
 
 # --- Model weights and checkpoints ---
 *.pt
@@ -50,14 +59,30 @@ Thumbs.db
 *.gguf
 
 # --- Ilaria bulk / regenerable data ---
-# Curated small files (ilaria/data/corpus/README.md, evals/, knowledge/,
+# Curated small files (ilaria/data/corpus/README.md, evals/,
 # tokenizer*.json, training/, ...) stay trackable: only bulk dirs are ignored.
+# Committed exception: ilaria/data/imc1b-azure-preparation/ (small prep reports).
 ilaria/data/smoke/
 ilaria/data/candidate-corpus/
 ilaria/data/source-cache/
 ilaria/data/colab/
 ilaria/data/forge/
+ilaria/data/production/
+ilaria/data/candidate-tokenizer-sample/
+ilaria/data/knowledge/
+ilaria/data/candidate-corpus-regenerated/
 ilaria/data/corpus/*.jsonl
 ilaria/data/corpus/*.txt
 !ilaria/data/corpus/general.jsonl
 !ilaria/data/corpus/reasoning.jsonl
+
+# Regenerable benchmark payloads/caches. Keep scripts, results, manifests and
+# provenance records trackable; preserve all existing local files on disk.
+ilaria/bench/**/*.sqlite
+ilaria/bench/**/*.sqlite-journal
+ilaria/bench/**/*.sqlite-wal
+ilaria/bench/**/*.sqlite-shm
+ilaria/bench/**/*.zip
+ilaria/bench/**/*.bin
+ilaria/bench/imc_125m_eval_frozen/*.jsonl
+ilaria/bench/imc_125m_tokenizer_candidate/sample/*.txt

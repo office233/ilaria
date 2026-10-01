@@ -1,0 +1,67 @@
+{
+  "decision_sha256": "1966dd16f7f2f7ba4488ffa2e9e36f8061d8d04b81accf0faa2123460a7eca2b",
+  "external_sources": {
+    "apache_nuttx": {
+      "decision": "PENDING",
+      "resolved_obligations": [],
+      "review_ref": "",
+      "reviewed_by": ""
+    },
+    "freebsd_licensed_tree": {
+      "decision": "PENDING",
+      "resolved_obligations": [],
+      "review_ref": "",
+      "reviewed_by": ""
+    },
+    "freertos_kernel": {
+      "decision": "PENDING",
+      "resolved_obligations": [],
+      "review_ref": "",
+      "reviewed_by": ""
+    },
+    "opencode_reasoning_split0": {
+      "decision": "PENDING",
+      "resolved_obligations": [],
+      "review_ref": "",
+      "reviewed_by": ""
+    },
+    "openmath_reasoning_cot": {
+      "decision": "PENDING",
+      "resolved_obligations": [],
+      "review_ref": "",
+      "reviewed_by": ""
+    },
+    "openscience_reasoning_2": {
+      "decision": "PENDING",
+      "resolved_obligations": [],
+      "review_ref": "",
+      "reviewed_by": ""
+    },
+    "wiki_en": {
+      "decision": "PENDING",
+      "resolved_obligations": [],
+      "review_ref": "",
+      "reviewed_by": ""
+    },
+    "zephyr": {
+      "decision": "PENDING",
+      "resolved_obligations": [],
+      "review_ref": "",
+      "reviewed_by": ""
+    }
+  },
+  "first_party_sources": {
+    "first_party_contracts": {
+      "attested_by": "",
+      "decision": "PENDING",
+      "review_ref": ""
+    },
+    "first_party_trajectories": {
+      "attested_by": "",
+      "decision": "PENDING",
+      "review_ref": ""
+    }
+  },
+  "format": "imc-125m-production-review-decision-v1",
+  "review_packet_sha256": "21cb5fe4ea956009259aff668a0c09c1dd1aede0a9aa0a48a542ee59670c1639"
+}

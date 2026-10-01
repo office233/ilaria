@@ -1,0 +1,76 @@
+{
+  "format": "imc-125m-frozen-eval-benchmarks-v1",
+  "manifest_sha256": "cb58ba22aa4d7a32f2de0597cfe773baa115141e06a92ae58c6ba777f2e6397b",
+  "outputs": {
+    "code_humaneval": {
+      "bytes": 216775,
+      "filename": "code_humaneval.jsonl",
+      "records": 164,
+      "sha256": "83e3084e68bc7a0d651b3143b768666136f3960e277a8b4c7bfc4bf275f23212"
+    },
+    "continual_regression": {
+      "bytes": 55175,
+      "filename": "continual_regression.jsonl",
+      "records": 256,
+      "sha256": "1e003ad0bfebd9299623664eb9ae4431aece0f67b5e24b3c407f49fa6a9affd2"
+    },
+    "general_truthfulqa": {
+      "bytes": 631821,
+      "filename": "general_truthfulqa.jsonl",
+      "records": 790,
+      "sha256": "6b0d6515713b0a9014a823db4fc3cba54beb0bd97c59a393366ee9414b43c3e0"
+    },
+    "math_gsm8k": {
+      "bytes": 783436,
+      "filename": "math_gsm8k.jsonl",
+      "records": 1319,
+      "sha256": "4051f53eef43223c039829ba37187515de25901882929b0011a81351c9313ae7"
+    },
+    "science_arc_challenge": {
+      "bytes": 520854,
+      "filename": "science_arc_challenge.jsonl",
+      "records": 1172,
+      "sha256": "e8ce8f0003b1caedf2bf0139a41c6d745201ad2bcdecb0745e1e99cfed87fb1b"
+    }
+  },
+  "policy": "frozen-before-genesis-training-v1",
+  "regression": {
+    "generator_sha256": "b4cc2109b82de98ce22cdf5f98253dd05ae54fdfee61d3d05487a25a8cbac827",
+    "seed": 9125007,
+    "tasks": 256
+  },
+  "sources": {
+    "ai2_arc": {
+      "declared_license": "CC-BY-SA-4.0",
+      "input_bytes": 203808,
+      "input_filename": "arc-challenge-test.parquet",
+      "input_sha256": "62f03257e737aed263f55c6abf87c7bb0028a44a6bdd2a26eb1279eb42c1d1e9",
+      "revision": "210d026faf9955653af8916fad021475a3f00453",
+      "url": "https://huggingface.co/datasets/allenai/ai2_arc"
+    },
+    "gsm8k": {
+      "declared_license": "MIT",
+      "input_bytes": 751057,
+      "input_filename": "test.jsonl",
+      "input_sha256": "f0eb4527e0a64e03db1eeba22a4cdd5806f14b8d8eeb41b2224151de64855ee5",
+      "revision": "3101c7d5072418e28b9008a6636bde82a006892c",
+      "url": "https://github.com/openai/grade-school-math.git"
+    },
+    "human_eval": {
+      "declared_license": "MIT",
+      "input_bytes": 44877,
+      "input_filename": "HumanEval.jsonl.gz",
+      "input_sha256": "b796127e635a67f93fb35c04f4cb03cf06f38c8072ee7cee8833d7bee06979ef",
+      "revision": "6d43fb980f9fee3c892a914eda09951f772ad10d",
+      "url": "https://github.com/openai/human-eval.git"
+    },
+    "truthfulqa": {
+      "declared_license": "Apache-2.0",
+      "input_bytes": 504340,
+      "input_filename": "TruthfulQA.csv",
+      "input_sha256": "611ba198853a3fba1d7b62368318622a46f14c68adde867482fdb2844a94e882",
+      "revision": "d71c110897f5d31c5d7f309e7bc316c152f6f031",
+      "url": "https://github.com/sylinrl/TruthfulQA.git"
+    }
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "format": "imc-125m-verified-trajectory-quality-v1",
+  "lanes": {
+    "agent_tool_trajectories": {
+      "maximum_family_share_ppm": 84610,
+      "mean_text_bytes": 484,
+      "sample_documents": 100000,
+      "task_families": {
+        "bitmask_test": 8461,
+        "checksum8": 8409,
+        "decimal_to_hex": 8419,
+        "gcd": 8268,
+        "integer_arithmetic": 8367,
+        "json_get": 8321,
+        "kib_to_bytes": 8271,
+        "set_intersection": 8294,
+        "sha256": 8306,
+        "sort_integers": 8383,
+        "string_reverse": 8293,
+        "timestamp_delta": 8208
+      },
+      "unique_evidence_ratio_ppm": 999890,
+      "unique_text_ratio_ppm": 999950
+    },
+    "world_device_trajectories": {
+      "maximum_family_share_ppm": 101550,
+      "mean_text_bytes": 582,
+      "sample_documents": 100000,
+      "task_families": {
+        "accelerometer_impact": 9957,
+        "can_speed_decode": 10155,
+        "embedded_thermal": 9850,
+        "fan_curve": 10065,
+        "pc_thermal": 10044,
+        "phone_battery": 10025,
+        "robot_stability": 9951,
+        "usb_charge_voltage": 10021,
+        "vehicle_engine_state": 10012,
+        "vehicle_ratio_band": 9920
+      },
+      "unique_evidence_ratio_ppm": 1000000,
+      "unique_text_ratio_ppm": 1000000
+    }
+  },
+  "policy": {
+    "maximum_family_share_ppm": 110000,
+    "minimum_families": {
+      "agent_tool_trajectories": 12,
+      "world_device_trajectories": 10
+    },
+    "minimum_unique_evidence_ratio_ppm": 999000,
+    "minimum_unique_text_ratio_ppm": 999000,
+    "sample_documents_per_lane": 100000
+  },
+  "quality_gate_sha256": "c0fc41a7504dff4107ffdb869964852a70ddf0232e5c55edefa503711882a91b",
+  "seed": 1250007
+}

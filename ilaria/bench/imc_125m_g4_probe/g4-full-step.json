@@ -1,0 +1,15 @@
+{
+  "accum": 4,
+  "context": 2048,
+  "device": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+  "format": "imc-125m-g4-full-step-benchmark-v1",
+  "measured_grad_norm": 0.4221702218055725,
+  "measured_seconds": 4.731955116000336,
+  "micro_batch": 32,
+  "parameters": 125882112,
+  "peak_allocated_bytes": 11822757376,
+  "tokens_per_second": 55398.665789031416,
+  "tokens_per_step": 262144,
+  "warmup_grad_norm": 0.42908287048339844,
+  "warmup_seconds": 4.926782152999749
+}

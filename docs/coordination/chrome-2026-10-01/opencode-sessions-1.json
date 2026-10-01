@@ -1,0 +1,55 @@
+{
+  "sessions": [
+    {
+      "id": "ses_f0946e6f9ffeafZCr1RvKTqjCM",
+      "title": "Nexus OC1: reduce Swyp preamble allocations",
+      "directory": "E:\\nexus-worktrees\\opencode-preamble-r3",
+      "agent": "build",
+      "readOnly": false,
+      "createdAt": "2026-10-01T09:08:41.167Z",
+      "lastPromptAt": 1790845721167,
+      "editKey": "e:\\nexus-worktrees\\opencode-preamble-r3",
+      "editing": true,
+      "dispatched": true,
+      "inboxID": "msg_0f6b91ce8001Gzf9hIh8o1xUus"
+    },
+    {
+      "id": "ses_f0946e6e4ffevvNlcDV2MrUyDl",
+      "title": "Nexus OC2: native driver image Go-C conformance",
+      "directory": "E:\\nexus-worktrees\\opencode-driver-conformance",
+      "agent": "build",
+      "readOnly": false,
+      "createdAt": "2026-10-01T09:08:41.190Z",
+      "lastPromptAt": 1790845721190,
+      "editKey": "e:\\nexus-worktrees\\opencode-driver-conformance",
+      "editing": true,
+      "dispatched": true,
+      "inboxID": "msg_0f6b91ce20010N6eILg1VFrU5P"
+    },
+    {
+      "id": "ses_f0946e6daffeLpjGmJl2E9phNo",
+      "title": "Nexus OC3: native cleanup fault matrix",
+      "directory": "E:\\nexus-worktrees\\opencode-cleanup-matrix",
+      "agent": "build",
+      "readOnly": false,
+      "createdAt": "2026-10-01T09:08:41.219Z",
+      "lastPromptAt": 1790845721219,
+      "editKey": "e:\\nexus-worktrees\\opencode-cleanup-matrix",
+      "editing": true,
+      "dispatched": true,
+      "inboxID": "msg_0f6b91db4001j5miZGKbKXMqJ6"
+    },
+    {
+      "id": "ses_f0946e6cfffe1yUqybTpG7pUb0",
+      "title": "Nexus OC4: next functional P2P learning milestone",
+      "directory": "E:\\nexus",
+      "agent": "plan",
+      "readOnly": true,
+      "createdAt": "2026-10-01T09:08:41.101Z",
+      "lastPromptAt": 1790845721102,
+      "dispatched": true,
+      "inboxID": "msg_0f6b91ae70015ISDGkwCjwZUF3"
+    }
+  ],
+  "note": "Prompts were admitted asynchronously. Inspect each session for completion, errors, and permission requests. Existing OpenCode model configuration is used."
+}

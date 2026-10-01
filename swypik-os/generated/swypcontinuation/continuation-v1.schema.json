@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://swyp.dev/specs/continuation-v1.schema.json",
+  "title": "Swyp continuation transport v1",
+  "oneOf": [
+    { "$ref": "#/$defs/checkpoint" },
+    { "$ref": "#/$defs/ack" }
+  ],
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "identifier": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120,
+      "pattern": "^[A-Za-z0-9_.:-]+$"
+    },
+    "entry": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+    },
+    "checkpoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocol_version", "type", "state_version", "run_id", "module_hash", "entry",
+        "fuel_limit", "steps_used", "max_effect_bytes", "effect_bytes", "effect_cursor",
+        "effect_request_hash", "effect_result_hash", "state_hash", "state"
+      ],
+      "properties": {
+        "protocol_version": { "const": 1 },
+        "type": { "const": "continuation" },
+        "state_version": { "const": 1 },
+        "run_id": { "$ref": "#/$defs/identifier" },
+        "module_hash": { "$ref": "#/$defs/sha256" },
+        "entry": { "$ref": "#/$defs/entry" },
+        "fuel_limit": { "type": "integer", "minimum": 1, "maximum": 1000000 },
+        "steps_used": { "type": "integer", "minimum": 0, "maximum": 1000000 },
+        "max_effect_bytes": { "type": "integer", "minimum": 0, "maximum": 1048576 },
+        "effect_bytes": { "type": "integer", "minimum": 0, "maximum": 1048576 },
+        "effect_cursor": { "type": "integer", "minimum": 1 },
+        "effect_request_hash": { "$ref": "#/$defs/sha256" },
+        "effect_result_hash": { "$ref": "#/$defs/sha256" },
+        "state_hash": { "$ref": "#/$defs/sha256" },
+        "state": {
+          "type": "string",
+          "contentEncoding": "base64",
+          "maxLength": 8388608
+        }
+      }
+    },
+    "ack": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocol_version", "type", "run_id", "module_hash", "entry",
+        "effect_cursor", "state_hash", "status", "error_code"
+      ],
+      "properties": {
+        "protocol_version": { "const": 1 },
+        "type": { "const": "continuation_ack" },
+        "run_id": { "$ref": "#/$defs/identifier" },
+        "module_hash": { "$ref": "#/$defs/sha256" },
+        "entry": { "$ref": "#/$defs/entry" },
+        "effect_cursor": { "type": "integer", "minimum": 1 },
+        "state_hash": { "$ref": "#/$defs/sha256" },
+        "status": { "enum": ["accepted", "rejected"] },
+        "error_code": { "type": "string", "maxLength": 64 }
+      }
+    }
+  }
+}

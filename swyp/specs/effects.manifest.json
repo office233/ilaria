@@ -1,0 +1,259 @@
+{
+  "version": 1,
+  "declarations": [
+    {
+      "kind": "component",
+      "name": "BrokerEffectsV1",
+      "invariants": [
+        "guest effect requirements name authority but never grant it",
+        "the host binds each request to an authenticated lease and scoped grant",
+        "only clock.read and fs.read are supported by version one",
+        "uncertain or completed intents are never blindly replayed",
+        "execution receipts do not confer training eligibility",
+        "preflight executes no guest effects and pins a canonical Core IR snapshot",
+        "continuation checkpoints carry VM state but no authority and require host authentication before resume",
+        "a checkpoint is emitted only after the corresponding effect result has been incorporated"
+      ]
+    },
+    {
+      "kind": "record",
+      "name": "EffectPlan",
+      "fields": [
+        {
+          "name": "protocol_version",
+          "type": "u64"
+        },
+        {
+          "name": "module_hash",
+          "type": "string"
+        },
+        {
+          "name": "entry",
+          "type": "string"
+        },
+        {
+          "name": "effects",
+          "type": "string_list"
+        },
+        {
+          "name": "capability_bindings",
+          "type": "string_map"
+        }
+      ]
+    },
+    {
+      "kind": "record",
+      "name": "EffectRequest",
+      "fields": [
+        {
+          "name": "protocol_version",
+          "type": "u64"
+        },
+        {
+          "name": "request_id",
+          "type": "string"
+        },
+        {
+          "name": "module_hash",
+          "type": "string"
+        },
+        {
+          "name": "function",
+          "type": "string"
+        },
+        {
+          "name": "effect",
+          "type": "string"
+        },
+        {
+          "name": "capability",
+          "type": "string"
+        },
+        {
+          "name": "path",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "kind": "record",
+      "name": "EffectResult",
+      "fields": [
+        {
+          "name": "protocol_version",
+          "type": "u64"
+        },
+        {
+          "name": "request_id",
+          "type": "string"
+        },
+        {
+          "name": "status",
+          "type": "string"
+        },
+        {
+          "name": "value_type",
+          "type": "string"
+        },
+        {
+          "name": "value",
+          "type": "bytes"
+        },
+        {
+          "name": "error_code",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "kind": "record",
+      "name": "EffectReceipt",
+      "fields": [
+        {
+          "name": "protocol_version",
+          "type": "u64"
+        },
+        {
+          "name": "request_id",
+          "type": "string"
+        },
+        {
+          "name": "request_hash",
+          "type": "string"
+        },
+        {
+          "name": "result_hash",
+          "type": "string"
+        },
+        {
+          "name": "effect",
+          "type": "string"
+        },
+        {
+          "name": "capability",
+          "type": "string"
+        },
+        {
+          "name": "task_id",
+          "type": "string"
+        },
+        {
+          "name": "node_id",
+          "type": "string"
+        },
+        {
+          "name": "attempt_id",
+          "type": "string"
+        },
+        {
+          "name": "executor_id",
+          "type": "string"
+        },
+        {
+          "name": "grant_id",
+          "type": "string"
+        },
+        {
+          "name": "lease_id",
+          "type": "string"
+        },
+        {
+          "name": "fence",
+          "type": "u64"
+        },
+        {
+          "name": "intent_id",
+          "type": "string"
+        },
+        {
+          "name": "status",
+          "type": "string"
+        },
+        {
+          "name": "error_code",
+          "type": "string"
+        },
+        {
+          "name": "occurred_at_unix_ms",
+          "type": "i64"
+        },
+        {
+          "name": "privacy_class",
+          "type": "string"
+        },
+        {
+          "name": "signer_key_id",
+          "type": "string"
+        },
+        {
+          "name": "signature",
+          "type": "bytes"
+        }
+      ]
+    },
+    {
+      "kind": "record",
+      "name": "ContinuationCheckpoint",
+      "fields": [
+        {
+          "name": "protocol_version",
+          "type": "u64"
+        },
+        {
+          "name": "run_id",
+          "type": "string"
+        },
+        {
+          "name": "module_hash",
+          "type": "string"
+        },
+        {
+          "name": "effect_sequence",
+          "type": "u64"
+        },
+        {
+          "name": "continuation_hash",
+          "type": "string"
+        },
+        {
+          "name": "continuation",
+          "type": "bytes"
+        }
+      ]
+    },
+    {
+      "kind": "record",
+      "name": "ContinuationAck",
+      "fields": [
+        {
+          "name": "protocol_version",
+          "type": "u64"
+        },
+        {
+          "name": "run_id",
+          "type": "string"
+        },
+        {
+          "name": "module_hash",
+          "type": "string"
+        },
+        {
+          "name": "effect_sequence",
+          "type": "u64"
+        },
+        {
+          "name": "continuation_hash",
+          "type": "string"
+        },
+        {
+          "name": "status",
+          "type": "string"
+        },
+        {
+          "name": "error_code",
+          "type": "string"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,79 @@
+component BrokerEffectsV1 {
+    invariant "guest effect requirements name authority but never grant it";
+    invariant "the host binds each request to an authenticated lease and scoped grant";
+    invariant "only clock.read and fs.read are supported by version one";
+    invariant "uncertain or completed intents are never blindly replayed";
+    invariant "execution receipts do not confer training eligibility";
+    invariant "preflight executes no guest effects and pins a canonical Core IR snapshot";
+    invariant "continuation checkpoints carry VM state but no authority and require host authentication before resume";
+    invariant "a checkpoint is emitted only after the corresponding effect result has been incorporated";
+}
+
+record EffectPlan {
+    field protocol_version: u64;
+    field module_hash: string;
+    field entry: string;
+    field effects: string_list;
+    field capability_bindings: string_map;
+}
+
+record EffectRequest {
+    field protocol_version: u64;
+    field request_id: string;
+    field module_hash: string;
+    field function: string;
+    field effect: string;
+    field capability: string;
+    field path: string;
+}
+
+record EffectResult {
+    field protocol_version: u64;
+    field request_id: string;
+    field status: string;
+    field value_type: string;
+    field value: bytes;
+    field error_code: string;
+}
+
+record EffectReceipt {
+    field protocol_version: u64;
+    field request_id: string;
+    field request_hash: string;
+    field result_hash: string;
+    field effect: string;
+    field capability: string;
+    field task_id: string;
+    field node_id: string;
+    field attempt_id: string;
+    field executor_id: string;
+    field grant_id: string;
+    field lease_id: string;
+    field fence: u64;
+    field intent_id: string;
+    field status: string;
+    field error_code: string;
+    field occurred_at_unix_ms: i64;
+    field privacy_class: string;
+    field signer_key_id: string;
+    field signature: bytes;
+}
+
+record ContinuationCheckpoint {
+    field protocol_version: u64;
+    field run_id: string;
+    field module_hash: string;
+    field effect_sequence: u64;
+    field continuation_hash: string;
+    field continuation: bytes;
+}
+
+record ContinuationAck {
+    field protocol_version: u64;
+    field run_id: string;
+    field module_hash: string;
+    field effect_sequence: u64;
+    field continuation_hash: string;
+    field status: string;
+    field error_code: string;
+}

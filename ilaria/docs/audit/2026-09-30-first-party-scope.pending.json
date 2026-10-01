@@ -1,0 +1,37 @@
+{
+  "attestation_sha256": "7c3052f2b202a0e4e81793e5b30ce0c339332d03bb393d34308eb3e3664bbdc3",
+  "attested_by": "",
+  "files": [
+    {
+      "path": "runtime/connectome/connectome.go",
+      "sha256": "32cd8a6f334dc3835fba020ec07d9b6c99373c9a8ff7e58893752a48e7c7f5f9"
+    },
+    {
+      "path": "runtime/pce/capsule.go",
+      "sha256": "e83e532b3c553f12fb05617436e64ec0254647b02c2d2ca638b412520b9300a8"
+    },
+    {
+      "path": "runtime/pce/replay_artifact.go",
+      "sha256": "b254d4f3f7d053226c00d79d4526ad4b372a40c05479d8295b9c486ef7e39dd2"
+    },
+    {
+      "path": "runtime/protocol/contract.go",
+      "sha256": "37beb66a35b59a4dafca23d14c2f6009be5534b31b542837782debe0cb8e83ff"
+    },
+    {
+      "path": "runtime/router/router.go",
+      "sha256": "65ea3357a004741c095b7374c5b8b4c0b8b4b37069752820ee1d39ba2aca813f"
+    },
+    {
+      "path": "runtime/world/world.go",
+      "sha256": "4cd8a1dac0375654575454f29ac43d333abe8c36fec045213ec1ddd9bf4b7c85"
+    },
+    {
+      "path": "specs/myriad.swyp",
+      "sha256": "e3bcb8d254cbc508f282b605230184034955517509f0b770d4fca47bbd4adf47"
+    }
+  ],
+  "format": "ilaria-first-party-attestation-v1",
+  "ownership_attested": false,
+  "review_ref": ""
+}

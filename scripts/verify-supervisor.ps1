@@ -1,0 +1,57 @@
+[CmdletBinding()]
+param(
+    [string]$GoCommand = 'go',
+    [string]$PythonCommand = 'python',
+    [string]$LinuxCgroupRoot = $env:NEXUS_TEST_CGROUP_ROOT
+)
+
+$ErrorActionPreference = 'Stop'
+Set-StrictMode -Version Latest
+$root = Split-Path -Parent $PSScriptRoot
+$temporaryBase = [IO.Path]::GetFullPath([IO.Path]::GetTempPath())
+$temporary = Join-Path $temporaryBase ('nexus-supervisor-' + [Guid]::NewGuid().ToString('N'))
+$previousWork = $env:GOWORK
+$previousOS = $env:GOOS
+$previousArch = $env:GOARCH
+New-Item -ItemType Directory -Path $temporary | Out-Null
+try {
+    $env:GOWORK = 'off'
+    $hostTarget = @(& $GoCommand env GOHOSTOS GOHOSTARCH)
+    if ($LASTEXITCODE -ne 0 -or $hostTarget.Count -ne 2) { throw 'Cannot determine the native Go target.' }
+    $env:GOOS = $hostTarget[0].Trim()
+    $env:GOARCH = $hostTarget[1].Trim()
+    $extension = if ($env:GOOS -eq 'windows') { '.exe' } else { '' }
+    $commands = @(
+        @{ Product = 'swyp'; Command = 'swyp' },
+        @{ Product = 'swypik-os'; Command = 'plan-supervisor' },
+        @{ Product = 'ilaria'; Command = 'evidence-check' }
+    )
+    foreach ($command in $commands) {
+        Push-Location -LiteralPath (Join-Path $root $command.Product)
+        try {
+            & $GoCommand build -buildvcs=false -trimpath -o (Join-Path $temporary ($command.Command + $extension)) "./cmd/$($command.Command)"
+            if ($LASTEXITCODE -ne 0) { throw "Supervisor CLI build failed: $($command.Product)/$($command.Command)" }
+        } finally { Pop-Location }
+    }
+    $arguments = @(
+        (Join-Path $PSScriptRoot 'verify-supervisor.py'),
+        '--swyp', (Join-Path $temporary ('swyp' + $extension)),
+        '--supervisor', (Join-Path $temporary ('plan-supervisor' + $extension)),
+        '--verifier', (Join-Path $temporary ('evidence-check' + $extension))
+    )
+    if ($env:GOOS -eq 'linux') {
+        if (-not $LinuxCgroupRoot) { throw 'Linux supervisor v2 integration requires an explicit delegated cgroup root.' }
+        $arguments += @('--cgroup-root', $LinuxCgroupRoot)
+    }
+    & $PythonCommand @arguments
+    if ($LASTEXITCODE -ne 0) { throw 'Supervisor v2 integration gate failed.' }
+} finally {
+    $env:GOWORK = $previousWork
+    $env:GOOS = $previousOS
+    $env:GOARCH = $previousArch
+    $resolvedTemporary = [IO.Path]::GetFullPath($temporary)
+    if (([IO.Path]::GetDirectoryName($resolvedTemporary) -eq $temporaryBase.TrimEnd('\', '/')) -and
+        ([IO.Path]::GetFileName($resolvedTemporary) -match '^nexus-supervisor-[0-9a-f]{32}$')) {
+        Remove-Item -LiteralPath $resolvedTemporary -Recurse -Force
+    } else { throw "Refusing to remove unexpected temporary path: $resolvedTemporary" }
+}

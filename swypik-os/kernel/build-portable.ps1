@@ -210,6 +210,9 @@ $ArgsBase = @(
     "-target", "x86_64-windows-gnu",
     "-std=c11",
     "-Wall", "-Wextra", "-Werror",
+    # The UEFI continuation stack is 64 KiB; any larger frame (for example a
+    # big compound-literal temporary at -O0) overflows it at boot.
+    "-Wframe-larger-than=16384",
     "-Wno-unused-command-line-argument",
     "-Iinclude",
     "-ffreestanding",

@@ -1,5 +1,16 @@
 #include "swypik/arch/x86_64/platform_boot.h"
 
+/* Zero in place. A compound-literal assignment of this ~2.4 MiB structure is
+   materialized as a stack temporary at -O0, which overflows the 64 KiB boot
+   continuation stack (found by booting under OVMF/QEMU). */
+static void swyp_x86_platform_zero(void *pointer, size_t bytes) {
+    uint8_t *out = (uint8_t *)pointer;
+    size_t i;
+    for (i = 0u; i < bytes; ++i) {
+        out[i] = 0u;
+    }
+}
+
 static void *swyp_x86_platform_acpi_physical(void *context, uint64_t physical_address) {
     SwypX86NativeMmu *mmu = (SwypX86NativeMmu *)context;
     const SwypX86AddressSpaceHardwareOps *ops = swyp_x86_native_mmu_ops();
@@ -320,7 +331,7 @@ SwypStatus swyp_x86_platform_boot_init_from_acpi(SwypX86PlatformBoot *platform, 
         boot_ops->current_apic_id == NULL || kernel_root->active == 0u) {
         return SWYP_ERR_INVALID;
     }
-    *platform = (SwypX86PlatformBoot){0};
+    swyp_x86_platform_zero(platform, sizeof(*platform));
     platform->acpi = *acpi;
     platform->acpi_ready = 1u;
     if (platform->acpi.local_apic_address == 0u || platform->acpi.ioapic_count == 0u ||
@@ -377,7 +388,12 @@ SwypStatus swyp_x86_platform_boot_init_from_acpi(SwypX86PlatformBoot *platform, 
     }
     status = swyp_x86_platform_init_vtd(platform, page_allocator, kernel_root, native_mmu,
                                         address_hardware_context, native_ops, boot_ops);
-    if (status != SWYP_OK && status != SWYP_ERR_NOT_FOUND) {
+    if (status == SWYP_ERR_UNSUPPORTED) {
+        /* DMAR hardware is present but lacks capabilities the safe VT-d path
+           requires. Units were already shut down; continue without an IOMMU so
+           every driver DMA request is refused rather than halting the kernel. */
+        platform->iommu_status = status;
+    } else if (status != SWYP_OK && status != SWYP_ERR_NOT_FOUND) {
         return status;
     }
     status = swyp_kernel_runtime_init(&platform->runtime, page_allocator, address_hardware_context, native_ops,
@@ -431,7 +447,7 @@ SwypStatus swyp_x86_platform_boot_init(SwypX86PlatformBoot *platform, const Swyp
         native_ops == NULL || privilege == NULL || boot_info->acpi_rsdp_address == 0u || kernel_root->active == 0u) {
         return SWYP_ERR_INVALID;
     }
-    *platform = (SwypX86PlatformBoot){0};
+    swyp_x86_platform_zero(platform, sizeof(*platform));
     acpi_memory.context = native_mmu;
     acpi_memory.physical_to_virtual = swyp_x86_platform_acpi_physical;
     status = swyp_acpi_discover(boot_info->acpi_rsdp_address, &acpi_memory, &discovered);

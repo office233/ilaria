@@ -57,6 +57,16 @@ static void swyp_vtd_zero_page(void *page) {
     }
 }
 
+/* Zero in place: SwypX86Vtd is ~134 KiB, larger than the boot stack, so a
+   compound-literal assignment would overflow it at -O0. */
+static void swyp_vtd_zero_bytes(void *pointer, size_t bytes) {
+    uint8_t *out = (uint8_t *)pointer;
+    size_t i;
+    for (i = 0u; i < bytes; ++i) {
+        out[i] = 0u;
+    }
+}
+
 static void swyp_vtd_barrier(void) {
     __asm__ volatile("" : : : "memory");
 }
@@ -764,7 +774,7 @@ SwypStatus swyp_x86_vtd_init(SwypX86Vtd *vtd, uint16_t segment, SwypPageAllocato
         register_ops->read64 == NULL || register_ops->write64 == NULL) {
         return SWYP_ERR_INVALID;
     }
-    *vtd = (SwypX86Vtd){0};
+    swyp_vtd_zero_bytes(vtd, sizeof(*vtd));
     vtd->page_allocator = page_allocator;
     vtd->memory_context = memory_context;
     vtd->memory_ops = memory_ops;

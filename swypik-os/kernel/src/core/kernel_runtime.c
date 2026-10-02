@@ -2,6 +2,16 @@
 #include "swypik/kernel/kernel_entry.h"
 #include "swypik/arch/x86_64/vtd_router.h"
 
+/* Zero in place rather than assigning a compound literal: large literals are
+   materialized as stack temporaries at -O0 and the boot stack is 64 KiB. */
+static void swyp_kernel_runtime_zero(void *pointer, size_t bytes) {
+    uint8_t *out = (uint8_t *)pointer;
+    size_t i;
+    for (i = 0u; i < bytes; ++i) {
+        out[i] = 0u;
+    }
+}
+
 static int swyp_kernel_runtime_ready(const SwypKernelRuntime *runtime) {
     return runtime != NULL && runtime->initialized != 0u;
 }
@@ -542,11 +552,11 @@ SwypStatus swyp_kernel_runtime_load_driver_image(SwypKernelRuntime *runtime, uin
     if (slot == NULL) {
         return SWYP_ERR_NO_SPACE;
     }
-    *slot = (SwypX86LoadedDriverImage){0};
+    swyp_kernel_runtime_zero(slot, sizeof(*slot));
     status = swyp_x86_driver_image_load(&runtime->x86_driver_runtime, domain_id, lease_fence, image, image_bytes,
                                         stack_pages, slot, initial_context);
     if (status != SWYP_OK && slot->active == 0u) {
-        *slot = (SwypX86LoadedDriverImage){0};
+        swyp_kernel_runtime_zero(slot, sizeof(*slot));
     }
     return status;
 }

@@ -39,6 +39,11 @@ typedef struct SwypX86PlatformBoot {
     uint32_t vtd_unit_count;
     uint32_t timer_ready;
     uint32_t runtime_ready;
+    /* Status from VT-d bring-up when DMAR units exist but cannot be used
+       safely (for example no coherent page-walk). The platform then boots
+       without an IOMMU and driver DMA is refused; it is never silently
+       granted. SWYP_OK when the IOMMU is active or no DMAR unit exists. */
+    SwypStatus iommu_status;
 } SwypX86PlatformBoot;
 
 typedef struct SwypX86PlatformBootOps {

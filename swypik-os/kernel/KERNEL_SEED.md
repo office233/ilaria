@@ -230,7 +230,25 @@ compiles the same core with `-std=c11 -Wall -Wextra -Werror` before executing th
 host tests. This does not substitute for the EFI/PE inspection performed by
 `build.ps1`.
 
-QEMU is still required for actual firmware/boot execution evidence and is not
-installed on this workstation. Host-core semantics and the complete EFI artifact
-are build-verified, but native CR3/APIC execution is not claimed until the image
-boots under OVMF/QEMU or physical hardware.
+QEMU boot evidence (2026-10-02): `boot-qemu.py` boots the `build-portable.ps1`
+image from a FAT ESP under OVMF in `qemu-system-x86_64` (TCG, `-no-reboot`),
+requires the pre-handoff ConOut lines on serial, waits for the vCPU to halt,
+dumps guest RAM and reads the live `SwypBootInfo.boot_flags`. All ten stages
+through `DRIVER_ABI_READY` are reached with 1 or 4 CPUs, 512 MiB or 1 GiB and
+with an emulated Intel VT-d unit, with no CPU reset. Getting there fixed four
+boot-only defects that host tests could not see: privilege validation rejected
+the TSS busy bit set by `LTR` and the accessed bits the CPU sets on loaded
+segment descriptors; compound-literal zeroing of `SwypX86PlatformBoot`
+(~2.4 MiB) and `SwypX86Vtd` (~134 KiB) created stack temporaries far larger than
+the 64 KiB continuation stack (`-Wframe-larger-than=16384` now fails the build);
+and DMAR hardware without coherent page walks (QEMU's emulated VT-d) halted the
+boot instead of continuing without an IOMMU. In that case `iommu_status`
+records `SWYP_ERR_UNSUPPORTED`, `IOMMU_READY` stays clear and driver DMA is
+refused. `IOMMU_READY` is not proven on any platform, and physical hardware is
+not claimed. TCG emulation does not measure timing.
+
+```bash
+python3 boot-qemu.py --efi out/efi-portable/BOOTX64.EFI \
+  --ovmf-code /usr/share/OVMF/OVMF_CODE_4M.fd --ovmf-vars /usr/share/OVMF/OVMF_VARS_4M.fd \
+  [--cpus 4] [--memory-mib 1024] [--iommu]
+```

@@ -6,6 +6,13 @@
 #define SWYP_X86_GDT_KERNEL_DATA UINT64_C(0x00cf92000000ffff)
 #define SWYP_X86_GDT_USER_DATA UINT64_C(0x00cff2000000ffff)
 #define SWYP_X86_GDT_USER_CODE UINT64_C(0x00affa000000ffff)
+/* The CPU sets a segment descriptor's accessed bit when it loads a selector
+   that references it, so a live GDT may legitimately carry it. */
+#define SWYP_X86_GDT_ACCESSED UINT64_C(0x0000010000000000)
+
+static int swyp_x86_privilege_segment_matches(uint64_t actual, uint64_t expected) {
+    return (actual | SWYP_X86_GDT_ACCESSED) == (expected | SWYP_X86_GDT_ACCESSED);
+}
 
 static int swyp_x86_privilege_canonical(uint64_t address) {
     return address <= UINT64_C(0x00007fffffffffff) || address >= UINT64_C(0xffff800000000000);
@@ -182,13 +189,18 @@ uint64_t swyp_x86_privilege_idt_handler(const SwypX86PrivilegeState *state, uint
 SwypStatus swyp_x86_privilege_validate(const SwypX86PrivilegeState *state) {
     uint32_t i;
     if (state == NULL || state->initialized == 0u || state->gdt[0] != 0u ||
-        state->gdt[1] != SWYP_X86_GDT_KERNEL_CODE || state->gdt[2] != SWYP_X86_GDT_KERNEL_DATA ||
-        state->gdt[3] != SWYP_X86_GDT_USER_DATA || state->gdt[4] != SWYP_X86_GDT_USER_CODE ||
+        !swyp_x86_privilege_segment_matches(state->gdt[1], SWYP_X86_GDT_KERNEL_CODE) ||
+        !swyp_x86_privilege_segment_matches(state->gdt[2], SWYP_X86_GDT_KERNEL_DATA) ||
+        !swyp_x86_privilege_segment_matches(state->gdt[3], SWYP_X86_GDT_USER_DATA) ||
+        !swyp_x86_privilege_segment_matches(state->gdt[4], SWYP_X86_GDT_USER_CODE) ||
         state->gdtr.limit != sizeof(state->gdt) - 1u || state->gdtr.base != (uint64_t)(uintptr_t)&state->gdt[0] ||
         state->idtr.limit != sizeof(state->idt) - 1u || state->idtr.base != (uint64_t)(uintptr_t)&state->idt[0] ||
         swyp_x86_privilege_decode_tss_base(state) != (uint64_t)(uintptr_t)&state->tss ||
         swyp_x86_privilege_decode_tss_limit(state) != sizeof(state->tss) - 1u ||
-        ((state->gdt[5] >> 40) & UINT64_C(0xff)) != UINT64_C(0x89) ||
+        /* LTR marks the loaded TSS busy (type 0x9 -> 0xB). Both encode a present
+           64-bit TSS, so validation must accept either after the task register
+           is loaded; any other type is still rejected. */
+        ((state->gdt[5] >> 40) & UINT64_C(0xfd)) != UINT64_C(0x89) ||
         !swyp_x86_privilege_stack_valid(state->tss.rsp0) || state->tss.io_map_base != sizeof(state->tss)) {
         return SWYP_ERR_CORRUPT;
     }

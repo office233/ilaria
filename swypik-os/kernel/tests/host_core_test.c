@@ -1232,6 +1232,35 @@ static void test_x86_privilege_descriptors(void) {
     CHECK(swyp_x86_privilege_validate(&state) == SWYP_ERR_CORRUPT);
 }
 
+/* Real hardware sets the TSS busy bit when LTR loads the task register and the
+   accessed bit of every segment descriptor it loads; the exception IDT is
+   installed afterwards, so validation must accept both. Found by booting the
+   EFI image under OVMF/QEMU, where boot halted before TRAP_ABI_READY. */
+static void test_x86_privilege_accepts_busy_tss_after_ltr(void) {
+    SwypX86PrivilegeState state;
+    uint64_t access_mask = UINT64_C(0xff) << 40;
+    uint64_t accessed = UINT64_C(1) << 40;
+    CHECK(swyp_x86_privilege_init(&state, UINT64_C(0xffff800000100000)) == SWYP_OK);
+    CHECK(swyp_x86_privilege_set_ist(&state, 1u, UINT64_C(0xffff800000110000)) == SWYP_OK);
+    state.gdt[5] = (state.gdt[5] & ~access_mask) | (UINT64_C(0x8b) << 40);
+    CHECK(swyp_x86_privilege_validate(&state) == SWYP_OK);
+    /* Loading DS/SS/CS sets the descriptors' accessed bit. */
+    state.gdt[1] |= accessed;
+    state.gdt[2] |= accessed;
+    state.gdt[3] |= accessed;
+    state.gdt[4] |= accessed;
+    CHECK(swyp_x86_privilege_validate(&state) == SWYP_OK);
+    CHECK(swyp_x86_trap_install_exception_idt(&state, 1u) == SWYP_OK);
+    state.gdt[2] ^= UINT64_C(1) << 41; /* writable -> read-only data is a real change */
+    CHECK(swyp_x86_privilege_validate(&state) == SWYP_ERR_CORRUPT);
+    state.gdt[2] ^= UINT64_C(1) << 41;
+    CHECK(swyp_x86_privilege_validate(&state) == SWYP_OK);
+    state.gdt[5] = (state.gdt[5] & ~access_mask) | (UINT64_C(0x82) << 40); /* LDT, not a TSS */
+    CHECK(swyp_x86_privilege_validate(&state) == SWYP_ERR_CORRUPT);
+    state.gdt[5] = (state.gdt[5] & ~access_mask) | (UINT64_C(0x0b) << 40); /* busy TSS, not present */
+    CHECK(swyp_x86_privilege_validate(&state) == SWYP_ERR_CORRUPT);
+}
+
 static SwypStatus test_trap_handler_ok(void *context, SwypX86TrapFrame *frame) {
     uint64_t *count = (uint64_t *)context;
     if (count == NULL || frame == NULL) {
@@ -4468,6 +4497,65 @@ static void test_x86_platform_boot_from_acpi(void) {
     CHECK(fake_x86_used_pages(&pool) == 0u);
 }
 
+/* QEMU's emulated intel-iommu does not report coherent page walks (ECAP.C), so
+   the safe VT-d path refuses it. Boot must continue without an IOMMU, record
+   why, and leave driver DMA refused instead of halting the kernel. */
+static void test_x86_platform_boot_without_coherent_vtd(void) {
+    FakeX86PagePool pool = {0};
+    FakeX86Hardware hardware = {.pool = &pool};
+    SwypPageAllocator allocator = {.context = &pool, .ops = &fake_x86_allocator_ops};
+    SwypX86KernelRoot root;
+    SwypX86NativeMmu native_mmu;
+    SwypX86PrivilegeState privilege;
+    SwypX86PlatformBoot platform;
+    SwypAcpiPlatform acpi = {0};
+    FakeVtdRegisters vtd_registers = {
+        .capability = (UINT64_C(1) << 10) | UINT64_C(1),
+        .extended_capability = TEST_VTD_IRO << 8, /* no coherent page-walk bit */
+    };
+    FakePlatformBootMap map = {
+        .lapic_physical = UINT64_C(0xfee00000),
+        .ioapic_physical = UINT64_C(0xfec00000),
+        .ecam_physical = UINT64_C(0xe0000000),
+        .vtd_physical = UINT64_C(0xfed90000),
+    };
+    SwypX86PlatformBootOps boot_ops = {
+        .context = &map,
+        .map_mmio = fake_platform_boot_map,
+        .current_apic_id = fake_platform_boot_apic_id,
+        .vtd_register_context = &vtd_registers,
+        .vtd_register_ops = &fake_vtd_register_ops,
+    };
+
+    *(uint32_t *)(void *)(map.ioapic + 0x10u) = (UINT32_C(23) << 16) | UINT32_C(0x11);
+    acpi.local_apic_address = map.lapic_physical;
+    acpi.ioapic_count = 1u;
+    acpi.ioapics[0].address = (uint32_t)map.ioapic_physical;
+    acpi.ioapics[0].gsi_base = 0u;
+    acpi.dmar_unit_count = 1u;
+    acpi.dmar_units[0].register_base = map.vtd_physical;
+    acpi.dmar_units[0].segment = 0u;
+    acpi.dmar_units[0].flags = 1u;
+
+    CHECK(swyp_x86_64_kernel_root_init(&root, &allocator, &hardware, &fake_x86_hardware_ops,
+                                       SWYP_X86_64_DIRECT_MAP_BASE, UINT64_C(0x100000000)) == SWYP_OK);
+    CHECK(swyp_x86_64_kernel_root_activate(&root) == SWYP_OK);
+    CHECK(swyp_x86_native_mmu_init_sparse(&native_mmu, SWYP_X86_64_DIRECT_MAP_BASE,
+                                          UINT64_C(0x100000000)) == SWYP_OK);
+    CHECK(swyp_x86_privilege_init(&privilege, UINT64_C(0x700000)) == SWYP_OK);
+    CHECK(swyp_x86_platform_boot_init_from_acpi(&platform, &acpi, &allocator, &root, &native_mmu, &hardware,
+                                                &fake_x86_hardware_ops, &privilege, &boot_ops) == SWYP_OK);
+    CHECK(platform.runtime_ready != 0u && platform.apic_ready != 0u);
+    CHECK(platform.iommu_ready == 0u && platform.vtd_unit_count == 0u);
+    CHECK(platform.iommu_status == SWYP_ERR_UNSUPPORTED);
+    CHECK(platform.runtime.x86_driver_runtime.iommu == NULL);
+    CHECK(!swyp_x86_vtd_is_enabled(&platform.vtd));
+
+    hardware.current_root = 0u;
+    CHECK(swyp_x86_64_kernel_root_destroy(&root) == SWYP_OK);
+    CHECK(fake_x86_used_pages(&pool) == 0u);
+}
+
 static void test_x86_platform_boot_multi_vtd_router(void) {
     FakeX86PagePool pool = {0};
     FakeX86Hardware hardware = {.pool = &pool};
@@ -4601,6 +4689,7 @@ int main(void) {
     test_x86_native_backend_nonprivileged_contracts();
     test_x86_platform_map_registry_failure_rolls_back();
     test_x86_privilege_descriptors();
+    test_x86_privilege_accepts_busy_tss_after_ltr();
     test_x86_trap_abi();
     test_x86_apic();
     test_x86_lapic_timer_modes();
@@ -4622,6 +4711,7 @@ int main(void) {
     test_scheduler_kernel_driver_cr3_dispatch();
     test_x86_kernel_continuation();
     test_x86_platform_boot_from_acpi();
+    test_x86_platform_boot_without_coherent_vtd();
     test_x86_platform_boot_multi_vtd_router();
     test_ipc();
     test_device_graph_wire();

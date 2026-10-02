@@ -118,9 +118,16 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends qemu-user
-          echo "SWYP_QEMU_AARCH64=$(command -v qemu-aarch64)" >> "$GITHUB_ENV"
+
+      - name: Go test with AArch64 runtime parity
+        if: matrix.os == 'ubuntu-latest'
+        env:
+          SWYP_QEMU_AARCH64: /usr/bin/qemu-aarch64
+        working-directory: swyp
+        run: go test -count=1 ./...
 
       - name: Go test
+        if: matrix.os == 'windows-latest'
         working-directory: swyp
         run: go test -count=1 ./...
 

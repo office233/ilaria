@@ -31,6 +31,20 @@ type Executable struct {
 type RunResult struct {
 	Value Value `json:"value"`
 	Steps int   `json:"steps"`
+	data  []byte
+}
+
+// ResolveBytes resolves a descriptor in this run's immutable arena, returning an
+// owned copy. Executable.ResolveBytes remains restricted to module constants.
+func (r RunResult) ResolveBytes(v Value) ([]byte, error) {
+	if v.typ != Bytes {
+		return nil, diagnostic("type_mismatch", "value is not bytes")
+	}
+	offset, length, err := byteSpanInArena(v.u, len(r.data))
+	if err != nil {
+		return nil, err
+	}
+	return append([]byte(nil), r.data[offset:offset+length]...), nil
 }
 
 func Prepare(m Module) (*Executable, error) {
@@ -225,6 +239,7 @@ type machine struct {
 	entry       string
 	runID       string
 	storage     *storageabi.Runtime
+	data        []byte
 	effects     *effectExecution
 	frames      []*machineFrame
 }
@@ -301,7 +316,7 @@ func (e *Executable) run(ctx context.Context, entry string, args []Value, fuel i
 	}
 	m := machine{executable: e, ctx: ctx, limit: fuel, fast: fast}
 	value, err := m.call(entry, args, 1)
-	return RunResult{Value: value, Steps: m.used}, err
+	return RunResult{Value: value, Steps: m.used, data: m.byteData()}, err
 }
 func (m *machine) call(name string, args []Value, depth int) (Value, error) {
 	if m.effects == nil || m.effects.checkpoint == nil {
@@ -378,6 +393,8 @@ func (m *machine) callUntracked(name string, args []Value, depth int) (Value, er
 					value, err = m.bytesLenValue(slots[ins.Args[0]])
 				case "bytes.get":
 					value, err = m.bytesGetValue(slots[ins.Args[0]], slots[ins.Args[1]])
+				case "bytes.from_storage_u64":
+					value, err = m.bytesFromStorageU64(slots[ins.Args[0]], slots[ins.Args[1]])
 				case "clock.read", "fs.read":
 					value, err = m.executeEffect(f.Function, ins, slots)
 				case "storage.alloc_u64":
@@ -503,6 +520,8 @@ func (m *machine) runFrame(f executableFunction, frame *machineFrame, depth, blo
 					value, err = m.bytesLenValue(frame.slots[ins.Args[0]])
 				case "bytes.get":
 					value, err = m.bytesGetValue(frame.slots[ins.Args[0]], frame.slots[ins.Args[1]])
+				case "bytes.from_storage_u64":
+					value, err = m.bytesFromStorageU64(frame.slots[ins.Args[0]], frame.slots[ins.Args[1]])
 				case "clock.read", "fs.read":
 					value, err = m.executeEffect(f.Function, ins, frame.slots)
 				case "storage.alloc_u64":

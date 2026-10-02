@@ -14,6 +14,7 @@ const (
 	fastCall
 	fastBytesLen
 	fastBytesGet
+	fastBytesFromStorageU64
 	fastStorageAllocU64
 	fastStorageLoadU64
 	fastStorageStoreU64
@@ -173,6 +174,10 @@ func prepareFastBlocks(f Function, constants [][]Value) [][]fastInstruction {
 				fi.a = ins.Args[0]
 			case "bytes.get":
 				fi.kind = fastBytesGet
+				fi.a = ins.Args[0]
+				fi.b = ins.Args[1]
+			case "bytes.from_storage_u64":
+				fi.kind = fastBytesFromStorageU64
 				fi.a = ins.Args[0]
 				fi.b = ins.Args[1]
 			case "storage.alloc_u64":
@@ -575,6 +580,8 @@ func (m *machine) executeFastInstruction(ins fastInstruction, slots []Value, dep
 		return m.bytesLenValue(slots[ins.a])
 	case fastBytesGet:
 		return m.bytesGetValue(slots[ins.a], slots[ins.b])
+	case fastBytesFromStorageU64:
+		return m.bytesFromStorageU64(slots[ins.a], slots[ins.b])
 	case fastStorageAllocU64:
 		return m.storageAllocU64(slots[ins.a])
 	case fastStorageLoadU64:

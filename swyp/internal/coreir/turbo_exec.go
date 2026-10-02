@@ -40,7 +40,7 @@ func (e *Executable) RunTurbo(ctx context.Context, entry string, args []Value, f
 	}
 	m := machine{executable: e, ctx: ctx, limit: fuel, fast: true}
 	raw, err := m.callTurbo(entry, rawArgs, 1)
-	return RunResult{Value: rawToValue(f.Result, raw), Steps: m.used}, err
+	return RunResult{Value: rawToValue(f.Result, raw), Steps: m.used, data: m.byteData()}, err
 }
 
 func valueToRaw(v Value) uint64 {
@@ -174,6 +174,9 @@ func (m *machine) executeTurboInstruction(ins turboInstruction, f executableFunc
 		return m.bytesLenRaw(slots[int(ins.a)])
 	case fastBytesGet:
 		return m.bytesGetRaw(slots[int(ins.a)], slots[int(ins.b)])
+	case fastBytesFromStorageU64:
+		value, err := m.bytesFromStorageU64(Uint(slots[int(ins.a)]), Uint(slots[int(ins.b)]))
+		return value.u, err
 	case fastStorageAllocU64:
 		value, err := m.storageAllocU64(Uint(slots[int(ins.a)]))
 		if err != nil {

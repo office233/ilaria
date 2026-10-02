@@ -404,7 +404,7 @@ func arm64MachineHasProcessIO(f SSAFunction) bool {
 		}
 		for _, ins := range block.Instructions {
 			if ins.Op == "io.stdout" || ins.Op == "io.stderr" || ins.Op == "clock.read" || ins.Op == "rng.sample" || ins.Op == "fs.read" || ins.Op == "fs.write" || ins.Op == "bytes.get" || ins.Op == "net.connect" || ins.Op == "net.fetch" || ins.Op == "process.exec" ||
-				ins.Op == "storage.alloc_u64" || ins.Op == "storage.load_u64" || ins.Op == "storage.store_u64" || ins.Op == "storage.free" {
+				ins.Op == "storage.alloc_u64" || ins.Op == "storage.load_u64" || ins.Op == "storage.store_u64" || ins.Op == "storage.free" || ins.Op == "bytes.from_storage_u64" {
 				return true
 			}
 		}
@@ -709,7 +709,7 @@ func emitARM64CFGMachineCallsFunction(f SSAFunction, plan SSARegisterPlan, allow
 				}
 				continue
 			}
-			if ins.Op == "storage.alloc_u64" || ins.Op == "storage.load_u64" || ins.Op == "storage.store_u64" || ins.Op == "storage.free" {
+			if ins.Op == "storage.alloc_u64" || ins.Op == "storage.load_u64" || ins.Op == "storage.store_u64" || ins.Op == "storage.free" || ins.Op == "bytes.from_storage_u64" {
 				if !allowProcessIO {
 					return nil, nil, fmt.Errorf("arm64 cfg machine calls: %s requires standalone process backend", ins.Op)
 				}
@@ -1046,7 +1046,7 @@ func arm64ProcessRuntimeHelper(name string) bool {
 		"__swyp_rt_stdout_ieee64",
 		"__swyp_rt_stderr_i64", "__swyp_rt_stderr_u64", "__swyp_rt_stderr_bool", "__swyp_rt_stderr_ieee64",
 		"__swyp_rt_clock_u64", "__swyp_rt_rng_u64", "__swyp_rt_fs_read", "__swyp_rt_fs_write", "__swyp_rt_bytes_get", "__swyp_rt_net_connect", "__swyp_rt_net_fetch",
-		"__swyp_rt_storage_alloc_u64", "__swyp_rt_storage_load_u64", "__swyp_rt_storage_store_u64", "__swyp_rt_storage_free":
+		"__swyp_rt_storage_alloc_u64", "__swyp_rt_storage_load_u64", "__swyp_rt_storage_store_u64", "__swyp_rt_storage_free", "__swyp_rt_bytes_from_storage_u64":
 		return true
 	default:
 		return false
@@ -1055,6 +1055,7 @@ func arm64ProcessRuntimeHelper(name string) bool {
 
 func emitARM64MachineStorage(b *arm64MachineBuilder, f SSAFunction, plan SSARegisterPlan, ins SSAInstruction, layout arm64MachineCallFrame) error {
 	wantArgs, helper := 0, ""
+	result := U64
 	switch ins.Op {
 	case "storage.alloc_u64":
 		wantArgs, helper = 1, "__swyp_rt_storage_alloc_u64"
@@ -1064,6 +1065,8 @@ func emitARM64MachineStorage(b *arm64MachineBuilder, f SSAFunction, plan SSARegi
 		wantArgs, helper = 3, "__swyp_rt_storage_store_u64"
 	case "storage.free":
 		wantArgs, helper = 1, "__swyp_rt_storage_free"
+	case "bytes.from_storage_u64":
+		wantArgs, helper, result = 2, "__swyp_rt_bytes_from_storage_u64", Bytes
 	default:
 		return fmt.Errorf("arm64 storage: unsupported operation %q", ins.Op)
 	}
@@ -1110,8 +1113,8 @@ func emitARM64MachineStorage(b *arm64MachineBuilder, f SSAFunction, plan SSARegi
 		}
 	}
 	if ins.Dest >= 0 {
-		if int(ins.Dest) >= len(f.ValueTypes) || f.ValueTypes[ins.Dest] != U64 {
-			return fmt.Errorf("arm64 storage: destination must be u64")
+		if int(ins.Dest) >= len(f.ValueTypes) || f.ValueTypes[ins.Dest] != result {
+			return fmt.Errorf("arm64 storage: destination must be %s", result)
 		}
 		loc := plan.Locations[ins.Dest]
 		if loc.Spill >= 0 {

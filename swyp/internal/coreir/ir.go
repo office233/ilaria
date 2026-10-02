@@ -348,6 +348,11 @@ func (m Module) Validate() error {
 						return fail("bytes.get requires bytes and u64 operands")
 					}
 					result, trap = U64, true
+				case "bytes.from_storage_u64":
+					if len(types) != 2 || types[0] != U64 || types[1] != U64 {
+						return fail("bytes.from_storage_u64 requires storage-id and length u64 operands")
+					}
+					result, trap = Bytes, true
 				case "storage.alloc_u64":
 					if len(types) != 1 || types[0] != U64 {
 						return fail("storage.alloc_u64 requires element-count u64")

@@ -95,7 +95,7 @@ func emitX64CFGMachineModuleMode(functions []SSAFunction, plans map[string]SSARe
 	if !ok {
 		return X64ProcessMachineCode{}, fmt.Errorf("x64 cfg machine module: entry %q not found", entry)
 	}
-	if err := validateX64CFGMachineCalls(byName, entry); err != nil {
+	if err := validateX64CFGMachineCalls(byName, entry, allowProcessIO); err != nil {
 		return X64ProcessMachineCode{}, err
 	}
 
@@ -151,7 +151,7 @@ func emitX64CFGMachineModuleMode(functions []SSAFunction, plans map[string]SSARe
 	return X64ProcessMachineCode{Code: code, RuntimeFixups: runtimeFixups}, nil
 }
 
-func validateX64CFGMachineCalls(functions map[string]SSAFunction, entry string) error {
+func validateX64CFGMachineCalls(functions map[string]SSAFunction, entry string, allowProcessIO bool) error {
 	state := make(map[string]uint8, len(functions))
 	var visit func(string) error
 	visit = func(name string) error {
@@ -181,7 +181,7 @@ func validateX64CFGMachineCalls(functions map[string]SSAFunction, entry string) 
 				if len(ins.Args) != len(callee.Params) || len(ins.Args) > 4 {
 					return fmt.Errorf("x64 cfg machine module: %s -> %s signature arity mismatch", name, ins.Callee)
 				}
-				if caller.ValueTypes[ins.Dest] != callee.Result || !x64MachineCallType(callee.Result) {
+				if caller.ValueTypes[ins.Dest] != callee.Result || !x64MachineCallType(callee.Result) || (callee.Result == Bytes && !allowProcessIO) {
 					return fmt.Errorf("x64 cfg machine module: %s -> %s result type mismatch", name, ins.Callee)
 				}
 				for i, arg := range ins.Args {
@@ -194,7 +194,7 @@ func validateX64CFGMachineCalls(functions map[string]SSAFunction, entry string) 
 					}
 					argType := caller.ValueTypes[arg]
 					paramType := callee.ValueTypes[param]
-					if argType != paramType || !x64MachineCallType(paramType) {
+					if argType != paramType || !x64MachineCallType(paramType) || (paramType == Bytes && !allowProcessIO) {
 						return fmt.Errorf("x64 cfg machine module: %s -> %s argument %d type mismatch %s/%s", name, ins.Callee, i, argType, paramType)
 					}
 				}
@@ -218,7 +218,7 @@ func validateX64CFGMachineCalls(functions map[string]SSAFunction, entry string) 
 }
 
 func x64MachineCallType(t Type) bool {
-	return t == I64 || t == U64 || t == Bool || t == IEEE64
+	return t == I64 || t == U64 || t == Bool || t == IEEE64 || t == Bytes
 }
 
 func emitX64CFGMachineFunction(f SSAFunction, plan SSARegisterPlan, allowCalls, allowProcessIO bool) ([]byte, []x64CallFixup, error) {
@@ -650,7 +650,7 @@ func (b *x64MachineBuilder) emitCFGInstruction(f SSAFunction, plan SSARegisterPl
 		}
 		return b.emitCFGBytesGetInstruction(f, plan, ins, activeGPRs)
 	}
-	if ins.Op == "storage.alloc_u64" || ins.Op == "storage.load_u64" || ins.Op == "storage.store_u64" || ins.Op == "storage.free" {
+	if ins.Op == "storage.alloc_u64" || ins.Op == "storage.load_u64" || ins.Op == "storage.store_u64" || ins.Op == "storage.free" || ins.Op == "bytes.from_storage_u64" {
 		if !allowProcessIO {
 			return fmt.Errorf("x64 cfg machine: %s requires standalone process backend", ins.Op)
 		}
@@ -660,7 +660,7 @@ func (b *x64MachineBuilder) emitCFGInstruction(f SSAFunction, plan SSARegisterPl
 		return fmt.Errorf("x64 cfg machine: instruction %s has no destination", ins.Op)
 	}
 	if ins.Op == "call" {
-		return b.emitCFGCallInstruction(f, plan, ins, activeGPRs)
+		return b.emitCFGCallInstruction(f, plan, ins, activeGPRs, allowProcessIO)
 	}
 	destLoc := plan.Locations[ins.Dest]
 	if registerClass(f.ValueTypes[ins.Dest]) == RegisterFP ||
@@ -1100,7 +1100,7 @@ func x64ProcessRuntimeHelper(name string) bool {
 		"__swyp_rt_stdout_ieee64",
 		"__swyp_rt_stderr_i64", "__swyp_rt_stderr_u64", "__swyp_rt_stderr_bool", "__swyp_rt_stderr_ieee64",
 		"__swyp_rt_clock_u64", "__swyp_rt_rng_u64", "__swyp_rt_fs_read", "__swyp_rt_fs_write", "__swyp_rt_bytes_get", "__swyp_rt_net_connect", "__swyp_rt_net_fetch",
-		"__swyp_rt_storage_alloc_u64", "__swyp_rt_storage_load_u64", "__swyp_rt_storage_store_u64", "__swyp_rt_storage_free":
+		"__swyp_rt_storage_alloc_u64", "__swyp_rt_storage_load_u64", "__swyp_rt_storage_store_u64", "__swyp_rt_storage_free", "__swyp_rt_bytes_from_storage_u64":
 		return true
 	default:
 		return false
@@ -1109,6 +1109,7 @@ func x64ProcessRuntimeHelper(name string) bool {
 
 func (b *x64MachineBuilder) emitCFGStorageInstruction(f SSAFunction, plan SSARegisterPlan, ins SSAInstruction, activeGPRs int) error {
 	wantArgs, helper := 0, ""
+	result := U64
 	switch ins.Op {
 	case "storage.alloc_u64":
 		wantArgs, helper = 1, "__swyp_rt_storage_alloc_u64"
@@ -1118,6 +1119,8 @@ func (b *x64MachineBuilder) emitCFGStorageInstruction(f SSAFunction, plan SSAReg
 		wantArgs, helper = 3, "__swyp_rt_storage_store_u64"
 	case "storage.free":
 		wantArgs, helper = 1, "__swyp_rt_storage_free"
+	case "bytes.from_storage_u64":
+		wantArgs, helper, result = 2, "__swyp_rt_bytes_from_storage_u64", Bytes
 	default:
 		return fmt.Errorf("x64 storage: unsupported operation %q", ins.Op)
 	}
@@ -1148,8 +1151,8 @@ func (b *x64MachineBuilder) emitCFGStorageInstruction(f SSAFunction, plan SSAReg
 	b.testRegReg(x64RDX, x64RDX)
 	b.boundsFailureFixups = append(b.boundsFailureFixups, b.jccRel32(0x5))
 	if ins.Dest >= 0 {
-		if int(ins.Dest) >= len(f.ValueTypes) || f.ValueTypes[ins.Dest] != U64 {
-			return fmt.Errorf("x64 storage: destination must be u64")
+		if int(ins.Dest) >= len(f.ValueTypes) || f.ValueTypes[ins.Dest] != result {
+			return fmt.Errorf("x64 storage: destination must be %s", result)
 		}
 		loc := plan.Locations[ins.Dest]
 		if loc.Spill >= 0 {
@@ -1321,7 +1324,7 @@ func (b *x64MachineBuilder) emitCFGNetFetchInstruction(f SSAFunction, plan SSARe
 	return nil
 }
 
-func (b *x64MachineBuilder) emitCFGCallInstruction(f SSAFunction, plan SSARegisterPlan, ins SSAInstruction, activeGPRs int) error {
+func (b *x64MachineBuilder) emitCFGCallInstruction(f SSAFunction, plan SSARegisterPlan, ins SSAInstruction, activeGPRs int, allowProcessIO bool) error {
 	if ins.Dest < 0 || int(ins.Dest) >= len(f.ValueTypes) {
 		return fmt.Errorf("x64 cfg machine call: invalid destination")
 	}
@@ -1332,14 +1335,14 @@ func (b *x64MachineBuilder) emitCFGCallInstruction(f SSAFunction, plan SSARegist
 		return fmt.Errorf("x64 cfg machine call: supports at most 4 positional arguments")
 	}
 	resultType := f.ValueTypes[ins.Dest]
-	if !x64MachineCallType(resultType) {
+	if !x64MachineCallType(resultType) || (resultType == Bytes && !allowProcessIO) {
 		return fmt.Errorf("x64 cfg machine call: result type %s is unsupported", resultType)
 	}
 	for i, value := range ins.Args {
 		if value < 0 || int(value) >= len(f.ValueTypes) {
 			return fmt.Errorf("x64 cfg machine call: invalid argument %d", i)
 		}
-		if !x64MachineCallType(f.ValueTypes[value]) {
+		if !x64MachineCallType(f.ValueTypes[value]) || (f.ValueTypes[value] == Bytes && !allowProcessIO) {
 			return fmt.Errorf("x64 cfg machine call: argument %d type %s is unsupported", i, f.ValueTypes[value])
 		}
 	}

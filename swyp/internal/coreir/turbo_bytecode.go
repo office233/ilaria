@@ -82,6 +82,10 @@ func prepareTurboBlocks(f Function, constants [][]Value) ([][]turboInstruction, 
 				ti.kind = fastBytesGet
 				ti.a = int16(ins.Args[0])
 				ti.b = int16(ins.Args[1])
+			case "bytes.from_storage_u64":
+				ti.kind = fastBytesFromStorageU64
+				ti.a = int16(ins.Args[0])
+				ti.b = int16(ins.Args[1])
 			case "storage.alloc_u64":
 				ti.kind = fastStorageAllocU64
 				ti.a = int16(ins.Args[0])

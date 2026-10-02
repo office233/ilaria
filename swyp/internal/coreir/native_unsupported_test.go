@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestNativeCoreRejectsByteDescriptorsWithoutPanic(t *testing.T) {
+func TestNativeCoreSupportsModuleByteDescriptors(t *testing.T) {
 	for _, tc := range []struct {
 		name   string
 		result Type
@@ -28,10 +28,21 @@ func TestNativeCoreRejectsByteDescriptorsWithoutPanic(t *testing.T) {
 				t.Fatal(err)
 			}
 			for _, profile := range []NativeProfile{NativeSafe, NativeFast} {
-				if _, err := EmitNativeC(m, "value", profile); err == nil || !strings.Contains(err.Error(), "bytes is unsupported") {
+				if _, err := EmitNativeC(m, "value", profile); err != nil {
 					t.Fatalf("profile=%s err=%v", profile, err)
 				}
 			}
+
 		})
+	}
+}
+
+func TestNativeCoreRejectsCLIByteParameters(t *testing.T) {
+	m := Module{Version: Version, Functions: []Function{{
+		Name: "entry", Params: []Parameter{{Name: "span", Type: Bytes}}, Result: Bytes, Slots: []Type{Bytes},
+		Blocks: []Block{{Terminator: Terminator{Op: "return", Value: 0}}},
+	}}}
+	if _, err := EmitNativeC(m, "entry", NativeSafe); err == nil || !strings.Contains(err.Error(), "CLI bytes parameters") {
+		t.Fatalf("err=%v", err)
 	}
 }

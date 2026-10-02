@@ -34,6 +34,8 @@ func arm64ProcessHelperSpec(name string) (stream string, typ Type, ok bool) {
 		return "fsread", Bytes, true
 	case "__swyp_rt_bytes_get":
 		return "bytesget", U64, true
+	case "__swyp_rt_bytes_from_storage_u64":
+		return "bytessnapshot", Bytes, true
 	case "__swyp_rt_net_connect":
 		return "netconnect", Bool, true
 	case "__swyp_rt_net_fetch":
@@ -87,10 +89,12 @@ func resolveARM64LinuxProcessRuntime(process ARM64ProcessMachineCode) ([]byte, [
 		} else if stream == "rng" {
 			runtimeCode, err = buildARM64LinuxRNGHelper()
 		} else if stream == "fswrite" {
-			var fixup ARM64ProcessDataFixup
-			runtimeCode, fixup, err = buildARM64LinuxFSWriteHelper(len(process.Data))
-			fixup.WordIndex += len(code) / 4
-			dataFixups = append(dataFixups, fixup)
+			var fixups []ARM64ProcessDataFixup
+			runtimeCode, fixups, err = buildARM64LinuxFSWriteHelper(len(process.Data), ioRuntimeBytes)
+			for _, fixup := range fixups {
+				fixup.WordIndex += len(code) / 4
+				dataFixups = append(dataFixups, fixup)
+			}
 		} else if stream == "fsread" {
 			var fixups []ARM64ProcessDataFixup
 			runtimeCode, fixups, err = buildARM64LinuxFSReadHelper(len(process.Data), ioRuntimeBytes)
@@ -105,6 +109,11 @@ func resolveARM64LinuxProcessRuntime(process ARM64ProcessMachineCode) ([]byte, [
 				fixup.WordIndex += len(code) / 4
 				dataFixups = append(dataFixups, fixup)
 			}
+		} else if stream == "bytessnapshot" {
+			var fixup ARM64ProcessDataFixup
+			runtimeCode, fixup, err = buildARM64BytesFromStorageHelper(len(process.Data), ioRuntimeBytes, process.StorageDataBytes)
+			fixup.WordIndex += len(code) / 4
+			dataFixups = append(dataFixups, fixup)
 		} else if stream == "netconnect" {
 			var fixup ARM64ProcessDataFixup
 			runtimeCode, fixup, err = buildARM64LinuxNetConnectHelper(len(process.Data))
@@ -1773,36 +1782,48 @@ func patchARM64ADR(code []byte, wordIndex, targetWord int) error {
 	return nil
 }
 
-func buildARM64LinuxFSWriteHelper(arenaLen int) ([]byte, ARM64ProcessDataFixup, error) {
-	if arenaLen < 0 || arenaLen > MaxByteArenaBytes {
-		return nil, ARM64ProcessDataFixup{}, fmt.Errorf("arm64 fs.write: invalid arena size %d", arenaLen)
+func buildARM64LinuxFSWriteHelper(arenaLen, runtimeBytes int) ([]byte, []ARM64ProcessDataFixup, error) {
+	if arenaLen < 0 || arenaLen > MaxByteArenaBytes || runtimeBytes < 0 || runtimeBytes > MaxProcessRuntimeArenaBytes {
+		return nil, nil, fmt.Errorf("arm64 fs.write: invalid arena sizes %d/%d", arenaLen, runtimeBytes)
 	}
 	b := &arm64MachineBuilder{}
+	fixups, err := emitARM64LinuxFSWrite(b, arenaLen, runtimeBytes)
+	if err != nil {
+		return nil, nil, err
+	}
+	out := make([]byte, len(b.words)*4)
+	for i, word := range b.words {
+		binary.LittleEndian.PutUint32(out[i*4:], word)
+	}
+	return out, fixups, nil
+}
+
+func emitARM64LinuxFSWrite(b *arm64MachineBuilder, arenaLen, runtimeBytes int) ([]ARM64ProcessDataFixup, error) {
 	if err := b.adjustSP(-288); err != nil {
-		return nil, ARM64ProcessDataFixup{}, err
+		return nil, err
 	}
 	if err := b.strRegSP(0, 248); err != nil {
-		return nil, ARM64ProcessDataFixup{}, err
+		return nil, err
 	}
 	if err := b.strRegSP(1, 256); err != nil {
-		return nil, ARM64ProcessDataFixup{}, err
+		return nil, err
 	}
-	dataFixup := ARM64ProcessDataFixup{WordIndex: b.adrPlaceholder(9)}
+	dataFixups := []ARM64ProcessDataFixup{{WordIndex: b.adrPlaceholder(9), Target: processDataModule}}
 	if err := b.strRegSP(9, 264); err != nil {
-		return nil, ARM64ProcessDataFixup{}, err
+		return nil, err
 	}
 	b.movImm64(17, 0xffffffff)
 	b.movImm64(16, uint64(arenaLen))
 
 	// Path descriptor: x10 raw, x11 offset, x12 length.
 	if err := b.ldrRegSP(10, 248); err != nil {
-		return nil, ARM64ProcessDataFixup{}, err
+		return nil, err
 	}
 	b.lsrImm(11, 10, 32)
 	b.logicalRegReg(0x8a000000, 12, 10, 17)
 	badPathEmpty := b.cbzPlaceholder(12)
 	if err := b.cmpRegImm(12, 240); err != nil {
-		return nil, ARM64ProcessDataFixup{}, err
+		return nil, err
 	}
 	badPathLong := b.condBranchPlaceholder(0x8) // HI
 	b.cmpRegReg(11, 16)
@@ -1811,68 +1832,105 @@ func buildARM64LinuxFSWriteHelper(arenaLen int) ([]byte, ARM64ProcessDataFixup, 
 	b.cmpRegReg(12, 13)
 	badPathSpan := b.condBranchPlaceholder(0x8)
 	if err := b.ldrRegSP(9, 264); err != nil {
-		return nil, ARM64ProcessDataFixup{}, err
+		return nil, err
 	}
 	b.addRegReg(13, 9, 11)
 	if err := b.addRegSPAddress(14, 0); err != nil {
-		return nil, ARM64ProcessDataFixup{}, err
+		return nil, err
 	}
 	b.movRegReg(15, 12)
 	copyLoop := len(b.words)
 	if err := b.ldrbRegBase(10, 13, 0); err != nil {
-		return nil, ARM64ProcessDataFixup{}, err
+		return nil, err
 	}
 	if err := b.strbRegBase(10, 14, 0); err != nil {
-		return nil, ARM64ProcessDataFixup{}, err
+		return nil, err
 	}
 	if err := b.addRegImm(13, 13, 1); err != nil {
-		return nil, ARM64ProcessDataFixup{}, err
+		return nil, err
 	}
 	if err := b.addRegImm(14, 14, 1); err != nil {
-		return nil, ARM64ProcessDataFixup{}, err
+		return nil, err
 	}
 	if err := b.subRegImm(15, 15, 1); err != nil {
-		return nil, ARM64ProcessDataFixup{}, err
+		return nil, err
 	}
 	copyDone := b.cbzPlaceholder(15)
 	copyBack := b.branchPlaceholder()
 	if err := b.patchBranch(copyBack, copyLoop); err != nil {
-		return nil, ARM64ProcessDataFixup{}, err
+		return nil, err
 	}
 	if err := b.patchCBZ(copyDone, len(b.words)); err != nil {
-		return nil, ARM64ProcessDataFixup{}, err
+		return nil, err
 	}
 	b.movImm64(10, 0)
 	if err := b.strbRegBase(10, 14, 0); err != nil {
-		return nil, ARM64ProcessDataFixup{}, err
+		return nil, err
 	}
 
 	// Data descriptor -> arena pointer and length.
 	if err := b.ldrRegSP(10, 256); err != nil {
-		return nil, ARM64ProcessDataFixup{}, err
+		return nil, err
 	}
 	b.lsrImm(11, 10, 32)
 	b.logicalRegReg(0x8a000000, 12, 10, 17)
 	b.cmpRegReg(11, 16)
-	badDataOffset := b.condBranchPlaceholder(0x8)
+	runtimeData := b.condBranchPlaceholder(0x2) // HS
 	b.subRegReg(13, 16, 11)
 	b.cmpRegReg(12, 13)
 	badDataSpan := b.condBranchPlaceholder(0x8)
 	if err := b.ldrRegSP(9, 264); err != nil {
-		return nil, ARM64ProcessDataFixup{}, err
+		return nil, err
 	}
 	b.addRegReg(13, 9, 11)
+	resolvedData := b.branchPlaceholder()
+	if err := b.patchCondBranch(runtimeData, len(b.words)); err != nil {
+		return nil, err
+	}
+	var dataFailures []int
+	if runtimeBytes >= 8 {
+		dataFixups = append(dataFixups, ARM64ProcessDataFixup{WordIndex: b.adrPlaceholder(9), Target: processDataRuntime})
+		b.movImm64(15, uint64(arenaLen))
+		b.subRegReg(11, 11, 15)
+		if err := b.ldrRegBase(14, 9, 0); err != nil {
+			return nil, err
+		}
+		b.movImm64(15, uint64(runtimeBytes-8))
+		b.cmpRegReg(14, 15)
+		dataFailures = append(dataFailures, b.condBranchPlaceholder(0x8))
+		b.cmpRegReg(11, 14)
+		dataFailures = append(dataFailures, b.condBranchPlaceholder(0x8))
+		b.subRegReg(14, 14, 11)
+		b.cmpRegReg(12, 14)
+		dataFailures = append(dataFailures, b.condBranchPlaceholder(0x8))
+		if err := b.addRegImm(13, 9, 8); err != nil {
+			return nil, err
+		}
+		b.addRegReg(13, 13, 11)
+	} else {
+		b.cmpRegReg(12, 31)
+		dataFailures = append(dataFailures, b.condBranchPlaceholder(0x1))
+		b.cmpRegReg(11, 16)
+		dataFailures = append(dataFailures, b.condBranchPlaceholder(0x1))
+		if err := b.ldrRegSP(9, 264); err != nil {
+			return nil, err
+		}
+		b.addRegReg(13, 9, 11)
+	}
+	if err := b.patchBranch(resolvedData, len(b.words)); err != nil {
+		return nil, err
+	}
 	if err := b.strRegSP(13, 272); err != nil {
-		return nil, ARM64ProcessDataFixup{}, err
+		return nil, err
 	}
 	if err := b.strRegSP(12, 280); err != nil {
-		return nil, ARM64ProcessDataFixup{}, err
+		return nil, err
 	}
 
 	// openat(AT_FDCWD, path, O_WRONLY|O_CREAT|O_TRUNC, 0644)
 	b.movImm64(0, ^uint64(99))
 	if err := b.addRegSPAddress(1, 0); err != nil {
-		return nil, ARM64ProcessDataFixup{}, err
+		return nil, err
 	}
 	b.movImm64(2, 577)
 	b.movImm64(3, 0644)
@@ -1882,18 +1940,18 @@ func buildARM64LinuxFSWriteHelper(arenaLen int) ([]byte, ARM64ProcessDataFixup, 
 	openOK := b.condBranchPlaceholder(0xa) // GE
 	openFailed := b.branchPlaceholder()
 	if err := b.patchCondBranch(openOK, len(b.words)); err != nil {
-		return nil, ARM64ProcessDataFixup{}, err
+		return nil, err
 	}
 	if err := b.strRegSP(0, 248); err != nil {
-		return nil, ARM64ProcessDataFixup{}, err
+		return nil, err
 	}
 
 	// write(fd, data, len)
 	if err := b.ldrRegSP(1, 272); err != nil {
-		return nil, ARM64ProcessDataFixup{}, err
+		return nil, err
 	}
 	if err := b.ldrRegSP(2, 280); err != nil {
-		return nil, ARM64ProcessDataFixup{}, err
+		return nil, err
 	}
 	b.movImm64(8, 64)
 	b.append(0xd4000001)
@@ -1902,19 +1960,19 @@ func buildARM64LinuxFSWriteHelper(arenaLen int) ([]byte, ARM64ProcessDataFixup, 
 	b.movImm64(17, 1)
 	writeStatusDone := b.branchPlaceholder()
 	if err := b.patchCondBranch(writeOK, len(b.words)); err != nil {
-		return nil, ARM64ProcessDataFixup{}, err
+		return nil, err
 	}
 	b.movImm64(17, 0)
 	if err := b.patchBranch(writeStatusDone, len(b.words)); err != nil {
-		return nil, ARM64ProcessDataFixup{}, err
+		return nil, err
 	}
 	if err := b.strRegSP(17, 240); err != nil {
-		return nil, ARM64ProcessDataFixup{}, err
+		return nil, err
 	}
 
 	// close(fd); a close failure also reports helper failure.
 	if err := b.ldrRegSP(0, 248); err != nil {
-		return nil, ARM64ProcessDataFixup{}, err
+		return nil, err
 	}
 	b.movImm64(8, 57)
 	b.append(0xd4000001)
@@ -1922,13 +1980,13 @@ func buildARM64LinuxFSWriteHelper(arenaLen int) ([]byte, ARM64ProcessDataFixup, 
 	closeOK := b.condBranchPlaceholder(0xa)
 	b.movImm64(17, 1)
 	if err := b.strRegSP(17, 240); err != nil {
-		return nil, ARM64ProcessDataFixup{}, err
+		return nil, err
 	}
 	if err := b.patchCondBranch(closeOK, len(b.words)); err != nil {
-		return nil, ARM64ProcessDataFixup{}, err
+		return nil, err
 	}
 	if err := b.ldrRegSP(0, 240); err != nil {
-		return nil, ARM64ProcessDataFixup{}, err
+		return nil, err
 	}
 	done := b.branchPlaceholder()
 
@@ -1938,7 +1996,7 @@ func buildARM64LinuxFSWriteHelper(arenaLen int) ([]byte, ARM64ProcessDataFixup, 
 		cbz   bool
 	}{
 		{badPathEmpty, true}, {badPathLong, false}, {badPathOffset, false}, {badPathSpan, false},
-		{badDataOffset, false}, {badDataSpan, false},
+		{badDataSpan, false},
 	} {
 		var err error
 		if fixup.cbz {
@@ -1947,25 +2005,26 @@ func buildARM64LinuxFSWriteHelper(arenaLen int) ([]byte, ARM64ProcessDataFixup, 
 			err = b.patchCondBranch(fixup.index, failure)
 		}
 		if err != nil {
-			return nil, ARM64ProcessDataFixup{}, err
+			return nil, err
+		}
+	}
+	for _, pos := range dataFailures {
+		if err := b.patchCondBranch(pos, failure); err != nil {
+			return nil, err
 		}
 	}
 	if err := b.patchBranch(openFailed, failure); err != nil {
-		return nil, ARM64ProcessDataFixup{}, err
+		return nil, err
 	}
 	b.movImm64(0, 1)
 	if err := b.patchBranch(done, len(b.words)); err != nil {
-		return nil, ARM64ProcessDataFixup{}, err
+		return nil, err
 	}
 	if err := b.adjustSP(288); err != nil {
-		return nil, ARM64ProcessDataFixup{}, err
+		return nil, err
 	}
 	b.ret()
-	out := make([]byte, len(b.words)*4)
-	for i, word := range b.words {
-		binary.LittleEndian.PutUint32(out[i*4:], word)
-	}
-	return out, dataFixup, nil
+	return dataFixups, nil
 }
 
 func buildARM64LinuxClockHelper() ([]byte, error) {

@@ -8,9 +8,9 @@ import (
 	"swyp-lang/internal/storageabi"
 )
 
-// MaxEffectBytes bounds additional byte data returned by a broker in one run.
-// Module constants have their separate MaxByteArenaBytes limit.
-const MaxEffectBytes = 1 << 20
+// MaxEffectBytes bounds additional run-owned bytes, including storage snapshots
+// and broker responses. Module constants have a separate MaxByteArenaBytes limit.
+const MaxEffectBytes = MaxRunByteArenaBytes
 
 // EffectRunOptions contains host-supplied execution and response allocation
 // budgets. These budgets do not grant authority to any effect.
@@ -315,6 +315,9 @@ func (m *machine) executeEffect(f Function, instruction Instruction, slots []Val
 func (m *machine) byteData() []byte {
 	if m.effects != nil && m.effects.data != nil {
 		return m.effects.data
+	}
+	if m.data != nil {
+		return m.data
 	}
 	return m.executable.data
 }

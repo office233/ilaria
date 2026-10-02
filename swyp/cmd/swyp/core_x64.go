@@ -165,18 +165,18 @@ func validateX64NativeModule(m coreir.Module, entry string) error {
 func validateX64NativeModuleMode(m coreir.Module, entry string, allowFPCalls, allowProcessIO bool) error {
 	functions := make(map[string]coreir.Function, len(m.Functions))
 	for _, f := range m.Functions {
-		if f.Result == coreir.Bytes {
+		if f.Result == coreir.Bytes && (!allowProcessIO || f.Name == entry) {
 			return fmt.Errorf("x64 native backend function %s: bytes result requires byte arena support", f.Name)
 		}
 		for i, param := range f.Params {
-			if param.Type == coreir.Bytes {
+			if param.Type == coreir.Bytes && (!allowProcessIO || f.Name == entry) {
 				return fmt.Errorf("x64 native backend function %s: bytes parameter %d requires byte arena support", f.Name, i)
 			}
 		}
 		for bi, block := range f.Blocks {
 			for ii, ins := range block.Instructions {
-				if ins.Op == "bytes.get" && !allowProcessIO {
-					return fmt.Errorf("x64 native backend function %s block %d instruction %d: bytes.get requires native byte-arena mapping", f.Name, bi, ii)
+				if (ins.Op == "bytes.get" || ins.Op == "bytes.from_storage_u64") && !allowProcessIO {
+					return fmt.Errorf("x64 native backend function %s block %d instruction %d: %s requires native byte-arena mapping", f.Name, bi, ii, ins.Op)
 				}
 			}
 		}
@@ -211,11 +211,11 @@ func validateX64NativeModuleMode(m coreir.Module, entry string, allowFPCalls, al
 				if len(ins.Args) > 4 || len(callee.Params) > 4 {
 					return fmt.Errorf("x64 native call %s -> %s exceeds 4 GPR arguments", name, ins.Callee)
 				}
-				if !x64NativeCallType(callee.Result, allowFPCalls) {
+				if !x64NativeCallType(callee.Result, allowFPCalls) && !(allowProcessIO && callee.Result == coreir.Bytes) {
 					return fmt.Errorf("x64 native call %s -> %s result type %s is unsupported", name, ins.Callee, callee.Result)
 				}
 				for i, param := range callee.Params {
-					if !x64NativeCallType(param.Type, allowFPCalls) {
+					if !x64NativeCallType(param.Type, allowFPCalls) && !(allowProcessIO && param.Type == coreir.Bytes) {
 						return fmt.Errorf("x64 native call %s -> %s argument %d type %s is unsupported", name, ins.Callee, i, param.Type)
 					}
 				}

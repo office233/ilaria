@@ -7,6 +7,8 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+
+	"swyp-lang/internal/storageabi"
 )
 
 type NativeProfile string
@@ -33,21 +35,15 @@ func EmitNativeC(m Module, entry string, profile NativeProfile) ([]byte, error) 
 		if semanticsForFunction(f).Purity != "pure" {
 			return nil, diagnostic("effectful_program", "native Core AOT accepts pure functions only")
 		}
-		// Core validation also accepts byte descriptors and storage operations.
-		// This C backend has no descriptor representation; reject unsupported
-		// types before signature/slot emission can reach coreCType.
-		if f.Result != Void && !f.Result.scalar() {
-			return nil, fmt.Errorf("native Core AOT: function %s result type %s is unsupported", f.Name, f.Result)
-		}
-		for _, t := range f.Slots {
-			if !t.scalar() {
-				return nil, fmt.Errorf("native Core AOT: function %s slot type %s is unsupported", f.Name, t)
-			}
-		}
 	}
 	root, ok := functions[entry]
 	if !ok {
 		return nil, diagnostic("unknown_function", entry)
+	}
+	for _, p := range root.Params {
+		if p.Type == Bytes {
+			return nil, fmt.Errorf("native Core AOT: CLI bytes parameters are unsupported")
+		}
 	}
 
 	names := make(map[string]string, len(m.Functions))
@@ -61,6 +57,14 @@ func EmitNativeC(m Module, entry string, profile NativeProfile) ([]byte, error) 
 	var b bytes.Buffer
 	fmt.Fprintf(&b, "#define SWYP_MAX_CALL_DEPTH %d\n", MaxCallDepth)
 	b.WriteString(coreNativeRuntime)
+	fmt.Fprintf(&b, "#define SWYP_STORAGE_BLOCKS %d\n#define SWYP_STORAGE_BYTES UINT64_C(%d)\n#define SWYP_RUN_BYTES %d\n#define SWYP_MODULE_BYTES %d\n",
+		storageabi.DefaultMaxBlocks, storageabi.DefaultMaxBytes, MaxRunByteArenaBytes, len(m.Data))
+	fmt.Fprintf(&b, "static unsigned char swyp_byte_data[SWYP_MODULE_BYTES+SWYP_RUN_BYTES+1]={")
+	for _, octet := range m.Data {
+		fmt.Fprintf(&b, "%d,", octet)
+	}
+	fmt.Fprintln(&b, "0};")
+	b.WriteString(coreNativeStorageRuntime)
 	for _, f := range ordered {
 		fmt.Fprintf(&b, "%s;\n", coreCSignature(f, names[f.Name], profile == NativeFast && shouldInlineCoreFunction(f, recursive[f.Name])))
 	}
@@ -78,7 +82,7 @@ func coreCType(t Type) string {
 	switch t {
 	case I64:
 		return "int64_t"
-	case U64:
+	case U64, Bytes:
 		return "uint64_t"
 	case F64, IEEE64:
 		return "double"
@@ -226,6 +230,26 @@ func coreCInstruction(f Function, ins Instruction, names map[string]string) (str
 			args[i] = arg(i)
 		}
 		return fmt.Sprintf("%s%s(%s);", dest, names[ins.Callee], strings.Join(args, ",")), nil
+	case "bytes.from_storage_u64":
+		return fmt.Sprintf("%sswyp_bytes_snapshot(%s,%s,%s);", dest, arg(0), arg(1), loc), nil
+	case "bytes.len":
+		return fmt.Sprintf("%sswyp_bytes_len(%s,%s);", dest, arg(0), loc), nil
+	case "bytes.get":
+		return fmt.Sprintf("%sswyp_bytes_get(%s,%s,%s);", dest, arg(0), arg(1), loc), nil
+	case "storage.alloc_u64":
+		return fmt.Sprintf("%sswyp_storage_alloc(%s,%s);", dest, arg(0), loc), nil
+	case "storage.load_u64":
+		return fmt.Sprintf("%sswyp_storage_load(%s,%s,%s);", dest, arg(0), arg(1), loc), nil
+	case "storage.store_u64":
+		return fmt.Sprintf("swyp_storage_store(%s,%s,%s,%s);", arg(0), arg(1), arg(2), loc), nil
+	case "storage.free":
+		return fmt.Sprintf("swyp_storage_free(%s,%s);", arg(0), loc), nil
+	case "storage.len_u64":
+		return fmt.Sprintf("%sswyp_storage_block(%s,%s)->length;", dest, arg(0), loc), nil
+	case "storage.capacity_u64":
+		return fmt.Sprintf("%sswyp_storage_block(%s,%s)->capacity;", dest, arg(0), loc), nil
+	case "storage.set_len_u64":
+		return fmt.Sprintf("swyp_storage_set_len(%s,%s,%s);", arg(0), arg(1), loc), nil
 	case "not":
 		return dest + "!" + arg(0) + ";", nil
 	case "neg":
@@ -356,6 +380,8 @@ func coreCLiteral(l Literal) (string, error) {
 	case U64:
 		x, _ := v.Uint64()
 		return fmt.Sprintf("UINT64_C(%d)", x), nil
+	case Bytes:
+		return fmt.Sprintf("UINT64_C(%d)", v.u), nil
 	case F64, IEEE64:
 		x, _ := v.Float64()
 		if math.IsNaN(x) {
@@ -402,7 +428,7 @@ func emitCoreMain(b *bytes.Buffer, root Function, name string) {
 		fmt.Fprintf(b, "%s; return 0;\n", call)
 	case I64:
 		fmt.Fprintf(b, "int64_t result=%s; printf(\"%%\" PRId64 \"\\n\",result); return 0;\n", call)
-	case U64:
+	case U64, Bytes:
 		fmt.Fprintf(b, "uint64_t result=%s; printf(\"%%\" PRIu64 \"\\n\",result); return 0;\n", call)
 	case F64, IEEE64:
 		fmt.Fprintf(b, "double result=%s; printf(\"%%.17g\\n\",result); return 0;\n", call)
@@ -508,4 +534,49 @@ SWYP_INLINE double swyp_f64_mul(double a,double b,const char *p){return swyp_f64
 SWYP_INLINE double swyp_f64_div(double a,double b,const char *p){if(SWYP_UNLIKELY(b==0))swyp_fail(p,"division by zero");return swyp_f64_checked(a/b,p);}
 SWYP_INLINE double swyp_f64_rem(double a,double b,const char *p){if(SWYP_UNLIKELY(b==0))swyp_fail(p,"division by zero");return swyp_f64_checked(fmod(a,b),p);}
 
+`
+
+const coreNativeStorageRuntime = `
+typedef struct {uint64_t *data,capacity,length;bool live;} swyp_storage;
+static swyp_storage swyp_storage_blocks[SWYP_STORAGE_BLOCKS];
+static uint64_t swyp_storage_next=1,swyp_storage_used=0,swyp_byte_cursor=SWYP_MODULE_BYTES;
+static swyp_storage *swyp_storage_block(uint64_t id,const char *p){
+ if(!id||id>=swyp_storage_next||!swyp_storage_blocks[id-1].live)swyp_fail(p,"storage");
+ return &swyp_storage_blocks[id-1];
+}
+static uint64_t swyp_storage_alloc(uint64_t n,const char *p){
+ if(n>UINT64_MAX/8)swyp_fail(p,"storage_limit");
+ if(swyp_storage_next>SWYP_STORAGE_BLOCKS||n*8>SWYP_STORAGE_BYTES-swyp_storage_used)swyp_fail(p,"storage");
+ uint64_t *data=calloc(n?n:1,sizeof(uint64_t));if(!data)swyp_fail(p,"storage");
+ uint64_t id=swyp_storage_next++;swyp_storage_blocks[id-1]=(swyp_storage){data,n,n,true};swyp_storage_used+=n*8;return id;
+}
+static uint64_t swyp_storage_load(uint64_t id,uint64_t i,const char *p){
+ swyp_storage *s=swyp_storage_block(id,p);if(i>=s->capacity)swyp_fail(p,"bounds");return s->data[i];
+}
+static void swyp_storage_store(uint64_t id,uint64_t i,uint64_t v,const char *p){
+ swyp_storage *s=swyp_storage_block(id,p);if(i>=s->capacity)swyp_fail(p,"bounds");s->data[i]=v;
+}
+static void swyp_storage_free(uint64_t id,const char *p){
+ swyp_storage *s=swyp_storage_block(id,p);swyp_storage_used-=s->capacity*8;free(s->data);s->data=NULL;s->live=false;
+}
+static void swyp_storage_set_len(uint64_t id,uint64_t n,const char *p){
+ if(n>UINT64_MAX/8)swyp_fail(p,"storage_limit");
+ swyp_storage *s=swyp_storage_block(id,p);if(n>s->capacity)swyp_fail(p,"storage");s->length=n;
+}
+static uint64_t swyp_bytes_len(uint64_t span,const char *p){
+ uint64_t o=span>>32,n=(uint32_t)span;if(o>swyp_byte_cursor||n>swyp_byte_cursor-o)swyp_fail(p,"invalid_bytespan");return n;
+}
+static uint64_t swyp_bytes_get(uint64_t span,uint64_t i,const char *p){
+ uint64_t n=swyp_bytes_len(span,p);if(i>=n)swyp_fail(p,"bounds");return swyp_byte_data[(span>>32)+i];
+}
+static uint64_t swyp_bytes_snapshot(uint64_t id,uint64_t n,const char *p){
+ swyp_storage *s=swyp_storage_block(id,p);
+ if(n>UINT64_MAX/8)swyp_fail(p,"storage_limit");
+ if(n>s->capacity)swyp_fail(p,"bounds");
+ if(n>SWYP_RUN_BYTES-(swyp_byte_cursor-SWYP_MODULE_BYTES))swyp_fail(p,"byte_arena_exhausted");
+ for(uint64_t i=0;i<n;i++)if(s->data[i]>255)swyp_fail(p,"invalid_octet");
+ uint64_t start=swyp_byte_cursor;
+ for(uint64_t i=0;i<n;i++)swyp_byte_data[start+i]=(unsigned char)s->data[i];
+ swyp_byte_cursor+=n;return(start<<32)|n;
+}
 `

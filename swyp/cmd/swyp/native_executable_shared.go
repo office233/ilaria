@@ -75,10 +75,11 @@ func validateStandaloneSensitiveGrants(m coreir.Module, allowFSRead, allowFSWrit
 }
 
 func encodeX64StandaloneArtifact(artifact x64ModuleIRArtifact, format string, pie bool) ([]byte, int, string, error) {
+	usesSnapshot := moduleUsesInstruction(artifact.Module, "bytes.from_storage_u64")
 	usesStorage := moduleUsesInstruction(artifact.Module, "storage.alloc_u64") ||
 		moduleUsesInstruction(artifact.Module, "storage.load_u64") ||
 		moduleUsesInstruction(artifact.Module, "storage.store_u64") ||
-		moduleUsesInstruction(artifact.Module, "storage.free")
+		moduleUsesInstruction(artifact.Module, "storage.free") || usesSnapshot
 	usesProcessIO := len(artifact.Entry.Effects) != 0 || moduleUsesInstruction(artifact.Module, "bytes.get") || usesStorage
 	var code []byte
 	var processCode coreir.X64ProcessMachineCode
@@ -86,7 +87,7 @@ func encodeX64StandaloneArtifact(artifact x64ModuleIRArtifact, format string, pi
 	if usesProcessIO {
 		processCode, err = coreir.EmitX64CFGMachineProcessModule(artifact.Functions, artifact.Plans, artifact.EntrySSA.Name)
 		processCode.Data = append([]byte(nil), artifact.Module.Data...)
-		if moduleUsesEffect(artifact.Module, coreir.EffectFSRead) || moduleUsesEffect(artifact.Module, coreir.EffectNetFetch) {
+		if moduleUsesEffect(artifact.Module, coreir.EffectFSRead) || moduleUsesEffect(artifact.Module, coreir.EffectNetFetch) || usesSnapshot {
 			processCode.RuntimeDataBytes = coreir.DefaultProcessRuntimeArenaBytes
 		}
 		if usesStorage {
@@ -138,10 +139,11 @@ func encodeX64StandaloneArtifact(artifact x64ModuleIRArtifact, format string, pi
 }
 
 func encodeARM64StandaloneArtifact(artifact arm64PackIRArtifact, pie bool) ([]byte, int, string, error) {
+	usesSnapshot := moduleUsesInstruction(artifact.Module, "bytes.from_storage_u64")
 	usesStorage := moduleUsesInstruction(artifact.Module, "storage.alloc_u64") ||
 		moduleUsesInstruction(artifact.Module, "storage.load_u64") ||
 		moduleUsesInstruction(artifact.Module, "storage.store_u64") ||
-		moduleUsesInstruction(artifact.Module, "storage.free")
+		moduleUsesInstruction(artifact.Module, "storage.free") || usesSnapshot
 	usesProcessIO := arm64ArtifactUsesProcessIO(artifact) || usesStorage
 	var code []byte
 	var processCode coreir.ARM64ProcessMachineCode
@@ -149,7 +151,7 @@ func encodeARM64StandaloneArtifact(artifact arm64PackIRArtifact, pie bool) ([]by
 	if usesProcessIO {
 		processCode, err = coreir.EmitARM64CFGMachineProcessModule(artifact.Functions, artifact.Plans, artifact.EntrySSA.Name)
 		processCode.Data = append([]byte(nil), artifact.Module.Data...)
-		if moduleUsesEffect(artifact.Module, coreir.EffectFSRead) || moduleUsesEffect(artifact.Module, coreir.EffectNetFetch) {
+		if moduleUsesEffect(artifact.Module, coreir.EffectFSRead) || moduleUsesEffect(artifact.Module, coreir.EffectNetFetch) || usesSnapshot {
 			processCode.RuntimeDataBytes = coreir.DefaultProcessRuntimeArenaBytes
 		}
 		if usesStorage {

@@ -2,6 +2,7 @@
 param(
     [string]$Executable = '',
     [string]$OutputDirectory = '',
+    [string]$ProductRoot = '',
     [ValidateSet('phone', 'balanced', 'performance')][string[]]$Profiles = @('balanced', 'phone'),
     [ValidateRange(1, 20)][int]$RunsPerProfile = 3,
     [ValidateRange(1, 60)][int]$StartupSeconds = 4,
@@ -14,7 +15,15 @@ param(
 $ErrorActionPreference = 'Stop'
 if ($env:OS -ne 'Windows_NT') { throw 'The native resource benchmark requires Windows.' }
 
-$root = Split-Path -Parent $PSScriptRoot
+if (-not $ProductRoot) {
+    $workspaceRoot = $PSScriptRoot
+    for ($i = 0; $i -lt 4; $i++) { $workspaceRoot = Split-Path -Parent $workspaceRoot }
+    $ProductRoot = Join-Path $workspaceRoot 'swypik-os'
+}
+$root = [IO.Path]::GetFullPath($ProductRoot)
+if (-not (Test-Path -LiteralPath (Join-Path $root 'go.mod'))) {
+    throw "SwypikOS product root must contain go.mod: $root"
+}
 if (-not $OutputDirectory) {
     $OutputDirectory = Join-Path $root ('out\resource-bench-' + (Get-Date -Format 'yyyyMMdd-HHmmss') + '-' + [Guid]::NewGuid().ToString('N').Substring(0, 6))
 }
@@ -64,7 +73,7 @@ function Test-LifecycleMarker([string]$DataDirectory, [string]$Marker) {
         Sort-Object LastWriteTimeUtc -Descending |
         Select-Object -First 1
     if (-not $log) { return $false }
-    return $null -ne (Select-String -LiteralPath $log.FullName -SimpleMatch $Marker -Quiet -ErrorAction SilentlyContinue)
+    return [bool](Select-String -LiteralPath $log.FullName -SimpleMatch $Marker -Quiet -ErrorAction Stop)
 }
 
 function Build-BenchmarkExecutable([string]$Destination) {
@@ -187,12 +196,13 @@ try {
                 $idleCPUPercent = 100.0 * $cpuDelta / ($wallDelta * [math]::Max(1, $logicalProcessors))
 
                 $samplesPath = Join-Path $runDirectory 'samples.json'
-                [ordered]@{
+                $sampleJSON = [ordered]@{
                     profile = $profile
                     run = $profileRun
                     startup = $startupSamples.ToArray()
                     idle = $idleSamples.ToArray()
-                } | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $samplesPath -Encoding UTF8
+                } | ConvertTo-Json -Depth 6
+                [IO.File]::WriteAllText($samplesPath, $sampleJSON + [Environment]::NewLine, (New-Object Text.UTF8Encoding $false))
 
                 $runResult = [pscustomobject][ordered]@{
                     run = $profileRun
@@ -261,11 +271,14 @@ $report = [ordered]@{
     schema_version = 1
     measured_utc = [DateTime]::UtcNow.ToString('o')
     executable = $Executable
+    product_root = $root
     executable_sha256 = $executableHash
     built_for_benchmark = $builtForBenchmark
     git_revision = $revision
     git_dirty = $dirty
     logical_processors = $logicalProcessors
+    cpu_percent_denominator = 'all_logical_processors'
+    energy_measured = $false
     startup_seconds = $StartupSeconds
     idle_seconds = $IdleSeconds
     sample_interval_ms = $SampleIntervalMs
@@ -276,6 +289,6 @@ $report = [ordered]@{
     runs = $runs.ToArray()
 }
 $reportPath = Join-Path $OutputDirectory 'resource-results.json'
-$report | ConvertTo-Json -Depth 7 | Set-Content -LiteralPath $reportPath -Encoding UTF8
+[IO.File]::WriteAllText($reportPath, ($report | ConvertTo-Json -Depth 7) + [Environment]::NewLine, (New-Object Text.UTF8Encoding $false))
 $report | ConvertTo-Json -Depth 7
 Write-Host "Resource benchmark report: $reportPath"

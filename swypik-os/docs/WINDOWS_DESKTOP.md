@@ -137,6 +137,30 @@ Optional screenshots are taken only when the test owns the foreground window;
 otherwise the report records why no screenshot was captured. Other running
 SwypikOS processes are never terminated by this test.
 
+### Resource measurement
+
+From the workspace root, `ramasite\benchmarks\swypik-os\scripts\benchmark-resources.ps1` builds or accepts a
+native GUI binary and starts only isolated instances with fresh data/workspace
+directories. It samples startup peaks and steady working set, private commit,
+CPU time, threads and handles, and requires a clean shutdown of every owned PID.
+It waits for the actual `Fonts warmed in` log marker plus a quiescence interval.
+The marker check must use the boolean result of `Select-String -Quiet`: a file
+with no match returns `False`, which is non-null and must not mean ready.
+The companion `test-benchmark-resources.ps1` covers missing logs and absent/present
+markers. JSON output is UTF-8 without BOM on both PowerShell 5.1 and 7.
+
+```powershell
+powershell -File ramasite\benchmarks\swypik-os\scripts\test-benchmark-resources.ps1
+powershell -File ramasite\benchmarks\swypik-os\scripts\benchmark-resources.ps1 -RunsPerProfile 3 -StartupSeconds 6 -IdleSeconds 10 -QuiesceSeconds 5
+```
+
+CPU percentages use all logical processors as the denominator; they are not
+single-core percentages. Reports explicitly mark energy as unmeasured. Two
+runs/profile on an eight-logical-processor Windows Azure VM on 2026-10-02
+observed steady median working sets of 32.170 MiB (balanced) and 34.799 MiB
+(phone), with median idle CPU 0.0000% and 0.4477% respectively. These are limited
+host-specific samples, not a universal under-30-MiB budget or an energy claim.
+
 The Linux ISO is still built separately:
 
 ```powershell

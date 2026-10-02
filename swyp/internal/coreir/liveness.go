@@ -16,9 +16,8 @@ type Liveness struct {
 
 // AnalyzeLiveness computes live-in/live-out sets for the mutable-slot Core IR.
 //
-// This analysis is intentionally separate from SSA conversion: it is valid for
-// the current IR and can drive slot compaction and future linear-scan register
-// allocation without changing program semantics.
+// This mutable-slot analysis drives pruned SSA construction independently of
+// SSA-value liveness and register allocation.
 func AnalyzeLiveness(f Function) (Liveness, error) {
 	if len(f.Blocks) == 0 {
 		return Liveness{}, fmt.Errorf("liveness: function has no blocks")

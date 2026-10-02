@@ -1,6 +1,8 @@
 #include "swypik/boot/uefi_bootstrap.h"
 #include "swypik/boot/uefi_acpi.h"
 #include "swypik/boot/uefi_handoff.h"
+#include "swypik/boot/uefi_init.h"
+#include "swypik/kernel/init.h"
 #include "swypik/boot/uefi_memory.h"
 #include "swypik/boot/uefi_switch.h"
 #include "swypik/boot/uefi_takeover.h"
@@ -138,6 +140,16 @@ static void SWYP_EFIAPI swyp_uefi_after_takeover(void *context) {
     if (g_platform_boot.iommu_ready != 0u) {
         continuation->boot_info->boot_flags |= SWYP_BOOT_FLAG_IOMMU_READY;
     }
+    if ((continuation->boot_info->boot_flags & SWYP_BOOT_FLAG_INIT_IMAGE_READY) != 0u) {
+        const uint8_t *image = native_ops->physical_to_virtual(native_mmu, continuation->boot_info->init_image_address);
+        SwypStatus init_result = swyp_kernel_run_init(continuation->boot_info, &g_platform_boot.runtime,
+                                                       &g_privilege_state, image);
+        continuation->boot_info->init_status = init_result;
+        if (init_result != SWYP_OK) {
+            continuation->boot_info->init_status = init_result;
+            continuation->boot_info->boot_flags |= SWYP_BOOT_FLAG_INIT_FAILED;
+        }
+    }
     swyp_kernel_entry_runtime(continuation->boot_info, allocator, &g_platform_boot.runtime);
 }
 
@@ -158,6 +170,10 @@ EFI_STATUS SWYP_EFIAPI efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *syste
         return status;
     }
     status = swyp_print(system_table, kStage);
+    if (status != EFI_SUCCESS) {
+        return status;
+    }
+    status = swyp_uefi_load_init(image_handle, system_table, &g_boot_info);
     if (status != EFI_SUCCESS) {
         return status;
     }

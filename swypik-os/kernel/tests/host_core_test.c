@@ -35,6 +35,7 @@
 #include "swypik/kernel/scheduler.h"
 
 static int failures = 0;
+int swyp_test_init_host(void);
 
 #define CHECK(expr)                                                                                 \
     do {                                                                                            \
@@ -4716,6 +4717,7 @@ int main(void) {
     test_ipc();
     test_device_graph_wire();
     test_device_graph_adversarial();
+    failures += swyp_test_init_host();
     if (failures != 0) {
         fprintf(stderr, "swypik-kernel host core tests: %d failure(s)\n", failures);
         return 1;

@@ -45,6 +45,7 @@ if ($CompilerName -eq "zig") {
 $Sources = @(
     "src/core/contracts.c",
     "src/boot/uefi_handoff.c",
+    "src/boot/uefi_init.c",
     "src/boot/uefi_acpi.c",
     "src/boot/uefi_bootstrap.c",
     "src/boot/pe_image.c",
@@ -82,11 +83,13 @@ $Sources = @(
     "src/core/driver_domain.c",
     "src/core/ipc.c",
     "src/core/kernel_entry.c",
+    "src/core/init.c",
     "src/core/kernel_runtime.c",
     "src/core/kernel_takeover.c",
     "src/core/scheduler.c",
     "src/core/device_graph.c",
     "tests/host_core_test.c"
+    "tests/init_host_test.c"
 )
 $AssemblySources = @("src/boot/uefi_switch.S", "src/arch/x86_64/continuation.S", "src/arch/x86_64/irq_entry.S", "src/arch/x86_64/privilege_native.S", "src/arch/x86_64/trap_entry.S", "src/arch/x86_64/syscall_entry.S", "src/arch/x86_64/timer_entry.S", "src/arch/x86_64/user_entry.S")
 $Executable = Join-Path $Out "core_tests.exe"

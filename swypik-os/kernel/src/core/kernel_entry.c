@@ -61,7 +61,7 @@ void swyp_kernel_entry(const SwypBootInfo *boot_info, SwypPageAllocator *page_al
     swyp_kernel_halt();
 }
 
-void swyp_kernel_entry_runtime(const SwypBootInfo *boot_info, SwypPageAllocator *page_allocator,
+void swyp_kernel_entry_runtime(SwypBootInfo *boot_info, SwypPageAllocator *page_allocator,
                                SwypKernelRuntime *runtime) {
     uint64_t probe_page = 0u;
     if (swyp_kernel_validate_runtime_handoff(boot_info, page_allocator, runtime) != SWYP_OK ||
@@ -72,5 +72,6 @@ void swyp_kernel_entry_runtime(const SwypBootInfo *boot_info, SwypPageAllocator 
     /* The platform, syscall/IRQ ABI and scheduler address-switch layer are now
        live. The next runnable work item must be admitted through KernelRuntime;
        there is intentionally no ambient bootstrap driver or fabricated task. */
+    boot_info->boot_flags |= SWYP_BOOT_FLAG_RUNTIME_HANDOFF_VALIDATED;
     swyp_kernel_halt();
 }

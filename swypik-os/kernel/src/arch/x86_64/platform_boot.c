@@ -455,6 +455,12 @@ SwypStatus swyp_x86_platform_boot_init(SwypX86PlatformBoot *platform, const Swyp
         return status;
     }
     boot_ops.tsc_deadline_ticks = swyp_x86_platform_native_tsc_deadline_ticks();
+    if (boot_ops.tsc_deadline_ticks == 0u) {
+        /* A bounded count-based quantum is not a calibrated duration. The
+           timer stays disarmed unless an admitted user task is running. */
+        boot_ops.lapic_timer_initial_count = 1000000u;
+        boot_ops.lapic_timer_divide_config = 3u;
+    }
     status = swyp_x86_platform_boot_init_from_acpi(platform, &discovered, page_allocator, kernel_root, native_mmu,
                                                    native_mmu, native_ops, privilege, &boot_ops);
     if (status != SWYP_OK) {

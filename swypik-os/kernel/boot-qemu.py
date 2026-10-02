@@ -31,6 +31,8 @@ FLAGS = [
     "EXITED_BOOT_SERVICES", "PAGE_ALLOCATOR_READY", "KERNEL_ROOT_ACTIVE", "DIRECT_MAP_READY",
     "PRIVILEGE_READY", "EMERGENCY_IDT_READY", "TRAP_ABI_READY", "PLATFORM_READY",
     "SCHEDULER_READY", "DRIVER_ABI_READY", "IOMMU_READY",
+    "INIT_IMAGE_READY", "INIT_REFUSED", "INIT_YIELDED", "INIT_EXITED", "INIT_CLEANED", "INIT_FAILED",
+    "RUNTIME_HANDOFF_VALIDATED",
 ]
 REQUIRED_RUNTIME = (1 << 10) - 1  # bits 0..9: everything before swyp_kernel_entry_runtime
 BANNER = ["SwypikOS native kernel seed", "stage=uefi-loader arch=x86_64", "handoff=kernel boot-services=exiting"]
@@ -44,13 +46,18 @@ def monitor(sock_path, command, timeout=30.0):
             s.connect(sock_path)
             break
         except OSError:
+            s.close()
             if time.monotonic() > deadline:
                 raise
             time.sleep(0.1)
     s.settimeout(timeout)
     data = b""
     while b"(qemu)" not in data:
-        data += s.recv(65536)
+        chunk = s.recv(65536)
+        if not chunk:
+            s.close()
+            raise ConnectionError("QEMU monitor closed before its prompt")
+        data += chunk
     s.sendall(command.encode() + b"\n")
     data = b""
     while data.count(b"(qemu)") < 1:
@@ -83,13 +90,27 @@ def main():
     parser.add_argument("--timeout", type=float, default=120.0)
     parser.add_argument("--hmp", action="append", default=[], help="extra QEMU monitor command after halt; {rip}/{rsp} expand")
     parser.add_argument("--out", default="", help="evidence directory (kept); default: temporary")
+    parser.add_argument("--init", help="explicit SWYDRV1 file placed at EFI/SWYPIK/INIT.SWD")
+    parser.add_argument("--init-outcome", choices=("exited", "refused", "limited"), default="exited")
+    parser.add_argument("--expected-exit", type=int, default=42)
+    parser.add_argument("--trace-interrupts", action="store_true", help="include interrupt/exception diagnostics")
     args = parser.parse_args()
+    if args.memory_mib < 128 or args.memory_mib > 4096 or args.cpus < 1 or args.cpus > 16 or args.timeout <= 0:
+        parser.error("memory must be 128..4096 MiB, cpus 1..16, timeout positive")
+    if args.init_outcome != "exited" and not args.init:
+        parser.error("--init-outcome requires --init")
 
     work = args.out or tempfile.mkdtemp(prefix="swypik-qemu-boot-")
     os.makedirs(work, exist_ok=True)
     esp = os.path.join(work, "esp")
     os.makedirs(os.path.join(esp, "EFI", "BOOT"), exist_ok=True)
     shutil.copyfile(args.efi, os.path.join(esp, "EFI", "BOOT", "BOOTX64.EFI"))
+    init_dir = os.path.join(esp, "EFI", "SWYPIK")
+    if args.init:
+        os.makedirs(init_dir, exist_ok=True)
+        shutil.copyfile(args.init, os.path.join(init_dir, "INIT.SWD"))
+    elif os.path.exists(os.path.join(init_dir, "INIT.SWD")):
+        raise ValueError("output ESP already contains INIT.SWD; choose a fresh --out directory")
     vars_copy = os.path.join(work, "OVMF_VARS.fd")
     shutil.copyfile(args.ovmf_vars, vars_copy)
     serial = os.path.join(work, "serial.log")
@@ -108,7 +129,7 @@ def main():
            "-drive", f"if=pflash,format=raw,file={vars_copy}",
            "-drive", f"format=raw,file=fat:rw:{esp}",
            "-serial", f"file:{serial}", "-monitor", f"unix:{mon},server,nowait",
-           "-d", "cpu_reset,guest_errors", "-D", qlog]
+           "-d", "cpu_reset,guest_errors" + (",int" if args.trace_interrupts else ""), "-D", qlog]
     if args.iommu:
         cmd += ["-device", "intel-iommu,intremap=on"]
     started = time.monotonic()
@@ -159,22 +180,30 @@ def main():
                 if os.path.exists(dump) and os.path.getsize(dump) == args.memory_mib * 1024 * 1024:
                     break
                 time.sleep(0.1)
-            if not os.path.exists(dump):
-                raise RuntimeError(f"pmemsave produced no dump; monitor replied: {reply!r}")
+            if not os.path.exists(dump) or os.path.getsize(dump) != args.memory_mib * 1024 * 1024:
+                raise RuntimeError(f"pmemsave produced no complete dump; monitor replied: {reply!r}")
             with open(dump, "rb") as stream:
                 ram = stream.read()
             os.remove(dump)
             needle = struct.pack("<Q", MAGIC)
             candidates = []
             at = ram.find(needle)
-            while at >= 0 and len(candidates) < 16:
+            while at >= 0 and at + 16 <= len(ram) and len(candidates) < 16:
                 abi, size = struct.unpack_from("<II", ram, at + 8)
                 if 32 <= size <= 4096 and at + size <= len(ram) and size % 8 == 0:
                     fw_table = struct.unpack_from("<Q", ram, at + 24)[0]
-                    flags = struct.unpack_from("<Q", ram, at + size - 8)[0]
+                    if abi != 1 or size < 168:
+                        at = ram.find(needle, at + 8)
+                        continue
+                    flags = struct.unpack_from("<Q", ram, at + 160)[0]
                     candidates.append({"physical": hex(at), "abi_version": abi, "struct_size": size,
                                        "firmware_system_table": hex(fw_table), "boot_flags": hex(flags),
                                        "stages": [name for bit, name in enumerate(FLAGS) if flags >> bit & 1]})
+                    if size >= 232:
+                        init = struct.unpack_from("<QQQiIQQQQ", ram, at + 168)
+                        candidates[-1]["init"] = dict(zip(
+                            ("image_address", "image_bytes", "image_pages", "status", "reserved",
+                             "yields", "preemptions", "exit_code", "observed_domain"), init))
                 at = ram.find(needle, at + 8)
             result["boot_info"] = candidates
             monitor(mon, "quit")
@@ -195,9 +224,10 @@ def main():
         pass
     result["serial_tail"] = serial_text_final[-600:]
     # Post-handoff proof: the live SwypBootInfo has the firmware table cleared
-    # after ExitBootServices; pick the candidate with the most stages.
+    # after ExitBootServices. Multiple plausible live records are ambiguous,
+    # never a reason to select whichever has the most favorable flags.
     live = [c for c in result.get("boot_info", []) if c["firmware_system_table"] == "0x0"]
-    best = max(live, key=lambda c: int(c["boot_flags"], 16), default=None)
+    best = live[0] if len(live) == 1 else None
     result["live_boot_info"] = best
     flags = int(best["boot_flags"], 16) if best else 0
     checks = {
@@ -206,7 +236,22 @@ def main():
         "vcpu_halted": result["halted"],
         "exited_boot_services": bool(flags & 1),
         "runtime_handoff_reached": flags & REQUIRED_RUNTIME == REQUIRED_RUNTIME,
+        "runtime_handoff_validated": bool(flags & (1 << 17)),
     }
+    init = (best or {}).get("init", {})
+    if not args.init:
+        checks["no_implicit_init"] = flags & (((1 << 17) - 1) ^ ((1 << 11) - 1)) == 0
+    elif args.init_outcome == "refused":
+        checks["invalid_init_refused"] = bool(flags & (1 << 12)) and not flags & ((1 << 11) | (1 << 13) | (1 << 14))
+        checks["refusal_reason_recorded"] = init.get("status", 0) != 0
+    elif args.init_outcome == "limited":
+        checks["init_preempted_and_limited"] = init.get("preemptions", 0) > 0 and init.get("status") != 0
+        checks["limited_init_cleaned"] = bool(flags & (1 << 15)) and bool(flags & (1 << 16)) and not flags & (1 << 14)
+    else:
+        checks["init_executed"] = flags & ((1 << 11) | (1 << 13) | (1 << 14) | (1 << 15)) == (
+            (1 << 11) | (1 << 13) | (1 << 14) | (1 << 15))
+        checks["init_succeeded"] = init.get("status") == 0 and init.get("exit_code") == args.expected_exit
+        checks["init_domain_isolated"] = init.get("observed_domain") == 1
     result["checks"] = checks
     result["status"] = "PASS" if all(checks.values()) else "FAIL"
     print(json.dumps(result, indent=2))

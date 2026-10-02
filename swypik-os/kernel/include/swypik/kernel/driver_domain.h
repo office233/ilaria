@@ -43,6 +43,10 @@ void swyp_driver_domain_manager_init(SwypDriverDomainManager *manager, SwypCapab
 SwypStatus swyp_driver_domain_open(SwypDriverDomainManager *manager, const SwypDeviceGraph *graph, uint64_t node_id,
                                    uint64_t domain_id, uint64_t lease_fence, const SwypDriverDomainPolicy *policy,
                                    const SwypDriverDomain **out_domain);
+/* Explicit no-device-grants path, only for COMPUTE/PLATFORM nodes. */
+SwypStatus swyp_driver_domain_open_compute(SwypDriverDomainManager *manager, const SwypDeviceGraph *graph,
+                                           uint64_t node_id, uint64_t domain_id, uint64_t lease_fence,
+                                           const SwypDriverDomain **out_domain);
 SwypStatus swyp_driver_domain_resolve(const SwypDriverDomainManager *manager, uint64_t domain_id, uint64_t lease_fence,
                                       SwypCapabilityHandle handle, uint64_t required_rights,
                                       SwypCapabilityObjectType expected_type, const SwypCapabilityGrant **out_grant);

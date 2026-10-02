@@ -66,6 +66,10 @@ SwypStatus swyp_kernel_runtime_open_driver_domain(SwypKernelRuntime *runtime, co
                                                   SwypAddressSpace **out_address_space);
 SwypStatus swyp_kernel_runtime_activate_driver_domain(SwypKernelRuntime *runtime, uint64_t domain_id,
                                                       uint64_t lease_fence);
+SwypStatus swyp_kernel_runtime_open_compute_domain(SwypKernelRuntime *runtime, const SwypDeviceGraph *graph,
+                                                   uint64_t node_id, uint64_t domain_id, uint64_t lease_fence,
+                                                   const SwypDriverDomain **out_domain,
+                                                   SwypAddressSpace **out_address_space);
 SwypStatus swyp_kernel_runtime_load_driver_image(SwypKernelRuntime *runtime, uint64_t domain_id, uint64_t lease_fence,
                                                  const uint8_t *image, uint64_t image_bytes, uint32_t stack_pages,
                                                  SwypThreadContext *initial_context);

@@ -36,6 +36,9 @@ typedef struct EFI_CONFIGURATION_TABLE {
 #define EFI_INVALID_PARAMETER EFIERR(2)
 #define EFI_BUFFER_TOO_SMALL EFIERR(5)
 #define EFI_DEVICE_ERROR EFIERR(7)
+#define EFI_NOT_FOUND EFIERR(14)
+#define EFI_FILE_MODE_READ UINT64_C(1)
+#define EFI_FILE_DIRECTORY UINT64_C(0x10)
 
 typedef enum EFI_MEMORY_TYPE {
     EfiReservedMemoryType = 0,
@@ -121,6 +124,43 @@ typedef struct EFI_LOADED_IMAGE_PROTOCOL {
     EFI_MEMORY_TYPE ImageDataType;
     void *Unload;
 } EFI_LOADED_IMAGE_PROTOCOL;
+
+typedef struct EFI_FILE_PROTOCOL EFI_FILE_PROTOCOL;
+typedef EFI_STATUS(SWYP_EFIAPI *EFI_FILE_OPEN)(EFI_FILE_PROTOCOL *This, EFI_FILE_PROTOCOL **NewHandle,
+                                              const EFI_CHAR16 *FileName, EFI_UINT64 OpenMode, EFI_UINT64 Attributes);
+typedef EFI_STATUS(SWYP_EFIAPI *EFI_FILE_CLOSE)(EFI_FILE_PROTOCOL *This);
+typedef EFI_STATUS(SWYP_EFIAPI *EFI_FILE_READ)(EFI_FILE_PROTOCOL *This, EFI_UINTN *BufferSize, void *Buffer);
+typedef EFI_STATUS(SWYP_EFIAPI *EFI_FILE_GET_INFO)(EFI_FILE_PROTOCOL *This, const EFI_GUID *InformationType,
+                                                 EFI_UINTN *BufferSize, void *Buffer);
+struct EFI_FILE_PROTOCOL {
+    EFI_UINT64 Revision;
+    EFI_FILE_OPEN Open;
+    EFI_FILE_CLOSE Close;
+    void *Delete;
+    EFI_FILE_READ Read;
+    void *Write;
+    void *GetPosition;
+    void *SetPosition;
+    EFI_FILE_GET_INFO GetInfo;
+    void *SetInfo;
+    void *Flush;
+};
+
+typedef struct EFI_SIMPLE_FILE_SYSTEM_PROTOCOL EFI_SIMPLE_FILE_SYSTEM_PROTOCOL;
+typedef EFI_STATUS(SWYP_EFIAPI *EFI_OPEN_VOLUME)(EFI_SIMPLE_FILE_SYSTEM_PROTOCOL *This, EFI_FILE_PROTOCOL **Root);
+struct EFI_SIMPLE_FILE_SYSTEM_PROTOCOL {
+    EFI_UINT64 Revision;
+    EFI_OPEN_VOLUME OpenVolume;
+};
+
+typedef struct EFI_FILE_INFO {
+    EFI_UINT64 Size;
+    EFI_UINT64 FileSize;
+    EFI_UINT64 PhysicalSize;
+    uint8_t Times[48];
+    EFI_UINT64 Attribute;
+    EFI_CHAR16 FileName[1];
+} EFI_FILE_INFO;
 
 typedef struct EFI_BOOT_SERVICES {
     EFI_TABLE_HEADER Hdr;

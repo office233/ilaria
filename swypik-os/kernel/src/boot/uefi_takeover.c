@@ -1,4 +1,5 @@
 #include "swypik/boot/uefi_takeover.h"
+#include "swypik/arch/x86_64/driver_image.h"
 
 static const EFI_GUID kLoadedImageProtocolGuid = {
     UINT32_C(0x5b1b31a1), UINT16_C(0x9562), UINT16_C(0x11d2),
@@ -295,6 +296,19 @@ SwypStatus swyp_uefi_takeover_prepare_exit(void *context, const SwypBootInfo *bo
     if (status != SWYP_OK) {
         takeover->last_status = status;
         return status;
+    }
+    if ((boot_info->boot_flags & SWYP_BOOT_FLAG_INIT_IMAGE_READY) != 0u) {
+        uint64_t bytes = boot_info->init_image_pages * SWYP_X86_64_PAGE_SIZE;
+        if (boot_info->init_image_pages == 0u || boot_info->init_image_pages > SWYP_X86_DRIVER_IMAGE_MAX_PAGES ||
+            boot_info->init_image_bytes == 0u || boot_info->init_image_bytes > bytes ||
+            !swyp_uefi_takeover_range_covered(&boot_info->physical_memory, boot_info->init_image_address, bytes, 1)) {
+            return SWYP_ERR_CORRUPT;
+        }
+        status = swyp_uefi_takeover_add_direct(takeover, boot_info->init_image_address, bytes,
+                                                SWYP_MMU_READ | SWYP_MMU_GLOBAL);
+        if (status != SWYP_OK) {
+            return status;
+        }
     }
     if (boot_info->acpi_rsdp_address != 0u &&
         (boot_info->acpi_rsdp_length < 20u ||

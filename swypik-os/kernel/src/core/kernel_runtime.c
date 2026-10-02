@@ -476,11 +476,11 @@ SwypStatus swyp_kernel_runtime_bind_kernel_root(SwypKernelRuntime *runtime, cons
     return SWYP_OK;
 }
 
-SwypStatus swyp_kernel_runtime_open_driver_domain(SwypKernelRuntime *runtime, const SwypDeviceGraph *graph,
+static SwypStatus swyp_kernel_runtime_open_domain(SwypKernelRuntime *runtime, const SwypDeviceGraph *graph,
                                                   uint64_t node_id, uint64_t domain_id, uint64_t lease_fence,
                                                   const SwypDriverDomainPolicy *policy,
                                                   const SwypDriverDomain **out_domain,
-                                                  SwypAddressSpace **out_address_space) {
+                                                  SwypAddressSpace **out_address_space, int compute_only) {
     SwypAddressSpace *address_space = NULL;
     int iommu_attached = 0;
     SwypStatus status;
@@ -495,8 +495,11 @@ SwypStatus swyp_kernel_runtime_open_driver_domain(SwypKernelRuntime *runtime, co
     if (status != SWYP_OK) {
         return status;
     }
-    status = swyp_driver_domain_open(&runtime->driver_domains, graph, node_id, domain_id, lease_fence, policy,
-                                     out_domain);
+    status = compute_only
+                 ? swyp_driver_domain_open_compute(&runtime->driver_domains, graph, node_id, domain_id,
+                                                    lease_fence, out_domain)
+                 : swyp_driver_domain_open(&runtime->driver_domains, graph, node_id, domain_id, lease_fence,
+                                            policy, out_domain);
     if (status != SWYP_OK) {
         SwypStatus rollback = swyp_x86_64_driver_runtime_close_domain(&runtime->x86_driver_runtime, domain_id,
                                                                       lease_fence);
@@ -505,8 +508,8 @@ SwypStatus swyp_kernel_runtime_open_driver_domain(SwypKernelRuntime *runtime, co
         }
         return status;
     }
-    status = swyp_kernel_runtime_attach_iommu_device(runtime, graph, node_id, domain_id, lease_fence,
-                                                     &iommu_attached);
+    status = compute_only ? SWYP_OK : swyp_kernel_runtime_attach_iommu_device(
+        runtime, graph, node_id, domain_id, lease_fence, &iommu_attached);
     if (status != SWYP_OK) {
         SwypStatus quiesce_status = swyp_driver_domain_quiesce(&runtime->driver_domains, domain_id, lease_fence);
         SwypStatus revoke_status = quiesce_status == SWYP_OK
@@ -523,6 +526,25 @@ SwypStatus swyp_kernel_runtime_open_driver_domain(SwypKernelRuntime *runtime, co
     (void)iommu_attached;
     *out_address_space = address_space;
     return SWYP_OK;
+}
+
+SwypStatus swyp_kernel_runtime_open_driver_domain(SwypKernelRuntime *runtime, const SwypDeviceGraph *graph,
+                                                  uint64_t node_id, uint64_t domain_id, uint64_t lease_fence,
+                                                  const SwypDriverDomainPolicy *policy,
+                                                  const SwypDriverDomain **out_domain,
+                                                  SwypAddressSpace **out_address_space) {
+    return swyp_kernel_runtime_open_domain(runtime, graph, node_id, domain_id, lease_fence, policy,
+                                            out_domain, out_address_space, 0);
+}
+
+SwypStatus swyp_kernel_runtime_open_compute_domain(SwypKernelRuntime *runtime, const SwypDeviceGraph *graph,
+                                                   uint64_t node_id, uint64_t domain_id, uint64_t lease_fence,
+                                                   const SwypDriverDomain **out_domain,
+                                                   SwypAddressSpace **out_address_space) {
+    SwypDriverDomainPolicy policy;
+    swyp_driver_domain_policy_init(&policy);
+    return swyp_kernel_runtime_open_domain(runtime, graph, node_id, domain_id, lease_fence, &policy,
+                                            out_domain, out_address_space, 1);
 }
 
 SwypStatus swyp_kernel_runtime_activate_driver_domain(SwypKernelRuntime *runtime, uint64_t domain_id,

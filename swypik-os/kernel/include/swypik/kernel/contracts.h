@@ -17,7 +17,14 @@ enum {
     SWYP_BOOT_FLAG_PLATFORM_READY = UINT64_C(1) << 7,
     SWYP_BOOT_FLAG_SCHEDULER_READY = UINT64_C(1) << 8,
     SWYP_BOOT_FLAG_DRIVER_ABI_READY = UINT64_C(1) << 9,
-    SWYP_BOOT_FLAG_IOMMU_READY = UINT64_C(1) << 10
+    SWYP_BOOT_FLAG_IOMMU_READY = UINT64_C(1) << 10,
+    SWYP_BOOT_FLAG_INIT_IMAGE_READY = UINT64_C(1) << 11,
+    SWYP_BOOT_FLAG_INIT_REFUSED = UINT64_C(1) << 12,
+    SWYP_BOOT_FLAG_INIT_YIELDED = UINT64_C(1) << 13,
+    SWYP_BOOT_FLAG_INIT_EXITED = UINT64_C(1) << 14,
+    SWYP_BOOT_FLAG_INIT_CLEANED = UINT64_C(1) << 15,
+    SWYP_BOOT_FLAG_INIT_FAILED = UINT64_C(1) << 16,
+    SWYP_BOOT_FLAG_RUNTIME_HANDOFF_VALIDATED = UINT64_C(1) << 17
 };
 
 typedef enum SwypFirmwareKind {
@@ -70,7 +77,20 @@ typedef struct SwypBootInfo {
     uint32_t acpi_rsdp_length;
     uint32_t acpi_revision;
     uint64_t boot_flags;
+    uint64_t init_image_address;
+    uint64_t init_image_bytes;
+    uint64_t init_image_pages;
+    SwypStatus init_status;
+    uint32_t init_reserved;
+    uint64_t init_yields;
+    uint64_t init_preemptions;
+    uint64_t init_exit_code;
+    uint64_t init_observed_domain;
 } SwypBootInfo;
+
+_Static_assert(offsetof(SwypBootInfo, boot_flags) == 160u, "boot evidence prefix changed");
+_Static_assert(offsetof(SwypBootInfo, init_image_address) == 168u, "init evidence layout changed");
+_Static_assert(sizeof(SwypBootInfo) == 232u, "init evidence size changed");
 
 typedef struct SwypPageAllocatorOps {
     SwypStatus (*allocate)(void *context, uint64_t page_count, uint64_t alignment_pages, uint64_t *physical_address);

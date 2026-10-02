@@ -16,7 +16,8 @@ typedef struct SwypX86KernelContinuation {
     uint64_t rip;
 } SwypX86KernelContinuation;
 
-int64_t SWYP_X86_NATIVE_ABI swyp_x86_kernel_continuation_capture(SwypX86KernelContinuation *continuation);
+int64_t SWYP_X86_NATIVE_ABI swyp_x86_kernel_continuation_capture(SwypX86KernelContinuation *continuation)
+    __attribute__((returns_twice));
 void SWYP_X86_NATIVE_ABI swyp_x86_kernel_continuation_resume(const SwypX86KernelContinuation *continuation,
                                                               int64_t value) __attribute__((noreturn));
 

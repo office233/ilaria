@@ -182,9 +182,9 @@ void swyp_driver_domain_manager_init(SwypDriverDomainManager *manager, SwypCapab
     }
 }
 
-SwypStatus swyp_driver_domain_open(SwypDriverDomainManager *manager, const SwypDeviceGraph *graph, uint64_t node_id,
+static SwypStatus swyp_driver_domain_open_impl(SwypDriverDomainManager *manager, const SwypDeviceGraph *graph, uint64_t node_id,
                                    uint64_t domain_id, uint64_t lease_fence, const SwypDriverDomainPolicy *policy,
-                                   const SwypDriverDomain **out_domain) {
+                                   const SwypDriverDomain **out_domain, int compute_only) {
     SwypDriverDomain *slot;
     SwypCapabilityHandle minted[SWYP_DRIVER_DOMAIN_MAX_GRANTS];
     uint16_t grant_count = 0u;
@@ -196,6 +196,18 @@ SwypStatus swyp_driver_domain_open(SwypDriverDomainManager *manager, const SwypD
     *out_domain = NULL;
     if (swyp_device_graph_validate(graph) != SWYP_OK || !swyp_driver_domain_graph_has_node(graph, node_id)) {
         return SWYP_ERR_INVALID;
+    }
+    if (compute_only) {
+        int allowed = 0;
+        for (i = 0u; i < graph->node_count; ++i) {
+            if (graph->nodes[i].id == node_id && graph->nodes[i].device_class == SWYP_DEVICE_CLASS_COMPUTE &&
+                graph->nodes[i].bus == SWYP_DEVICE_BUS_PLATFORM) {
+                allowed = 1;
+            }
+        }
+        if (!allowed) {
+            return SWYP_ERR_DENIED;
+        }
     }
     if (swyp_driver_domain_find(manager, domain_id) != NULL) {
         return SWYP_ERR_DENIED;
@@ -233,7 +245,7 @@ SwypStatus swyp_driver_domain_open(SwypDriverDomainManager *manager, const SwypD
             return SWYP_ERR_INVALID;
         }
     }
-    if (grant_count == 0u) {
+    if (grant_count == 0u && !compute_only) {
         return SWYP_ERR_INVALID;
     }
     if (grant_count > SWYP_DRIVER_DOMAIN_MAX_GRANTS ||
@@ -276,6 +288,20 @@ SwypStatus swyp_driver_domain_open(SwypDriverDomainManager *manager, const SwypD
     slot->active = SWYP_DRIVER_DOMAIN_ACTIVE;
     *out_domain = slot;
     return SWYP_OK;
+}
+
+SwypStatus swyp_driver_domain_open(SwypDriverDomainManager *manager, const SwypDeviceGraph *graph, uint64_t node_id,
+                                   uint64_t domain_id, uint64_t lease_fence, const SwypDriverDomainPolicy *policy,
+                                   const SwypDriverDomain **out_domain) {
+    return swyp_driver_domain_open_impl(manager, graph, node_id, domain_id, lease_fence, policy, out_domain, 0);
+}
+
+SwypStatus swyp_driver_domain_open_compute(SwypDriverDomainManager *manager, const SwypDeviceGraph *graph,
+                                           uint64_t node_id, uint64_t domain_id, uint64_t lease_fence,
+                                           const SwypDriverDomain **out_domain) {
+    SwypDriverDomainPolicy policy;
+    swyp_driver_domain_policy_init(&policy);
+    return swyp_driver_domain_open_impl(manager, graph, node_id, domain_id, lease_fence, &policy, out_domain, 1);
 }
 
 SwypStatus swyp_driver_domain_resolve(const SwypDriverDomainManager *manager, uint64_t domain_id, uint64_t lease_fence,

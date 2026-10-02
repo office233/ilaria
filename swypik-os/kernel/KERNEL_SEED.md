@@ -208,8 +208,48 @@ the IRQ/syscall IDT entries and only then enters `swyp_kernel_entry_runtime`.
 The current runtime entry therefore starts after firmware boot services are
 gone, kernel CR3/direct-map are active, GDT/TSS/IST and exception traps are live,
 the platform/APIC path has passed discovery, and scheduler + driver ABI entry
-points are bound. It still halts deliberately when no admitted runnable driver
-task exists; there is no ambient bootstrap driver or fabricated workload.
+points are bound. Without an external init image it halts deliberately; there
+is no ambient bootstrap driver or fabricated workload.
+
+### Explicit initial task (2026-10-02)
+
+The UEFI loader optionally reads `\EFI\SWYPIK\INIT.SWD` from the image's boot
+volume. Absence is recorded, not replaced with a built-in task. The SWYDRV1
+image is capped at 1 MiB and parsed before ExitBootServices; directories,
+corruption, truncation, growth during reads and size overflow are refused.
+Its loader-owned source pages remain read-only supervisor input until reboot.
+The added `SwypBootInfo` fields extend the existing prefix, keeping
+`boot_flags` at offset 160; the boot harness checks the structure's size.
+
+An explicitly provided image runs through the existing domain, W^X image
+loader, scheduler, ring-3 and syscall paths. A separate COMPUTE/PLATFORM
+admission API grants **zero** device capabilities; the resource-bearing driver
+API still refuses an empty grant policy. Hardware preemption is required.
+When calibrated TSC-deadline support is absent, a count-based LAPIC quantum is
+used only while the task is running; its count is not a duration claim.
+After at most 128 dispatches, an unfinished task is stopped and its domain,
+user pages and entry stack are cleaned up.
+
+The proof exposed a boot-only stack corruption: `TSS.RSP0` pointed at the
+suspended boot continuation's stack, so ring-3 interrupts overwrote live
+kernel call frames. Init now has a separate 64 KiB supervisor-only NX entry
+stack between unmapped guard pages; the prior RSP0 is restored afterwards.
+`RUNTIME_HANDOFF_VALIDATED` distinguishes the intentional final kernel halt
+from emergency halts or a prematurely completed stage.
+
+```bash
+python3 tools/make-init-image.py INIT.SWD
+python3 boot-qemu.py --efi out/efi-portable/BOOTX64.EFI \
+  --ovmf-code /usr/share/OVMF/OVMF_CODE_4M.fd \
+  --ovmf-vars /usr/share/OVMF/OVMF_VARS_4M.fd --init INIT.SWD
+```
+
+The supplied first-party probe checks CS privilege level 3 and DOMAIN_ID 1,
+yields, resumes and exits with code 42. `--mode loop` produces an infinite-loop
+probe; use `--init-outcome limited` to require timer preemption, bounded
+termination and cleanup. `--init-outcome refused` requires invalid input to
+stay unexecuted. These are execution probes, not real hardware drivers, a
+general-purpose userspace, multicore task scheduling, or a signed boot chain.
 
 ## Reproducible local build
 

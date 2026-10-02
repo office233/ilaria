@@ -586,6 +586,7 @@ func (c *ownershipChecker) consumeExpression(e Expression, scope *ownershipScope
 		}
 		if e.Callee != nil {
 			if symbol, ok := c.functions[e.Callee.Canonical()]; ok {
+				exclusive := map[*ownershipVar]int{}
 				for i, arg := range e.Args {
 					if arg.Kind == "borrow" || arg.Kind == "slice" {
 						c.diagnostic("borrow_binding_required", "borrowed call arguments must be bound with let in ownership v1", arg.Location)
@@ -593,6 +594,17 @@ func (c *ownershipChecker) consumeExpression(e Expression, scope *ownershipScope
 					argMode := inspectValue
 					if i < len(symbol.Signature.Params) && c.class(symbol.Signature.Params[i].Type, arg.Location) == OwnershipMove {
 						argMode = consumeValue
+					}
+					if i < len(symbol.Signature.Params) && symbol.Signature.Params[i].Type.Name == "mutref" && arg.Kind == "variable" {
+						if loan, ok := scope.lookup(arg.Name); ok {
+							// Loan construction already checks overlapping provenance.
+							// One exclusive binding cannot fill two simultaneous inputs.
+							if previous, exists := exclusive[loan]; exists {
+								c.diagnostic("exclusive_call_alias", fmt.Sprintf("call to %s arguments %d and %d reuse exclusive mutable loan %s", e.Callee.Canonical(), previous+1, i+1, arg.Name), arg.Location)
+							} else {
+								exclusive[loan] = i
+							}
+						}
 					}
 					c.consumeExpression(arg, scope, argMode)
 				}

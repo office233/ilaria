@@ -245,9 +245,17 @@ of exposing raw pointers. Windows x64 is runtime-tested; ARM64 is structurally
 and cross-build validated on this workstation. Packed modules remain stateless
 and continue to reject `storage.*`.
 
-Local `vec<u64>` and `vec<i64>` owners now use that storage contract directly.
+Local `vec<u64>`, `vec<i64>`, `vec<ieee64>` and `vec<bool>` owners use that
+storage contract directly.
 Signed `i64` values are reinterpreted bit-exactly at the storage boundary through
 verified non-trapping Core bitcasts; storage never numerically converts them.
+Each bool occupies one raw64 word: `false` encodes as `0`, `true` as `1`.
+Encoding branches on a typed Core bool; decoding checks `word <= 1` before
+comparing with `1`. Noncanonical words trap instead of becoming truthy values,
+and no bool/numeric cast is introduced. This is the raw64 lowering representation,
+not a change to the logical `swyp-fixed-v1` bool size/alignment (one byte) or to
+`swyp-descriptor-v1`. Large local `array<bool,N>` values above the existing
+64-element scalarization threshold reuse the same encoding, indexing and refs.
 A contextual literal such as `let v: vec<i64> = [-10,20,30];` allocates owned storage;
 `v[i]` is checked; `v[start:end]` is a borrowed slice view; and `drop(v)` emits
 `storage.free`. `&v[i]` / `&mut v[i]` lower to checked descriptor-backed
@@ -255,7 +263,7 @@ A contextual literal such as `let v: vec<i64> = [-10,20,30];` allocates owned st
 does not materialize a native pointer. `vec_len(v)` and `vec_capacity(v)` inspect
 metadata without consuming the move-only owner.
 
-`vec_push(v, value)` is implemented for local `vec<u64>` across structured CFG
+`vec_push(v, value)` is implemented for storage-backed raw64 vecs across structured CFG
 control flow. Capacity is reused when available; a full vec grows x2 into a
 new bounded storage block, copies existing elements through checked
 `storage.load_u64`/`storage.store_u64`, frees the old block and updates the local
@@ -263,7 +271,8 @@ descriptor. Ownership rejects push while any overlapping borrow is live. Push
 inside `if`/`while` is represented by mutable Core descriptor slots so SSA
 creates the required joins/backedge phis.
 
-`vec<u64>` and `vec<i64>` parameters cross the linked-HIR/Core function ABI explicitly as
+Storage-backed raw64 vec parameters, including `vec<bool>`, cross the
+linked-HIR/Core function ABI explicitly as
 three `u64` values `(storage_id, length, capacity)`. A callee reconstructs the
 descriptor view locally and may index it, inspect metadata, grow it and consume
 the owner with `drop`. Callers flatten only an existing storage-backed vec
@@ -292,14 +301,15 @@ rejected so destruction cannot become branch-dependent in v1. Other move-owned
 resources remain explicit-drop-only.
 
 Storage-backed vecs now also support a first compound element layout: a flat
-`struct`/`record` whose fields are all raw-64 storage scalars (`u64`, `i64` or
-`ieee64`). The vec descriptor is unchanged—`length`/`capacity` remain element
+`struct`/`record` whose fields are all raw-64 storage scalars (`u64`, `i64`,
+`ieee64` or canonical `bool` words). The vec descriptor is unchanged—`length`/`capacity` remain element
 counts—while the backing allocation uses a fixed word stride equal to the field
 count. Literals store fields in declaration order; `v[i].field` performs checked
 element bounds plus stride/field addressing; `vec_push` grows/copies the backing
 store in words while preserving element-count metadata. The same descriptor ABI
 crosses function parameters and opaque vec-return handles, including qualified
-cross-module nominal types. Mixed `u64`/`i64`/`ieee64` fields are bit-preserving.
+cross-module nominal types. Mixed `u64`/`i64`/`ieee64` fields are bit-preserving;
+bool leaves use the checked canonical encoding, including field refs and Copy loads.
 Flat raw64 struct elements can also be materialized by Copy (`let p: Pair =
 v[i]`) into the existing scalarized local-struct representation. Field places
 inside storage vec elements support shared/mutable descriptor refs such as
@@ -319,15 +329,23 @@ is raw64. Storage order follows declaration order depth-first, so constructors a
 `v[i].inner.value`, `&mut v[i].inner.value`, `s[i].inner.value` and shared slice
 refs compute the same deterministic word offset. The vec/slice descriptors stay
 unchanged and all bounds are still checked in element units before stride math.
-Recursive-by-value layouts and non-raw64 leaves remain rejected. Whole-element
-Copy of a nested aggregate is still fail-closed because the current local
-scalarized struct representation is flat.
+Recursive-by-value layouts and non-raw64 leaves remain rejected. The existing
+recursive local scalarization also supports whole-element Copy from vec/slice
+storage and local leaf refs for nested raw64 aggregates; bool leaves reuse
+those paths. This does not promote general whole-aggregate assignment, variable
+aggregate values for `vec_push`, aggregate parameters/results or new destructors.
+
+Bool storage is covered by Run/RunFast/RunTurbo and differential Core/native
+execution on Windows x64 and Linux x64/AArch64 (QEMU), including static ELF and
+PIE. Checked descriptor OOB and noncanonical bool decode failures use the
+existing HIR `unreachable` guard and native failure exit `1`; direct storage OOB
+uses Core's `bounds` diagnostic. Physical AArch64 execution is not claimed.
 
 Local fixed structs whose fields are all already Core-scalar are promoted by the
 same strategy. A `new Struct { ... }` local is decomposed into one Core slot per
 field and `value.field` projects the corresponding slot, so no native struct ABI
 or hidden pointer representation is introduced. Struct parameters/results,
-nested aggregate fields, move-owned/dynamic fields and whole-struct assignment
+non-raw64 nested fields, move-owned/dynamic fields and whole-struct assignment
 remain fail-closed until their ABI/ownership contracts are promoted explicitly.
 
 Compile-time-known tagged sums have a similarly narrow promotion path. A local
@@ -340,13 +358,14 @@ fail-closed for the future tagged-union ABI.
 
 Local `ref<T>` / `mutref<T>` now have two Core/native promotion paths. Statically
 resolvable scalar places are compile-time aliases to existing Core slots. In
- addition, indexed places inside a local storage-backed `vec<u64>` / `vec<i64>` lower to an
+addition, indexed places inside storage-backed raw64 vecs and large scalar arrays lower to an
 opaque `(storage_id,index)` descriptor after an explicit bounds guard; constant
 and dynamic indices both work. `*r` loads through the appropriate path,
 `store(r,value)` writes through `mutref`, and `drop(r)` ends the source-level
 loan without exposing a native pointer. References still cannot cross the Core
-function ABI, and descriptor refs to storage layouts beyond raw `u64`/`i64` remain
-fail-closed.
+function ABI. Aggregate slice leaf refs are shared-only; scalar slice refs and
+mutable slice refs remain fail-closed. Descriptor refs to layouts beyond the
+supported raw64 leaves remain fail-closed.
 
 `swyp hir-ownership -root DIR root.swyp` is the first affine ownership gate for
 linked HIR. It classifies values recursively as `copy`, `move` or `borrowed`:

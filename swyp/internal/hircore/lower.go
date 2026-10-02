@@ -1068,7 +1068,7 @@ func storageRawScalarType(t hir.TypeRef) bool {
 	if len(t.Args) != 0 || t.Length != nil {
 		return false
 	}
-	return t.Name == "u64" || t.Name == "i64" || t.Name == "ieee64"
+	return t.Name == "u64" || t.Name == "i64" || t.Name == "ieee64" || t.Name == "bool"
 }
 
 type storageElementField struct {
@@ -1347,6 +1347,43 @@ func (b *builder) encodeStorageScalar(slot int, typ hir.TypeRef, loc hir.Locatio
 			return -1, fmt.Errorf("storage u64 source has Core type %s", b.f.Slots[slot])
 		}
 		return slot, nil
+	case "bool":
+		if b.f.Slots[slot] != coreir.Bool {
+			return -1, fmt.Errorf("storage bool source has Core type %s", b.f.Slots[slot])
+		}
+		zero, err := b.u64Constant(0, loc)
+		if err != nil {
+			return -1, err
+		}
+		one, err := b.u64Constant(1, loc)
+		if err != nil {
+			return -1, err
+		}
+		raw, err := b.slot(coreir.U64)
+		if err != nil {
+			return -1, err
+		}
+		if err := b.move(raw, zero, loc); err != nil {
+			return -1, err
+		}
+		origin := b.current
+		whenTrue, err := b.newBlock()
+		if err != nil {
+			return -1, err
+		}
+		join, err := b.newBlock()
+		if err != nil {
+			return -1, err
+		}
+		b.current = origin
+		b.terminate(coreir.Terminator{Op: "branch", Value: slot, Targets: []int{whenTrue, join}, Location: coreLocation(loc)})
+		b.current = whenTrue
+		if err := b.move(raw, one, loc); err != nil {
+			return -1, err
+		}
+		b.jump(join, loc)
+		b.current = join
+		return raw, nil
 	case "i64":
 		if b.f.Slots[slot] != coreir.I64 {
 			return -1, fmt.Errorf("storage i64 source has Core type %s", b.f.Slots[slot])
@@ -1382,6 +1419,24 @@ func (b *builder) decodeStorageScalar(raw int, typ hir.TypeRef, loc hir.Location
 	}
 	if typ.Name == "u64" {
 		return raw, nil
+	}
+	if typ.Name == "bool" {
+		one, err := b.u64Constant(1, loc)
+		if err != nil {
+			return -1, err
+		}
+		// Bool storage is canonical, not a truthiness conversion of arbitrary words.
+		if err := b.guardU64Relation("le", raw, one, loc); err != nil {
+			return -1, err
+		}
+		dest, err := b.slot(coreir.Bool)
+		if err != nil {
+			return -1, err
+		}
+		if err := b.emit(coreir.Instruction{Op: "eq", Dest: dest, Args: []int{raw, one}, Location: coreLocation(loc)}); err != nil {
+			return -1, err
+		}
+		return dest, nil
 	}
 	destType := coreir.I64
 	op := "bitcast_u64_i64"
@@ -1811,7 +1866,7 @@ func (b *builder) fixedArrayLet(stmt hir.Statement, env *scope) error {
 	}
 	if *stmt.Type.Length > maxScalarizedDynamicArrayLength {
 		if !storageRawScalarType(stmt.Type.Args[0]) {
-			return fmt.Errorf("storage-backed fixed-array lowering currently supports u64/i64 elements, got %s", elementType)
+			return fmt.Errorf("storage-backed fixed-array lowering supports u64/i64/ieee64/bool elements, got %s", elementType)
 		}
 		return b.storageArrayLet(stmt, env)
 	}
@@ -1845,7 +1900,7 @@ func (b *builder) storageArrayLet(stmt hir.Statement, env *scope) error {
 		return fmt.Errorf("invalid storage-array local %s", stmt.Name)
 	}
 	if stmt.Type.Name != "array" || len(stmt.Type.Args) != 1 || !storageRawScalarType(stmt.Type.Args[0]) {
-		return fmt.Errorf("storage-array lowering supports array<u64,N>/array<i64,N>, got %s", stmt.Type.String())
+		return fmt.Errorf("storage-array lowering supports u64/i64/ieee64/bool elements, got %s", stmt.Type.String())
 	}
 	lengthSlot, err := b.u64Constant(*stmt.Type.Length, stmt.Location)
 	if err != nil {
@@ -2725,7 +2780,7 @@ func (b *builder) call(expr hir.Expression, env *scope) (int, error) {
 		}
 		if ref, ok := env.lookupStorageRef(expr.Args[0].Name); ok {
 			if !ref.mutable || ref.typ.Name != "mutref" || len(ref.typ.Args) != 1 || !storageRawScalarType(ref.typ.Args[0]) {
-				return -1, fmt.Errorf("storage store lowering requires mutref<u64>/mutref<i64>")
+				return -1, fmt.Errorf("storage store lowering requires mutref to a u64/i64/ieee64/bool leaf")
 			}
 			value, err := b.expression(expr.Args[1], env)
 			if err != nil {

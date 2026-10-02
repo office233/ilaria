@@ -190,15 +190,21 @@ func (target nativeParityTarget) run(t *testing.T, dir, exe string, args ...stri
 
 // nativeParityOracle evaluates a Core entry with the reference interpreter. A
 // semantic trap maps to the standalone backend-failure exit status 1.
-func nativeParityOracle(t *testing.T, target nativeParityTarget, source, entry string, args []string) int {
+func nativeParityOracle(t *testing.T, target nativeParityTarget, program nativeParityProgram, args []string) int {
 	t.Helper()
-	program, err := swyplang.ParseCore("oracle.swyp", source)
-	if err != nil {
-		t.Fatalf("oracle parse: %v", err)
-	}
-	module, err := program.CoreIR(entry)
-	if err != nil {
-		t.Fatalf("oracle lower: %v", err)
+	entry := program.entry
+	var module coreir.Module
+	if program.core != "" {
+		parsed, err := swyplang.ParseCore("oracle.swyp", program.core)
+		if err != nil {
+			t.Fatalf("oracle parse: %v", err)
+		}
+		module, err = parsed.CoreIR(entry)
+		if err != nil {
+			t.Fatalf("oracle lower: %v", err)
+		}
+	} else {
+		module = nativeParityHIRModule(t, program)
 	}
 	executable, err := coreir.Prepare(module)
 	if err != nil {
@@ -230,6 +236,10 @@ func nativeParityOracle(t *testing.T, target nativeParityTarget, source, entry s
 			switch d.Code {
 			case "overflow", "division_by_zero", "shift_out_of_range", "bounds", "non_finite":
 				return 1
+			case "unreachable":
+				if program.core == "" {
+					return 1 // HIR checked descriptor guards use an unreachable failure block.
+				}
 			}
 		}
 		t.Fatalf("oracle %s%q: non-semantic interpreter failure: %v", entry, args, err)
@@ -249,6 +259,23 @@ func nativeParityOracle(t *testing.T, target nativeParityTarget, source, entry s
 	}
 	t.Fatalf("oracle result type %v has no process exit mapping", result.Value.Type())
 	return 0
+}
+
+func nativeParityHIRModule(t *testing.T, program nativeParityProgram) coreir.Module {
+	t.Helper()
+	root := t.TempDir()
+	for rel, source := range program.modules {
+		writeHIRNativeFile(t, root, rel, source)
+	}
+	var out bytes.Buffer
+	if err := hirCoreCommand([]string{"-root", root, "-entry", program.entry, filepath.Join(root, "app", "main.swyp")}, &out); err != nil {
+		t.Fatalf("oracle HIR lower: %v", err)
+	}
+	module, err := coreir.Decode(out.Bytes())
+	if err != nil {
+		t.Fatal(err)
+	}
+	return module
 }
 
 func TestNativeRuntimeParity(t *testing.T) {
@@ -278,7 +305,7 @@ func TestNativeRuntimeParity(t *testing.T) {
 					exe := target.build(t, dir, tc.program)
 					for _, want := range tc.runs {
 						if tc.oracle {
-							want.exit = nativeParityOracle(t, target, tc.program.core, tc.program.entry, want.args)
+							want.exit = nativeParityOracle(t, target, tc.program, want.args)
 						}
 						wantStdout, wantStderr := "", ""
 						if want.stdout != nil {
@@ -933,7 +960,7 @@ fn run() -> u64 {
     return consume(v);
 }`), nativeParityExit(4)),
 	}
-	return cases
+	return append(cases, boolStorageParityCases()...)
 }
 
 type nativeParityCustomCase struct {

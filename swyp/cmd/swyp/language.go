@@ -80,6 +80,7 @@ func currentLanguageManifest() languageManifest {
 			"storage-backed-slice-core-v1",
 			"storage-backed-vec-u64-core-v1",
 			"storage-backed-i64-core-v1",
+			"storage-backed-bool-core-v1",
 			"storage-backed-vec-ref-core-v1",
 			"vec-push-cfg-core-v1",
 			"vec-u64-function-param-abi-v1",

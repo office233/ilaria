@@ -525,20 +525,32 @@ cover these paths. Richer element layouts, finer dynamic aliasing and generalize
 resource destructor contracts remain open. M1 is not yet complete.
 
 The storage-backed vec ABI now also supports flat nominal struct/record elements
-whose fields are all raw64 (`u64`, `i64`, `ieee64`). Element stride is explicit
+whose fields are all raw64 (`u64`, `i64`, `ieee64`, canonical `bool`). Element stride is explicit
 in Core lowering; `v[i].field`, vec growth/copy, parameter descriptors and vec
 return handles work without native pointers, including cross-module nominal type
 qualification. Whole-element Copy, descriptor refs to vec fields and read-only
 `slice<Struct>` views with field access/Copy/shared refs are also promoted while
-preserving element-unit bounds. Mutable refs through slices, nested aggregate
-fields and non-raw64 element layouts remain open.
+preserving element-unit bounds. Mutable refs through slices and non-raw64
+element layouts remain open.
 
 Storage flattening now recurses through by-value struct/record members when every
 leaf is raw64. Nested constructors/push and leaf projection/ref paths work through
-vec and read-only slice descriptors, while whole nested aggregate materialization
-remains intentionally fail-closed. `defer_drop` also supports moved vec parameters
+vec and read-only slice descriptors. Existing nested whole-element Copy and local
+leaf refs use recursive scalarization; bool leaves reuse the same paths.
+`defer_drop` also supports moved vec parameters
 when scheduled in the top-level function body; nested conditional scheduling is
 rejected.
+
+Bool storage uses a checked raw64 word (`false = 0`, `true = 1`), not a loose
+numeric cast. Noncanonical decode words fail explicitly. `vec<bool>` literals,
+indexing, push/growth, shared/mutable vec refs, read-only slices, parameter/return
+descriptors and bool leaves in flat/nested aggregates reuse the existing bounded
+storage ABI and native emitters. Large scalar bool arrays reuse this path too.
+The logical one-byte fixed bool layout is unchanged. Differential Core/native
+coverage includes Windows x64 and Linux x64/AArch64 QEMU static/PIE execution,
+OOB and noncanonical words; physical AArch64 is not claimed. General aggregate
+assignment/parameter/result ABIs, variable aggregate pushes, scalar slice refs
+and new destructor contracts are not promoted by this feature.
 
 Local fixed structs with Core-scalar fields use slot scalarization for field
 projection; compile-time-known scalar-payload sums and local scalar refs have

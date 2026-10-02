@@ -53,8 +53,7 @@ func coreX64BuildCommand(args []string, out io.Writer) error {
 	if err := os.WriteFile(cPath, []byte(harness), 0600); err != nil {
 		return err
 	}
-	cmd := exec.Command(gcc, "-O1", "-fno-lto", asmPath, cPath, "-o", *output)
-	if result, err := cmd.CombinedOutput(); err != nil {
+	if result, err := runNativeCompilerExclusive(gcc, *output, "-O1", "-fno-lto", asmPath, cPath); err != nil {
 		return fmt.Errorf("x64 assembler/linker failed: %w\n%s", err, result)
 	}
 	fmt.Fprintf(out, "Built direct x86-64 %s (%s)\n", *output, coreir.X64CFGABI)
@@ -93,13 +92,17 @@ func x64HarnessC(artifact x64LeafArtifact) (string, error) {
 		args[i] = fmt.Sprintf("p%d", i)
 		switch p.Type {
 		case coreir.I64:
-			parsers[i] = fmt.Sprintf("int64_t p%d=(int64_t)strtoll(argv[%d],0,10);", i, i+1)
+			parsers[i] = fmt.Sprintf("int64_t p%d=swyp_parse_i64(argv[%d]);", i, i+1)
 		case coreir.U64:
-			parsers[i] = fmt.Sprintf("uint64_t p%d=(uint64_t)strtoull(argv[%d],0,10);", i, i+1)
+			parsers[i] = fmt.Sprintf("uint64_t p%d=swyp_parse_u64(argv[%d]);", i, i+1)
 		case coreir.Bool:
-			parsers[i] = fmt.Sprintf("uint64_t p%d=(strcmp(argv[%d],\"true\")==0||strcmp(argv[%d],\"1\")==0);", i, i+1, i+1)
+			parsers[i] = fmt.Sprintf("uint64_t p%d=swyp_parse_bool(argv[%d]);", i, i+1)
 		case coreir.F64, coreir.IEEE64:
-			parsers[i] = fmt.Sprintf("double p%d=strtod(argv[%d],0);", i, i+1)
+			finite := 0
+			if p.Type == coreir.F64 {
+				finite = 1
+			}
+			parsers[i] = fmt.Sprintf("double p%d=swyp_parse_float(argv[%d],%d);", i, i+1, finite)
 		}
 	}
 	prototypeArgs := append([]string{}, params...)
@@ -108,8 +111,10 @@ func x64HarnessC(artifact x64LeafArtifact) (string, error) {
 	callArgs = append(callArgs, "&status")
 
 	var b strings.Builder
-	b.WriteString("#include <stdint.h>\n#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n")
-	fmt.Fprintf(&b, "extern %s %s(%s);\n", resultType, artifact.Symbol, strings.Join(prototypeArgs, ","))
+	b.WriteString(x64HarnessArgumentRuntime)
+	// Swyp's internal machine ABI is Win64 on every host. GCC on Linux
+	// otherwise calls this declaration using SysV registers and stack layout.
+	fmt.Fprintf(&b, "extern %s __attribute__((ms_abi)) %s(%s);\n", resultType, artifact.Symbol, strings.Join(prototypeArgs, ","))
 	b.WriteString("int main(int argc,char**argv){\n")
 	fmt.Fprintf(&b, "  if(argc!=%d)return 2;\n", len(params)+1)
 	for _, parser := range parsers {
@@ -131,3 +136,35 @@ func x64HarnessC(artifact x64LeafArtifact) (string, error) {
 	b.WriteString("  return 0;\n}\n")
 	return b.String(), nil
 }
+
+const x64HarnessArgumentRuntime = `#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
+#include <math.h>
+#include <ctype.h>
+static void swyp_invalid_arg(void){fputs("invalid typed argument\n",stderr);exit(2);}
+static int64_t swyp_parse_i64(const char *s){
+  const char *digits=s;if(*digits=='+'||*digits=='-')++digits;
+  if(*digits<'0'||*digits>'9')swyp_invalid_arg();
+  char *end=NULL;errno=0;long long value=strtoll(s,&end,10);
+  if(errno||end==s||*end)swyp_invalid_arg();return (int64_t)value;
+}
+static uint64_t swyp_parse_u64(const char *s){
+  if(*s<'0'||*s>'9')swyp_invalid_arg();
+  char *end=NULL;errno=0;unsigned long long value=strtoull(s,&end,10);
+  if(errno||end==s||*end)swyp_invalid_arg();return (uint64_t)value;
+}
+static uint64_t swyp_parse_bool(const char *s){
+  if(strcmp(s,"true")==0||strcmp(s,"1")==0)return 1;
+  if(strcmp(s,"false")==0||strcmp(s,"0")==0)return 0;
+  swyp_invalid_arg();return 0;
+}
+static double swyp_parse_float(const char *s,int finite){
+  if(!*s||isspace((unsigned char)*s))swyp_invalid_arg();
+  char *end=NULL;errno=0;double value=strtod(s,&end);
+  if((errno&&!(errno==ERANGE&&isfinite(value)))||end==s||*end||(finite&&!isfinite(value)))swyp_invalid_arg();
+  return value;
+}
+`

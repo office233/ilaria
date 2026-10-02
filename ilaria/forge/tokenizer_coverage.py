@@ -13,6 +13,11 @@ from data_contract import (
     require_lower_sha256,
     sha256_file,
 )
+from first_party_attestation import (
+    attestation_scope_sha256,
+    match_attested_file,
+    validate_attestation,
+)
 
 COVERAGE_FORMAT = "ilarialex-coverage-v1"
 REQUIRED_COVERAGE = frozenset(
@@ -37,6 +42,8 @@ def build_coverage_manifest(
     entries: dict[str, list[tuple[str | Path, str]]],
     *,
     rights_registry_path: str | Path,
+    first_party_attestations: dict[str, str | Path] | None = None,
+    first_party_root: str | Path | None = None,
 ) -> dict:
     """Pin dedicated evidence files for every required tokenizer coverage class.
 
@@ -56,7 +63,34 @@ def build_coverage_manifest(
     all_sources = sorted(
         {source for records in entries.values() for _, source in records}
     )
-    require_approved_rights(rights, all_sources)
+    first_party_attestations = dict(first_party_attestations or {})
+    unused_first_party = sorted(set(first_party_attestations) - set(all_sources))
+    if unused_first_party:
+        raise ValueError(
+            "unused first-party tokenizer coverage attestations: "
+            + ", ".join(unused_first_party)
+        )
+    ambiguous = sorted(set(first_party_attestations) & set(rights["sources"]))
+    if ambiguous:
+        raise ValueError(
+            "tokenizer coverage sources have ambiguous external and first-party rights bases: "
+            + ", ".join(ambiguous)
+        )
+    external_sources = sorted(set(all_sources) - set(first_party_attestations))
+    require_approved_rights(rights, external_sources)
+    if first_party_attestations and first_party_root is None:
+        raise ValueError("first-party tokenizer coverage requires first_party_root")
+    first_party_packets: dict[str, dict] = {}
+    first_party_records: dict[str, dict] = {}
+    for source, attestation_path in sorted(first_party_attestations.items()):
+        packet = validate_attestation(attestation_path, workspace_root=first_party_root)
+        first_party_packets[source] = packet
+        first_party_records[source] = {
+            "filename": Path(attestation_path).name,
+            "file_sha256": sha256_file(attestation_path),
+            "attestation_sha256": packet["attestation_sha256"],
+            "attestation_scope_sha256": attestation_scope_sha256(packet),
+        }
 
     coverage: dict[str, dict] = {}
     for category in sorted(REQUIRED_COVERAGE):
@@ -85,6 +119,17 @@ def build_coverage_manifest(
                     "sha256": sha256_file(path),
                     "bytes": size,
                     "source": source,
+                    **(
+                        {
+                            "attested_path": match_attested_file(
+                                first_party_packets[source],
+                                path,
+                                workspace_root=first_party_root,
+                            )
+                        }
+                        if source in first_party_packets
+                        else {}
+                    ),
                 }
             )
             total_bytes += size
@@ -102,6 +147,11 @@ def build_coverage_manifest(
             "sha256": sha256_file(rights_path),
             "policy": rights.get("policy", ""),
         },
+        **(
+            {"first_party_attestations": first_party_records}
+            if first_party_records
+            else {}
+        ),
     }
     manifest["coverage_sha256"] = _identity_hash(manifest)
     return manifest
@@ -111,6 +161,8 @@ def validate_coverage_manifest(
     path: str | Path,
     *,
     rights_registry_path: str | Path,
+    first_party_attestations: dict[str, str | Path] | None = None,
+    first_party_root: str | Path | None = None,
 ) -> dict:
     manifest_path = Path(path)
     with manifest_path.open(encoding="utf-8") as stream:
@@ -131,7 +183,37 @@ def validate_coverage_manifest(
     sources = manifest.get("sources")
     if not isinstance(sources, list) or not sources:
         raise ValueError("tokenizer coverage manifest has no sources")
-    require_approved_rights(rights, sources)
+    first_party_identity = manifest.get("first_party_attestations", {})
+    if not isinstance(first_party_identity, dict):
+        raise ValueError("tokenizer coverage first-party identity is invalid")
+    first_party_attestations = dict(first_party_attestations or {})
+    if set(first_party_attestations) != set(first_party_identity):
+        raise ValueError("tokenizer coverage first-party attestation set mismatch")
+    ambiguous = sorted(set(first_party_identity) & set(rights["sources"]))
+    if ambiguous:
+        raise ValueError(
+            "tokenizer coverage sources have ambiguous external and first-party rights bases: "
+            + ", ".join(ambiguous)
+        )
+    external_sources = sorted(set(sources) - set(first_party_identity))
+    require_approved_rights(rights, external_sources)
+    if first_party_identity and first_party_root is None:
+        raise ValueError("first-party tokenizer coverage requires first_party_root")
+    first_party_packets: dict[str, dict] = {}
+    for source, identity in sorted(first_party_identity.items()):
+        if not isinstance(identity, dict):
+            raise ValueError(f"tokenizer coverage first-party identity {source!r} is invalid")
+        attestation_path = first_party_attestations[source]
+        packet = validate_attestation(attestation_path, workspace_root=first_party_root)
+        expected = {
+            "filename": Path(attestation_path).name,
+            "file_sha256": sha256_file(attestation_path),
+            "attestation_sha256": packet["attestation_sha256"],
+            "attestation_scope_sha256": attestation_scope_sha256(packet),
+        }
+        if identity != expected:
+            raise ValueError(f"tokenizer coverage first-party identity mismatch for {source!r}")
+        first_party_packets[source] = packet
     pinned_rights = manifest.get("rights")
     if not isinstance(pinned_rights, dict) or pinned_rights.get("sha256") != sha256_file(rights_path):
         raise ValueError("tokenizer coverage rights registry hash mismatch")
@@ -164,6 +246,21 @@ def validate_coverage_manifest(
                 raise ValueError(f"tokenizer coverage input size mismatch: {filename}")
             if sha256_file(input_path) != digest:
                 raise ValueError(f"tokenizer coverage input hash mismatch: {filename}")
+            if source in first_party_packets:
+                attested_path = file_record.get("attested_path")
+                if not isinstance(attested_path, str) or not attested_path:
+                    raise ValueError(
+                        f"tokenizer coverage first-party input lacks attested_path: {filename}"
+                    )
+                matched = match_attested_file(
+                    first_party_packets[source],
+                    input_path,
+                    workspace_root=first_party_root,
+                )
+                if matched != attested_path:
+                    raise ValueError(
+                        f"tokenizer coverage first-party provenance mismatch: {filename}"
+                    )
             total += size
             observed_sources.add(source)
         if total != int(record.get("bytes", -1)):
@@ -185,13 +282,26 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--input", action="append", required=True)
     parser.add_argument("--rights", required=True)
+    parser.add_argument("--first-party-attestation", action="append", default=[])
+    parser.add_argument("--first-party-root", default="")
     parser.add_argument("--out", required=True)
     args = parser.parse_args()
     entries = {category: [] for category in REQUIRED_COVERAGE}
     for raw in args.input:
         category, path, source = _parse_entry(raw)
         entries[category].append((path, source))
-    manifest = build_coverage_manifest(entries, rights_registry_path=args.rights)
+    first_party_attestations = {}
+    for raw in args.first_party_attestation:
+        source, sep, path = raw.partition("=")
+        if not sep or not source or not path or source in first_party_attestations:
+            raise ValueError("first-party attestation must be unique SOURCE=PATH")
+        first_party_attestations[source] = path
+    manifest = build_coverage_manifest(
+        entries,
+        rights_registry_path=args.rights,
+        first_party_attestations=first_party_attestations,
+        first_party_root=args.first_party_root or None,
+    )
     atomic_write_json(args.out, manifest)
     print(f"[ilarialex] coverage manifest {args.out}: {manifest['coverage_sha256']}")
 

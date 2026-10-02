@@ -5,7 +5,6 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
-import sys
 import tempfile
 import threading
 
@@ -97,11 +96,9 @@ def main():
     parser.add_argument("--native-only", action="store_true", help="disable Windows-to-WSL fallback")
     args = parser.parse_args()
     compiler = compiler_path(args.compiler)
+    # The caller can select an approved output root. Otherwise tempfile uses
+    # the host's TEMP/TMP configuration, never a developer-specific home path.
     temp_root = args.temp_root
-    if temp_root is None and os.name == "nt":
-        approved = Path(r"C:\Users\abel\AppData\Local\Temp\2\opencode")
-        if approved.is_dir():
-            temp_root = approved
     if temp_root is not None and not temp_root.is_dir():
         parser.error("--temp-root must already exist")
     if compiler is None:

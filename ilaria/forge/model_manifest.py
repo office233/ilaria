@@ -12,7 +12,10 @@ import json
 from pathlib import Path
 
 from atomic_io import atomic_binary_writer
+from data_contract import require_lower_sha256
 from hf_tokenizer import (
+    EOS,
+    ILARIALEX_BASE_VOCAB_SIZE,
     ILARIALEX_FORMAT,
     ILARIALEX_PROTOCOL_RESERVED,
     ILARIALEX_VOCAB_SIZE,
@@ -38,18 +41,26 @@ def canonical_json_bytes(value: object) -> bytes:
     ).encode("utf-8")
 
 
-def _validate_sha256(name: str, value: str) -> None:
-    if len(value) != 64 or value.lower() != value:
-        raise ValueError(f"{name} must be a lowercase sha256 hex digest")
-    try:
-        bytes.fromhex(value)
-    except ValueError as exc:
-        raise ValueError(f"{name} must be a lowercase sha256 hex digest") from exc
+def _validate_tokenizer_identity(data: dict) -> None:
+    expected = {
+        "format": ILARIALEX_FORMAT,
+        "vocab_size": ILARIALEX_VOCAB_SIZE,
+        "base_vocab_size": ILARIALEX_BASE_VOCAB_SIZE,
+        "protocol_reserved": ILARIALEX_PROTOCOL_RESERVED,
+        "protocol_start_id": ILARIALEX_BASE_VOCAB_SIZE,
+        "eos_id": ILARIALEX_BASE_VOCAB_SIZE,
+        "eos_token": EOS,
+    }
+    for name, value in expected.items():
+        if type(data.get(name)) is not type(value) or data[name] != value:
+            raise ValueError(f"canonical IMC tokenizer {name} must be {value!r}")
 
 
 def load_tokenizer_identity(path: str | Path) -> dict:
     with open(path, encoding="utf-8") as stream:
         data = json.load(stream)
+    if not isinstance(data, dict):
+        raise ValueError("tokenizer identity must be a JSON object")
     if data.get("format") != ILARIALEX_FORMAT:
         raise ValueError(
             f"tokenizer must use {ILARIALEX_FORMAT}, got {data.get('format')!r}"
@@ -67,27 +78,14 @@ def load_tokenizer_identity(path: str | Path) -> dict:
         raise ValueError(
             "tokenizer identity missing fields: " + ", ".join(missing)
         )
-    if int(data["vocab_size"]) != ILARIALEX_VOCAB_SIZE:
-        raise ValueError(
-            f"canonical IMC tokenizer must have {ILARIALEX_VOCAB_SIZE} tokens"
-        )
-    if int(data["protocol_reserved"]) != ILARIALEX_PROTOCOL_RESERVED:
-        raise ValueError(
-            "canonical IMC tokenizer must reserve "
-            f"{ILARIALEX_PROTOCOL_RESERVED} protocol IDs"
-        )
-    if int(data["protocol_start_id"]) != int(data["base_vocab_size"]):
-        raise ValueError("tokenizer protocol range is not contiguous")
-    eos_id = int(data["eos_id"])
-    if not 0 <= eos_id < int(data["vocab_size"]):
-        raise ValueError("tokenizer EOS ID is outside vocabulary")
+    _validate_tokenizer_identity(data)
     return {
         "format": data["format"],
         "vocab_size": int(data["vocab_size"]),
         "base_vocab_size": int(data["base_vocab_size"]),
         "protocol_reserved": int(data["protocol_reserved"]),
         "protocol_start_id": int(data["protocol_start_id"]),
-        "eos_id": eos_id,
+        "eos_id": data["eos_id"],
         "eos_token": data["eos_token"],
         "sha256": sha256_file(path),
     }
@@ -100,10 +98,13 @@ def build_manifest(
     tokenizer_identity: dict,
     source_sha256: str,
 ) -> dict:
-    _validate_sha256("tokenizer sha256", tokenizer_identity["sha256"])
-    _validate_sha256("source_sha256", source_sha256)
+    require_lower_sha256("tokenizer sha256", tokenizer_identity["sha256"])
+    require_lower_sha256("source_sha256", source_sha256)
+    _validate_tokenizer_identity(tokenizer_identity)
     if preset not in PRESETS:
         raise ValueError(f"unknown IMC preset: {preset}")
+    if any(getattr(cfg, field) != value for field, value in PRESETS[preset].items()):
+        raise ValueError("model dimensions do not match the declared preset")
     if cfg.vocab_size != tokenizer_identity["vocab_size"]:
         raise ValueError("model vocab size does not match tokenizer")
     if cfg.eos_token_id != tokenizer_identity["eos_id"]:
@@ -135,7 +136,7 @@ def validate_architecture_manifest_file(path: str | Path) -> dict:
     if not isinstance(manifest, dict):
         raise ValueError("architecture manifest must be a JSON object")
     declared = manifest.get("architecture_hash", "")
-    _validate_sha256("architecture_hash", declared)
+    require_lower_sha256("architecture_hash", declared)
     unhashed = dict(manifest)
     del unhashed["architecture_hash"]
     actual = hashlib.sha256(canonical_json_bytes(unhashed)).hexdigest()
@@ -155,6 +156,15 @@ def validate_architecture_manifest_file(path: str | Path) -> dict:
         raise ValueError("architecture/tokenizer vocab mismatch")
     if int(config.get("eos_token_id", -1)) != int(tokenizer.get("eos_id", -2)):
         raise ValueError("architecture/tokenizer EOS mismatch")
+    try:
+        rebuilt = build_manifest(
+            ImcConfig.from_json(config), preset=manifest["preset"],
+            tokenizer_identity=tokenizer, source_sha256=manifest["source_sha256"],
+        )
+    except (KeyError, TypeError) as exc:
+        raise ValueError("architecture manifest is incomplete") from exc
+    if rebuilt != manifest:
+        raise ValueError("architecture manifest differs from its reconstructed model contract")
     return manifest
 
 

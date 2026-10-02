@@ -2,12 +2,48 @@ package swarm
 
 import (
 	"context"
+	"encoding/json"
+	"os"
+	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
 	"time"
 
+	"swypik-os/core/imcnetwork"
 	resourcepolicy "swypik-os/core/resource"
 )
+
+func TestSwarmReportsCorruptPersistentState(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("SWYPIK_STATE_DIR", dir)
+	if err := os.WriteFile(filepath.Join(dir, "swarm_state.json"), []byte("{"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	d := NewDaemon(SwarmConfig{Enabled: false, TrainingEnabled: false})
+	defer d.Stop()
+	if got := d.GetStatus().StateError; got == "" || !strings.Contains(got, "unexpected end") {
+		t.Fatalf("corrupt state was hidden: %q", got)
+	}
+}
+
+func TestDefaultDaemonPreservesTrainingOptIn(t *testing.T) {
+	for _, value := range []string{"", "false"} {
+		t.Run("training_enabled="+value, func(t *testing.T) {
+			t.Setenv("SWYPIK_STATE_DIR", t.TempDir())
+			t.Setenv("SWYPIK_SWARM_TRAINING_ENABLED", value)
+			d := NewDaemon()
+			defer d.Stop()
+			d.mu.RLock()
+			trainingEnabled := d.trainingEnabled
+			monitorStarted := d.governorCancel != nil || d.governorDone != nil
+			d.mu.RUnlock()
+			if trainingEnabled || monitorStarted {
+				t.Fatalf("training without explicit opt-in: enabled=%v monitor=%v", trainingEnabled, monitorStarted)
+			}
+		})
+	}
+}
 
 type fixedSignalSource struct {
 	signals resourcepolicy.RuntimeSignals
@@ -19,12 +55,12 @@ func (s fixedSignalSource) Sample(context.Context) (resourcepolicy.RuntimeSignal
 
 func TestSwarmDaemonLifecycle(t *testing.T) {
 	t.Setenv("SWYPIK_STATE_DIR", t.TempDir())
-	d := NewDaemon()
+	d := NewDaemon(SwarmConfig{Enabled: true, TrainingEnabled: true})
 	defer d.Stop()
 
 	initial := d.GetStatus()
 	if !initial.Enabled {
-		t.Errorf("Expected daemon to be enabled by default")
+		t.Errorf("Expected explicitly enabled daemon")
 	}
 
 	d.Toggle()
@@ -83,8 +119,8 @@ func TestSwarmEnabledIdleDoesNoSyntheticCompute(t *testing.T) {
 	defer d.Stop()
 
 	time.Sleep(50 * time.Millisecond)
-	if got := d.GetStatus().RealHashRate; got != 0 {
-		t.Fatalf("idle swarm reported fabricated hashrate: %v", got)
+	if got := d.GetStatus().TasksCompleted; got != 0 {
+		t.Fatalf("idle swarm reported fabricated completed work: %v", got)
 	}
 }
 
@@ -106,8 +142,8 @@ func TestStoppedSwarmCannotRestartAdaptiveMonitor(t *testing.T) {
 	if cancel != nil || done != nil {
 		t.Fatal("toggle after Stop restarted adaptive resource monitor")
 	}
-	if _, _, err := d.ExecuteTrainingMicroBatchContext(context.Background(), 1); err == nil || err.Error() != "daemon stopped" {
-		t.Fatalf("training after Stop err=%v want daemon stopped", err)
+	if _, err := d.ExecuteVerifiedRound(context.Background(), imcnetwork.IssuedRound{}); err == nil {
+		t.Fatal("verified round admitted after Stop")
 	}
 }
 
@@ -149,8 +185,8 @@ func TestSwarmDisabledDefersTrainerAndHardwareWork(t *testing.T) {
 	t.Setenv("SWYPIK_STATE_DIR", t.TempDir())
 	d := NewDaemon(SwarmConfig{Enabled: false, TrainingEnabled: false})
 	defer d.Stop()
-	if d.trainer != nil {
-		t.Fatal("disabled swarm eagerly allocated trainer")
+	if d.verifiedRounds != nil {
+		t.Fatal("disabled swarm eagerly attached a training round adapter")
 	}
 	status := d.GetStatus()
 	if status.HasGPU || status.VRAMMB != 0 || status.LocalTflops != 0 {
@@ -182,5 +218,37 @@ func TestSwarmGPUAutoDetection(t *testing.T) {
 		}
 	} else if status.VRAMMB != 0 {
 		t.Errorf("no detected GPU must not report VRAM, got %d", status.VRAMMB)
+	}
+}
+
+func TestSwarmStatusExposesNoRewardOrMiningFields(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "swarm_state.json"), []byte(`{"tasks_completed":3,"coins_earned":9.5}`), 0600); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("SWYPIK_STATE_DIR", dir)
+	d := NewDaemon(SwarmConfig{Enabled: false, TrainingEnabled: false})
+	defer d.Stop()
+	if got := d.GetStatus().TasksCompleted; got != 3 {
+		t.Fatalf("legacy state lost completed work count: %d", got)
+	}
+	raw, err := json.Marshal(d.GetStatus())
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, key := range []string{"coin", "reward", "hashrate", "wallet"} {
+		if strings.Contains(strings.ToLower(string(raw)), key) {
+			t.Fatalf("status exposes %q: %s", key, raw)
+		}
+	}
+	if err := d.SaveState(dir); err != nil {
+		t.Fatal(err)
+	}
+	saved, err := os.ReadFile(filepath.Join(dir, "swarm_state.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(saved), "coins") {
+		t.Fatalf("saved state kept legacy reward field: %s", saved)
 	}
 }

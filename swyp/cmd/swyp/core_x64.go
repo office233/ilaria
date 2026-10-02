@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"os"
 
 	"swyp-lang/internal/coreir"
 	"swyp-lang/internal/swyplang"
@@ -64,6 +63,14 @@ func compileX64ModuleIRCapabilities(sourcePath, entry string, allowFPCalls, allo
 	if err != nil {
 		return x64ModuleIRArtifact{}, err
 	}
+	return prepareX64ModuleIR(m, entry, allowFPCalls, allowProcessIO)
+}
+
+// prepareX64ModuleIR is the shared backend boundary for source-lowered and
+// linked-HIR Core modules. Everything after this point is architecture/backend
+// validation, optimization, SSA and register allocation.
+func prepareX64ModuleIR(m coreir.Module, entry string, allowFPCalls, allowProcessIO bool) (x64ModuleIRArtifact, error) {
+	var err error
 	m, _, err = coreir.Optimize(m)
 	if err != nil {
 		return x64ModuleIRArtifact{}, err
@@ -323,15 +330,7 @@ func coreX64Command(args []string, out io.Writer) error {
 	if err != nil {
 		return err
 	}
-	file, err := os.OpenFile(*output, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
-	if err != nil {
-		return err
-	}
-	if _, err := file.Write(artifact.Assembly); err != nil {
-		_ = file.Close()
-		return err
-	}
-	if err := file.Close(); err != nil {
+	if err := writeNewModule(*output, artifact.Assembly); err != nil {
 		return err
 	}
 	fmt.Fprintf(out, "Created direct x86-64 assembly %s (%s)\n", *output, coreir.X64CFGABI)

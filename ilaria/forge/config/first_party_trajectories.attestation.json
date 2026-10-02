@@ -1,0 +1,29 @@
+{
+  "attestation_sha256": "913a6221c076a0feefc9e87c67d834dcba17b13d002eded92623cf31d11dbddf",
+  "attested_by": "project-owner",
+  "files": [
+    {
+      "path": "forge/config/imc_125m_trajectory_generation.json",
+      "sha256": "90a34c5e02ab063e5742432f64fa8138dc5dbccdc035eb7fc9bcb0d9558d76a3"
+    },
+    {
+      "path": "forge/data_contract.py",
+      "sha256": "95449cb67c712d4889fcb688431ee3f9c2cd151536765b9f212377bc954ae53c"
+    },
+    {
+      "path": "forge/first_party_attestation.py",
+      "sha256": "af0d101e93caa4fd8a34b15305ff8f50aa81a8bf7c55af52dd41ae3503a4b339"
+    },
+    {
+      "path": "forge/hf_tokenizer.py",
+      "sha256": "0a0d30734a9c2c1ecb635e8f599506ad69ceeb3f6325433008a0e9a23282a3b7"
+    },
+    {
+      "path": "forge/verified_trajectory_corpus.py",
+      "sha256": "59b54021cf82a399081f462a48604b6c772348ef89f89e279dcb8c31919df80f"
+    }
+  ],
+  "format": "ilaria-first-party-attestation-v1",
+  "ownership_attested": true,
+  "review_ref": "chat-confirmation:2026-09-30T18:37+03:00;packet=21cb5fe4ea956009259aff668a0c09c1dd1aede0a9aa0a48a542ee59670c1639;attribution=2943b8c9ef398b3b50f7e0100aa0ec844f57bdeee66ad45d21483bdc86f0fdc9"
+}

@@ -18,6 +18,7 @@ import (
 
 var (
 	ErrClosed              = errors.New("control-kernel store is closed")
+	ErrReadOnly            = errors.New("control-kernel store is read-only")
 	ErrCorruptJournal      = errors.New("control-kernel journal is corrupt")
 	ErrSequenceMismatch    = errors.New("event stream sequence mismatch")
 	ErrStorageFailed       = errors.New("control-kernel storage failed closed")
@@ -71,18 +72,36 @@ type EventStore struct {
 	headHash     string
 	events       []Event
 	retainEvents bool
+	readOnly     bool
 }
 
 // OpenEventStore opens or creates a journal. Only a physically incomplete last
 // frame is repaired by truncating it. Any complete frame with a bad checksum,
 // sequence, JSON body, version, or hash-chain fails closed.
 func OpenEventStore(path string) (*EventStore, error) {
+	return openEventStore(path, false)
+}
+
+// OpenExistingEventStore replays an existing journal under the normal exclusive
+// writer lock without creating, appending to, or repairing its contents. Empty
+// journals and incomplete tails fail closed. The lock sidecar may be created.
+func OpenExistingEventStore(path string) (*EventStore, error) {
+	return openEventStore(path, true)
+}
+
+func openEventStore(path string, readOnly bool) (*EventStore, error) {
 	if path == "" || !filepath.IsAbs(path) {
 		return nil, fmt.Errorf("journal path must be absolute")
 	}
 	dir := filepath.Dir(path)
-	if err := os.MkdirAll(dir, 0700); err != nil {
+	if !readOnly {
+		if err := os.MkdirAll(dir, 0700); err != nil {
+			return nil, err
+		}
+	} else if info, err := os.Lstat(path); err != nil {
 		return nil, err
+	} else if !info.Mode().IsRegular() {
+		return nil, fmt.Errorf("journal must be a regular file")
 	}
 	if info, err := os.Lstat(dir); err != nil || !info.IsDir() || info.Mode()&os.ModeSymlink != 0 {
 		return nil, fmt.Errorf("journal parent must be a real directory")
@@ -91,7 +110,11 @@ func OpenEventStore(path string) (*EventStore, error) {
 	if err != nil {
 		return nil, err
 	}
-	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE, 0600)
+	flags := os.O_RDWR | os.O_CREATE
+	if readOnly {
+		flags = os.O_RDONLY
+	}
+	f, err := os.OpenFile(path, flags, 0600)
 	if err != nil {
 		_ = lock.Close()
 		return nil, err
@@ -110,6 +133,7 @@ func OpenEventStore(path string) (*EventStore, error) {
 		lock:         lock,
 		streamSeq:    make(map[string]uint64),
 		retainEvents: true,
+		readOnly:     readOnly,
 	}
 	if err := s.loadAndRepairTail(); err != nil {
 		_ = f.Close()
@@ -125,6 +149,9 @@ func (s *EventStore) loadAndRepairTail() error {
 		return err
 	}
 	if info.Size() == 0 {
+		if s.readOnly {
+			return fmt.Errorf("%w: empty journal", ErrCorruptJournal)
+		}
 		if _, err := s.file.Write([]byte(journalMagic)); err != nil {
 			return err
 		}
@@ -196,6 +223,9 @@ func (s *EventStore) loadAndRepairTail() error {
 }
 
 func (s *EventStore) truncateTornTail(offset int64) error {
+	if s.readOnly {
+		return fmt.Errorf("%w at offset %d: incomplete final frame", ErrCorruptJournal, offset)
+	}
 	if err := s.file.Truncate(offset); err != nil {
 		return err
 	}
@@ -264,6 +294,9 @@ func (s *EventStore) Append(stream string, expectedSeq uint64, events ...Event) 
 	defer s.mu.Unlock()
 	if s.closed {
 		return nil, ErrClosed
+	}
+	if s.readOnly {
+		return nil, ErrReadOnly
 	}
 	if s.failed != nil {
 		return nil, fmt.Errorf("%w: %v", ErrStorageFailed, s.failed)

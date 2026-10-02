@@ -27,9 +27,9 @@ const (
 
 // HardwareAddresses standard MMIO memory layout.
 const (
-	AddrStatusRegister   uint32 = 0x1000
-	AddrActuationTorque  uint32 = 0x1004
-	AddrCoolingDuty      uint32 = 0x1008
+	AddrStatusRegister    uint32 = 0x1000
+	AddrActuationTorque   uint32 = 0x1004
+	AddrCoolingDuty       uint32 = 0x1008
 	AddrHardwareInterlock uint32 = 0x100C
 )
 
@@ -44,13 +44,13 @@ type CapabilityToken struct {
 
 // TelemetryPacket captures real-time hardware status streamed through SPSC buffers.
 type TelemetryPacket struct {
-	Sequence       uint64    `json:"sequence"`
-	TimestampNanos int64     `json:"timestamp_nanos"`
-	ThermalC       float64   `json:"thermal_celsius"`
-	VibrationG     float64   `json:"vibration_g"`
-	PositionM      float64   `json:"position_meters"`
-	VelocityMps    float64   `json:"velocity_mps"`
-	MMIOBits       uint32    `json:"mmio_bits"`
+	Sequence       uint64  `json:"sequence"`
+	TimestampNanos int64   `json:"timestamp_nanos"`
+	ThermalC       float64 `json:"thermal_celsius"`
+	VibrationG     float64 `json:"vibration_g"`
+	PositionM      float64 `json:"position_meters"`
+	VelocityMps    float64 `json:"velocity_mps"`
+	MMIOBits       uint32  `json:"mmio_bits"`
 }
 
 // SPSCRingBuffer provides an ultra-low-latency Single-Producer Single-Consumer lockless queue.

@@ -21,6 +21,11 @@ from hf_tokenizer import (
     ILARIALEX_VOCAB_SIZE,
 )
 from model_manifest import load_tokenizer_identity
+from first_party_attestation import (
+    attestation_scope_sha256,
+    match_attested_file,
+    validate_attestation,
+)
 
 SAMPLE_FORMAT = "ilarialex-tokenizer-sample-v1"
 FREEZE_FORMAT = "ilarialex-freeze-v1"
@@ -51,6 +56,9 @@ def build_sample_manifest(
     source_lock_path: str | Path | None = None,
     git_source_lock_path: str | Path | None = None,
     coverage_manifest_path: str | Path | None = None,
+    first_party_attestations: dict[str, str | Path] | None = None,
+    first_party_root: str | Path | None = None,
+    input_sources: list[str] | None = None,
 ) -> dict:
     if not input_paths:
         raise ValueError("tokenizer sample requires at least one input")
@@ -68,7 +76,49 @@ def build_sample_manifest(
 
     rights_path = Path(rights_registry_path)
     rights = load_rights_registry(rights_path)
-    require_approved_rights(rights, sources)
+    first_party_attestations = dict(first_party_attestations or {})
+    unused_first_party = sorted(set(first_party_attestations) - set(sources))
+    if unused_first_party:
+        raise ValueError(
+            "unused first-party tokenizer sample attestations: "
+            + ", ".join(unused_first_party)
+        )
+    ambiguous = sorted(set(first_party_attestations) & set(rights["sources"]))
+    if ambiguous:
+        raise ValueError(
+            "tokenizer sample sources have ambiguous external and first-party rights bases: "
+            + ", ".join(ambiguous)
+        )
+    external_sources = sorted(set(sources) - set(first_party_attestations))
+    require_approved_rights(rights, external_sources)
+    if first_party_attestations and first_party_root is None:
+        raise ValueError("first-party tokenizer sample requires first_party_root")
+    if first_party_attestations and input_sources is None:
+        raise ValueError(
+            "first-party tokenizer sample requires per-input source provenance"
+        )
+    if input_sources is not None and len(input_sources) != len(input_paths):
+        raise ValueError("tokenizer sample input_sources length mismatch")
+    if input_sources is not None:
+        unknown_input_sources = sorted(set(input_sources) - set(sources))
+        if unknown_input_sources:
+            raise ValueError(
+                "tokenizer sample input provenance references unknown sources: "
+                + ", ".join(unknown_input_sources)
+            )
+        if set(input_sources) != set(sources):
+            raise ValueError("tokenizer sample input provenance does not cover every source")
+    first_party_packets: dict[str, dict] = {}
+    first_party_records: dict[str, dict] = {}
+    for source, attestation_path in sorted(first_party_attestations.items()):
+        packet = validate_attestation(attestation_path, workspace_root=first_party_root)
+        first_party_packets[source] = packet
+        first_party_records[source] = {
+            "filename": Path(attestation_path).name,
+            "file_sha256": sha256_file(attestation_path),
+            "attestation_sha256": packet["attestation_sha256"],
+            "attestation_scope_sha256": attestation_scope_sha256(packet),
+        }
 
     registry_evidence = rights.get("evidence")
     if git_source_lock_path is None and isinstance(registry_evidence, dict):
@@ -86,6 +136,8 @@ def build_sample_manifest(
         coverage_evidence = validate_coverage_manifest(
             coverage_manifest_path,
             rights_registry_path=rights_path,
+            first_party_attestations=first_party_attestations,
+            first_party_root=first_party_root,
         )
         if set(coverage_evidence["sources"]) != set(sources):
             raise ValueError(
@@ -118,11 +170,16 @@ def build_sample_manifest(
             source_lock_path=source_lock_path,
             rights_registry_path=rights_path,
         )
-        require_approved_evidence(rights, evidence, sources)
+        require_approved_evidence(rights, evidence, external_sources)
 
     records = []
     seen_names: set[str] = set()
-    for raw in sorted((Path(p) for p in input_paths), key=lambda p: str(p)):
+    source_labels = input_sources or [None] * len(input_paths)
+    pairs = sorted(
+        ((Path(raw), source_labels[index]) for index, raw in enumerate(input_paths)),
+        key=lambda item: str(item[0]),
+    )
+    for raw, source in pairs:
         if not raw.is_file():
             raise ValueError(f"tokenizer sample input does not exist: {raw}")
         if raw.stat().st_size <= 0:
@@ -130,13 +187,20 @@ def build_sample_manifest(
         if raw.name in seen_names:
             raise ValueError(f"duplicate tokenizer sample filename: {raw.name}")
         seen_names.add(raw.name)
-        records.append(
-            {
-                "filename": raw.name,
-                "sha256": sha256_file(raw),
-                "bytes": raw.stat().st_size,
-            }
-        )
+        record = {
+            "filename": raw.name,
+            "sha256": sha256_file(raw),
+            "bytes": raw.stat().st_size,
+        }
+        if source is not None:
+            record["source"] = source
+        if source in first_party_packets:
+            record["attested_path"] = match_attested_file(
+                first_party_packets[source],
+                raw,
+                workspace_root=first_party_root,
+            )
+        records.append(record)
 
     manifest = {
         "format": SAMPLE_FORMAT,
@@ -148,6 +212,11 @@ def build_sample_manifest(
             "sha256": sha256_file(rights_path),
             "policy": rights.get("policy", ""),
         },
+        **(
+            {"first_party_attestations": first_party_records}
+            if first_party_records
+            else {}
+        ),
     }
     if coverage_evidence is not None:
         manifest["coverage_evidence"] = {
@@ -197,8 +266,8 @@ def build_sample_manifest(
         locked_names.update(manifest["source_lock"]["sources"])
     if "git_source_lock" in manifest:
         locked_names.update(manifest["git_source_lock"]["sources"])
-    if source_lock_path is not None or git_source_lock_path is not None:
-        missing = sorted(set(sources) - locked_names)
+    if source_lock_path is not None or git_source_lock_path is not None or first_party_records:
+        missing = sorted(set(sources) - locked_names - set(first_party_records))
         if missing:
             raise ValueError(
                 f"tokenizer sample source locks are missing sources: {missing}"
@@ -213,6 +282,8 @@ def validate_sample_manifest(
     manifest_path: str | Path,
     *,
     rights_registry_path: str | Path,
+    first_party_attestations: dict[str, str | Path] | None = None,
+    first_party_root: str | Path | None = None,
 ) -> dict:
     path = Path(manifest_path)
     with path.open(encoding="utf-8") as stream:
@@ -304,12 +375,42 @@ def validate_sample_manifest(
                     f"tokenizer sample git source revision is invalid for {name!r}"
                 ) from exc
 
-    if locked_source_names and locked_source_names != set(sources):
-        raise ValueError("tokenizer sample source lock source set mismatch")
-
     rights_path = Path(rights_registry_path)
     rights = load_rights_registry(rights_path)
-    require_approved_rights(rights, list(sources))
+    first_party_identity = manifest.get("first_party_attestations", {})
+    if not isinstance(first_party_identity, dict):
+        raise ValueError("tokenizer sample first-party identity is invalid")
+    first_party_attestations = dict(first_party_attestations or {})
+    if set(first_party_attestations) != set(first_party_identity):
+        raise ValueError("tokenizer sample first-party attestation set mismatch")
+    ambiguous = sorted(set(first_party_identity) & set(rights["sources"]))
+    if ambiguous:
+        raise ValueError(
+            "tokenizer sample sources have ambiguous external and first-party rights bases: "
+            + ", ".join(ambiguous)
+        )
+    external_sources = sorted(set(sources) - set(first_party_identity))
+    require_approved_rights(rights, external_sources)
+    if first_party_identity and first_party_root is None:
+        raise ValueError("first-party tokenizer sample requires first_party_root")
+    first_party_packets: dict[str, dict] = {}
+    for source, identity in sorted(first_party_identity.items()):
+        if not isinstance(identity, dict):
+            raise ValueError(f"tokenizer sample first-party identity {source!r} is invalid")
+        attestation_path = first_party_attestations[source]
+        packet = validate_attestation(attestation_path, workspace_root=first_party_root)
+        expected = {
+            "filename": Path(attestation_path).name,
+            "file_sha256": sha256_file(attestation_path),
+            "attestation_sha256": packet["attestation_sha256"],
+            "attestation_scope_sha256": attestation_scope_sha256(packet),
+        }
+        if identity != expected:
+            raise ValueError(f"tokenizer sample first-party identity mismatch for {source!r}")
+        first_party_packets[source] = packet
+    accounted_sources = locked_source_names | set(first_party_identity)
+    if accounted_sources and accounted_sources != set(sources):
+        raise ValueError("tokenizer sample source lock/attestation source set mismatch")
     pinned_rights = manifest.get("rights")
     if not isinstance(pinned_rights, dict):
         raise ValueError("tokenizer sample manifest has no rights identity")
@@ -336,6 +437,8 @@ def validate_sample_manifest(
         evidence = validate_coverage_manifest(
             path.parent / evidence_name,
             rights_registry_path=rights_path,
+            first_party_attestations=first_party_attestations,
+            first_party_root=first_party_root,
         )
         if evidence["coverage_sha256"] != coverage_evidence.get("sha256"):
             raise ValueError("tokenizer coverage evidence hash mismatch")
@@ -359,6 +462,27 @@ def validate_sample_manifest(
             raise ValueError(f"tokenizer sample input size mismatch: {filename}")
         if sha256_file(input_path) != digest:
             raise ValueError(f"tokenizer sample input hash mismatch: {filename}")
+        source = record.get("source")
+        if first_party_packets:
+            if not isinstance(source, str) or source not in sources:
+                raise ValueError(
+                    f"tokenizer sample input lacks valid source provenance: {filename}"
+                )
+        if source in first_party_packets:
+            attested_path = record.get("attested_path")
+            if not isinstance(attested_path, str) or not attested_path:
+                raise ValueError(
+                    f"tokenizer sample first-party input lacks attested_path: {filename}"
+                )
+            matched = match_attested_file(
+                first_party_packets[source],
+                input_path,
+                workspace_root=first_party_root,
+            )
+            if matched != attested_path:
+                raise ValueError(
+                    f"tokenizer sample first-party provenance mismatch: {filename}"
+                )
     return manifest
 
 
@@ -367,10 +491,15 @@ def build_freeze_manifest(
     *,
     sample_manifest_path: str | Path,
     rights_registry_path: str | Path,
+    first_party_attestations: dict[str, str | Path] | None = None,
+    first_party_root: str | Path | None = None,
 ) -> dict:
     tokenizer_path = Path(tokenizer_path)
     sample = validate_sample_manifest(
-        sample_manifest_path, rights_registry_path=rights_registry_path
+        sample_manifest_path,
+        rights_registry_path=rights_registry_path,
+        first_party_attestations=first_party_attestations,
+        first_party_root=first_party_root,
     )
     identity = load_tokenizer_identity(tokenizer_path)
     if identity["format"] != ILARIALEX_FORMAT:
@@ -414,6 +543,11 @@ def build_freeze_manifest(
                 if "coverage_evidence" in sample
                 else {}
             ),
+            **(
+                {"first_party_attestations": sample["first_party_attestations"]}
+                if "first_party_attestations" in sample
+                else {}
+            ),
         },
         "rights": dict(sample["rights"]),
     }
@@ -425,6 +559,8 @@ def validate_freeze_manifest(
     freeze_path: str | Path,
     *,
     rights_registry_path: str | Path,
+    first_party_attestations: dict[str, str | Path] | None = None,
+    first_party_root: str | Path | None = None,
 ) -> dict:
     path = Path(freeze_path)
     with path.open(encoding="utf-8") as stream:
@@ -442,7 +578,10 @@ def validate_freeze_manifest(
         raise ValueError("IlariaLex freeze manifest references are incomplete")
     sample_path = path.parent / str(sample_info.get("filename", ""))
     sample = validate_sample_manifest(
-        sample_path, rights_registry_path=rights_registry_path
+        sample_path,
+        rights_registry_path=rights_registry_path,
+        first_party_attestations=first_party_attestations,
+        first_party_root=first_party_root,
     )
     if sample["sample_manifest_sha256"] != sample_info.get("sha256"):
         raise ValueError("IlariaLex freeze sample hash mismatch")
@@ -452,6 +591,8 @@ def validate_freeze_manifest(
         tokenizer_path,
         sample_manifest_path=sample_path,
         rights_registry_path=rights_registry_path,
+        first_party_attestations=first_party_attestations,
+        first_party_root=first_party_root,
     )
     if rebuilt != freeze:
         raise ValueError("IlariaLex freeze manifest differs from reconstructed artifacts")
@@ -470,19 +611,32 @@ def main() -> None:
     sample_parser.add_argument("--source-lock", default="")
     sample_parser.add_argument("--git-source-lock", default="")
     sample_parser.add_argument("--coverage-manifest", default="")
+    sample_parser.add_argument("--input-source", action="append", default=[])
+    sample_parser.add_argument("--first-party-attestation", action="append", default=[])
+    sample_parser.add_argument("--first-party-root", default="")
     sample_parser.add_argument("--out", required=True)
 
     freeze_parser = sub.add_parser("freeze")
     freeze_parser.add_argument("--tokenizer", required=True)
     freeze_parser.add_argument("--sample-manifest", required=True)
     freeze_parser.add_argument("--rights", required=True)
+    freeze_parser.add_argument("--first-party-attestation", action="append", default=[])
+    freeze_parser.add_argument("--first-party-root", default="")
     freeze_parser.add_argument("--out", required=True)
 
     validate_parser = sub.add_parser("validate")
     validate_parser.add_argument("--freeze", required=True)
     validate_parser.add_argument("--rights", required=True)
+    validate_parser.add_argument("--first-party-attestation", action="append", default=[])
+    validate_parser.add_argument("--first-party-root", default="")
 
     args = parser.parse_args()
+    first_party_attestations = {}
+    for raw in getattr(args, "first_party_attestation", []):
+        source, sep, path = raw.partition("=")
+        if not sep or not source or not path or source in first_party_attestations:
+            raise ValueError("first-party attestation must be unique SOURCE=PATH")
+        first_party_attestations[source] = path
     if args.command == "sample-manifest":
         manifest = build_sample_manifest(
             args.input,
@@ -492,6 +646,9 @@ def main() -> None:
             source_lock_path=args.source_lock or None,
             git_source_lock_path=args.git_source_lock or None,
             coverage_manifest_path=args.coverage_manifest or None,
+            first_party_attestations=first_party_attestations,
+            first_party_root=args.first_party_root or None,
+            input_sources=args.input_source or None,
         )
         atomic_write_json(args.out, manifest)
         print(
@@ -503,6 +660,8 @@ def main() -> None:
             args.tokenizer,
             sample_manifest_path=args.sample_manifest,
             rights_registry_path=args.rights,
+            first_party_attestations=first_party_attestations,
+            first_party_root=args.first_party_root or None,
         )
         atomic_write_json(args.out, manifest)
         print(
@@ -512,7 +671,10 @@ def main() -> None:
         )
     else:
         manifest = validate_freeze_manifest(
-            args.freeze, rights_registry_path=args.rights
+            args.freeze,
+            rights_registry_path=args.rights,
+            first_party_attestations=first_party_attestations,
+            first_party_root=args.first_party_root or None,
         )
         print(f"[ilarialex] freeze valid: {manifest['freeze_sha256']}")
 

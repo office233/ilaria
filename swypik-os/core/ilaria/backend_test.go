@@ -62,3 +62,11 @@ func TestLocalInferenceAndFailure(t *testing.T) {
 		t.Fatalf("cancellation: %v", err)
 	}
 }
+
+func TestHealthUsesSameEndpointPolicyAsChat(t *testing.T) {
+	for _, endpoint := range []string{"http://example.com", "http://127.0.0.1/path", "http://user:pass@127.0.0.1"} {
+		if err := NewLocalBackend(endpoint).Health(context.Background()); err == nil {
+			t.Fatalf("health accepted %s", endpoint)
+		}
+	}
+}

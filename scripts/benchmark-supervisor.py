@@ -13,7 +13,6 @@ import platform
 import sys
 import tempfile
 import time
-from types import SimpleNamespace
 
 
 def load_gate_module():

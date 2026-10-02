@@ -82,6 +82,24 @@ def test_hash_uses_utf8_byte_lengths():
     assert replay.domain == "diag.română"
 
 
+@pytest.mark.parametrize("field", ["domain", "signer_key_id"])
+@pytest.mark.parametrize("value", ["invalid\nidentifier", "invalid\x7fidentifier", "ș" * 129])
+def test_replay_identifier_validation_matches_go_protocol(field, value):
+    data = artifact()
+    data[field] = value
+    data["artifact_sha256"] = artifact_sha256(data)
+    with pytest.raises(ValueError, match=field):
+        validate_replay_artifact(data)
+
+
+def test_replay_rejects_whitespace_in_content_hash_even_if_identity_is_recomputed():
+    data = artifact()
+    data["capsule_hash"] = "ab" * 31 + "  "
+    data["artifact_sha256"] = artifact_sha256(data)
+    with pytest.raises(ValueError, match="capsule_hash"):
+        validate_replay_artifact(data)
+
+
 def test_content_addressed_directory_loads_valid_artifacts(tmp_path):
     data = artifact()
     path = tmp_path / f"{data['artifact_sha256']}.json"

@@ -34,6 +34,8 @@ Output files must not already exist; Swyp never overwrites.
 |---|---|---|
 | Scalar language: functions, `let`, `if`/`while`, `number`/`bool`/`string` | Tested; AST interpreter, C (GCC) and offline HTML/JS backends | [SWYP_LANG](docs/SWYP_LANG.md) |
 | Semantic Core: checked `i64`, finite `f64`, typed JSON IR, exact `safe` executor + zero-allocation `fast` embedded profile | Tested; small Core frames can execute with 0 heap allocations | [SEMANTIC_CORE](docs/SEMANTIC_CORE.md), [PERFORMANCE](docs/PERFORMANCE.md) |
+| Brokered Core effects | Safe interpreter resumes explicit `clock.read` / `fs.read` JSONL results; scoped authority stays with SwypikOS | [BROKER_EXECUTION](docs/BROKER_EXECUTION.md), [EFFECTS_CAPABILITIES](docs/EFFECTS_CAPABILITIES.md) |
+| Supervisor preflight snapshots | `core-preflight` validates without execution and pins canonical Core IR; `core-broker --ir` consumes the same snapshot | [BROKER_EXECUTION](docs/BROKER_EXECUTION.md) |
 | Contracts: `verify` → `exhaustive` / `tested` / `counterexample` / `unknown` / `timeout` | Tested on finite domains; no SMT proofs | [SEMANTIC_CORE](docs/SEMANTIC_CORE.md) |
 | Synthesis: enumerative search with counterexample refinement (`synth`, `synth -contract`) | Tested; grammar is `x`, constants, `+ - *` | [CONTRACT_SYNTHESIS](docs/CONTRACT_SYNTHESIS.md) |
 | STV2 VM + SWYPB modules: compile once, run without source or toolchain | Tested, fuzzed; safe-integer subset only | [STV2_ISA](docs/STV2_ISA.md), [SWYPB_FORMAT](docs/SWYPB_FORMAT.md) |
@@ -42,6 +44,7 @@ Output files must not already exist; Swyp never overwrites.
 | Legacy Nexus worker (`swyp worker`, `bridge/nexus`) | Adapter tested, not registered | [bridge/nexus](bridge/nexus/README.md) |
 | Natural-language `draft` / `expand` / `repair` via Ilaria | Fixture-tested only; never run against a live model | [SWYP_LANG](docs/SWYP_LANG.md) |
 | Components/models/experts/datasets/training manifests | Declarative parser + semantic validation + canonical JSON compiler | [COMPONENTS](docs/COMPONENTS.md) |
+| Modular Swyp / HIR v1 | Shared `module`/`use` preamble, deterministic explicit-root graph, typed HIR bodies, qualified direct-use linking, Core IR lowering and x64/ARM64 packed + standalone native paths | [SWYP_LANG](docs/SWYP_LANG.md), [ARCHITECTURE](docs/ARCHITECTURE.md) |
 | Semantic Core native AOT | Checked i64/finite-f64/ieee64 Core IR to C11/GCC; safe + fast profiles, optional native CPU/LTO/strip | [SEMANTIC_CORE](docs/SEMANTIC_CORE.md), [PERFORMANCE](docs/PERFORMANCE.md) |
 | Compute numeric type | Explicit `ieee64` hardware IEEE-754 semantics for near-native numeric kernels; strict `f64` remains unchanged | [PERFORMANCE](docs/PERFORMANCE.md) |
 

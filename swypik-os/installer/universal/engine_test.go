@@ -74,6 +74,43 @@ func TestUniversalInstallerPCWritesMetadataOnly(t *testing.T) {
 	}
 }
 
+func TestProbeTargetCarriesExplicitHALResourcesWithoutFabrication(t *testing.T) {
+	manager := hal.NewManager()
+	manager.RegisterScanner(func(context.Context) ([]*hal.DiscoveredDevice, error) {
+		return []*hal.DiscoveredDevice{{
+			ID:           "dev_fixture_nic",
+			Name:         "Fixture NIC",
+			Class:        hal.ClassNetwork,
+			Bus:          hal.BusPCIe,
+			Protocol:     "FIXTURE",
+			DriverStatus: hal.DriverNeedsAutogenesis,
+			Resources: []hal.HardwareResource{
+				{Kind: hal.ResourceMMIO, Start: 0xfebf0000, Length: 0x1000},
+				{Kind: hal.ResourceIRQ, Start: 17, Length: 1},
+			},
+		}}, nil
+	})
+	eng := universal.NewInstallerEngine(manager, autogenesis.NewSynthesizer(t.TempDir()))
+	env, err := eng.ProbeTarget(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	var resources []devicesynth.DeviceResource
+	for _, resource := range env.HardwareManifest.Graph.Resources {
+		if resource.DeviceID == "dev_fixture_nic" {
+			resources = append(resources, resource)
+		}
+	}
+	if len(resources) != 2 || resources[0].Kind != devicesynth.ResourceIRQ && resources[1].Kind != devicesynth.ResourceIRQ {
+		t.Fatalf("manifest resources=%+v", resources)
+	}
+	for _, resource := range env.HardwareManifest.Graph.Resources {
+		if resource.DeviceID == "dev_host_compute_0" {
+			t.Fatalf("legacy HAL fabricated host-compute authority: %+v", resource)
+		}
+	}
+}
+
 func TestUniversalInstallerRobotAndVehicle(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()

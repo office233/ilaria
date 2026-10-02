@@ -14,6 +14,17 @@ import (
 	"testing"
 )
 
+// Go's testing.TempDir follows the process umask. Stores that intentionally use
+// an existing private directory must set the fixture's mode explicitly.
+func privateCheckpointDir(t *testing.T) string {
+	t.Helper()
+	dir := t.TempDir()
+	if err := os.Chmod(dir, 0700); err != nil {
+		t.Fatal(err)
+	}
+	return dir
+}
+
 func TestFileCheckpointRoundTripAndPrivateModes(t *testing.T) {
 	dir := filepath.Join(t.TempDir(), "state")
 	store, err := OpenFileStore(dir)
@@ -53,7 +64,7 @@ func TestFileCheckpointRoundTripAndPrivateModes(t *testing.T) {
 	}
 }
 func TestFileCheckpointExclusiveWriter(t *testing.T) {
-	dir := t.TempDir()
+	dir := privateCheckpointDir(t)
 	first, err := OpenFileStore(dir)
 	if err != nil {
 		t.Fatal(err)
@@ -85,13 +96,13 @@ func TestCheckpointLockHelper(t *testing.T) {
 		t.Fatal("cross-process lock bypass")
 	}
 }
-func TestCorruptCheckpointIsNeverSilentlyReplaced(t *testing.T) {
+func TestCorruptCheckpointIsQuarantinedWithoutExecution(t *testing.T) {
 	r := pendingSavedRun(t)
 	valid, _ := json.Marshal(diskCheckpoint{Version: 1, Run: r})
 	wrongVersion := bytes.Replace(valid, []byte(`"version":1`), []byte(`"version":2`), 1)
 	duplicates := append([]byte(`{"version":1,`), valid[1:]...)
 	for _, raw := range [][]byte{[]byte("broken"), []byte(`{}`), wrongVersion, duplicates, []byte(strings.Repeat("x", checkpointLimit+1))} {
-		dir := t.TempDir()
+		dir := privateCheckpointDir(t)
 		path := filepath.Join(dir, checkpointName)
 		if err := os.WriteFile(path, raw, 0600); err != nil {
 			t.Fatal(err)
@@ -100,16 +111,34 @@ func TestCorruptCheckpointIsNeverSilentlyReplaced(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		if _, err := s.Load(); err == nil {
+			s.Close()
+			t.Fatal("store accepted corrupt checkpoint")
+		}
 		var plans, tools atomic.Int32
 		m, err := NewPersistent(recoveryPlanner(&plans, false), recoveryTools(&tools), Limits{}, s)
-		if err == nil {
-			m.Close()
-			t.Fatal("accepted corrupt checkpoint")
+		if err != nil {
+			s.Close()
+			t.Fatalf("corrupt checkpoint should be quarantined: %v", err)
 		}
+		if m.Snapshot() != nil {
+			t.Fatal("corrupt checkpoint became an active run")
+		}
+		m.Close()
 		s.Close()
-		after, _ := os.ReadFile(path)
+		quarantined, err := filepath.Glob(filepath.Join(dir, "invalid-run-*.json"))
+		if err != nil || len(quarantined) != 1 {
+			t.Fatalf("corrupt checkpoint was not preserved: %v %v", quarantined, err)
+		}
+		after, err := os.ReadFile(quarantined[0])
+		if err != nil {
+			t.Fatal(err)
+		}
 		if !bytes.Equal(raw, after) {
 			t.Fatal("overwrote corrupt checkpoint")
+		}
+		if _, err := os.Stat(path); !os.IsNotExist(err) {
+			t.Fatal("quarantine created a replacement run")
 		}
 		if plans.Load() != 0 || tools.Load() != 0 {
 			t.Fatal("corruption triggered execution")
@@ -131,7 +160,7 @@ func TestFileCheckpointRejectsSymlinksAndSpecialFiles(t *testing.T) {
 	})
 	for _, kind := range []string{"symlink", "hardlink", "fifo", "public"} {
 		t.Run(kind, func(t *testing.T) {
-			dir := t.TempDir()
+			dir := privateCheckpointDir(t)
 			target := filepath.Join(t.TempDir(), "target")
 			if err := os.WriteFile(target, []byte("private"), 0600); err != nil {
 				t.Fatal(err)

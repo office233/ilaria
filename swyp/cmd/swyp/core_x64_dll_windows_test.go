@@ -59,48 +59,6 @@ fn choose(c:bool,x:ieee64,y:ieee64)->ieee64 {
   }
   return y;
 }
-
-func TestCoreX64DLLRelocatesWhenPreferredBaseIsOccupied(t *testing.T) {
-	dir := t.TempDir()
-	source := filepath.Join(dir, "add.swyp")
-	firstPath := filepath.Join(dir, "first.dll")
-	secondPath := filepath.Join(dir, "second.dll")
-	if err := os.WriteFile(source, []byte("fn add(x:i64,y:i64)->i64{return x+y;} fn main(){}"), 0600); err != nil {
-		t.Fatal(err)
-	}
-	var out bytes.Buffer
-	if err := coreX64DLLCommand([]string{"-entry", "add", "-o", firstPath, source}, &out); err != nil {
-		t.Fatal(err)
-	}
-	if err := coreX64DLLCommand([]string{"-entry", "add", "-o", secondPath, source}, &out); err != nil {
-		t.Fatal(err)
-	}
-	first, err := syscall.LoadDLL(firstPath)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer first.Release()
-	second, err := syscall.LoadDLL(secondPath)
-	if err != nil {
-		t.Fatalf("second copy failed to relocate: %v", err)
-	}
-	defer second.Release()
-	if first.Handle == second.Handle {
-		t.Fatalf("two distinct DLL copies mapped at same handle 0x%x", uintptr(first.Handle))
-	}
-	for _, dll := range []*syscall.DLL{first, second} {
-		proc, err := dll.FindProc("swyp_core_add")
-		if err != nil {
-			t.Fatal(err)
-		}
-		status := uint64(99)
-		result, _, _ := proc.Call(11, 31, uintptr(unsafe.Pointer(&status)))
-		runtime.KeepAlive(&status)
-		if uint64(result) != 42 || status != 0 {
-			t.Fatalf("handle=0x%x result=%d status=%d", uintptr(dll.Handle), result, status)
-		}
-	}
-}
 fn answer(c:bool,x:ieee64,y:ieee64)->ieee64 { return choose(c,x,y); }
 fn main(){}
 `
@@ -144,5 +102,49 @@ int main(int argc,char**argv){
 	}
 	if got := strings.TrimSpace(string(output)); got != "7.25 0 9.5 0" {
 		t.Fatalf("output=%q", got)
+	}
+}
+
+// Two copies of the same DLL cannot share the preferred image base, so the
+// second load must apply the .reloc table and still execute correctly.
+func TestCoreX64DLLRelocatesWhenPreferredBaseIsOccupied(t *testing.T) {
+	dir := t.TempDir()
+	source := filepath.Join(dir, "add.swyp")
+	firstPath := filepath.Join(dir, "first.dll")
+	secondPath := filepath.Join(dir, "second.dll")
+	if err := os.WriteFile(source, []byte("fn add(x:i64,y:i64)->i64{return x+y;} fn main(){}"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	var out bytes.Buffer
+	if err := coreX64DLLCommand([]string{"-entry", "add", "-o", firstPath, source}, &out); err != nil {
+		t.Fatal(err)
+	}
+	if err := coreX64DLLCommand([]string{"-entry", "add", "-o", secondPath, source}, &out); err != nil {
+		t.Fatal(err)
+	}
+	first, err := syscall.LoadDLL(firstPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer first.Release()
+	second, err := syscall.LoadDLL(secondPath)
+	if err != nil {
+		t.Fatalf("second copy failed to relocate: %v", err)
+	}
+	defer second.Release()
+	if first.Handle == second.Handle {
+		t.Fatalf("two distinct DLL copies mapped at same handle 0x%x", uintptr(first.Handle))
+	}
+	for _, dll := range []*syscall.DLL{first, second} {
+		proc, err := dll.FindProc("swyp_core_add")
+		if err != nil {
+			t.Fatal(err)
+		}
+		status := uint64(99)
+		result, _, _ := proc.Call(11, 31, uintptr(unsafe.Pointer(&status)))
+		runtime.KeepAlive(&status)
+		if uint64(result) != 42 || status != 0 {
+			t.Fatalf("handle=0x%x result=%d status=%d", uintptr(dll.Handle), result, status)
+		}
 	}
 }

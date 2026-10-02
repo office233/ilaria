@@ -8,7 +8,9 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from data_contract import atomic_write_json  # noqa: E402
+from data_contract import atomic_write_json, canonical_json_sha256  # noqa: E402
+from first_party_attestation import build_attestation_template  # noqa: E402
+from tokenizer_coverage import build_coverage_manifest  # noqa: E402
 from git_source_lock import build_lock as build_git_source_lock  # noqa: E402
 from tokenizer_freeze import (  # noqa: E402
     REQUIRED_COVERAGE,
@@ -273,3 +275,74 @@ def test_sample_and_freeze_pin_hf_and_git_source_locks(tmp_path):
     )
     assert freeze["sample"]["source_lock"] == manifest["source_lock"]
     assert freeze["sample"]["git_source_lock"] == manifest["git_source_lock"]
+
+
+def test_first_party_provenance_flows_through_coverage_sample_and_freeze(tmp_path):
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    source = workspace / "protocol.swyp"
+    source.write_text("record ToolCall {}\n", encoding="utf-8")
+    attestation_data = build_attestation_template(workspace, paths=["protocol.swyp"])
+    attestation_data.update(
+        {
+            "ownership_attested": True,
+            "attested_by": "fixture-owner",
+            "review_ref": "fixture-first-party-review",
+        }
+    )
+    unhashed = dict(attestation_data)
+    unhashed.pop("attestation_sha256", None)
+    attestation_data["attestation_sha256"] = canonical_json_sha256(unhashed)
+    attestation = tmp_path / "first-party.attestation.json"
+    atomic_write_json(attestation, attestation_data)
+
+    production = tmp_path / "production"
+    production.mkdir()
+    copied = production / "protocol.swyp"
+    copied.write_bytes(source.read_bytes())
+    rights = rights_fixture(tmp_path)
+    first_party = {"first_party_contracts": attestation}
+
+    coverage = build_coverage_manifest(
+        {
+            category: [(copied, "first_party_contracts")]
+            for category in REQUIRED_COVERAGE
+        },
+        rights_registry_path=rights,
+        first_party_attestations=first_party,
+        first_party_root=workspace,
+    )
+    coverage_path = production / "ilarialex.coverage.json"
+    atomic_write_json(coverage_path, coverage)
+
+    sample = build_sample_manifest(
+        [copied],
+        source_names=["first_party_contracts"],
+        coverage=sorted(REQUIRED_COVERAGE),
+        rights_registry_path=rights,
+        coverage_manifest_path=coverage_path,
+        first_party_attestations=first_party,
+        first_party_root=workspace,
+        input_sources=["first_party_contracts"],
+    )
+    sample_path = production / "ilarialex.sample.manifest.json"
+    atomic_write_json(sample_path, sample)
+    assert sample["inputs"][0]["attested_path"] == "protocol.swyp"
+
+    tokenizer = tokenizer_fixture(production)
+    freeze = build_freeze_manifest(
+        tokenizer,
+        sample_manifest_path=sample_path,
+        rights_registry_path=rights,
+        first_party_attestations=first_party,
+        first_party_root=workspace,
+    )
+    freeze_path = production / "ilarialex.freeze.json"
+    atomic_write_json(freeze_path, freeze)
+    assert "first_party_attestations" in freeze["sample"]
+    assert validate_freeze_manifest(
+        freeze_path,
+        rights_registry_path=rights,
+        first_party_attestations=first_party,
+        first_party_root=workspace,
+    ) == freeze

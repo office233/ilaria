@@ -1,3 +1,5 @@
+// Package cbf is a prototype control-barrier simulation. Its outputs do not
+// establish physical safety, certification or a hard real-time guarantee.
 package cbf
 
 import (
@@ -19,9 +21,9 @@ type PhysicalState struct {
 
 // SafetyEnvelope defines the boundary of the safe set S = {x | h(x) >= 0}.
 type SafetyEnvelope struct {
-	MaxThermalC float64 `json:"max_thermal_celsius"`
-	MaxVelocity float64 `json:"max_velocity_mps"`
-	MaxPosition float64 `json:"max_position_meters"`
+	MaxThermalC  float64 `json:"max_thermal_celsius"`
+	MaxVelocity  float64 `json:"max_velocity_mps"`
+	MaxPosition  float64 `json:"max_position_meters"`
 	MaxVibration float64 `json:"max_vibration_g"`
 }
 
@@ -53,39 +55,52 @@ type QPFilterResult struct {
 	FilterDurationMicro int64        `json:"filter_duration_us"`
 }
 
-// BaselineSafetyController provides a formally certified deterministic holding pattern (SBC).
+// BaselineSafetyController provides a bounded holding pattern for the model.
 type BaselineSafetyController struct{}
 
 func (sbc *BaselineSafetyController) ExecuteSafeHolding(state PhysicalState) ControlInput {
 	// Deterministic fail-safe: dynamic regenerative braking, max cooling
+	velocity := state.VelocityMps
+	if !finite(velocity) {
+		velocity = 0 // Direction is unknown; never emit non-finite actuation.
+	}
 	return ControlInput{
-		ActuationTorque: -math.Min(20.0, state.VelocityMps*15.0), // Oppose velocity
-		AuxCoolingDuty:  1.0,                                    // Max heat dissipation
+		ActuationTorque: -math.Max(-20.0, math.Min(20.0, velocity*15.0)), // Oppose velocity
+		AuxCoolingDuty:  1.0,                                             // Max heat dissipation
 	}
 }
 
-// SimplexArbiter coordinates high-level AI policy with the CBF filter and certified SBC.
+func finite(values ...float64) bool {
+	for _, value := range values {
+		if math.IsNaN(value) || math.IsInf(value, 0) {
+			return false
+		}
+	}
+	return true
+}
+
+// SimplexArbiter coordinates proposed inputs with the model's CBF filter.
 type SimplexArbiter struct {
-	mu           sync.RWMutex
-	envelope     SafetyEnvelope
-	sbc          *BaselineSafetyController
-	alphaParam   float64 // Class-K function slope: alpha(h) = alphaParam * h
-	maxExecTime  time.Duration
+	mu            sync.RWMutex
+	envelope      SafetyEnvelope
+	sbc           *BaselineSafetyController
+	alphaParam    float64 // Class-K function slope: alpha(h) = alphaParam * h
+	maxExecTime   time.Duration
 	failoverCount int64
 }
 
 // NewSimplexArbiter initializes the deterministic CBF filter and Simplex arbiter.
 func NewSimplexArbiter(env SafetyEnvelope) *SimplexArbiter {
-	if env.MaxThermalC <= 0 {
+	if !finite(env.MaxThermalC) || env.MaxThermalC <= 0 {
 		env.MaxThermalC = 85.0
 	}
-	if env.MaxVelocity <= 0 {
+	if !finite(env.MaxVelocity) || env.MaxVelocity <= 0 {
 		env.MaxVelocity = 3.5
 	}
-	if env.MaxPosition <= 0 {
+	if !finite(env.MaxPosition) || env.MaxPosition <= 0 {
 		env.MaxPosition = 15.0
 	}
-	if env.MaxVibration <= 0 {
+	if !finite(env.MaxVibration) || env.MaxVibration <= 0 {
 		env.MaxVibration = 4.5
 	}
 
@@ -93,12 +108,15 @@ func NewSimplexArbiter(env SafetyEnvelope) *SimplexArbiter {
 		envelope:    env,
 		sbc:         &BaselineSafetyController{},
 		alphaParam:  1.5,
-		maxExecTime: 1 * time.Millisecond, // 1ms hard real-time execution ceiling
+		maxExecTime: 1 * time.Millisecond, // Base budget used by the inference deadline check.
 	}
 }
 
 // EvaluateBarriers calculates barrier functions h_i(x) for all state dimensions.
 func (sa *SimplexArbiter) EvaluateBarriers(x PhysicalState) BarrierEvaluation {
+	if !finite(x.ThermalC, x.VelocityMps, x.PositionM, x.VibrationG) {
+		return BarrierEvaluation{Safe: false}
+	}
 	hT := sa.envelope.MaxThermalC - x.ThermalC
 	hV := sa.envelope.MaxVelocity - x.VelocityMps
 	hP := sa.envelope.MaxPosition - x.PositionM
@@ -127,9 +145,27 @@ func (sa *SimplexArbiter) FilterAction(
 	start := time.Now()
 	sa.mu.Lock()
 	defer sa.mu.Unlock()
+	validState := finite(state.ThermalC, state.VelocityMps, state.PositionM, state.VibrationG)
+	validInput := finite(uNom.ActuationTorque, uNom.AuxCoolingDuty)
+	if !validState || !validInput {
+		sa.failoverCount++
+		// Keep the result serializable even when untrusted numeric input is NaN.
+		nominal := uNom
+		if !validInput {
+			nominal = ControlInput{}
+		}
+		return QPFilterResult{
+			CertifiedInput:      sa.sbc.ExecuteSafeHolding(state),
+			NominalInput:        nominal,
+			SimplexEngaged:      true,
+			SimplexReason:       "Non-finite telemetry or control input",
+			MinSafetyMargin:     sa.EvaluateBarriers(state).MinMargin,
+			FilterDurationMicro: time.Since(start).Microseconds(),
+		}
+	}
 
 	// 1. Simplex Deadline Check: If AI inference experienced deadline overrun (> 1ms allocation window)
-	if aiLatency > sa.maxExecTime*100 { // Allow 100ms for soft-inference, but physical loop enforces strict bounds
+	if aiLatency > sa.maxExecTime*100 { // Prototype inference budget; not a hard real-time guarantee.
 		sa.failoverCount++
 		safeU := sa.sbc.ExecuteSafeHolding(state)
 		return QPFilterResult{

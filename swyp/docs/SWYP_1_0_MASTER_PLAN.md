@@ -474,6 +474,81 @@ for correctness or production execution.
 - typed arrays/slices.
 - source-visible effects/contracts.
 
+Current foundation: executable and declarative sources share the same
+`module`/`use` preamble; an explicit-root deterministic module graph validates
+dependency identity/cycles and hashes sources; declaration HIR v1 unifies
+qualified symbol identities, typed function signatures, typed executable bodies
+and declarative record fields. `hir-link` resolves qualified calls only through
+direct `use` edges and validates exact signatures across the graph. Backend
+lowering is now real: linked HIR emits standard Core IR and reuses existing
+x64/ARM64 packed and standalone backends, including propagated effect/capability
+policy. Generic option/result/array/slice/vec/tuple signatures and nominal
+`struct`/`enum` schemas are now represented in HIR; qualified nominal references
+require direct imports and must resolve to a real declaration. HIR values now
+cover explicit struct construction/projection, enum constructors/exhaustive
+matching, contextual option/result constructors/matches, fixed-array literals,
+array/slice indexing and `[start,end)` slice views. `swyp-fixed-v1` defines a
+deterministic compiler-owned layout for fixed scalars/arrays/structs/enums and
+rejects recursive-by-value or dynamic descriptor layouts. `swyp-descriptor-v1`
+now defines a separate logical descriptor for slice/vec/ref/mutref using opaque
+storage identity plus overflow-safe offset/length/capacity invariants, with
+element stride derived from fixed layout. Storage runtime/allocator, richer-value
+Core lowering and eventual
+default-frontend convergence remain open. The first ownership slice now exists
+as an explicit promotion gate: HIR recursively classifies Copy/Move/Borrowed,
+tracks affine moves across structured control flow, detects use-after-move /
+implicit-drop / borrowed-return violations and supports HIR-only `drop(x)`.
+Lexical `&`/`&mut` borrows now enforce shared/exclusive loans within a function;
+Copy referents support `*r` and `store(mutref<T>, value)`, and borrow locals end
+at scope exit or explicit `drop`. Explicit `borrows <param>` contracts tie a
+borrowed result to a borrowed parameter and are verified through linked function
+calls/reborrows. Non-Copy field/index borrow projections now exist; static field
+paths, distinct constant array indices and disjoint constant half-open ranges use
+place analysis, while dynamic indexed/range projections remain container-
+conservative. `hir-bounds` records `proven` vs `runtime_required` evidence and
+rejects static OOB. Small fixed arrays/slices continue to scalarize into Core
+slots and reuse the x64/ARM64 backends; dynamic indices use an explicit OOB CFG
+with machine bounds status `3`.
+
+The first actual descriptor-storage promotion now exists in Core interpreter
+profiles: neutral `internal/storageabi` provides bounded monotonic opaque storage
+IDs, checked read/write/free and stale-ID rejection. Core IR exposes pure
+`storage.alloc_u64/load_u64/store_u64/free` operations with per-run storage in
+Run/RunFast/RunTurbo, and standalone x64/ARM64 now implement the same bounded
+contract in RW process data. HIR uses storage for large local arrays/slices and
+raw64 vec owners/references. Vec parameters flatten to explicit descriptor words;
+vec results transfer ownership through an opaque one-slot descriptor handle that
+the caller unpacks and frees. `defer_drop(v)` now schedules deterministic LIFO
+cleanup for local storage-backed vec owners at lexical scope exit/return, without
+GC or hidden host finalizers. x64 runtime and ARM64 structural/cross-build tests
+cover these paths. Richer element layouts, finer dynamic aliasing and generalized
+resource destructor contracts remain open. M1 is not yet complete.
+
+The storage-backed vec ABI now also supports flat nominal struct/record elements
+whose fields are all raw64 (`u64`, `i64`, `ieee64`). Element stride is explicit
+in Core lowering; `v[i].field`, vec growth/copy, parameter descriptors and vec
+return handles work without native pointers, including cross-module nominal type
+qualification. Whole-element Copy, descriptor refs to vec fields and read-only
+`slice<Struct>` views with field access/Copy/shared refs are also promoted while
+preserving element-unit bounds. Mutable refs through slices, nested aggregate
+fields and non-raw64 element layouts remain open.
+
+Storage flattening now recurses through by-value struct/record members when every
+leaf is raw64. Nested constructors/push and leaf projection/ref paths work through
+vec and read-only slice descriptors, while whole nested aggregate materialization
+remains intentionally fail-closed. `defer_drop` also supports moved vec parameters
+when scheduled in the top-level function body; nested conditional scheduling is
+rejected.
+
+Local fixed structs with Core-scalar fields use slot scalarization for field
+projection; compile-time-known scalar-payload sums and local scalar refs have
+similar narrow promotions.
+Local `ref<T>`/`mutref<T>` to statically resolvable Core-scalar places are also
+promoted without a pointer representation: ownership is checked first and the
+lowerer aliases the existing Core slot for dereference/store. Function-boundary
+references and dynamic places still require the descriptor/storage ABI. M1 is
+not yet complete.
+
 ### M2 — Resource-safe systems core
 
 - ownership/borrowing/resources;

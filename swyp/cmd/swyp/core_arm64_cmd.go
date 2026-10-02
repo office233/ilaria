@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"os"
 
 	"swyp-lang/internal/coreir"
 	"swyp-lang/internal/swyplang"
@@ -197,17 +196,7 @@ func coreARM64Command(args []string, out io.Writer) error {
 	if err != nil {
 		return err
 	}
-	file, err := os.OpenFile(*output, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
-	if err != nil {
-		return err
-	}
-	if _, err := file.Write(assembly); err != nil {
-		_ = file.Close()
-		_ = os.Remove(*output)
-		return err
-	}
-	if err := file.Close(); err != nil {
-		_ = os.Remove(*output)
+	if err := writeNewModule(*output, assembly); err != nil {
 		return err
 	}
 	fmt.Fprintf(out, "Created direct ARM64 assembly %s (%s)\n", *output, coreir.ARM64CFGABI)

@@ -63,6 +63,30 @@ def test_bf16_requirement_is_optional_but_enforceable():
     assert "gpu0:bf16_not_native" in assessed["blockers"]
 
 
+def test_gpu_name_requirement_is_fail_closed():
+    g4 = report(memory_gib=95, major=12, bf16=True)
+    g4["devices"][0]["name"] = "NVIDIA RTX PRO 6000 Blackwell Server Edition"
+    assessed = assess_gpu_report(
+        g4,
+        world_size=1,
+        min_vram_gib=90,
+        min_compute_major=12,
+        require_bf16=True,
+        require_name_contains="RTX PRO 6000 Blackwell",
+    )
+    assert assessed["ready"] is True
+    assert assessed["blockers"] == []
+
+    wrong = report(memory_gib=95, major=12, bf16=True)
+    assessed = assess_gpu_report(
+        wrong,
+        world_size=1,
+        require_name_contains="RTX PRO 6000 Blackwell",
+    )
+    assert assessed["ready"] is False
+    assert "gpu0:name_missing=RTX PRO 6000 Blackwell" in assessed["blockers"]
+
+
 def test_invalid_world_size_rejected():
     with pytest.raises(ValueError, match="world_size"):
         assess_gpu_report(report(), world_size=0)

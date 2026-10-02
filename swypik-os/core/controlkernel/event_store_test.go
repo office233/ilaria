@@ -1,6 +1,7 @@
 package controlkernel
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"os"
@@ -9,6 +10,84 @@ import (
 	"sync/atomic"
 	"testing"
 )
+
+func TestExistingEventStoreCannotCreateAppendOrRepair(t *testing.T) {
+	missing := testJournalPath(t)
+	if store, err := OpenExistingEventStore(missing); !os.IsNotExist(err) {
+		if store != nil {
+			_ = store.Close()
+		}
+		t.Fatalf("missing journal err=%v", err)
+	}
+	for _, path := range []string{missing, missing + ".lock"} {
+		if _, err := os.Stat(path); !os.IsNotExist(err) {
+			t.Fatalf("read-only open created %s: %v", path, err)
+		}
+	}
+	for _, suffix := range []string{"valid", "empty", "torn_header", "torn_body"} {
+		t.Run(suffix, func(t *testing.T) {
+			path := testJournalPath(t)
+			writer, err := OpenEventStore(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, err := writer.Append("test", 0, testEvent("test.first", map[string]bool{"ok": true})); err != nil {
+				t.Fatal(err)
+			}
+			if err := writer.Close(); err != nil {
+				t.Fatal(err)
+			}
+			original, err := os.ReadFile(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			switch suffix {
+			case "empty":
+				original = nil
+			case "torn_header":
+				original = append(original, frameMagic[:2]...)
+			case "torn_body":
+				frame := encodeFrame([]byte(`{"version":1,"events":[]}`))
+				original = append(original, frame[:frameHeaderLen+2]...)
+			}
+			if err := os.WriteFile(path, original, 0600); err != nil {
+				t.Fatal(err)
+			}
+			before, err := os.Stat(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			reader, openErr := OpenExistingEventStore(path)
+			if suffix == "valid" {
+				if openErr != nil {
+					t.Fatal(openErr)
+				}
+				if len(reader.Events()) != 1 || reader.Sequence("test") != 1 {
+					t.Fatal("read-only replay lost committed evidence")
+				}
+				if _, err := reader.Append("test", 1, testEvent("test.second", true)); !errors.Is(err, ErrReadOnly) {
+					t.Fatalf("read-only append err=%v", err)
+				}
+				if err := reader.Close(); err != nil {
+					t.Fatal(err)
+				}
+			} else if !errors.Is(openErr, ErrCorruptJournal) {
+				if reader != nil {
+					_ = reader.Close()
+				}
+				t.Fatalf("damaged journal accepted: %v", openErr)
+			}
+			after, err := os.Stat(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			raw, err := os.ReadFile(path)
+			if err != nil || !bytes.Equal(raw, original) || before.Mode() != after.Mode() || !before.ModTime().Equal(after.ModTime()) {
+				t.Fatalf("read-only replay changed journal contents/metadata: err=%v", err)
+			}
+		})
+	}
+}
 
 func testJournalPath(t *testing.T) string {
 	t.Helper()

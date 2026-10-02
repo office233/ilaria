@@ -3,8 +3,10 @@
 
 package bridge
 
+import "fmt"
+
 func SetWindowsClipboard(text string) error {
-	return nil
+	return fmt.Errorf("native clipboard update is unavailable on this platform")
 }
 
 func GetWindowsClipboard() (string, error) {

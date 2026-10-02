@@ -26,7 +26,6 @@ record ResourcePolicy {
     field max_chat_history_messages: u64;
     field max_document_bytes: u64;
     field max_app_catalog_entries: u64;
-    field max_wallet_transactions: u64;
     field max_resident_peers: u64;
     field max_hive_tasks: u64;
     field p2p_inspection_queue: u64;

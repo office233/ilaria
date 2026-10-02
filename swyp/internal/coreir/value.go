@@ -30,8 +30,11 @@ const (
 	// MaxProcessRuntimeArenaBytes bounds zero-initialized mutable storage owned by
 	// a standalone process image. It is deliberately separate from the immutable
 	// module byte arena and is never mapped executable.
-	MaxProcessRuntimeArenaBytes = 1 << 20
+	MaxProcessRuntimeArenaBytes     = 1 << 20
 	DefaultProcessRuntimeArenaBytes = 64 << 10
+	// DefaultNativeStorageArenaBytes is the standalone native storage budget.
+	// It shares the RW runtime-data section but is partitioned from process I/O.
+	DefaultNativeStorageArenaBytes = 512 << 10
 )
 
 func (t Type) scalar() bool   { return t == I64 || t == U64 || t == F64 || t == IEEE64 || t == Bool }
@@ -167,6 +170,18 @@ func resultType(op string, types []Type) (Type, bool, error) {
 	if op == "not" && len(types) == 1 && types[0] == Bool {
 		return Bool, false, nil
 	}
+	if op == "bitcast_i64_u64" && len(types) == 1 && types[0] == I64 {
+		return U64, false, nil
+	}
+	if op == "bitcast_u64_i64" && len(types) == 1 && types[0] == U64 {
+		return I64, false, nil
+	}
+	if op == "bitcast_ieee64_u64" && len(types) == 1 && types[0] == IEEE64 {
+		return U64, false, nil
+	}
+	if op == "bitcast_u64_ieee64" && len(types) == 1 && types[0] == U64 {
+		return IEEE64, false, nil
+	}
 	if len(types) != 2 {
 		return bad()
 	}
@@ -219,6 +234,18 @@ func Apply(op string, args ...Value) (Value, error) {
 			return Value{}, diagnostic("overflow", "i64 negation overflow")
 		}
 		return Int(-x.i), nil
+	}
+	if op == "bitcast_i64_u64" {
+		return Uint(uint64(x.i)), nil
+	}
+	if op == "bitcast_u64_i64" {
+		return Int(int64(x.u)), nil
+	}
+	if op == "bitcast_ieee64_u64" {
+		return Uint(math.Float64bits(x.f)), nil
+	}
+	if op == "bitcast_u64_ieee64" {
+		return Value{typ: IEEE64, f: math.Float64frombits(x.u)}, nil
 	}
 	y := args[1]
 	if op == "eq" || op == "ne" {
@@ -403,6 +430,18 @@ func resultTypeValues(op string, args []Value) (Type, bool, error) {
 		}
 		if op == "not" && t == Bool {
 			return Bool, false, nil
+		}
+		if op == "bitcast_i64_u64" && t == I64 {
+			return U64, false, nil
+		}
+		if op == "bitcast_u64_i64" && t == U64 {
+			return I64, false, nil
+		}
+		if op == "bitcast_ieee64_u64" && t == IEEE64 {
+			return U64, false, nil
+		}
+		if op == "bitcast_u64_ieee64" && t == U64 {
+			return IEEE64, false, nil
 		}
 		return bad()
 	}

@@ -33,6 +33,17 @@ func EmitNativeC(m Module, entry string, profile NativeProfile) ([]byte, error) 
 		if semanticsForFunction(f).Purity != "pure" {
 			return nil, diagnostic("effectful_program", "native Core AOT accepts pure functions only")
 		}
+		// Core validation also accepts byte descriptors and storage operations.
+		// This C backend has no descriptor representation; reject unsupported
+		// types before signature/slot emission can reach coreCType.
+		if f.Result != Void && !f.Result.scalar() {
+			return nil, fmt.Errorf("native Core AOT: function %s result type %s is unsupported", f.Name, f.Result)
+		}
+		for _, t := range f.Slots {
+			if !t.scalar() {
+				return nil, fmt.Errorf("native Core AOT: function %s slot type %s is unsupported", f.Name, t)
+			}
+		}
 	}
 	root, ok := functions[entry]
 	if !ok {

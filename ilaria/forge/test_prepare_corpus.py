@@ -75,7 +75,8 @@ class ShardWriterTests(unittest.TestCase):
             with open(os.path.join(d, files[0]), encoding="utf-8") as f:
                 rows = [json.loads(l) for l in f]
             self.assertEqual(len(rows), 10)
-            self.assertEqual(set(rows[0].keys()), {"text"})
+            self.assertEqual(set(rows[0].keys()), {"path", "text"})
+            self.assertEqual(rows[0]["path"], "row/000000000000")
             self.assertTrue(pc.manifest_path(d, "wiki_ro").endswith("wiki_ro.manifest.json"))
             with open(pc.manifest_path(d, "wiki_ro"), encoding="utf-8") as f:
                 man = json.load(f)
@@ -196,11 +197,140 @@ class TokenizerSampleTests(unittest.TestCase):
 
 class SourceRegistryTests(unittest.TestCase):
     def test_known_sources_have_loader_and_language(self):
-        for name in ["tinystories", "wiki_ro", "wiki_en", "fineweb2_ro", "fineweb_edu"]:
+        for name in [
+            "tinystories",
+            "wiki_ro",
+            "wiki_en",
+            "fineweb2_ro",
+            "fineweb_edu",
+            "openmath_reasoning_cot",
+            "openscience_reasoning_2",
+            "opencode_reasoning_split0",
+        ]:
             src = pc.SOURCES[name]
             self.assertIn(src.lang, ("ro", "en"))
             self.assertTrue(callable(src.stream))
             self.assertTrue(src.hf_id)
+
+    def test_openmath_reasoning_cot_shapes_rows_and_preserves_raw_indexes(self):
+        rows = [
+            {"problem": "x"},
+            {
+                "problem": "Compute the exact value of 17 times 19.",
+                "generated_solution": "<think>Multiply carefully.</think> The answer is 323.",
+                "problem_source": "MATH_training_set",
+                "generation_model": "DeepSeek-R1",
+                "problem_type": "has_answer_extracted",
+                "expected_answer": "323",
+                "used_in_kaggle": False,
+            },
+            {
+                "problem": "Show that the sum of two even integers is even.",
+                "generated_solution": "Write the integers as 2a and 2b. Their sum is 2(a+b).",
+            },
+        ]
+        out = list(pc._openmath_reasoning_cot_from(rows, max_samples=None, skip=7))
+        self.assertEqual([row[0] for row in out], [8, 9])
+        self.assertIn("Problem:\nCompute the exact value", out[0][1])
+        self.assertIn("Solution:\nMultiply carefully. The answer is 323.", out[0][1])
+        self.assertNotIn("<think>", out[0][1])
+        self.assertEqual(out[0][2]["path"], "cot/000000000008")
+        self.assertEqual(out[0][2]["problem_source"], "MATH_training_set")
+        self.assertEqual(out[0][2]["generation_model"], "DeepSeek-R1")
+        self.assertEqual(out[0][2]["problem_type"], "has_answer_extracted")
+        self.assertEqual(out[0][2]["expected_answer"], "323")
+        self.assertIs(out[0][2]["used_in_kaggle"], False)
+
+    def test_openscience_reasoning_2_requires_prompt_and_reasoning(self):
+        rows = [
+            {"input": "", "output": "ignored", "expected_answer": "A"},
+            {
+                "input": "Which mechanism best explains the observation?",
+                "output": "<think>Compare the mechanisms.</think> Choice C follows from the evidence.",
+                "expected_answer": "C",
+            },
+        ]
+        out = list(pc._openscience_reasoning_2_from(rows, max_samples=None, skip=20))
+        self.assertEqual([row[0] for row in out], [21])
+        self.assertIn("Expected answer:\nC", out[0][1])
+        self.assertNotIn("<think>", out[0][1])
+        self.assertEqual(out[0][2]["expected_answer"], "C")
+
+    def test_opencode_reasoning_split0_filters_license_and_missing_prompt(self):
+        rows = [
+            {"dataset": "code_contests", "license": "gpl-3.0", "input": "problem", "output": "reasoning", "solution": "code"},
+            {"dataset": "apps", "license": "CC-BY-4.0", "input": "problem", "output": "reasoning", "solution": "code"},
+            {"dataset": "code_contests", "license": "cc-by-4.0", "input": "-", "output": "reasoning", "solution": "code"},
+            {
+                "dataset": "code_contests",
+                "license": "CC-BY-4.0",
+                "input": "Return the sum of two integers from stdin.",
+                "output": "<think>Parse both values.</think> Print their sum.",
+                "solution": "a, b = map(int, input().split())\nprint(a + b)",
+            },
+        ]
+        out = list(pc._opencode_reasoning_split0_from(rows, max_samples=None, skip=4))
+        self.assertEqual([row[0] for row in out], [7])
+        self.assertIn("Reference solution:\na, b = map", out[0][1])
+        self.assertNotIn("<think>", out[0][1])
+        self.assertEqual(out[0][2]["license"], "cc-by-4.0")
+        self.assertEqual(out[0][2]["dataset"], "code_contests")
+        self.assertEqual(out[0][2]["path"], "split_0/000000000007")
+
+    def test_wiki_preserves_attribution_metadata_per_chunk(self):
+        rows = [
+            {
+                "id": "12345",
+                "title": "Attribution Test",
+                "url": "https://en.wikipedia.org/wiki/Attribution_Test",
+                "text": (
+                    "This is a sufficiently long first paragraph with useful encyclopedic text.\n\n"
+                    "This is a second sufficiently long paragraph with more useful encyclopedic text."
+                ),
+            }
+        ]
+        out = list(pc._wiki_from_rows(rows, max_samples=None, skip=9))
+        self.assertTrue(out)
+        self.assertEqual(out[0][0], 9)
+        self.assertEqual(out[0][2]["article_id"], "12345")
+        self.assertEqual(out[0][2]["title"], "Attribution Test")
+        self.assertEqual(
+            out[0][2]["article_url"],
+            "https://en.wikipedia.org/wiki/Attribution_Test",
+        )
+        self.assertTrue(out[0][2]["path"].startswith("article/12345/"))
+
+    def test_writer_preserves_metadata_and_rejects_text_override(self):
+        with tempfile.TemporaryDirectory() as d:
+            docs = iter(
+                [
+                    (
+                        7,
+                        "licensed reasoning document",
+                        {
+                            "path": "split_0/0007",
+                            "license": "mit",
+                            "record_id": "abc",
+                        },
+                    )
+                ]
+            )
+            self.assertEqual(pc.write_shards(docs, d, "licensed", shard_docs=10), 1)
+            with open(os.path.join(d, "licensed-00000.jsonl"), encoding="utf-8") as f:
+                row = json.loads(next(f))
+            self.assertEqual(row["path"], "split_0/0007")
+            self.assertEqual(row["license"], "mit")
+            self.assertEqual(row["record_id"], "abc")
+            self.assertEqual(row["text"], "licensed reasoning document")
+
+        with tempfile.TemporaryDirectory() as d:
+            with self.assertRaisesRegex(ValueError, "cannot override text"):
+                pc.write_shards(
+                    iter([(1, "document", {"text": "replacement"})]),
+                    d,
+                    "bad",
+                    shard_docs=10,
+                )
 
     def test_docs_generator_yields_raw_index_and_honours_skip(self):
         rows = [{"text": "x"}, {"text": "un text suficient de lung ca să treacă filtrul de lungime"},

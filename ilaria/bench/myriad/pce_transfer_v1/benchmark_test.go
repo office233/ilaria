@@ -28,7 +28,11 @@ const ancestryHash = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789
 
 func loadTasks(t *testing.T) []task {
 	t.Helper()
-	f, err := os.Open("tasks.jsonl")
+	path := os.Getenv("ILARIA_BENCH_TASK_CORPUS")
+	if path == "" {
+		t.Skip("external corpus audit requires explicit ILARIA_BENCH_TASK_CORPUS; public end-to-end fixture always runs")
+	}
+	f, err := os.Open(path)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -73,6 +77,11 @@ func loadTasks(t *testing.T) []task {
 
 func TestFrozenTasksCompileToVerifiedReplayExamples(t *testing.T) {
 	tasks := loadTasks(t)
+	verifyReplayTasks(t, tasks)
+}
+
+func verifyReplayTasks(t *testing.T, tasks []task) {
+	t.Helper()
 	seed := sha256.Sum256([]byte("ilaria-pce-transfer-v1-test-key"))
 	privateKey := ed25519.NewKeyFromSeed(seed[:])
 	publicKey := privateKey.Public().(ed25519.PublicKey)

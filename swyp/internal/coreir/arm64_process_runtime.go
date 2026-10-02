@@ -38,6 +38,14 @@ func arm64ProcessHelperSpec(name string) (stream string, typ Type, ok bool) {
 		return "netconnect", Bool, true
 	case "__swyp_rt_net_fetch":
 		return "netfetch", Bytes, true
+	case "__swyp_rt_storage_alloc_u64":
+		return "storage_alloc", U64, true
+	case "__swyp_rt_storage_load_u64":
+		return "storage_load", U64, true
+	case "__swyp_rt_storage_store_u64":
+		return "storage_store", Void, true
+	case "__swyp_rt_storage_free":
+		return "storage_free", Void, true
 	default:
 		return "", "", false
 	}
@@ -65,6 +73,10 @@ func resolveARM64LinuxProcessRuntime(process ARM64ProcessMachineCode) ([]byte, [
 	code := append([]byte(nil), process.Code...)
 	offsets := make(map[string]int, len(helpers)) // word offsets
 	dataFixups := make([]ARM64ProcessDataFixup, 0)
+	ioRuntimeBytes := process.RuntimeDataBytes - process.StorageDataBytes
+	if ioRuntimeBytes < 0 {
+		return nil, nil, fmt.Errorf("arm64 process runtime: storage data exceeds runtime data")
+	}
 	for _, helper := range helpers {
 		stream, typ, _ := arm64ProcessHelperSpec(helper)
 		offsets[helper] = len(code) / 4
@@ -81,14 +93,14 @@ func resolveARM64LinuxProcessRuntime(process ARM64ProcessMachineCode) ([]byte, [
 			dataFixups = append(dataFixups, fixup)
 		} else if stream == "fsread" {
 			var fixups []ARM64ProcessDataFixup
-			runtimeCode, fixups, err = buildARM64LinuxFSReadHelper(len(process.Data), process.RuntimeDataBytes)
+			runtimeCode, fixups, err = buildARM64LinuxFSReadHelper(len(process.Data), ioRuntimeBytes)
 			for _, fixup := range fixups {
 				fixup.WordIndex += len(code) / 4
 				dataFixups = append(dataFixups, fixup)
 			}
 		} else if stream == "bytesget" {
 			var fixups []ARM64ProcessDataFixup
-			runtimeCode, fixups, err = buildARM64BytesGetHelper(len(process.Data), process.RuntimeDataBytes)
+			runtimeCode, fixups, err = buildARM64BytesGetHelper(len(process.Data), ioRuntimeBytes)
 			for _, fixup := range fixups {
 				fixup.WordIndex += len(code) / 4
 				dataFixups = append(dataFixups, fixup)
@@ -100,11 +112,16 @@ func resolveARM64LinuxProcessRuntime(process ARM64ProcessMachineCode) ([]byte, [
 			dataFixups = append(dataFixups, fixup)
 		} else if stream == "netfetch" {
 			var fixups []ARM64ProcessDataFixup
-			runtimeCode, fixups, err = buildARM64LinuxNetFetchHelper(len(process.Data), process.RuntimeDataBytes)
+			runtimeCode, fixups, err = buildARM64LinuxNetFetchHelper(len(process.Data), ioRuntimeBytes)
 			for _, fixup := range fixups {
 				fixup.WordIndex += len(code) / 4
 				dataFixups = append(dataFixups, fixup)
 			}
+		} else if stream == "storage_alloc" || stream == "storage_load" || stream == "storage_store" || stream == "storage_free" {
+			var fixup ARM64ProcessDataFixup
+			runtimeCode, fixup, err = buildARM64StorageHelper(stream, ioRuntimeBytes, process.StorageDataBytes)
+			fixup.WordIndex += len(code) / 4
+			dataFixups = append(dataFixups, fixup)
 		} else {
 			runtimeCode, err = buildARM64LinuxProcessHelper(stream, typ)
 		}
@@ -211,6 +228,200 @@ func buildARM64BytesGetHelper(moduleLen, runtimeDataBytes int) ([]byte, []ARM64P
 		binary.LittleEndian.PutUint32(out[i*4:], word)
 	}
 	return out, fixups, nil
+}
+
+// buildARM64StorageHelper mirrors the bounded standalone x64 storage ABI.
+// x0/x1/x2 carry arguments; x0 returns the result and x1 returns status
+// (0 success, non-zero bounds/storage failure). Storage IDs are monotonic
+// descriptor slot+1 values and never expose process pointers.
+func buildARM64StorageHelper(kind string, storageOffset, storageBytes int) ([]byte, ARM64ProcessDataFixup, error) {
+	if storageOffset < 0 || storageBytes < nativeStoragePayloadOffset || storageOffset+storageBytes > MaxProcessRuntimeArenaBytes {
+		return nil, ARM64ProcessDataFixup{}, fmt.Errorf("arm64 storage runtime: invalid partition offset=%d bytes=%d", storageOffset, storageBytes)
+	}
+	b := &arm64MachineBuilder{}
+	runtimeWord := b.adrPlaceholder(9)
+	if storageOffset != 0 {
+		b.movImm64(15, uint64(storageOffset))
+		b.addRegReg(9, 9, 15)
+	}
+	fail := make([]int, 0, 8)
+	descPtr := func(idReg, dstReg int) error {
+		b.movRegReg(dstReg, idReg)
+		if err := b.subRegImm(dstReg, dstReg, 1); err != nil {
+			return err
+		}
+		b.movImm64(15, nativeStorageDescriptorBytes)
+		b.mul(dstReg, dstReg, 15)
+		if err := b.addRegImm(dstReg, dstReg, nativeStorageHeaderBytes); err != nil {
+			return err
+		}
+		b.addRegReg(dstReg, 9, dstReg)
+		return nil
+	}
+	validateID := func(idReg, descReg, scratchReg int) error {
+		b.cmpRegReg(idReg, 31)
+		fail = append(fail, b.condBranchPlaceholder(0x0)) // EQ
+		if err := b.cmpRegImm(idReg, nativeStorageMaxBlocks); err != nil {
+			return err
+		}
+		fail = append(fail, b.condBranchPlaceholder(0x8)) // HI
+		if err := descPtr(idReg, descReg); err != nil {
+			return err
+		}
+		if err := b.ldrRegBase(scratchReg, descReg, 16); err != nil {
+			return err
+		}
+		if err := b.cmpRegImm(scratchReg, 1); err != nil {
+			return err
+		}
+		fail = append(fail, b.condBranchPlaceholder(0x1)) // NE
+		return nil
+	}
+
+	switch kind {
+	case "storage_alloc":
+		capacityElems := uint64((storageBytes - nativeStoragePayloadOffset) / 8)
+		b.movImm64(15, capacityElems)
+		b.cmpRegReg(0, 15)
+		fail = append(fail, b.condBranchPlaceholder(0x8)) // HI
+		if err := b.ldrRegBase(10, 9, 0); err != nil {
+			return nil, ARM64ProcessDataFixup{}, err
+		}
+		initID := b.cbzPlaceholder(10)
+		skipID := b.branchPlaceholder()
+		initIDOffset := len(b.words)
+		b.movImm64(10, 1)
+		haveIDOffset := len(b.words)
+		if err := b.patchCBZ(initID, initIDOffset); err != nil {
+			return nil, ARM64ProcessDataFixup{}, err
+		}
+		if err := b.patchBranch(skipID, haveIDOffset); err != nil {
+			return nil, ARM64ProcessDataFixup{}, err
+		}
+		if err := b.cmpRegImm(10, nativeStorageMaxBlocks); err != nil {
+			return nil, ARM64ProcessDataFixup{}, err
+		}
+		fail = append(fail, b.condBranchPlaceholder(0x8))
+
+		if err := b.ldrRegBase(11, 9, 8); err != nil {
+			return nil, ARM64ProcessDataFixup{}, err
+		}
+		initCursor := b.cbzPlaceholder(11)
+		skipCursor := b.branchPlaceholder()
+		initCursorOffset := len(b.words)
+		b.movImm64(11, nativeStoragePayloadOffset)
+		haveCursorOffset := len(b.words)
+		if err := b.patchCBZ(initCursor, initCursorOffset); err != nil {
+			return nil, ARM64ProcessDataFixup{}, err
+		}
+		if err := b.patchBranch(skipCursor, haveCursorOffset); err != nil {
+			return nil, ARM64ProcessDataFixup{}, err
+		}
+
+		b.movImm64(15, 8)
+		b.mul(12, 0, 15)
+		b.movImm64(14, uint64(storageBytes))
+		b.subRegReg(14, 14, 11)
+		b.cmpRegReg(12, 14)
+		fail = append(fail, b.condBranchPlaceholder(0x8))
+		if err := descPtr(10, 13); err != nil {
+			return nil, ARM64ProcessDataFixup{}, err
+		}
+		if err := b.strRegBase(11, 13, 0); err != nil {
+			return nil, ARM64ProcessDataFixup{}, err
+		}
+		if err := b.strRegBase(0, 13, 8); err != nil {
+			return nil, ARM64ProcessDataFixup{}, err
+		}
+		b.movImm64(14, 1)
+		if err := b.strRegBase(14, 13, 16); err != nil {
+			return nil, ARM64ProcessDataFixup{}, err
+		}
+		b.addRegReg(11, 11, 12)
+		if err := b.strRegBase(11, 9, 8); err != nil {
+			return nil, ARM64ProcessDataFixup{}, err
+		}
+		b.movRegReg(0, 10)
+		if err := b.addRegImm(10, 10, 1); err != nil {
+			return nil, ARM64ProcessDataFixup{}, err
+		}
+		if err := b.strRegBase(10, 9, 0); err != nil {
+			return nil, ARM64ProcessDataFixup{}, err
+		}
+		b.movImm64(1, 0)
+		b.ret()
+	case "storage_load":
+		if err := validateID(0, 10, 11); err != nil {
+			return nil, ARM64ProcessDataFixup{}, err
+		}
+		if err := b.ldrRegBase(11, 10, 8); err != nil {
+			return nil, ARM64ProcessDataFixup{}, err
+		}
+		b.cmpRegReg(1, 11)
+		fail = append(fail, b.condBranchPlaceholder(0x2)) // HS
+		if err := b.ldrRegBase(12, 10, 0); err != nil {
+			return nil, ARM64ProcessDataFixup{}, err
+		}
+		b.movImm64(15, 8)
+		b.mul(13, 1, 15)
+		b.addRegReg(12, 12, 13)
+		b.addRegReg(12, 9, 12)
+		if err := b.ldrRegBase(0, 12, 0); err != nil {
+			return nil, ARM64ProcessDataFixup{}, err
+		}
+		b.movImm64(1, 0)
+		b.ret()
+	case "storage_store":
+		if err := validateID(0, 10, 11); err != nil {
+			return nil, ARM64ProcessDataFixup{}, err
+		}
+		if err := b.ldrRegBase(11, 10, 8); err != nil {
+			return nil, ARM64ProcessDataFixup{}, err
+		}
+		b.cmpRegReg(1, 11)
+		fail = append(fail, b.condBranchPlaceholder(0x2))
+		if err := b.ldrRegBase(12, 10, 0); err != nil {
+			return nil, ARM64ProcessDataFixup{}, err
+		}
+		b.movImm64(15, 8)
+		b.mul(13, 1, 15)
+		b.addRegReg(12, 12, 13)
+		b.addRegReg(12, 9, 12)
+		if err := b.strRegBase(2, 12, 0); err != nil {
+			return nil, ARM64ProcessDataFixup{}, err
+		}
+		b.movImm64(0, 0)
+		b.movImm64(1, 0)
+		b.ret()
+	case "storage_free":
+		if err := validateID(0, 10, 11); err != nil {
+			return nil, ARM64ProcessDataFixup{}, err
+		}
+		b.movImm64(11, 0)
+		if err := b.strRegBase(11, 10, 16); err != nil {
+			return nil, ARM64ProcessDataFixup{}, err
+		}
+		b.movImm64(0, 0)
+		b.movImm64(1, 0)
+		b.ret()
+	default:
+		return nil, ARM64ProcessDataFixup{}, fmt.Errorf("arm64 storage runtime: unknown helper kind %q", kind)
+	}
+
+	failure := len(b.words)
+	for _, pos := range fail {
+		if err := b.patchCondBranch(pos, failure); err != nil {
+			return nil, ARM64ProcessDataFixup{}, err
+		}
+	}
+	b.movImm64(0, 0)
+	b.movImm64(1, 1)
+	b.ret()
+	out := make([]byte, len(b.words)*4)
+	for i, word := range b.words {
+		binary.LittleEndian.PutUint32(out[i*4:], word)
+	}
+	return out, ARM64ProcessDataFixup{WordIndex: runtimeWord, Target: processDataRuntime}, nil
 }
 
 func buildARM64LinuxFSReadHelper(moduleLen, runtimeDataBytes int) ([]byte, []ARM64ProcessDataFixup, error) {
@@ -632,10 +843,12 @@ func buildARM64LinuxNetConnectHelper(arenaLen int) ([]byte, ARM64ProcessDataFixu
 				return nil, ARM64ProcessDataFixup{}, err
 			}
 		} else {
+			// The fourth octet must end at the NUL terminator: any other
+			// trailing byte is invalid input.
 			parseFailures = append(parseFailures, struct {
 				index int
 				cbz   bool
-			}{b.cbzPlaceholder(12), true})
+			}{b.cbnzPlaceholder(12), true})
 		}
 		if err := b.strbRegBase(10, 13, 0); err != nil {
 			return nil, ARM64ProcessDataFixup{}, err
@@ -1094,10 +1307,12 @@ func buildARM64LinuxNetFetchHelper(moduleLen, runtimeDataBytes int) ([]byte, []A
 				return nil, nil, err
 			}
 		} else {
+			// The fourth octet must end at the NUL terminator: any other
+			// trailing byte is invalid input.
 			parseFailures = append(parseFailures, struct {
 				index int
 				cbz   bool
-			}{b.cbzPlaceholder(12), true})
+			}{b.cbnzPlaceholder(12), true})
 		}
 		if err := b.strbRegBase(10, 13, 0); err != nil {
 			return nil, nil, err

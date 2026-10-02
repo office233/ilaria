@@ -116,6 +116,30 @@ record ReplayExample {
     field verifier_evidence_hash: string;
 }
 
+record IMCLocalProbeEnvelope {
+    field protocol_version: u64;
+    field expert_id: string;
+    field peer_id: string;
+    field round_id: string;
+    field model_config_hash: string;
+    field genesis_checkpoint_hash: string;
+    field parameter_delta_hash: string;
+    field curriculum_manifest_hash: string;
+    field training_recipe_hash: string;
+    field consent_epoch: u64;
+    field lease_fence: u64;
+    field nonce: string;
+    field deadline_unix_ms: i64;
+    field payload_bytes: u64;
+    field payload_base64: string;
+    field tensor_layout_json: string;
+    field model_config_json: string;
+    field recipe_json: string;
+    field signed_canonical_base64: string;
+    field signer_key_id: string;
+    field signature: string;
+}
+
 record PCEReplayArtifact {
     field format: string;
     field protocol_version: u64;
@@ -127,6 +151,57 @@ record PCEReplayArtifact {
     field action_target: string;
     field verifier_evidence_hash: string;
     field signer_key_id: string;
+}
+
+record IMCNetworkRoundJob {
+    field protocol_version: u64;
+    field issuer_id: string;
+    field expert_id: string;
+    field session_id: string;
+    field round_sequence: u64;
+    field round_id: string;
+    field genesis_checkpoint_hash: string;
+    field current_parent_checkpoint_hash: string;
+    field lineage_hash: string;
+    field model_config_hash: string;
+    field curriculum_manifest_hash: string;
+    field dataset_scope: string;
+    field authorized_purpose: string;
+    field training_recipe_hash: string;
+    field proposer_id: string;
+    field recipe_json: string;
+    field evaluator_id: string;
+    field proposer_key_hash: string;
+    field evaluator_key_hash: string;
+    field nonce: string;
+    field consent_epoch: u64;
+    field lease_fence: u64;
+    field deadline_unix_ms: i64;
+}
+
+record IMCNetworkRoundReceipt {
+    field protocol_version: u64;
+    field issuer_id: string;
+    field evaluator_id: string;
+    field session_id: string;
+    field round_id: string;
+    field round_sequence: u64;
+    field issued_job_hash: string;
+    field current_parent_checkpoint_hash: string;
+    field candidate_checkpoint_hash: string;
+    field parameter_delta_hash: string;
+    field accepted: bool;
+    field training_recipe_hash: string;
+    field model_config_hash: string;
+    field genesis_checkpoint_hash: string;
+    field lineage_hash: string;
+    field consent_epoch: u64;
+    field lease_fence: u64;
+    field nonce: string;
+    field deadline_unix_ms: i64;
+    field before_metrics_json: string;
+    field candidate_metrics_json: string;
+    field active_metrics_json: string;
 }
 
 record ConnectomeEdge {

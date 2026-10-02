@@ -6,13 +6,33 @@ tokenizer-freeze, dataset-manifest or curriculum validation.
 
 ## 1. Hardware preflight
 
-Single-GPU pilot:
+Canonical Colab target for the IMC-125M Genesis run is **G4 High-RAM**.
+Do not silently fall back to L4/T4/A100/H100 if G4 allocation is unavailable.
+The previously verified Colab G4 maps to an NVIDIA RTX PRO 6000 Blackwell
+Server Edition with about 95 GiB VRAM and native BF16.
 
-    python forge/gpu_preflight.py --world-size 1 --min-vram-gib 24
+Run this inside the allocated G4 runtime:
 
-For an H100/A100-style bf16 run, add `--require-bf16`.
+    python forge/gpu_preflight.py \
+      --world-size 1 \
+      --min-vram-gib 90 \
+      --min-compute-major 12 \
+      --require-bf16 \
+      --require-name-contains "RTX PRO 6000 Blackwell"
 
 Do not launch if the report is not `ready: true`.
+
+Before the production launch, benchmark exact-context micro-batches
+`4, 8, 16, 32`. Each is compatible with the locked 262,144-token global
+batch on one GPU:
+
+- micro-batch 4 -> accumulation 32
+- micro-batch 8 -> accumulation 16
+- micro-batch 16 -> accumulation 8
+- micro-batch 32 -> accumulation 4
+
+Select the largest stable candidate that retains adequate VRAM headroom;
+do not change `global_batch_tokens` to fit the device.
 
 ## 2. Production readiness
 

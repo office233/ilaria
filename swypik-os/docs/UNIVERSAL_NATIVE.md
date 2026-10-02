@@ -278,3 +278,45 @@ These are foundations, not universal-device support claims. The next milestone
 is integration: installer → hardware probe → device synthesis → control kernel
 task/evidence → driver-domain activation, plus a real two-node Compute Fabric
 pilot.
+
+## M1 integration slice — 2026-09-30
+
+The first authority-preserving integration path now exists in
+`installer/universal/adaptation.go` for an explicitly unsupported device:
+
+- a validated Hardware Manifest is matched before synthesis; the synthesis path
+  refuses to masquerade as a known-driver path;
+- DeviceSynth candidate/build/test/capability evidence is verified against an
+  explicit allowed capability set, exact hardware-resource/right grants and a
+  configured verifier trust anchor; the signed evidence summary binds the
+  normalized grant plan;
+- the Control Kernel owns the durable task, lease/fence, attempt and canary
+  side-effect intent;
+- the verifier credential is preflight-bound to the same `VerifierID` as the
+  DeviceSynth trust anchor before the external driver domain is touched;
+- successful canary activation records a durable RESULT, independent control
+  verification, COMMIT and only then `ACTIVE`/`SUCCEEDED`;
+- failed canary health enters `ROLLBACK`; a proven rollback is reconciled and
+  ends `FAILED`, while ambiguous activation/rollback outcomes escalate to
+  `OPERATOR_REQUIRED` rather than replaying the effect;
+- deterministic integration tests replay both the DeviceSynth journal and the
+  Control Kernel journal after the success path.
+
+The Hardware Manifest `DeviceGraph` also carries typed concrete resources. HAL
+scanners may provide them explicitly; legacy scanners do not invent MMIO, IRQ,
+DMA or configuration authority when they cannot observe it. The installer passes
+the verified exact grant plan and current lease fence to the
+`DriverDomainActivation` boundary, and the Control Kernel intent request hash
+includes the grant-plan hash so a retry cannot silently change hardware rights.
+
+This slice intentionally injects the driver matcher, isolated builder, trusted
+test runner, capability scanner and driver-domain runtime. The native kernel seed
+now includes a host-verified x86_64 substrate behind that boundary: isolated
+4-level driver address spaces, capability-gated MMIO, APIC IRQ routing, IOMMU
+mapping semantics requiring a second shared-memory capability, and PCI ECAM
+config access. These mechanisms are verified with fake hardware plus compile-
+verified native CR3/invlpg and APIC-MMIO primitives. This still does **not**
+claim production hardware support: firmware memory ownership/`ExitBootServices`,
+ACPI MADT/MCFG/DMAR discovery, native VT-d programming, scheduler/process
+isolation and real canary execution on hardware remain required before generated
+drivers may be loaded outside controlled test environments.

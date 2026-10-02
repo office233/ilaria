@@ -850,11 +850,24 @@ func emitX64FPInstruction(b *bytes.Buffer, f SSAFunction, plan SSARegisterPlan, 
 		if at != IEEE64 || bt != IEEE64 || destType != IEEE64 {
 			return fmt.Errorf("x64 fp: %s requires ieee64", ins.Op)
 		}
-		if dstFP != a {
+		op := map[string]string{"add": "addsd", "sub": "subsd", "mul": "mulsd", "div": "divsd"}[ins.Op]
+		target := dstFP
+		switch {
+		case dstFP == a:
+		case dstFP == c:
+			// The destination aliases the right operand; copying a first would
+			// clobber it, so compute in the xmm4 source scratch instead.
+			target = "xmm4"
+			if a != target {
+				fmt.Fprintf(b, "    movsd %s, %s\n", target, a)
+			}
+		default:
 			fmt.Fprintf(b, "    movsd %s, %s\n", dstFP, a)
 		}
-		op := map[string]string{"add": "addsd", "sub": "subsd", "mul": "mulsd", "div": "divsd"}[ins.Op]
-		fmt.Fprintf(b, "    %s %s, %s\n", op, dstFP, c)
+		fmt.Fprintf(b, "    %s %s, %s\n", op, target, c)
+		if target != dstFP {
+			fmt.Fprintf(b, "    movsd %s, %s\n", dstFP, target)
+		}
 		commitFP()
 		return nil
 	case "eq", "ne", "lt", "le", "gt", "ge":

@@ -70,7 +70,9 @@ def _manifest_hash(value: dict) -> str:
 def detect_spdx(path: Path, *, max_bytes: int = 64 * 1024) -> str | None:
     with path.open("rb") as stream:
         raw = stream.read(max_bytes)
-    text = raw.decode("utf-8", errors="ignore")
+    # All markers inspected here are ASCII. Latin-1 preserves every input byte
+    # one-to-one, so malformed UTF-8 cannot disappear during provenance checks.
+    text = raw.decode("latin-1")
     expressions: list[str] = []
     for line in text.splitlines():
         if _SPDX_MARKER not in line:
@@ -121,7 +123,7 @@ def spdx_expression_is_allowed(
 def contains_strong_secret_marker(path: Path, *, max_bytes: int = 512 * 1024) -> bool:
     with path.open("rb") as stream:
         raw = stream.read(max_bytes)
-    text = raw.decode("utf-8", errors="ignore")
+    text = raw.decode("latin-1")
     return any(pattern.search(text) is not None for pattern in _SECRET_PATTERNS)
 
 
@@ -139,7 +141,7 @@ def inspect_file(
             if len(prefix) < max_secret_bytes:
                 remaining = max_secret_bytes - len(prefix)
                 prefix.extend(chunk[:remaining])
-    text = bytes(prefix).decode("utf-8", errors="ignore")
+    text = bytes(prefix).decode("latin-1")
     has_secret = any(pattern.search(text) is not None for pattern in _SECRET_PATTERNS)
     return digest.hexdigest(), has_secret
 

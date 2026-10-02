@@ -29,12 +29,10 @@ function Invoke-Native([string]$Exe, [string[]]$Arguments) {
 
 $Gcc = Resolve-RequiredTool "gcc"
 $Objdump = Resolve-RequiredTool "objdump"
-$Nasm = Resolve-RequiredTool "nasm"
 
 $Toolchain = @(
     "gcc=$((& $Gcc --version | Select-Object -First 1))",
-    "objdump=$((& $Objdump --version | Select-Object -First 1))",
-    "nasm=$((& $Nasm --version | Select-Object -First 1))"
+    "objdump=$((& $Objdump --version | Select-Object -First 1))"
 )
 [IO.File]::WriteAllLines((Join-Path $Out "toolchain.txt"), $Toolchain)
 
@@ -44,10 +42,56 @@ Write-Host "[1/5] host architecture-neutral core tests"
 $HostTest = Join-Path $HostOut "core_tests.exe"
 Invoke-Native $Gcc ($Common + @(
     "src/core/contracts.c",
+    "src/boot/uefi_handoff.c",
+    "src/boot/uefi_acpi.c",
+    "src/boot/uefi_bootstrap.c",
+    "src/boot/pe_image.c",
+    "src/boot/uefi_takeover.c",
+    "src/boot/uefi_memory.c",
+    "src/arch/x86_64/address_space.c",
+    "src/arch/x86_64/apic.c",
+    "src/arch/x86_64/apic_router.c",
+    "src/arch/x86_64/apic_mmio.c",
+    "src/arch/x86_64/driver_runtime.c",
+    "src/arch/x86_64/extended_state.c",
+    "src/arch/x86_64/driver_image.c",
+    "src/arch/x86_64/iommu.c",
+    "src/arch/x86_64/irq.c",
+    "src/arch/x86_64/kernel_root.c",
+    "src/arch/x86_64/native_mmu.c",
+    "src/arch/x86_64/pci_ecam.c",
+    "src/arch/x86_64/pci_ecam_mmio.c",
+    "src/arch/x86_64/platform_boot.c",
+    "src/arch/x86_64/platform_map.c",
+    "src/arch/x86_64/privilege.c",
+    "src/arch/x86_64/scheduler.c",
+    "src/arch/x86_64/syscall.c",
+    "src/arch/x86_64/timer.c",
+    "src/arch/x86_64/trap.c",
+    "src/arch/x86_64/user_mode.c",
+    "src/arch/x86_64/vtd.c",
+    "src/arch/x86_64/vtd_router.c",
+    "src/arch/x86_64/vtd_mmio.c",
+    "src/firmware/acpi.c",
     "src/core/capability.c",
+    "src/core/device_broker.c",
+    "src/core/device_platform.c",
+    "src/core/driver_domain.c",
     "src/core/ipc.c",
+    "src/core/kernel_entry.c",
+    "src/core/kernel_runtime.c",
+    "src/core/kernel_takeover.c",
+    "src/core/scheduler.c",
     "src/core/device_graph.c",
     "tests/host_core_test.c",
+    "src/boot/uefi_switch.S",
+    "src/arch/x86_64/continuation.S",
+    "src/arch/x86_64/irq_entry.S",
+    "src/arch/x86_64/privilege_native.S",
+    "src/arch/x86_64/trap_entry.S",
+    "src/arch/x86_64/syscall_entry.S",
+    "src/arch/x86_64/timer_entry.S",
+    "src/arch/x86_64/user_entry.S",
     "-o", $HostTest
 ))
 Invoke-Native $HostTest @()
@@ -86,9 +130,35 @@ $Freestanding = $Common + @(
     "-fno-ident"
 )
 $ContractsObject = Join-Path $EfiOut "contracts.o"
+$AcpiObject = Join-Path $EfiOut "uefi_acpi.o"
+$HandoffObject = Join-Path $EfiOut "uefi_handoff.o"
+$BootstrapObject = Join-Path $EfiOut "uefi_bootstrap.o"
+$PeImageObject = Join-Path $EfiOut "pe_image.o"
+$TakeoverObject = Join-Path $EfiOut "uefi_takeover.o"
+$SwitchObject = Join-Path $EfiOut "uefi_switch.o"
+$MemoryObject = Join-Path $EfiOut "uefi_memory.o"
+$KernelTakeoverObject = Join-Path $EfiOut "kernel_takeover.o"
+$KernelRootObject = Join-Path $EfiOut "kernel_root.o"
+$PrivilegeObject = Join-Path $EfiOut "privilege.o"
+$PrivilegeNativeObject = Join-Path $EfiOut "privilege_native.o"
+$NativeMmuObject = Join-Path $EfiOut "native_mmu.o"
+$KernelEntryObject = Join-Path $EfiOut "kernel_entry.o"
 $UefiObject = Join-Path $EfiOut "uefi_x86_64.o"
 $EfiImage = Join-Path $EfiOut "BOOTX64.EFI"
 Invoke-Native $Gcc ($Freestanding + @("-c", "src/core/contracts.c", "-o", $ContractsObject))
+Invoke-Native $Gcc ($Freestanding + @("-c", "src/boot/uefi_acpi.c", "-o", $AcpiObject))
+Invoke-Native $Gcc ($Freestanding + @("-c", "src/boot/uefi_handoff.c", "-o", $HandoffObject))
+Invoke-Native $Gcc ($Freestanding + @("-c", "src/boot/uefi_bootstrap.c", "-o", $BootstrapObject))
+Invoke-Native $Gcc ($Freestanding + @("-c", "src/boot/pe_image.c", "-o", $PeImageObject))
+Invoke-Native $Gcc ($Freestanding + @("-c", "src/boot/uefi_takeover.c", "-o", $TakeoverObject))
+Invoke-Native $Gcc ($Freestanding + @("-c", "src/boot/uefi_switch.S", "-o", $SwitchObject))
+Invoke-Native $Gcc ($Freestanding + @("-c", "src/boot/uefi_memory.c", "-o", $MemoryObject))
+Invoke-Native $Gcc ($Freestanding + @("-c", "src/core/kernel_takeover.c", "-o", $KernelTakeoverObject))
+Invoke-Native $Gcc ($Freestanding + @("-c", "src/arch/x86_64/kernel_root.c", "-o", $KernelRootObject))
+Invoke-Native $Gcc ($Freestanding + @("-c", "src/arch/x86_64/privilege.c", "-o", $PrivilegeObject))
+Invoke-Native $Gcc ($Freestanding + @("-c", "src/arch/x86_64/privilege_native.S", "-o", $PrivilegeNativeObject))
+Invoke-Native $Gcc ($Freestanding + @("-c", "src/arch/x86_64/native_mmu.c", "-o", $NativeMmuObject))
+Invoke-Native $Gcc ($Freestanding + @("-c", "src/core/kernel_entry.c", "-o", $KernelEntryObject))
 Invoke-Native $Gcc ($Freestanding + @("-c", "src/boot/uefi_x86_64.c", "-o", $UefiObject))
 Invoke-Native $Gcc @(
     "-nostdlib",
@@ -99,6 +169,19 @@ Invoke-Native $Gcc @(
     "-Wl,--no-insert-timestamp",
     "-o", $EfiImage,
     $UefiObject,
+    $AcpiObject,
+    $HandoffObject,
+    $BootstrapObject,
+    $PeImageObject,
+    $TakeoverObject,
+    $SwitchObject,
+    $MemoryObject,
+    $KernelTakeoverObject,
+    $KernelRootObject,
+    $PrivilegeObject,
+    $PrivilegeNativeObject,
+    $NativeMmuObject,
+    $KernelEntryObject,
     $ContractsObject
 )
 

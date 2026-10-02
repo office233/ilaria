@@ -3,7 +3,7 @@ package sheets
 import "testing"
 
 func TestFormulaDependenciesAndCycles(t *testing.T) {
-	s := NewSheet("test", 10, 30)
+	s := budgetFixture()
 	s.SetCell(1, 1, "100")
 	if got := s.Cells[cellKey(4, 1)].Value; got != 1660 {
 		t.Fatalf("stale total: %v", got)

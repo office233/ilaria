@@ -42,6 +42,7 @@ type VerificationRequest struct {
 	Hardware              HardwareManifest      `json:"hardware_manifest"`
 	Candidate             CandidateBundle       `json:"candidate"`
 	AllowedCapabilities   []LogicalCapability   `json:"allowed_capabilities"`
+	AllowedResourceGrants []ResourceGrant       `json:"allowed_resource_grants"`
 	ApprovedEvidence      []EvidenceReference   `json:"approved_evidence"`
 	BuiltArtifact         []byte                `json:"-"`
 	TrustedTestEvidence   []TrustedTestEvidence `json:"trusted_test_evidence"`
@@ -203,6 +204,19 @@ func (v DeterministicVerifier) Verify(ctx context.Context, request VerificationR
 	}
 	add("declared_capabilities", declaredMatch, "driver manifest declarations must equal the synthesis capability request")
 
+	resourceBindingOK := true
+	resourceBindingDetail := ""
+	normalizedResourceGrants := append([]ResourceGrant(nil), request.AllowedResourceGrants...)
+	if verificationRank(request.TargetState) > 0 {
+		var resourceErr error
+		normalizedResourceGrants, resourceErr = ValidateResourceGrantPlan(request.Hardware, manifest.Selector.DeviceID, request.Candidate.RequestedCapabilities, request.AllowedResourceGrants)
+		if resourceErr != nil {
+			resourceBindingOK = false
+			resourceBindingDetail = resourceErr.Error()
+		}
+	}
+	add("concrete_resource_grants", resourceBindingOK, resourceBindingDetail)
+
 	artifactDigest := ""
 	artifactOK := true
 	if stateRequiresBuiltArtifact(request.TargetState) {
@@ -214,6 +228,19 @@ func (v DeterministicVerifier) Verify(ctx context.Context, request VerificationR
 	}
 	result.ArtifactDigest = artifactDigest
 	add("built_artifact", artifactOK, "trusted builder artifact bytes must hash exactly to the driver manifest")
+
+	driverImageOK := true
+	driverImageDetail := ""
+	if verificationRank(request.TargetState) >= verificationRank(StateCanary) {
+		if manifest.ImageFormat != DriverImageFormatV1 {
+			driverImageOK = false
+			driverImageDetail = "CANARY/ACTIVE require swypik.driver-image/v1"
+		} else if _, err := ParseDriverImageV1(request.BuiltArtifact); err != nil {
+			driverImageOK = false
+			driverImageDetail = err.Error()
+		}
+	}
+	add("driver_image_format", driverImageOK, driverImageDetail)
 
 	observationOK := trustedCapabilityObservationValid(request.CapabilityObservation, candidateDigest, artifactDigest, abiSet)
 	add("trusted_capability_observation", observationOK, "capability observation must come from a bound external scanner result using Driver ABI v1")
@@ -271,11 +298,13 @@ func (v DeterministicVerifier) Verify(ctx context.Context, request VerificationR
 
 	summaryHash, summaryErr := CanonicalHash(struct {
 		ApprovedEvidence      []EvidenceReference   `json:"approved_evidence"`
+		AllowedResourceGrants []ResourceGrant       `json:"allowed_resource_grants"`
 		TrustedTestEvidence   []TrustedTestEvidence `json:"trusted_test_evidence"`
 		CapabilityObservation CapabilityObservation `json:"capability_observation"`
 		Checks                []CheckResult         `json:"checks"`
 	}{
 		ApprovedEvidence:      request.ApprovedEvidence,
+		AllowedResourceGrants: normalizedResourceGrants,
 		TrustedTestEvidence:   request.TrustedTestEvidence,
 		CapabilityObservation: request.CapabilityObservation,
 		Checks:                result.Checks,

@@ -30,17 +30,20 @@ relative legacy writes resolve against the selected workspace, never the
 launcher's accidental current directory. This is path selection, not confinement:
 the process retains the launching Windows user's filesystem permissions.
 
-The persistent index is `search-index.json`; invalid existing indexes stop startup
-instead of being silently discarded. Unique startup logs are written under
+The persistent index is `search-index.jsonl`; the older JSON index is imported
+and retained with a `.migrated` suffix after successful migration. A torn final
+JSONL write is removed. Other index corruption is quarantined with a warning,
+retaining only validated earlier documents. The original damaged file remains
+available for inspection. Unique startup logs are written under
 `logs/desktop-*.log` without depending on a console's stderr handle. GUI startup
 errors use a native message box. Credentials are supplied at runtime and are not
 embedded in artifacts or printed in startup logs.
 
-Swarm inventory is constructed with compute and training explicitly disabled.
-An available NVIDIA management tool can supply model and VRAM inventory; unknown
-TFLOPS remain unknown rather than being inferred from a model name. No automatic
-training job, cloud coordinator request or payment is triggered by desktop launch.
-Closing the window cancels the active command and stops the Swarm worker.
+The Compute tab can query an available NVIDIA management tool for model and VRAM
+inventory. It records consent for future contribution; no training work currently
+runs from this desktop. No automatic training job, cloud coordinator request or
+payment is triggered by launch. Closing the window cancels the active operation
+and closes the agent manager before its checkpoint store.
 
 ## Win32 lifecycle and input
 
@@ -64,15 +67,16 @@ work; correct text storage alone does not establish those capabilities.
 The command dispatcher accepts one asynchronous command at a time. Blocking AI
 or terminal work does not execute on the Win32 message thread. Tasks have a
 context deadline, cancellation and panic reporting. Workers update synchronized
-view state, not GDI handles. `cancel` requests cancellation. `stop`, `estop` and
-emergency-stop phrases bypass the busy gate, cancel the active task and request a
-software controller stop. This is not a certified or verified physical E-stop.
-Legacy routines that do not accept context may finish before cancellation takes
-effect; this is not process isolation or forced preemption.
+view state, not GDI handles. `/cancel` requests cancellation of background work,
+pending confirmations and the agent run. The desktop has no certified physical
+E-stop or hardware actuation path. Context cancellation is cooperative; Windows
+Job Objects supply lifecycle control for approved child processes.
 
-`search <query>` reads only the persistent local index. Empty indexes and unmatched
+Queries in the Search tab read only the persistent local index. Empty indexes and unmatched
 queries produce explicit empty results. An index does not populate itself: the
-Windows crawl/approval interaction remains to implement. Search tests use a known
+Windows `/crawl URL [pages]` requires confirmation before contacting the site,
+enforces robots rules and rejects private destinations. `/index [dir]` indexes
+local text files inside the configured workspace. Search tests use a known
 local document and a nil Ilaria engine to catch accidental inference fallback.
 The renderer no longer executes a hardcoded search query during each paint.
 
@@ -81,24 +85,28 @@ Ilaria is an optional real inference backend. The default origin is
 contract and `ILARIA_API_TOKEN`. No real model is bundled or automatically started.
 A missing backend produces an error when a prompt is submitted.
 
-The existing developer command dispatcher is retained, including its prototypes
-and simulations. It is not wired to `core/agent.Manager` approvals or durable run
-recovery. Do not treat the command filter as a sandbox or expose it to untrusted
-remote callers. Windows approval prompts, run history, credential storage and a
-Windows-appropriate durable store must precede a production autonomous release.
+The Windows entrypoint wires `core/agent.Manager` to workspace read/write/edit/list,
+process execution and local search tools. Each proposed tool requires one explicit
+approval; F8 approval requires the prompt to have been visible for at least 500 ms.
+Existing-file writes require a SHA256 from an earlier read. Windows checkpoints
+use a private per-user location, exclusive writer locking and flushed replacement;
+`/resume` replans safely interrupted runs with fresh approvals. Uncertain tool
+outcomes block automatic replay. Approved commands run in a Windows Job Object
+with an allowlisted environment and descendant cleanup. This controls process
+lifecycle; filesystem and network sandboxing remain to implement.
 
 ## UI maturity
 
-Search and workspace listing are connected to their local engines. Other legacy
-app panels are marked as prototypes because their demonstration statuses do not
-prove working media pipelines, finance, messaging, app installation or hardware
-actuation. The voice button explicitly reports that capture is not implemented;
-it does not pretend to activate a microphone.
+Search and workspace listing are connected to their local engines. Legacy app,
+finance, device actuation, BCI and distributed training modules remain prototypes
+outside the desktop entrypoint. Their presence in source does not establish
+working desktop integrations or validated physical drivers.
 
-The next integration boundary is the existing approval-gated agent runtime, not
-more simulated capability claims. Its Linux checkpoint implementation must not
-be relabeled as Windows persistence. The Linux session and service remain intact
-while the native Windows adapter is developed separately.
+The desktop has a Home screen and six functional tabs. Windows and Linux use
+distinct native checkpoint adapters; both share the approval-gated agent runtime.
+The Linux session and private service remain separate from Windows delivery.
+Full accessibility, production credential storage, signed releases and physical
+hardware validation remain open requirements.
 
 ## Verification and artifacts
 

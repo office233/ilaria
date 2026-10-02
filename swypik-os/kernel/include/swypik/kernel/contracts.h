@@ -6,6 +6,20 @@
 #define SWYP_BOOT_INFO_MAGIC UINT64_C(0x49424B4950595753)
 #define SWYP_THREAD_CONTEXT_STORAGE_BYTES 320u
 
+enum {
+    SWYP_BOOT_FLAG_EXITED_BOOT_SERVICES = UINT64_C(1) << 0,
+    SWYP_BOOT_FLAG_PAGE_ALLOCATOR_READY = UINT64_C(1) << 1,
+    SWYP_BOOT_FLAG_KERNEL_ROOT_ACTIVE = UINT64_C(1) << 2,
+    SWYP_BOOT_FLAG_DIRECT_MAP_READY = UINT64_C(1) << 3,
+    SWYP_BOOT_FLAG_PRIVILEGE_READY = UINT64_C(1) << 4,
+    SWYP_BOOT_FLAG_EMERGENCY_IDT_READY = UINT64_C(1) << 5,
+    SWYP_BOOT_FLAG_TRAP_ABI_READY = UINT64_C(1) << 6,
+    SWYP_BOOT_FLAG_PLATFORM_READY = UINT64_C(1) << 7,
+    SWYP_BOOT_FLAG_SCHEDULER_READY = UINT64_C(1) << 8,
+    SWYP_BOOT_FLAG_DRIVER_ABI_READY = UINT64_C(1) << 9,
+    SWYP_BOOT_FLAG_IOMMU_READY = UINT64_C(1) << 10
+};
+
 typedef enum SwypFirmwareKind {
     SWYP_FIRMWARE_UNKNOWN = 0,
     SWYP_FIRMWARE_UEFI = 1,
@@ -52,6 +66,9 @@ typedef struct SwypBootInfo {
     uint64_t firmware_system_table;
     SwypArchInfo arch;
     SwypPhysicalMemoryMap physical_memory;
+    uint64_t acpi_rsdp_address;
+    uint32_t acpi_rsdp_length;
+    uint32_t acpi_revision;
     uint64_t boot_flags;
 } SwypBootInfo;
 
@@ -88,6 +105,7 @@ typedef struct SwypAddressSpace {
 
 typedef struct SwypInterruptSourceOps {
     SwypStatus (*bind)(void *context, uint32_t source_id, uint32_t vector);
+    SwypStatus (*unbind)(void *context, uint32_t source_id);
     SwypStatus (*mask)(void *context, uint32_t source_id);
     SwypStatus (*unmask)(void *context, uint32_t source_id);
     SwypStatus (*end_of_interrupt)(void *context, uint32_t source_id);

@@ -1,5 +1,7 @@
 from pathlib import Path
-import hashlib, json
+import argparse
+import hashlib
+import json
 
 def sha256(path: Path) -> str:
     h = hashlib.sha256()
@@ -8,13 +10,21 @@ def sha256(path: Path) -> str:
             h.update(chunk)
     return h.hexdigest()
 
-root = Path("/content/imc125-trainer-smoke")
-items = {}
-for name in ("imc.pt", "checkpoint.pt", "training.log", "tokenizer.json"):
-    p = root / name
-    items[name] = {
-        "exists": p.is_file(),
-        "bytes": p.stat().st_size if p.is_file() else 0,
-        "sha256": sha256(p) if p.is_file() else None,
-    }
-print(json.dumps(items, indent=2, sort_keys=True))
+def main(argv=None):
+    parser = argparse.ArgumentParser(description="Inspect only the explicitly selected smoke output directory.")
+    parser.add_argument("--root", type=Path, required=True)
+    args = parser.parse_args(argv)
+    items = {}
+    for name in ("imc.pt", "checkpoint.pt", "training.log", "tokenizer.json"):
+        p = args.root / name
+        items[name] = {
+            "exists": p.is_file(),
+            "bytes": p.stat().st_size if p.is_file() else 0,
+            "sha256": sha256(p) if p.is_file() else None,
+        }
+    print(json.dumps(items, indent=2, sort_keys=True))
+    return 0 if all(item["exists"] for item in items.values()) else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

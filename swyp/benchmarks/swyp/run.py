@@ -101,7 +101,7 @@ for case,mode,size in cases:
     for row in selected:
         if not math.isclose(row["result"],reference["result"],rel_tol=1e-9,abs_tol=1e-15):
             raise ValueError(f"Result mismatch: {row} versus {reference}")
-        if row["weights"] and any(not math.isclose(a,b,rel_tol=1e-9,abs_tol=1e-15) for a,b in zip(row["weights"],reference["weights"])):
+        if row["weights"] and (reference["weights"] is None or len(row["weights"])!=len(reference["weights"]) or any(not math.isclose(a,b,rel_tol=1e-9,abs_tol=1e-15) for a,b in zip(row["weights"],reference["weights"],strict=True))):
             raise ValueError(f"Weights mismatch: {row}")
     print(f"Validated {case}",flush=True)
 

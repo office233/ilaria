@@ -94,10 +94,6 @@
           "type": "u64"
         },
         {
-          "name": "max_wallet_transactions",
-          "type": "u64"
-        },
-        {
           "name": "max_resident_peers",
           "type": "u64"
         },

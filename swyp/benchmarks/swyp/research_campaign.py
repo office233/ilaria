@@ -49,7 +49,9 @@ def validate(row: dict[str, Any], oracle: dict[str, Any], mode: int) -> None:
     if mode == 2:
         if row["weights"] is None or oracle["weights"] is None:
             raise ValueError("missing training parameters")
-        for value, expected in zip(row["weights"], oracle["weights"]):
+        if len(row["weights"]) != len(oracle["weights"]):
+            raise ValueError("training parameter mismatch")
+        for value, expected in zip(row["weights"], oracle["weights"], strict=True):
             if not math.isclose(value, expected, rel_tol=1e-9, abs_tol=1e-15):
                 raise ValueError("training parameter mismatch")
 

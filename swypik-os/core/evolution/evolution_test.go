@@ -35,10 +35,10 @@ func TestEvolutionEngine(t *testing.T) {
 
 	// 4. Run Darwinian Tournament with rigorous test vectors
 	testVectors := [][]float64{
-		{3.0, 4.0},                      // Expected: [0.6, 0.8]
-		{1.0, 1.0, 1.0, 1.0},            // Expected: [0.5, 0.5, 0.5, 0.5]
-		{0.0, 0.0, 0.0},                 // Zero vector check
-		make([]float64, 512),            // Large vector check
+		{3.0, 4.0},           // Expected: [0.6, 0.8]
+		{1.0, 1.0, 1.0, 1.0}, // Expected: [0.5, 0.5, 0.5, 0.5]
+		{0.0, 0.0, 0.0},      // Zero vector check
+		make([]float64, 512), // Large vector check
 	}
 	for i := range testVectors[3] {
 		testVectors[3][i] = float64(i%13) + 0.5

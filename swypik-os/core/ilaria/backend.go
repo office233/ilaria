@@ -38,17 +38,23 @@ func NewLocalBackend(endpoint string) *LocalBackend {
 	}}
 }
 
-func (b *LocalBackend) Chat(ctx context.Context, prompt string, history []Message) (string, error) {
+func (b *LocalBackend) origin() (*url.URL, bool, error) {
 	u, err := url.Parse(b.endpoint)
 	if err != nil || u.User != nil || u.RawQuery != "" || u.Fragment != "" || u.Path != "" || u.Hostname() == "" {
-		return "", fmt.Errorf("invalid Ilaria endpoint")
+		return nil, false, fmt.Errorf("invalid Ilaria endpoint")
 	}
-	// The token is only ever sent over HTTPS. A token configured for a remote
-	// deployment does not break a local loopback service, and is not sent to it.
 	local := u.Scheme == "http" && u.Hostname() == "127.0.0.1"
 	cloud := u.Scheme == "https" && len(b.token) >= 32 && strings.TrimSpace(b.token) == b.token
 	if !local && !cloud {
-		return "", fmt.Errorf("Ilaria requires loopback HTTP or authenticated HTTPS")
+		return nil, false, fmt.Errorf("Ilaria requires loopback HTTP or authenticated HTTPS")
+	}
+	return u, cloud, nil
+}
+
+func (b *LocalBackend) Chat(ctx context.Context, prompt string, history []Message) (string, error) {
+	_, cloud, err := b.origin()
+	if err != nil {
+		return "", err
 	}
 	type turn struct {
 		Role    string `json:"role"`
@@ -133,15 +139,15 @@ func (b *LocalBackend) Chat(ctx context.Context, prompt string, history []Messag
 // Health performs GET /health. It sends no prompt or user data; callers use it
 // to show whether the configured service is reachable before a request.
 func (b *LocalBackend) Health(ctx context.Context) error {
-	u, err := url.Parse(b.endpoint)
-	if err != nil || u.Hostname() == "" {
-		return fmt.Errorf("invalid Ilaria endpoint")
+	_, cloud, err := b.origin()
+	if err != nil {
+		return err
 	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, b.endpoint+"/health", nil)
 	if err != nil {
 		return err
 	}
-	if u.Scheme == "https" && b.token != "" {
+	if cloud {
 		req.Header.Set("Authorization", "Bearer "+b.token)
 	}
 	res, err := b.client.Do(req)

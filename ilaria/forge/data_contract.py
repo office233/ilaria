@@ -61,14 +61,16 @@ def atomic_write_json(
 
 
 def require_lower_sha256(field: str, value: str) -> None:
-    if len(value) != 64 or value.lower() != value:
+    if not isinstance(value, str) or len(value) != 64 or value.lower() != value:
         raise ValueError(f"{field} must be a lowercase SHA-256 hex digest")
     try:
-        bytes.fromhex(value)
+        decoded = bytes.fromhex(value)
     except ValueError as exc:
         raise ValueError(
             f"{field} must be a lowercase SHA-256 hex digest"
         ) from exc
+    if len(decoded) != 32:
+        raise ValueError(f"{field} must be a lowercase SHA-256 hex digest")
 
 
 def load_rights_registry(path: str | os.PathLike[str]) -> dict:

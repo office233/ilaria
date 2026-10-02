@@ -8,6 +8,19 @@ Swyp has two distinct performance paths:
 
 For performance-sensitive verified code, Semantic Core AOT is the preferred direction.
 
+## Runtime validation status (2026-10-02)
+
+The native runtime parity corpus (`cmd/swyp/native_runtime_parity_test.go`)
+executes identical programs and expectations on Windows x86-64 PE, Linux x86-64
+static ELF/PIE and Linux AArch64 static ELF/PIE under `qemu-aarch64`
+(`SWYP_QEMU_AARCH64`). Statements below that describe Linux or AArch64 paths as
+only "structurally validated" or "pending QEMU" are superseded for everything
+that corpus covers: argv parsing, process IO, clock, rng, `fs.read`/`fs.write`,
+`net.connect`, `net.fetch`, storage/vec ABIs, native calls, checked arithmetic
+including `div`/`rem`, spills and IEEE64 arithmetic. AArch64 evidence is
+user-mode emulation, not physical hardware; no AArch64 performance numbers are
+claimed.
+
 ## Native profiles
 
 ### safe

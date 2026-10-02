@@ -1,12 +1,15 @@
 from __future__ import annotations
 
+import argparse
 import gc
 import json
 import time
+import sys
 from pathlib import Path
 
 import torch
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "forge"))
 from imc_model import ImcConfig, ImcTransformer
 
 EXPECTED_PARAMS = 125_882_112
@@ -63,6 +66,9 @@ def run_variant(ternary: bool) -> dict:
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description="Locked synthetic IMC GPU smoke; output path is explicit.")
+    parser.add_argument("--out", type=Path, required=True)
+    args = parser.parse_args()
     if not torch.cuda.is_available():
         raise RuntimeError("CUDA is not available")
     device = torch.cuda.get_device_properties(0)
@@ -79,7 +85,8 @@ def main() -> None:
     }
     if not all(item["finite_loss"] for item in results["variants"]):
         raise RuntimeError("non-finite loss in GPU smoke")
-    path = Path("/content/imc125-smoke-results.json")
+    path = args.out
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(results, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(json.dumps(results, indent=2, sort_keys=True))
 

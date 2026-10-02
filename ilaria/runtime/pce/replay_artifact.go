@@ -51,12 +51,9 @@ func BuildReplayArtifact(
 	if err != nil {
 		return myriad.PCEReplayArtifact{}, err
 	}
-	const resultMarker = "\n<|obs:result|>\n"
-	parts := strings.SplitN(example.Target, resultMarker, 2)
-	if len(parts) != 2 {
-		return myriad.PCEReplayArtifact{}, fmt.Errorf("pce replay artifact: replay target lacks verified-result boundary")
-	}
-	actionTarget := strings.TrimSpace(parts[0])
+	// Preserve the signed action directly. Parsing the rendered replay target
+	// would let a reserved marker inside the action silently truncate it.
+	actionTarget := strings.TrimSpace(capsule.ActionOrHypothesis)
 	if actionTarget == "" {
 		return myriad.PCEReplayArtifact{}, fmt.Errorf("pce replay artifact: action target is empty")
 	}

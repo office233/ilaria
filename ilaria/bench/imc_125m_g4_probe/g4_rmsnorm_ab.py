@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import gc
 import json
 import sys
@@ -9,7 +10,7 @@ from pathlib import Path
 import torch
 import torch.nn.functional as F
 
-ROOT = Path("/content/ilaria-g4-throughput")
+ROOT = Path(__file__).resolve().parents[2]
 FORGE = ROOT / "forge"
 sys.path.insert(0, str(FORGE))
 
@@ -104,6 +105,9 @@ def bf16_weight_forward(self, x):
 
 
 def main():
+    parser = argparse.ArgumentParser(description="Locked G4 RMSNorm comparison with explicit output.")
+    parser.add_argument("--out", type=Path, required=True)
+    args = parser.parse_args()
     props = torch.cuda.get_device_properties(0)
     if "RTX PRO 6000 Blackwell" not in props.name:
         raise SystemExit(f"not G4 Blackwell: {props.name}")
@@ -124,7 +128,8 @@ def main():
         ),
     }
     print(json.dumps(out, indent=2, sort_keys=True))
-    Path("/content/g4-rmsnorm-ab.json").write_text(
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    args.out.write_text(
         json.dumps(out, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
 

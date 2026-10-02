@@ -51,6 +51,7 @@ type TransportMesh struct {
 	packetStream chan P2PPacket
 	maxPeers     int
 	inspectMax   int
+	socket       *SocketTransport
 }
 
 // NewTransportMesh initializes the P2P transport layer.
@@ -111,7 +112,8 @@ func (tm *TransportMesh) RegisterPeer(peer *PeerNode) {
 	tm.peers[peer.NodeID] = &cp
 }
 
-// BroadcastGradient sends a local weight delta across connected peers.
+// BroadcastGradient records a bounded local inspection packet. This package has
+// no QUIC/WebRTC sender yet, so it must never report remote delivery.
 func (tm *TransportMesh) BroadcastGradient(delta *WeightDelta) (int, error) {
 	if delta == nil {
 		return 0, fmt.Errorf("nil weight delta")
@@ -130,18 +132,11 @@ func (tm *TransportMesh) BroadcastGradient(delta *WeightDelta) (int, error) {
 	packet := P2PPacket{
 		Type:      MsgGradientBroadcast,
 		SenderID:  tm.localID,
-		PublicIP:  tm.localID,
+		PublicIP:  "",
 		Port:      0,
-		NATType:   "FullCone",
+		NATType:   "UNKNOWN",
 		Payload:   payload,
 		Timestamp: time.Now(),
-	}
-
-	sentCount := 0
-	for _, peer := range tm.peers {
-		if time.Since(peer.LastSeen) < 1*time.Minute && peer.Reputation >= 0.5 {
-			sentCount++
-		}
 	}
 
 	// Queue to local stream for inspection
@@ -150,7 +145,7 @@ func (tm *TransportMesh) BroadcastGradient(delta *WeightDelta) (int, error) {
 	default:
 	}
 
-	return sentCount, nil
+	return 0, fmt.Errorf("P2P broadcast unavailable: no network transport is configured")
 }
 
 // PenalizePeer reduces a peer's reputation on Byzantine poisoning or cheating.

@@ -1,32 +1,38 @@
 from __future__ import annotations
 
+import argparse
 import json
 import subprocess
 import sys
-import zipfile
 from pathlib import Path
 
-bundle = Path("/content/ilaria-live-training-bundle.zip")
-root = Path("/content/ilaria-g4")
-if root.exists():
-    import shutil
-    shutil.rmtree(root)
-root.mkdir(parents=True)
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "forge"))
+from bundle_workspace import extract_code_bundle
 
-with zipfile.ZipFile(bundle) as archive:
-    archive.extractall(root)
 
-cmd = [
-    sys.executable,
-    str(root / "bench" / "imc_125m_g4_probe" / "g4_batch_probe.py"),
-    "--batches", "4,8,16,32",
-    "--max-vram-utilization", "0.85",
-    "--out", "/content/g4-batch-probe.json",
-]
-print("[g4-runner]", " ".join(cmd), flush=True)
-result = subprocess.run(cmd, text=True, capture_output=True, timeout=900)
-print(result.stdout, end="")
-if result.stderr:
-    print(result.stderr, file=sys.stderr, end="")
-print(json.dumps({"returncode": result.returncode}))
-raise SystemExit(result.returncode)
+def main(argv=None):
+    parser = argparse.ArgumentParser(description="Run G4 probing in a new explicit workspace.")
+    parser.add_argument("--bundle", type=Path, required=True)
+    parser.add_argument("--workspace", type=Path, required=True)
+    parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument("--batches", default="4,8,16,32")
+    parser.add_argument("--max-vram-utilization", type=float, default=0.85)
+    parser.add_argument("--timeout", type=float, default=900)
+    args = parser.parse_args(argv)
+    if not 0 < args.timeout <= 3600:
+        parser.error("--timeout must be >0 and <=3600 seconds")
+    root = extract_code_bundle(args.bundle, args.workspace)
+    cmd = [sys.executable, str(root / "bench" / "imc_125m_g4_probe" / "g4_batch_probe.py"),
+           "--batches", args.batches, "--max-vram-utilization", str(args.max_vram_utilization),
+           "--out", str(args.out.resolve())]
+    print("[g4-runner]", " ".join(cmd), flush=True)
+    result = subprocess.run(cmd, text=True, capture_output=True, timeout=args.timeout)
+    print(result.stdout, end="")
+    if result.stderr:
+        print(result.stderr, file=sys.stderr, end="")
+    print(json.dumps({"returncode": result.returncode}))
+    return result.returncode
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

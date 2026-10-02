@@ -3,13 +3,19 @@ from __future__ import annotations
 
 import hashlib
 import json
+import unicodedata
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+try:
+    from .data_contract import require_lower_sha256
+except ImportError:
+    from data_contract import require_lower_sha256
+
 REPLAY_ARTIFACT_FORMAT = "ilaria-pce-replay-v1"
 PROTOCOL_VERSION = 1
-_SHA256_HEX_LEN = 64
+MAX_IDENTIFIER_BYTES = 256
 _FORBIDDEN_POST_ACTION_MARKERS = (
     "<|obs:result|>",
     "<|result:verified|>",
@@ -39,14 +45,7 @@ class ReplayDecision:
 
 
 def _require_sha256(name: str, value: Any) -> str:
-    if not isinstance(value, str) or len(value) != _SHA256_HEX_LEN:
-        raise ValueError(f"{name} must be a lowercase sha256 hex digest")
-    if value != value.lower():
-        raise ValueError(f"{name} must be a lowercase sha256 hex digest")
-    try:
-        bytes.fromhex(value)
-    except ValueError as exc:
-        raise ValueError(f"{name} must be a lowercase sha256 hex digest") from exc
+    require_lower_sha256(name, value)
     return value
 
 
@@ -54,6 +53,15 @@ def _require_text(name: str, value: Any) -> str:
     if not isinstance(value, str) or not value.strip():
         raise ValueError(f"{name} must be a non-empty string")
     if any(ord(ch) < 32 for ch in value if ch not in "\n\r\t"):
+        raise ValueError(f"{name} contains a control character")
+    return value
+
+
+def _require_identifier(name: str, value: Any) -> str:
+    value = _require_text(name, value)
+    if len(value.encode("utf-8")) > MAX_IDENTIFIER_BYTES:
+        raise ValueError(f"{name} exceeds {MAX_IDENTIFIER_BYTES} bytes")
+    if any(unicodedata.category(ch) == "Cc" for ch in value):
         raise ValueError(f"{name} contains a control character")
     return value
 
@@ -113,8 +121,8 @@ def validate_replay_artifact(data: Any) -> ReplayDecision:
     verifier_hash = _require_sha256(
         "verifier_evidence_hash", data["verifier_evidence_hash"]
     )
-    domain = _require_text("domain", data["domain"])
-    signer_key_id = _require_text("signer_key_id", data["signer_key_id"])
+    domain = _require_identifier("domain", data["domain"])
+    signer_key_id = _require_identifier("signer_key_id", data["signer_key_id"])
     decision_prompt = _require_text("decision_prompt", data["decision_prompt"])
     action_target = _require_text("action_target", data["action_target"])
 

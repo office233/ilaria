@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -44,15 +45,27 @@ func coreAOTCacheKey(source []byte, compilerIdentity, entry, profile, cpu string
 }
 
 func compilerIdentity(path string) string {
-	// The executable path is stable enough to avoid mixing different compilers
-	// in one cache. Toolchain upgrades at the same path are still guarded by the
-	// generated C + compile options and may be invalidated by clearing the cache.
-	// Avoid invoking the compiler merely to compute a key on every build.
+	if resolved, err := exec.LookPath(path); err == nil {
+		path = resolved
+	}
 	abs, err := filepath.Abs(path)
 	if err == nil {
 		path = abs
 	}
-	return filepath.Clean(strings.ToLower(path))
+	path = filepath.Clean(path)
+	if runtime.GOOS == "windows" {
+		path = strings.ToLower(path)
+	}
+	file, err := os.Open(path)
+	if err != nil {
+		return path
+	}
+	defer file.Close()
+	h := sha256.New()
+	if _, err := io.Copy(h, file); err != nil {
+		return path
+	}
+	return path + "|sha256=" + hex.EncodeToString(h.Sum(nil))
 }
 
 func copyFileExclusive(src, dst string, mode os.FileMode) error {

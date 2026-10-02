@@ -98,9 +98,11 @@ static int swyp_resource_range_valid(const SwypDeviceResource *resource) {
     }
     switch (resource->kind) {
     case SWYP_DEVICE_RESOURCE_MMIO:
+        return resource->length <= UINT64_MAX - resource->start;
     case SWYP_DEVICE_RESOURCE_DMA:
     case SWYP_DEVICE_RESOURCE_SHARED_MEMORY:
-        return resource->length <= UINT64_MAX - resource->start;
+        return (resource->start & UINT64_C(0xfff)) == 0u && (resource->length & UINT64_C(0xfff)) == 0u &&
+               resource->length <= UINT64_MAX - resource->start;
     case SWYP_DEVICE_RESOURCE_PORT_IO:
         return resource->start <= UINT16_MAX && resource->length <= (UINT64_C(0x10000) - resource->start);
     case SWYP_DEVICE_RESOURCE_IRQ:

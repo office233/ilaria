@@ -154,13 +154,16 @@ type Verification struct {
 	CreatedAt    time.Time            `json:"created_at"`
 }
 
-// VerificationRequest contains only the verifier's verdict and immutable
-// evidence reference. Identity and execution-epoch binding are derived by the
-// kernel from authenticated verifier authority and the current lease/attempt.
+// VerificationRequest contains the verifier's verdict and immutable evidence
+// reference. Identity and execution-epoch binding are derived by the kernel
+// from authenticated verifier authority and the current lease/attempt.
+// ExpectedVerifierID is only a fail-closed binding check: it can never choose
+// or replace the authenticated principal.
 type VerificationRequest struct {
-	NodeID       string               `json:"node_id"`
-	Decision     VerificationDecision `json:"decision"`
-	EvidenceHash string               `json:"evidence_hash"`
+	NodeID             string               `json:"node_id"`
+	Decision           VerificationDecision `json:"decision"`
+	EvidenceHash       string               `json:"evidence_hash"`
+	ExpectedVerifierID string               `json:"expected_verifier_id,omitempty"`
 }
 
 // Event is the immutable event-source record. Seq is per stream while

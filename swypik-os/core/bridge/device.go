@@ -1,6 +1,7 @@
 package bridge
 
 import (
+	"context"
 	"fmt"
 	"os/exec"
 	"runtime"
@@ -9,10 +10,13 @@ import (
 	"time"
 )
 
+const adbScanTimeout = 2 * time.Second
+
 // DeviceType classifies the host hardware form factor.
 type DeviceType string
 
 const (
+	DeviceUnknown DeviceType = "UNKNOWN"
 	DeviceDesktop DeviceType = "DESKTOP_PC"
 	DeviceLaptop  DeviceType = "LAPTOP_PC"
 	DeviceTablet  DeviceType = "TABLET"
@@ -21,24 +25,24 @@ const (
 
 // ConnectedMobile describes a smartphone detected via USB ADB or Local Wi-Fi Mesh.
 type ConnectedMobile struct {
-	ID           string    `json:"id"`
-	Model        string    `json:"model"`
-	ConnectionType string  `json:"connection_type"` // "USB-ADB" or "P2P-WIFI"
-	BatteryPct   int       `json:"battery_pct"`
-	SwypikReady  bool      `json:"swypik_ready"`
-	LastSeen     time.Time `json:"last_seen"`
+	ID             string    `json:"id"`
+	Model          string    `json:"model"`
+	ConnectionType string    `json:"connection_type"` // "USB-ADB" or "P2P-WIFI"
+	BatteryPct     int       `json:"battery_pct"`
+	SwypikReady    bool      `json:"swypik_ready"`
+	LastSeen       time.Time `json:"last_seen"`
 }
 
 // DeviceProfile captures real-time host hardware specs and connected peripherals.
 type DeviceProfile struct {
-	OS               string            `json:"os"`
-	Arch             string            `json:"arch"`
-	Type             DeviceType        `json:"type"`
-	Hostname         string            `json:"hostname"`
-	CPUCount         int               `json:"cpu_count"`
-	TargetInstall    string            `json:"target_install"`
-	ConnectedPhones  []ConnectedMobile `json:"connected_phones"`
-	ClipboardShared  string            `json:"clipboard_shared"`
+	OS              string            `json:"os"`
+	Arch            string            `json:"arch"`
+	Type            DeviceType        `json:"type"`
+	Hostname        string            `json:"hostname"`
+	CPUCount        int               `json:"cpu_count"`
+	TargetInstall   string            `json:"target_install"`
+	ConnectedPhones []ConnectedMobile `json:"connected_phones"`
+	ClipboardShared string            `json:"clipboard_shared"`
 }
 
 // DeviceBridge coordinates cross-platform device intelligence and telepathy.
@@ -61,11 +65,7 @@ func (b *DeviceBridge) RefreshProfile() DeviceProfile {
 
 	hostOS := runtime.GOOS
 	arch := runtime.GOARCH
-	devType := DeviceDesktop
-
-	if arch == "arm" || arch == "arm64" {
-		devType = DeviceMobile
-	}
+	devType := DeviceUnknown
 
 	phones := b.scanConnectedPhones()
 
@@ -76,18 +76,19 @@ func (b *DeviceBridge) RefreshProfile() DeviceProfile {
 		CPUCount:        runtime.NumCPU(),
 		TargetInstall:   fmt.Sprintf("%s-%s", hostOS, arch),
 		ConnectedPhones: phones,
-		ClipboardShared: "SwypikOS Universal P2P Clipboard Synchronized",
+		ClipboardShared: "",
 	}
 
 	return b.profile
 }
 
-// scanConnectedPhones checks if an Android smartphone is plugged in via USB (ADB) or local mesh.
+// scanConnectedPhones reports Android devices actually observed through ADB.
 func (b *DeviceBridge) scanConnectedPhones() []ConnectedMobile {
 	phones := make([]ConnectedMobile, 0)
 
-	// Check if adb is present and list devices
-	cmd := exec.Command("adb", "devices")
+	ctx, cancel := context.WithTimeout(context.Background(), adbScanTimeout)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, "adb", "devices")
 	out, err := cmd.Output()
 	if err == nil {
 		lines := strings.Split(string(out), "\n")
@@ -102,24 +103,12 @@ func (b *DeviceBridge) scanConnectedPhones() []ConnectedMobile {
 						Model:          "Android Smartphone (USB-Connected)",
 						ConnectionType: "USB-ADB",
 						BatteryPct:     -1,
-						SwypikReady:    true,
+						SwypikReady:    false,
 						LastSeen:       time.Now(),
 					})
 				}
 			}
 		}
-	}
-
-	// Always provide Local Wi-Fi Mesh pairing fallback
-	if len(phones) == 0 {
-		phones = append(phones, ConnectedMobile{
-			ID:             "p2p-mesh-phone-01",
-			Model:          "Paired Mobile Phone (Wi-Fi Mesh)",
-			ConnectionType: "P2P-WIFI",
-			BatteryPct:     -1,
-			SwypikReady:    true,
-			LastSeen:       time.Now(),
-		})
 	}
 
 	return phones
@@ -132,23 +121,27 @@ func (b *DeviceBridge) GetProfile() DeviceProfile {
 	return b.profile
 }
 
-// SyncClipboard mirrors copied text between PC and Mobile instantly.
+// SyncClipboard updates the local native clipboard. Cross-device transport is
+// not implemented in this package, so the result never claims remote sync.
 func (b *DeviceBridge) SyncClipboard(text string) string {
 	b.mu.Lock()
 	defer b.mu.Unlock()
+	if err := SetWindowsClipboard(text); err != nil {
+		return fmt.Sprintf("[LOCAL CLIPBOARD UPDATE FAILED] %v", err)
+	}
 	b.profile.ClipboardShared = text
-	_ = SetWindowsClipboard(text)
-	return fmt.Sprintf("[CROSS-DEVICE CLIPBOARD SYNCED] %s", text)
+	return "[LOCAL CLIPBOARD UPDATED]"
 }
 
-// DeployToMobile triggers 1-Click push of SwypikOS to the connected phone.
+// DeployToMobile fails closed until a verified mobile deployment transport is
+// implemented. Detecting a phone is not evidence that anything was installed.
 func (b *DeviceBridge) DeployToMobile(phoneID string) (string, error) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
 	for _, p := range b.profile.ConnectedPhones {
 		if p.ID == phoneID {
-			return fmt.Sprintf("[1-CLICK MOBILE DEPLOY] Pushed SwypikOS Native Core & Launcher to %s (%s). Phone is now running SwypikOS.", p.Model, p.ConnectionType), nil
+			return "", fmt.Errorf("mobile deployment is unavailable: no verified transport for %s (%s)", p.Model, p.ConnectionType)
 		}
 	}
 

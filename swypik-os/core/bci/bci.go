@@ -27,10 +27,10 @@ type BioFrame struct {
 
 // Features captures extracted time-frequency domain metrics from a signal window.
 type Features struct {
-	MeanAbsVal   [8]float64
-	ZeroCrosses  [8]int
-	WaveformLen  [8]float64
-	BetaBandPow  [8]float64 // 13-30 Hz motor intent band
+	MeanAbsVal  [8]float64
+	ZeroCrosses [8]int
+	WaveformLen [8]float64
+	BetaBandPow [8]float64 // 13-30 Hz motor intent band
 }
 
 // DecodedIntent represents the output of the neural classifier.
@@ -44,12 +44,12 @@ type DecodedIntent struct {
 
 // Processor manages the DSP pipeline and neural intent classification.
 type Processor struct {
-	mu           sync.RWMutex
-	sampleRate   float64
-	windowSize   int
-	frameBuffer  []BioFrame
-	notchFilter  bool
-	lastIntent   DecodedIntent
+	mu          sync.RWMutex
+	sampleRate  float64
+	windowSize  int
+	frameBuffer []BioFrame
+	notchFilter bool
+	lastIntent  DecodedIntent
 }
 
 // NewProcessor initializes the neural BCI & subvocal EMG decoder.
@@ -62,10 +62,10 @@ func NewProcessor(sampleRate float64, windowSize int) *Processor {
 	}
 
 	return &Processor{
-		sampleRate:   sampleRate,
-		windowSize:   windowSize,
-		frameBuffer:  make([]BioFrame, 0, windowSize*2),
-		notchFilter:  true,
+		sampleRate:  sampleRate,
+		windowSize:  windowSize,
+		frameBuffer: make([]BioFrame, 0, windowSize*2),
+		notchFilter: true,
 		lastIntent: DecodedIntent{
 			Intent:     IntentIdle,
 			Confidence: 1.0,

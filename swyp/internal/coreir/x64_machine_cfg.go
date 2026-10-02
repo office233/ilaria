@@ -70,6 +70,7 @@ type X64ProcessMachineCode struct {
 	RuntimeFixups    []X64ProcessRuntimeFixup
 	Data             []byte
 	RuntimeDataBytes int
+	StorageDataBytes int
 }
 
 func EmitX64CFGMachineProcessModule(functions []SSAFunction, plans map[string]SSARegisterPlan, entry string) (X64ProcessMachineCode, error) {
@@ -315,6 +316,9 @@ func emitX64CFGMachineFunction(f SSAFunction, plan SSARegisterPlan, allowCalls, 
 		fpSaveIndex++
 	}
 	for i, value := range f.Params {
+		if !ssaValueUsed(f, value) {
+			continue
+		}
 		loc := plan.Locations[value]
 		if registerClass(f.ValueTypes[value]) == RegisterFP {
 			src := i
@@ -389,7 +393,7 @@ func emitX64CFGMachineFunction(f SSAFunction, plan SSARegisterPlan, allowCalls, 
 				return nil, nil, fmt.Errorf("x64 cfg machine: block %d invalid jump", bi)
 			}
 			target := block.Terminator.Targets[0]
-			if err := emitX64MachinePhiCopies(b, f, plan, bi, target); err != nil {
+			if err := emitX64MachineLivePhiCopies(b, f, plan, bi, target); err != nil {
 				return nil, nil, err
 			}
 			fixups = append(fixups, x64BlockFixup{dispPos: b.jmpRel32(), target: target})
@@ -407,17 +411,27 @@ func emitX64CFGMachineFunction(f SSAFunction, plan SSARegisterPlan, allowCalls, 
 			b.testRegReg(cond, cond)
 			falseDisp := b.jccRel32(0x4) // JE
 			trueTarget := block.Terminator.Targets[0]
-			if err := emitX64MachinePhiCopies(b, f, plan, bi, trueTarget); err != nil {
+			if err := emitX64MachineLivePhiCopies(b, f, plan, bi, trueTarget); err != nil {
 				return nil, nil, err
 			}
 			fixups = append(fixups, x64BlockFixup{dispPos: b.jmpRel32(), target: trueTarget})
 			falseOffset := len(b.code)
 			patchX64Rel32(b.code, falseDisp, falseOffset)
 			falseTarget := block.Terminator.Targets[1]
-			if err := emitX64MachinePhiCopies(b, f, plan, bi, falseTarget); err != nil {
+			if err := emitX64MachineLivePhiCopies(b, f, plan, bi, falseTarget); err != nil {
 				return nil, nil, err
 			}
 			fixups = append(fixups, x64BlockFixup{dispPos: b.jmpRel32(), target: falseTarget})
+		case "unreachable":
+			// Core uses unreachable as a checked-failure sink for paths proven
+			// invalid by the frontend/lowerer (currently dynamic fixed-array
+			// bounds). Return the existing machine ABI bounds status rather than
+			// emitting an illegal instruction that would terminate the host.
+			b.xorRegReg(x64RAX, x64RAX)
+			b.xorpsRegReg(0, 0)
+			b.movRegImm64(x64RDX, 3)
+			b.movMemReg(x64R11, x64RDX)
+			emitX64MachineRestoreAndReturn(b, used, usedFP, spillBytes)
 		default:
 			return nil, nil, fmt.Errorf("x64 cfg machine: unsupported terminator %q in block %d", block.Terminator.Op, bi)
 		}
@@ -549,6 +563,30 @@ func emitX64MachinePhiCopies(b *x64MachineBuilder, f SSAFunction, plan SSARegist
 	return nil
 }
 
+func emitX64MachineLivePhiCopies(b *x64MachineBuilder, f SSAFunction, plan SSARegisterPlan, predecessor, target int) error {
+	if target < 0 || target >= len(f.Blocks) {
+		return emitX64MachinePhiCopies(b, f, plan, predecessor, target)
+	}
+	block := f.Blocks[target]
+	if len(block.Phis) == 0 {
+		return emitX64MachinePhiCopies(b, f, plan, predecessor, target)
+	}
+	live := make([]SSAPhi, 0, len(block.Phis))
+	for _, phi := range block.Phis {
+		if ssaValueUsed(f, phi.Dest) {
+			live = append(live, phi)
+		}
+	}
+	if len(live) == len(block.Phis) {
+		return emitX64MachinePhiCopies(b, f, plan, predecessor, target)
+	}
+	filtered := f
+	filtered.Blocks = append([]SSABlock(nil), f.Blocks...)
+	block.Phis = live
+	filtered.Blocks[target] = block
+	return emitX64MachinePhiCopies(b, filtered, plan, predecessor, target)
+}
+
 func x64MachineSpillDisp(spill int) int32 {
 	return int32(-(spill + 1) * 8)
 }
@@ -611,6 +649,12 @@ func (b *x64MachineBuilder) emitCFGInstruction(f SSAFunction, plan SSARegisterPl
 			return fmt.Errorf("x64 cfg machine: bytes.get requires standalone process backend")
 		}
 		return b.emitCFGBytesGetInstruction(f, plan, ins, activeGPRs)
+	}
+	if ins.Op == "storage.alloc_u64" || ins.Op == "storage.load_u64" || ins.Op == "storage.store_u64" || ins.Op == "storage.free" {
+		if !allowProcessIO {
+			return fmt.Errorf("x64 cfg machine: %s requires standalone process backend", ins.Op)
+		}
+		return b.emitCFGStorageInstruction(f, plan, ins, activeGPRs)
 	}
 	if ins.Dest < 0 {
 		return fmt.Errorf("x64 cfg machine: instruction %s has no destination", ins.Op)
@@ -732,6 +776,23 @@ func (b *x64MachineBuilder) emitCFGInstruction(f SSAFunction, plan SSARegisterPl
 		}
 		commit()
 		return nil
+	case "bitcast_i64_u64", "bitcast_u64_i64":
+		a, srcType, err := arg(0, x64R10)
+		if err != nil {
+			return err
+		}
+		wantSrc, wantDst := I64, U64
+		if ins.Op == "bitcast_u64_i64" {
+			wantSrc, wantDst = U64, I64
+		}
+		if srcType != wantSrc || f.ValueTypes[ins.Dest] != wantDst {
+			return fmt.Errorf("x64 cfg machine: invalid %s types %s -> %s", ins.Op, srcType, f.ValueTypes[ins.Dest])
+		}
+		if dst != a {
+			b.movRegReg(dst, a)
+		}
+		commit()
+		return nil
 	case "neg":
 		a, t, err := arg(0, x64R10)
 		if err != nil {
@@ -833,6 +894,57 @@ func (b *x64MachineBuilder) emitCFGInstruction(f SSAFunction, plan SSARegisterPl
 			b.movRegReg(dst, target)
 		}
 		commit()
+		return nil
+	case "div", "rem":
+		// Checked Core semantics: a zero divisor traps, i64 MIN/-1 overflows and
+		// MIN%-1 is 0. IDIV/DIV fault on those inputs, so they never reach it.
+		// Both traps use the arithmetic-failure status 1.
+		a, at, err := arg(0, x64RAX)
+		if err != nil {
+			return err
+		}
+		c, bt, err := arg(1, x64R10)
+		if err != nil {
+			return err
+		}
+		if at != bt || (at != I64 && at != U64) {
+			return fmt.Errorf("x64 cfg machine: %s unsupported operands %s/%s", ins.Op, at, bt)
+		}
+		if c != x64R10 {
+			b.movRegReg(x64R10, c)
+		}
+		if a != x64RAX {
+			b.movRegReg(x64RAX, a)
+		}
+		b.testRegReg(x64R10, x64R10)
+		b.overflowFixups = append(b.overflowFixups, b.jccRel32(0x4)) // JE: division by zero
+		if at == I64 {
+			b.cmpRegImm8(x64R10, 0xff) // divisor == -1
+			general := b.jccRel32(0x5) // JNE
+			if ins.Op == "div" {
+				b.neg(x64RAX)
+				b.joOverflow()
+			} else {
+				b.xorRegReg(x64RDX, x64RDX)
+			}
+			done := b.jmpRel32()
+			patchX64Rel32(b.code, general, len(b.code))
+			b.cqo()
+			b.idivReg(x64R10)
+			patchX64Rel32(b.code, done, len(b.code))
+		} else {
+			b.xorRegReg(x64RDX, x64RDX)
+			b.divReg(x64R10)
+		}
+		result := x64RAX
+		if ins.Op == "rem" {
+			result = x64RDX
+		}
+		if destLoc.Spill >= 0 {
+			b.movMemDisp32Reg(x64RBP, x64MachineSpillDisp(destLoc.Spill), result)
+		} else if dst != result {
+			b.movRegReg(dst, result)
+		}
 		return nil
 	default:
 		return fmt.Errorf("x64 cfg machine: unsupported operation %q", ins.Op)
@@ -987,11 +1099,69 @@ func x64ProcessRuntimeHelper(name string) bool {
 	case "__swyp_rt_stdout_i64", "__swyp_rt_stdout_u64", "__swyp_rt_stdout_bool",
 		"__swyp_rt_stdout_ieee64",
 		"__swyp_rt_stderr_i64", "__swyp_rt_stderr_u64", "__swyp_rt_stderr_bool", "__swyp_rt_stderr_ieee64",
-		"__swyp_rt_clock_u64", "__swyp_rt_rng_u64", "__swyp_rt_fs_read", "__swyp_rt_fs_write", "__swyp_rt_bytes_get", "__swyp_rt_net_connect", "__swyp_rt_net_fetch":
+		"__swyp_rt_clock_u64", "__swyp_rt_rng_u64", "__swyp_rt_fs_read", "__swyp_rt_fs_write", "__swyp_rt_bytes_get", "__swyp_rt_net_connect", "__swyp_rt_net_fetch",
+		"__swyp_rt_storage_alloc_u64", "__swyp_rt_storage_load_u64", "__swyp_rt_storage_store_u64", "__swyp_rt_storage_free":
 		return true
 	default:
 		return false
 	}
+}
+
+func (b *x64MachineBuilder) emitCFGStorageInstruction(f SSAFunction, plan SSARegisterPlan, ins SSAInstruction, activeGPRs int) error {
+	wantArgs, helper := 0, ""
+	switch ins.Op {
+	case "storage.alloc_u64":
+		wantArgs, helper = 1, "__swyp_rt_storage_alloc_u64"
+	case "storage.load_u64":
+		wantArgs, helper = 2, "__swyp_rt_storage_load_u64"
+	case "storage.store_u64":
+		wantArgs, helper = 3, "__swyp_rt_storage_store_u64"
+	case "storage.free":
+		wantArgs, helper = 1, "__swyp_rt_storage_free"
+	default:
+		return fmt.Errorf("x64 storage: unsupported operation %q", ins.Op)
+	}
+	if len(ins.Args) != wantArgs {
+		return fmt.Errorf("x64 storage: %s requires %d operands", ins.Op, wantArgs)
+	}
+	for i, value := range ins.Args {
+		if value < 0 || int(value) >= len(f.ValueTypes) || f.ValueTypes[value] != U64 {
+			return fmt.Errorf("x64 storage: operand %d must be u64", i)
+		}
+		loc := plan.Locations[value]
+		dst := x64WinArgRegs[i]
+		if loc.Spill >= 0 {
+			b.movRegMemDisp32(dst, x64RBP, x64MachineSpillDisp(loc.Spill))
+		} else {
+			src := x64PhysicalReg(plan, value)
+			if src != dst {
+				b.movRegReg(dst, src)
+			}
+		}
+	}
+	frameBytes, savedStatusDisp := x64MachineCallFrame(activeGPRs, wantArgs)
+	b.subRegImm32(x64RSP, uint32(frameBytes))
+	b.movMemDisp32Reg(x64RSP, int32(savedStatusDisp), x64R11)
+	b.callFixups = append(b.callFixups, x64CallFixup{dispPos: b.callRel32(), callee: helper})
+	b.movRegMemDisp32(x64R11, x64RSP, int32(savedStatusDisp))
+	b.addRegImm32(x64RSP, uint32(frameBytes))
+	b.testRegReg(x64RDX, x64RDX)
+	b.boundsFailureFixups = append(b.boundsFailureFixups, b.jccRel32(0x5))
+	if ins.Dest >= 0 {
+		if int(ins.Dest) >= len(f.ValueTypes) || f.ValueTypes[ins.Dest] != U64 {
+			return fmt.Errorf("x64 storage: destination must be u64")
+		}
+		loc := plan.Locations[ins.Dest]
+		if loc.Spill >= 0 {
+			b.movMemDisp32Reg(x64RBP, x64MachineSpillDisp(loc.Spill), x64RAX)
+		} else {
+			dst := x64PhysicalReg(plan, ins.Dest)
+			if dst != x64RAX {
+				b.movRegReg(dst, x64RAX)
+			}
+		}
+	}
+	return nil
 }
 
 func (b *x64MachineBuilder) emitCFGFSWriteInstruction(f SSAFunction, plan SSARegisterPlan, ins SSAInstruction, activeGPRs int) error {
@@ -1270,6 +1440,40 @@ func (b *x64MachineBuilder) emitCFGFPInstruction(f SSAFunction, plan SSARegister
 	if destType == F64 {
 		return fmt.Errorf("x64 cfg machine fp: strict f64 is unsupported; use ieee64 or Core AOT")
 	}
+	if ins.Op == "bitcast_ieee64_u64" {
+		if len(ins.Args) != 1 || f.ValueTypes[ins.Args[0]] != IEEE64 || destType != U64 {
+			return fmt.Errorf("x64 cfg machine fp: bitcast_ieee64_u64 requires ieee64 -> u64")
+		}
+		a, _, err := source(0, 4)
+		if err != nil {
+			return err
+		}
+		raw := x64RAX
+		if destLoc.Spill < 0 {
+			raw = x64PhysicalReg(plan, ins.Dest)
+		}
+		b.movqRegXMM(raw, a)
+		if destLoc.Spill >= 0 {
+			b.movMemDisp32Reg(x64RBP, x64MachineSpillDisp(destLoc.Spill), raw)
+		}
+		return nil
+	}
+	if ins.Op == "bitcast_u64_ieee64" {
+		if len(ins.Args) != 1 || f.ValueTypes[ins.Args[0]] != U64 || destType != IEEE64 {
+			return fmt.Errorf("x64 cfg machine fp: bitcast_u64_ieee64 requires u64 -> ieee64")
+		}
+		value := ins.Args[0]
+		loc := plan.Locations[value]
+		raw := x64R10
+		if loc.Spill >= 0 {
+			b.movRegMemDisp32(raw, x64RBP, x64MachineSpillDisp(loc.Spill))
+		} else {
+			raw = x64PhysicalReg(plan, value)
+		}
+		b.movqXMMReg(dstFP, raw)
+		commitFP()
+		return nil
+	}
 
 	switch ins.Op {
 	case "call":
@@ -1325,11 +1529,25 @@ func (b *x64MachineBuilder) emitCFGFPInstruction(f SSAFunction, plan SSARegister
 		if at != IEEE64 || bt != IEEE64 || destType != IEEE64 {
 			return fmt.Errorf("x64 cfg machine fp: %s requires ieee64", ins.Op)
 		}
-		if dstFP != a {
+		op := map[string]byte{"add": 0x58, "sub": 0x5c, "mul": 0x59, "div": 0x5e}[ins.Op]
+		target := dstFP
+		switch {
+		case dstFP == a:
+		case dstFP == c:
+			// The destination register aliases the right operand, whose live
+			// range ends here. Copying a into it first would clobber c, so build
+			// the result in the XMM4 source scratch and move it afterwards.
+			target = 4
+			if a != target {
+				b.movsdXMMXMM(target, a)
+			}
+		default:
 			b.movsdXMMXMM(dstFP, a)
 		}
-		op := map[string]byte{"add": 0x58, "sub": 0x5c, "mul": 0x59, "div": 0x5e}[ins.Op]
-		b.scalarSDRegReg(op, dstFP, c)
+		b.scalarSDRegReg(op, target, c)
+		if target != dstFP {
+			b.movsdXMMXMM(dstFP, target)
+		}
 		commitFP()
 		return nil
 	case "eq", "ne", "lt", "le", "gt", "ge":

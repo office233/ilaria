@@ -50,6 +50,32 @@ type SSAFunction struct {
 	Blocks     []SSABlock
 }
 
+func ssaValueUsed(f SSAFunction, value SSAValue) bool {
+	for _, block := range f.Blocks {
+		if !block.Reachable {
+			continue
+		}
+		for _, phi := range block.Phis {
+			for _, input := range phi.Inputs {
+				if input.Value == value {
+					return true
+				}
+			}
+		}
+		for _, ins := range block.Instructions {
+			for _, arg := range ins.Args {
+				if arg == value {
+					return true
+				}
+			}
+		}
+		if block.Terminator.Value == value {
+			return true
+		}
+	}
+	return false
+}
+
 // BuildSSA versions mutable Core slots into a conventional SSA view. It does
 // not mutate the input Function and is intended for optimization and direct
 // native backends; Core's executable/wire format remains unchanged.

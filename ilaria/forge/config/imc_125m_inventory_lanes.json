@@ -1,6 +1,44 @@
 {
   "format": "imc-125m-inventory-lanes-v1",
   "sources": {
+    "apache_nuttx": {
+      "rules": [
+        {
+          "default": true,
+          "lane": "os_hardware_drivers_standards"
+        }
+      ]
+    },
+    "first_party_trajectories": {
+      "rules": [
+        {
+          "lane": "world_device_trajectories",
+          "path_globs": [
+            "world_device_trajectories/**"
+          ]
+        },
+        {
+          "default": true,
+          "lane": "agent_tool_trajectories"
+        }
+      ]
+    },
+    "first_party_math": {
+      "rules": [
+        {
+          "default": true,
+          "lane": "mathematics"
+        }
+      ]
+    },
+    "freebsd_licensed_tree": {
+      "rules": [
+        {
+          "default": true,
+          "lane": "os_hardware_drivers_standards"
+        }
+      ]
+    },
     "freertos_kernel": {
       "rules": [
         {
@@ -14,6 +52,30 @@
         {
           "default": true,
           "lane": "code"
+        }
+      ]
+    },
+    "openmath_reasoning_cot": {
+      "rules": [
+        {
+          "default": true,
+          "lane": "mathematics"
+        }
+      ]
+    },
+    "opencode_reasoning_split0": {
+      "rules": [
+        {
+          "default": true,
+          "lane": "code"
+        }
+      ]
+    },
+    "openscience_reasoning_2": {
+      "rules": [
+        {
+          "default": true,
+          "lane": "science_technical_reasoning"
         }
       ]
     },

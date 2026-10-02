@@ -1,6 +1,6 @@
 # Dezvoltare locala Swyp pe Windows
 
-Folderul de lucru folosit prin Antigravity este `D:\nexus\swyp`.
+Din radacina checkout-ului Nexus, intra in modul cu `Set-Location .\swyp`.
 Sursele programelor raman `.swyp`; `.swypb` este modulul compilat,
 nu un alt limbaj. Codul Go din proiect implementeaza compilatorul si VM-ul.
 
@@ -32,6 +32,13 @@ mai intai un executabil temporar, verifica pornirea si apoi publica
 `bin\swyp.exe`. Executabilul precedent este pastrat sub `agent-lab\build-*`,
 impreuna cu un `build.json` care contine hash-ul noului executabil.
 Scriptul nu instaleaza unelte, nu schimba PATH-ul permanent si nu face push.
+Build-ul si validatorul local folosesc `GOWORK=off`, astfel incat modulul sa
+ramana independent de celelalte produse din workspace.
+
+Gate-ul comun pentru Linux si Windows este definit in
+[`../../.github/workflows/ci.yml`](../../.github/workflows/ci.yml). Workflow-ul
+STV2 anterior este pastrat numai ca istoric in
+[`history/STV2_VALIDATION_WORKFLOW_20260930.yml`](history/STV2_VALIDATION_WORKFLOW_20260930.yml).
 
 ## Validare reproductibila
 
@@ -69,9 +76,29 @@ argumentele gresite, fuel-ul si refuzul suprascrierii. Interpretorul, backendul
 nativ prin C/GCC si generarea HTML existente sunt verificate separat.
 Generarea HTML nu este echivalenta cu validarea vizuala intr-un browser.
 
-## Stare si limite
+## Teste care cer GCC si paritatea runtime nativa
 
-Sincronizarea din 2026-09-28 a adus local commit-ul `650d88616da46cbc0f459f7af29991654d00e507`
+Fara `gcc` in PATH, aproximativ 37 de teste (backendul C AOT de referinta,
+backendul text x64, DLL/COFF, harness-urile FP) sunt sarite tacut. Pe o statie
+fara GCC se poate folosi `zig cc` din `E:\nexus\.tools\zig-0.16.0` printr-un
+shim numit `gcc` pus primul in PATH (un executabil mic care ruleaza
+`zig.exe cc <argumente>`; pe Linux ajunge un script `exec zig cc "$@"`).
+Verifica numarul de teste `SKIP` dupa rulare: un skip nu este o validare.
+
+`cmd/swyp/native_runtime_parity_test.go` ruleaza acelasi corpus pe toate
+tintele executabile disponibile: Windows x86-64 PE, Linux x86-64 ELF/PIE si
+Linux AArch64 ELF/PIE. Pentru AArch64 pe o statie x86-64 se seteaza
+`SWYP_QEMU_AARCH64` catre `qemu-aarch64` (user-mode); o valoare setata dar
+invalida face testul sa esueze, nu sa sara. Dovada AArch64 prin qemu nu este
+validare pe hardware fizic.
+
+```bash
+SWYP_QEMU_AARCH64=/usr/bin/qemu-aarch64 go test -count=1 ./cmd/swyp -run '^TestNativeRuntimeParity$'
+```
+
+## Istoric si limite STV2
+
+Raportul istoric din 2026-09-28 descrie sincronizarea commit-ului `650d88616da46cbc0f459f7af29991654d00e507`
 pe branch-ul `work/local-swyp-validation-20260928`, fara merge in `main` si fara
 push. Directorul local necomis `bridge/chatgpt-mcp` nu face parte din aceste
 modificari si nu trebuie adaugat automat intr-un commit.

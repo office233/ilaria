@@ -33,6 +33,9 @@ try:
         require_lower_sha256,
         sha256_file,
     )
+    from .first_party_attestation import (
+        evaluate_source_attestation,
+    )
 except ImportError:  # direct script execution
     from curriculum_stream import allocate_token_budget, load_curriculum
     from data_audit import document_sha256
@@ -44,6 +47,9 @@ except ImportError:  # direct script execution
         load_rights_registry,
         require_lower_sha256,
         sha256_file,
+    )
+    from first_party_attestation import (
+        evaluate_source_attestation,
     )
 
 
@@ -156,7 +162,8 @@ def classify_path(source_name: str, path: str, lane_rules: dict) -> str:
         )
     if distinct:
         return distinct[0]
-    assert default_lane is not None
+    if default_lane is None:
+        raise ValueError(f"no default inventory lane for source {source_name!r}")
     return default_lane
 
 
@@ -164,7 +171,7 @@ def _source_inputs(manifest_paths: Iterable[str | Path]) -> list[dict]:
     sources = []
     names: set[str] = set()
     for raw_path in manifest_paths:
-        manifest_path = Path(raw_path)
+        manifest_path = Path(raw_path).resolve()
         manifest = _load_json(manifest_path)
         if manifest.get("schema_version") != CORPUS_MANIFEST_SCHEMA:
             raise ValueError(f"{manifest_path}: unsupported source manifest schema")
@@ -184,10 +191,21 @@ def _source_inputs(manifest_paths: Iterable[str | Path]) -> list[dict]:
         records = manifest.get("shard_records")
         if not isinstance(records, list) or not records:
             raise ValueError(f"{manifest_path}: missing shard_records")
+        if not all(isinstance(record, dict) for record in records):
+            raise ValueError(f"{manifest_path}: invalid shard record")
+
+        indices: set[int] = set()
+        for record in records:
+            index = record.get("index")
+            if type(index) is not int or index < 0:
+                raise ValueError(f"{manifest_path}: invalid shard index")
+            if index in indices:
+                raise ValueError(f"{manifest_path}: duplicate shard index {index}")
+            indices.add(index)
+
+        paths: set[Path] = set()
         shards = []
-        for record in sorted(records, key=lambda item: item.get("index", -1)):
-            if not isinstance(record, dict):
-                raise ValueError(f"{manifest_path}: invalid shard record")
+        for record in sorted(records, key=lambda item: item["index"]):
             filename = record.get("filename")
             digest = record.get("sha256")
             byte_count = record.get("bytes")
@@ -199,7 +217,15 @@ def _source_inputs(manifest_paths: Iterable[str | Path]) -> list[dict]:
                 raise ValueError(f"{manifest_path}:{filename}: invalid byte count")
             if type(document_count) is not int or document_count < 0:
                 raise ValueError(f"{manifest_path}:{filename}: invalid document count")
-            shard_path = manifest_path.parent / filename
+            raw_shard_path = manifest_path.parent / filename
+            if raw_shard_path.is_symlink():
+                raise ValueError(f"{manifest_path}:{filename}: shard symlink is forbidden")
+            shard_path = raw_shard_path.resolve()
+            if manifest_path.parent not in shard_path.parents:
+                raise ValueError(f"{manifest_path}:{filename}: shard path escapes manifest directory")
+            if shard_path in paths:
+                raise ValueError(f"{manifest_path}:{filename}: duplicate shard path")
+            paths.add(shard_path)
             if not shard_path.is_file():
                 raise ValueError(f"{manifest_path}: missing shard {shard_path}")
             if shard_path.stat().st_size != byte_count:
@@ -279,20 +305,48 @@ def build_inventory(
     target_tokens: int = 1_000_000_000,
     tokenizer_path: str | Path | None = None,
     sqlite_path: str | Path | None = None,
+    first_party_attestations: dict[str, str | Path] | None = None,
+    first_party_root: str | Path | None = None,
 ) -> dict:
     curriculum = load_curriculum(curriculum_path)
     quotas = allocate_token_budget(target_tokens, curriculum["target_mix_ppm"])
     lane_rules = load_lane_rules(lane_rules_path, set(quotas))
     rights = load_rights_registry(rights_registry_path)
     inputs = _source_inputs(manifest_paths)
+    first_party_attestations = dict(first_party_attestations or {})
     if not inputs:
         raise ValueError("inventory requires at least one source manifest")
+    input_names = {item["name"] for item in inputs}
+    unused_first_party = sorted(set(first_party_attestations) - input_names)
+    if unused_first_party:
+        raise ValueError(
+            "first-party attestation mappings have no matching input source: "
+            + ", ".join(unused_first_party)
+        )
+
+    first_party_reports: dict[str, dict] = {}
+    if first_party_attestations and first_party_root is None:
+        raise ValueError("first-party inventory sources require first_party_root")
 
     for item in inputs:
-        if item["name"] not in lane_rules["sources"]:
-            raise ValueError(f"no inventory lane rules for source {item['name']!r}")
-        if item["name"] not in rights["sources"]:
-            raise ValueError(f"rights registry has no entry for {item['name']!r}")
+        name = item["name"]
+        if name not in lane_rules["sources"]:
+            raise ValueError(f"no inventory lane rules for source {name!r}")
+        if name not in rights["sources"] and name not in first_party_reports:
+            if name not in first_party_attestations:
+                raise ValueError(
+                    f"source {name!r} has no rights registry entry or first-party attestation"
+                )
+        if name in first_party_attestations:
+            if name in rights["sources"]:
+                raise ValueError(
+                    f"source {name!r} has ambiguous external and first-party rights bases"
+                )
+            first_party_reports[name] = evaluate_source_attestation(
+                item["manifest"],
+                first_party_attestations[name],
+                workspace_root=first_party_root,
+            )
 
     tokenizer = None
     tokenizer_sha256 = None
@@ -333,12 +387,15 @@ def build_inventory(
         connection.execute("DELETE FROM seen")
         for item in inputs:
             name = item["name"]
-            rights_entry = rights["sources"][name]
-            is_approved = (
-                rights_entry.get("status") == RIGHTS_APPROVED
-                and rights_entry.get("commercial_use_approved") is True
-                and bool(str(rights_entry.get("review_ref", "")).strip())
-            )
+            if name in first_party_reports:
+                is_approved = first_party_reports[name]["production_eligible"]
+            else:
+                rights_entry = rights["sources"][name]
+                is_approved = (
+                    rights_entry.get("status") == RIGHTS_APPROVED
+                    and rights_entry.get("commercial_use_approved") is True
+                    and bool(str(rights_entry.get("review_ref", "")).strip())
+                )
             seen_source_rows = 0
             for shard in item["shards"]:
                 seen_shard_rows = 0
@@ -454,14 +511,21 @@ def build_inventory(
     input_output = []
     for item in inputs:
         name = item["name"]
-        rights_entry = rights["sources"][name]
+        first_party = first_party_reports.get(name)
+        rights_entry = rights["sources"].get(name)
         source_output[name] = {
             "revision": item["revision"],
-            "rights_status": rights_entry.get("status"),
-            "commercial_use_approved": rights_entry.get(
-                "commercial_use_approved"
-            )
-            is True,
+            "rights_status": (
+                first_party["status"] if first_party else rights_entry.get("status")
+            ),
+            "commercial_use_approved": (
+                first_party["production_eligible"]
+                if first_party
+                else rights_entry.get("commercial_use_approved") is True
+            ),
+            "eligibility_basis": (
+                "first_party_attestation" if first_party else "rights_registry"
+            ),
             "stats": _public_stats(source_stats[name], exact),
             "lanes": {
                 lane: _public_stats(source_lane_stats[name][lane], exact)
@@ -500,6 +564,10 @@ def build_inventory(
             "file_sha256": sha256_file(lane_rules_path),
         },
         "rights_registry_sha256": sha256_file(rights_registry_path),
+        "first_party_attestations": {
+            name: dict(report)
+            for name, report in sorted(first_party_reports.items())
+        },
         "counting": {
             "mode": "exact" if exact else "estimated",
             "tokenizer_sha256": tokenizer_sha256,
@@ -545,8 +613,33 @@ def main() -> None:
         help="canonical IlariaLex JSON; enables exact token counting",
     )
     parser.add_argument("--sqlite", help="optional persistent dedup SQLite path")
+    parser.add_argument(
+        "--first-party-attestation",
+        action="append",
+        default=[],
+        metavar="SOURCE=PATH",
+        help="bind a first-party source to an ownership/provenance attestation",
+    )
+    parser.add_argument(
+        "--first-party-root",
+        help="workspace root used to validate first-party attested file hashes",
+    )
     parser.add_argument("--out", required=True)
     args = parser.parse_args()
+
+    first_party_attestations = {}
+    for raw in args.first_party_attestation:
+        source, sep, path = raw.partition("=")
+        if (
+            not sep
+            or not source.strip()
+            or not path.strip()
+            or source in first_party_attestations
+        ):
+            raise ValueError(
+                "--first-party-attestation must be a unique SOURCE=PATH mapping"
+            )
+        first_party_attestations[source] = path
 
     report = build_inventory(
         args.source_manifest,
@@ -556,6 +649,8 @@ def main() -> None:
         target_tokens=args.target_tokens,
         tokenizer_path=args.tokenizer,
         sqlite_path=args.sqlite,
+        first_party_attestations=first_party_attestations,
+        first_party_root=args.first_party_root,
     )
     atomic_write_json(args.out, report)
     print(

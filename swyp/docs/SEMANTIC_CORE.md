@@ -105,17 +105,19 @@ Supported: booleans, typed parameters and locals, lexical shadowing, mutation,
 if/else, while, early return, pure function calls and bounded recursion. Logical
 `&&` and `||` are compiled into branches, so their right sides remain lazy.
 
-Core source supports explicit process effects for `print`, `eprint` and `clock`;
-the normal Core executor still refuses host effects and requires the standalone
-process backend/capability boundary. Pure programs remain unchanged. See
-[EFFECTS_CAPABILITIES](EFFECTS_CAPABILITIES.md).
+Core source supports explicit effectful builtins. Pure execution profiles refuse
+host effects. The safe `core-broker` command supports `clock` and `read_file`
+through a JSONL host handler; standalone native process backends support their
+documented effect subset and explicit build grants. Pure programs remain
+unchanged. See [EFFECTS_CAPABILITIES](EFFECTS_CAPABILITIES.md) and
+[BROKER_EXECUTION](BROKER_EXECUTION.md).
 
 `Program.CoreIR(entry)` selects that function and its transitive callees.
 Unrelated functions are not included or claimed as checked by this operation.
 Every statement in the selected functions is checked, including dead statements
-after return. Arbitrary strings, filesystem/network/process services and other
-unsupported host calls remain rejected. `print`, `eprint` and `clock` lower to
-explicit capability-gated effects. This still allows a pure helper to be selected
+after return. String constants lower into bounded byte data. Supported host
+builtins lower to declared effects; arbitrary host calls remain rejected.
+This still allows a pure helper to be selected
 from a file whose unrelated functions contain process effects.
 
 `ParseCore` is explicitly separate from `Parse`. Existing `run`, `check`,
@@ -177,11 +179,15 @@ accounting systems, not interchangeable performance measurements. Context
 cancellation and deadlines are checked at every tick.
 
 Prepared functions expose a `pure` or `effectful` semantics profile. `Run`
-rejects effectful entries with `effectful_program` before guest execution. Core
-does not resolve capabilities and does not execute host effects.
+rejects effectful entries with `effectful_program` before guest execution.
+`RunWithEffects` reuses the safe interpreter with an explicit host handler for
+`clock.read` and `fs.read`. It preserves exact fuel and call semantics, checks
+responses before resuming, and owns a bounded arena for returned file bytes.
+Core does not resolve capabilities or supply ambient host effect providers.
 
-There are no guest filesystem/network/process/model/tool effect opcodes. Effect
-metadata is a declaration, not authority. This restricted runtime is not
+Effect opcodes have a closed vocabulary; brokered interpretation supports only
+the two operations above. Effect metadata is a declaration, not authority.
+This restricted runtime is not
 advertised as an OS security sandbox, a memory quota or a certification.
 JSON file reads are size-bounded, not guaranteed to time out on special devices.
 CLI execution deadlines begin after reading, lowering and preparing input.

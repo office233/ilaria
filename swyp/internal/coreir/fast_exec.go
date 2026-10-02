@@ -14,6 +14,13 @@ const (
 	fastCall
 	fastBytesLen
 	fastBytesGet
+	fastStorageAllocU64
+	fastStorageLoadU64
+	fastStorageStoreU64
+	fastStorageFree
+	fastStorageLenU64
+	fastStorageCapacityU64
+	fastStorageSetLenU64
 )
 
 type fastValueOp uint8
@@ -166,6 +173,28 @@ func prepareFastBlocks(f Function, constants [][]Value) [][]fastInstruction {
 				fi.a = ins.Args[0]
 			case "bytes.get":
 				fi.kind = fastBytesGet
+				fi.a = ins.Args[0]
+				fi.b = ins.Args[1]
+			case "storage.alloc_u64":
+				fi.kind = fastStorageAllocU64
+				fi.a = ins.Args[0]
+			case "storage.load_u64":
+				fi.kind = fastStorageLoadU64
+				fi.a = ins.Args[0]
+				fi.b = ins.Args[1]
+			case "storage.store_u64":
+				fi.kind = fastStorageStoreU64
+			case "storage.free":
+				fi.kind = fastStorageFree
+				fi.a = ins.Args[0]
+			case "storage.len_u64":
+				fi.kind = fastStorageLenU64
+				fi.a = ins.Args[0]
+			case "storage.capacity_u64":
+				fi.kind = fastStorageCapacityU64
+				fi.a = ins.Args[0]
+			case "storage.set_len_u64":
+				fi.kind = fastStorageSetLenU64
 				fi.a = ins.Args[0]
 				fi.b = ins.Args[1]
 			default:
@@ -546,6 +575,32 @@ func (m *machine) executeFastInstruction(ins fastInstruction, slots []Value, dep
 		return m.bytesLenValue(slots[ins.a])
 	case fastBytesGet:
 		return m.bytesGetValue(slots[ins.a], slots[ins.b])
+	case fastStorageAllocU64:
+		return m.storageAllocU64(slots[ins.a])
+	case fastStorageLoadU64:
+		return m.storageLoadU64(slots[ins.a], slots[ins.b])
+	case fastStorageStoreU64:
+		if len(ins.args) != 3 {
+			return Value{}, diagnostic("invalid_ir", "storage.store_u64 fast arity")
+		}
+		if err := m.storageStoreU64(slots[ins.args[0]], slots[ins.args[1]], slots[ins.args[2]]); err != nil {
+			return Value{}, err
+		}
+		return Value{typ: Void}, nil
+	case fastStorageFree:
+		if err := m.storageFree(slots[ins.a]); err != nil {
+			return Value{}, err
+		}
+		return Value{typ: Void}, nil
+	case fastStorageLenU64:
+		return m.storageLenU64(slots[ins.a])
+	case fastStorageCapacityU64:
+		return m.storageCapacityU64(slots[ins.a])
+	case fastStorageSetLenU64:
+		if err := m.storageSetLenU64(slots[ins.a], slots[ins.b]); err != nil {
+			return Value{}, err
+		}
+		return Value{typ: Void}, nil
 	default:
 		x := slots[ins.a]
 		var y Value

@@ -10,6 +10,7 @@ import (
 // recalculate runs while the sheet lock is held. DFS handles dependency order and cycles.
 func (s *Sheet) recalculate() {
 	state := make(map[string]uint8)
+	evaluationErrors := make(map[string]error)
 	var evaluate func(string) (float64, error)
 	evaluate = func(key string) (float64, error) {
 		cell, exists := s.Cells[key]
@@ -20,10 +21,7 @@ func (s *Sheet) recalculate() {
 			return 0, fmt.Errorf("#CYCLE!")
 		}
 		if state[key] == 2 {
-			if strings.HasPrefix(cell.Display, "#") {
-				return 0, fmt.Errorf("%s", cell.Display)
-			}
-			return cell.Value, nil
+			return cell.Value, evaluationErrors[key]
 		}
 		state[key] = 1
 		value, err := strconv.ParseFloat(cell.Raw, 64)
@@ -45,6 +43,7 @@ func (s *Sheet) recalculate() {
 			err = nil
 		}
 		state[key] = 2
+		evaluationErrors[key] = err
 		s.Cells[key] = cell
 		return cell.Value, err
 	}
@@ -67,7 +66,11 @@ func (s *Sheet) sumFormula(raw string, evaluate func(string) (float64, error)) (
 		ref = strings.TrimSpace(ref)
 		col, i := 0, 0
 		for i < len(ref) && ref[i] >= 'A' && ref[i] <= 'Z' {
-			col = col*26 + int(ref[i]-'A') + 1
+			next := int(ref[i]-'A') + 1
+			if next > s.Cols || col > (s.Cols-next)/26 {
+				return 0, 0, invalid
+			}
+			col = col*26 + next
 			i++
 			if col > s.Cols {
 				return 0, 0, invalid

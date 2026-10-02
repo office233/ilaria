@@ -1,17 +1,18 @@
 """train_ilaria.py — the forge: pretrain an Ilaria brain in PyTorch and
 train the native Ilaria MicroCortex (IMC) from scratch.
 
-Pipeline (Go tokenizes, Python trains, Go runs):
+Pipeline (Forge prepares/tokenizes, Python trains, native runtime deploys):
 
-    go run ./cmd/corpus-tokenize -tokenizer <tokenizer.json> -in <corpus.jsonl> -out <prefix>
-    python forge/train_ilaria.py --data <prefix> --out data/forge/brain-v1 --steps 3000
+    python forge/hf_tokenizer.py encode --tokenizer <tokenizer.json> --in <corpus.jsonl> --out <prefix>
+    python forge/train_ilaria.py --data <train-prefix> --val-data <validation-prefix> \
+        --dataset-manifest <manifest.json> --tokenizer-freeze <freeze.json> --out <run-dir>
 
-Design choices (all deliberate for a GTX 1660 Ti, 6 GB, no bf16):
-  - fp16 autocast + GradScaler (Turing has fp16 tensor throughput, no bf16).
+Design choices:
+  - device-aware bf16/fp16 autocast, or fp32; fp16 uses GradScaler.
   - Packed random windows of ctx+1 tokens from the flat stream — standard LM
     pretraining, no padding waste.
   - AdamW (betas 0.9/0.95), linear warmup + cosine, grad-clip 1.0, weight
-    decay on matrices only (LN/bias exempt) — same policy as the Go trainer.
+    decay on matrices only (norm scales exempt).
   - Exports an IMC checkpoint at every improved evaluation.
 """
 
@@ -39,7 +40,7 @@ from data_contract import (  # noqa: E402
 from dataset_manifest import validate_dataset_manifest_file  # noqa: E402
 from tokenizer_freeze import validate_freeze_manifest  # noqa: E402
 from atomic_io import atomic_binary_writer  # noqa: E402
-from training_state import (file_sha256, training_signature, make_checkpoint,
+from training_state import (file_sha256, training_signature, make_checkpoint, capture_rng,
                             restore_checkpoint, initialize_weights)  # noqa: E402
 
 
@@ -140,6 +141,24 @@ def steps_for_target_tokens(
     return math.ceil(target_tokens / tokens_per_step)
 
 
+def distributed_env(environ=None):
+    """Parse and validate the torchrun rank contract."""
+    env = os.environ if environ is None else environ
+    try:
+        world = int(env.get("WORLD_SIZE", "1"))
+        rank = int(env.get("RANK", "0"))
+        local_rank = int(env.get("LOCAL_RANK", "0"))
+    except ValueError as exc:
+        raise ValueError("WORLD_SIZE, RANK and LOCAL_RANK must be integers") from exc
+    if world < 1:
+        raise ValueError("WORLD_SIZE must be positive")
+    if not 0 <= rank < world:
+        raise ValueError(f"RANK must satisfy 0 <= RANK < WORLD_SIZE; got {rank} / {world}")
+    if local_rank < 0:
+        raise ValueError("LOCAL_RANK must be non-negative")
+    return world, rank, local_rank
+
+
 def param_groups(model, wd: float):
     decay, no_decay = [], []
     for name, p in model.named_parameters():
@@ -206,7 +225,7 @@ def validate_training_args(args: argparse.Namespace) -> None:
 
 
 @torch.no_grad()
-def evaluate(model, data, ctx, bsz, device, iters, rng, autocast_dtype):
+def evaluate(model, data, ctx, bsz, device, iters, rng, autocast_dtype, chunked_loss=False):
     if iters < 1:
         raise ValueError("evaluation iterations must be positive")
     was_training = model.training
@@ -217,8 +236,12 @@ def evaluate(model, data, ctx, bsz, device, iters, rng, autocast_dtype):
         for _ in range(iters):
             x, y = batch_windows(data, ctx, bsz, rng, device)
             with torch.autocast("cuda", dtype=autocast_dtype or torch.float16, enabled=use_amp):
-                logits = model(x)
-            losses.append(F.cross_entropy(logits.float().view(-1, logits.size(-1)), y.view(-1)).item())
+                if chunked_loss:
+                    loss = model(x, y)
+                else:
+                    logits = model(x)
+                    loss = F.cross_entropy(logits.float().view(-1, logits.size(-1)), y.view(-1))
+            losses.append(loss.item())
         return float(np.mean(losses))
     finally:
         model.train(was_training)
@@ -234,8 +257,10 @@ def main():
     ap.add_argument("--dataset-manifest", default="", help="content-addressed ilaria-dataset-manifest-v1 (required for production)")
     ap.add_argument("--tokenizer-freeze", default="", help="ilarialex-freeze-v1 manifest (required for production)")
     ap.add_argument("--allow-unmanifested-data", action="store_true", help="smoke tests only: bypass the dataset-manifest gate")
+    ap.add_argument("--qualified-pilot", default="", help="versioned, reviewed NON_PROMOTABLE code-only pilot v1 launch metadata")
+    ap.add_argument("--qualified-pilot-v2", default="", help="reviewed clean split-before-tokenizer NON_PROMOTABLE pilot v2 launch metadata")
     ap.add_argument("--preset", default="", help=f"imc size preset: {', '.join(PRESETS)} (overrides the dimension flags)")
-    ap.add_argument("--kv-heads", type=int, default=4, help="imc: key/value heads for grouped-query attention")
+    ap.add_argument("--kv-heads", type=int, default=2, help="imc: key/value heads for grouped-query attention")
     ap.add_argument("--ffn-act", choices=["silu", "relu2"], default="silu", help="imc: gated FFN activation")
     ap.add_argument("--embed-dim", type=int, default=384)
     ap.add_argument("--heads", type=int, default=6)
@@ -275,7 +300,7 @@ def main():
                     help="stop after N steps in this invocation without changing the total LR horizon")
     ap.add_argument("--precision", default="auto", choices=["auto", "bf16", "fp16", "fp32"],
                     help="compute precision: auto (bf16 on H100/Ampere, else fp16), bf16, fp16, fp32")
-    ap.add_argument("--compile", action="store_true", help="use torch.compile for maximum H100 kernel fusion")
+    ap.add_argument("--compile", action="store_true", help="compile the model with torch.compile")
     ap.add_argument("--grad-checkpoint", action="store_true", help="enable gradient checkpointing to save VRAM")
     ap.add_argument("--chunked-loss", action="store_true",
                     help="imc: cross-entropy in chunks with recomputed logits, never materializing [tokens, vocab]")
@@ -294,7 +319,9 @@ def main():
             raise ValueError("--stop-after must be non-negative")
         if args.sample_tokens < 0:
             raise ValueError("--sample-tokens must be non-negative")
-        if not args.dataset_manifest and not args.allow_unmanifested_data:
+        if args.qualified_pilot and args.qualified_pilot_v2:
+            raise ValueError("--qualified-pilot and --qualified-pilot-v2 are mutually exclusive")
+        if not args.qualified_pilot and not args.qualified_pilot_v2 and not args.dataset_manifest and not args.allow_unmanifested_data:
             raise ValueError(
                 "--dataset-manifest is required; --allow-unmanifested-data is smoke-test only"
             )
@@ -302,7 +329,7 @@ def main():
             raise ValueError(
                 "--dataset-manifest and --allow-unmanifested-data are mutually exclusive"
             )
-        if not args.allow_unmanifested_data and not args.tokenizer_freeze:
+        if not args.allow_unmanifested_data and not args.qualified_pilot_v2 and not args.tokenizer_freeze:
             raise ValueError(
                 "--tokenizer-freeze is required for production training"
             )
@@ -311,9 +338,10 @@ def main():
 
     # torchrun sets these; a plain launch is a world of one. Every rank reads a
     # different random slice of the stream; rank 0 alone evaluates, logs and saves.
-    world = int(os.environ.get("WORLD_SIZE", "1"))
-    rank = int(os.environ.get("RANK", "0"))
-    local_rank = int(os.environ.get("LOCAL_RANK", "0"))
+    try:
+        world, rank, local_rank = distributed_env()
+    except ValueError as exc:
+        ap.error(str(exc))
     master = rank == 0
     if not master:
         sys.stdout = open(os.devnull, "w")
@@ -334,39 +362,27 @@ def main():
             )
         args.steps = resolved_steps
 
-    device = "cuda" if torch.cuda.is_available() and torch.cuda.device_count() > 0 else "cpu"
-    if device == "cuda":
-        if local_rank >= torch.cuda.device_count():
-            ap.error(f"LOCAL_RANK {local_rank} but only {torch.cuda.device_count()} CUDA device(s) are visible")
-        torch.cuda.set_device(local_rank)
-        torch.backends.cuda.matmul.allow_tf32 = True
-        torch.backends.cudnn.allow_tf32 = True
-    if world > 1:
-        import torch.distributed as dist
-        dist.init_process_group("nccl" if device == "cuda" and os.name != "nt" else "gloo")
-
-    # Precision resolution
-    if args.precision == "auto":
-        use_bf16 = device == "cuda" and torch.cuda.is_bf16_supported()
-        autocast_dtype = torch.bfloat16 if use_bf16 else (torch.float16 if device == "cuda" else None)
-    elif args.precision == "bf16":
-        autocast_dtype = torch.bfloat16
-    elif args.precision == "fp16":
-        autocast_dtype = torch.float16
-    else:
-        autocast_dtype = None
-
-    if device == "cpu" and args.precision not in ("auto", "fp32"):
-        ap.error("explicit fp16/bf16 requires CUDA; use --precision fp32 on CPU")
-    if device == "cuda" and autocast_dtype == torch.bfloat16 and not torch.cuda.is_bf16_supported():
-        ap.error("requested bf16 is unsupported by this CUDA device")
-    use_scaler = (device == "cuda" and autocast_dtype == torch.float16)
-
-    random.seed(args.seed)
-    torch.manual_seed(args.seed)
-    rng = np.random.default_rng(args.seed if world == 1 else [args.seed, rank])
-
-    data, meta = load_stream(args.data)
+    # Qualify the streams, tokenizer and dataset before acquiring CUDA/DDP
+    # resources or constructing the model/optimizer. Every rank fails closed.
+    pilot = None
+    if args.qualified_pilot:
+        from qualified_pilot import admit_metadata
+        try:
+            pilot = admit_metadata(args.qualified_pilot, args, world)
+            pilot.check()
+        except (OSError, ValueError, json.JSONDecodeError) as exc:
+            ap.error(str(exc))
+    elif args.qualified_pilot_v2:
+        from qualified_pilot_v2 import admit_metadata
+        try:
+            pilot = admit_metadata(args.qualified_pilot_v2, args, world)
+            pilot.check()
+        except (OSError, ValueError, json.JSONDecodeError) as exc:
+            ap.error(str(exc))
+    try:
+        data, meta = load_stream(args.data)
+    except (OSError, ValueError, json.JSONDecodeError) as exc:
+        ap.error(str(exc))
     if args.val_data:
         try:
             val_data, val_meta = load_stream(args.val_data)
@@ -386,37 +402,7 @@ def main():
         )
     if len(train_data) < args.ctx + 1 or len(val_data) < args.ctx + 1:
         ap.error("train and validation streams must each contain at least ctx+1 tokens")
-    print(
-        f"[forge] tokens: train {len(train_data):,} / val {len(val_data):,} "
-        f"vocab {meta['vocab_size']} eos {meta['eos_id']} device {device} "
-        f"(precision: {autocast_dtype})"
-    )
 
-    dims = PRESETS[args.preset] if args.preset else dict(
-        d_model=args.embed_dim, n_layers=args.layers, n_heads=args.heads,
-        n_kv_heads=args.kv_heads, ffn_dim=args.ffn_dim)
-    cfg = ImcConfig(vocab_size=meta["vocab_size"], max_seq_len=args.max_seq_len,
-                    eos_token_id=meta["eos_id"], ffn_act=args.ffn_act, ternary=args.ternary, **dims)
-    model = ImcTransformer(cfg)
-    best_name, export = "imc.pt", save_imc
-    desc = (f"imc d={cfg.d_model} layers={cfg.n_layers} heads={cfg.n_heads}/{cfg.n_kv_heads}kv "
-            f"ffn={cfg.ffn_dim} act={cfg.ffn_act}")
-    if args.grad_checkpoint:
-        model.enable_gradient_checkpointing(True)
-    model = model.to(device)
-
-    print(f"[forge] model: {model.param_count()/1e6:.1f}M params | {desc} ternary={cfg.ternary} "
-          f"ctx={args.ctx} batch={args.batch}x{args.accum} (effective batch {args.batch * args.accum}) "
-          f"grad_checkpoint={args.grad_checkpoint} compile={args.compile}")
-
-    opt = torch.optim.AdamW(
-        param_groups(model, args.wd),
-        lr=args.lr,
-        betas=(args.beta1, args.beta2),
-        eps=args.adam_eps,
-    )
-    scaler = torch.amp.GradScaler("cuda", enabled=use_scaler)
-    start_step, best_val, tokens_seen = 0, float("inf"), 0
     tok_src = args.tokenizer
     if not tok_src:
         tok_src = os.path.join(os.path.dirname(os.path.abspath(args.data)), meta["tokenizer"])
@@ -471,10 +457,80 @@ def main():
             tokenizer_freeze_sha256 = tokenizer_freeze["freeze_sha256"]
         except (OSError, ValueError, json.JSONDecodeError) as exc:
             ap.error(str(exc))
+    elif pilot is not None:
+        try:
+            tokenizer_freeze_sha256 = pilot.validate_bytes(args, meta, val_meta, tokenizer_sha256)
+            dataset_manifest_sha256 = pilot.binding["dataset_identity_sha256"]
+            pilot.require_supervision()
+        except (OSError, ValueError, json.JSONDecodeError) as exc:
+            ap.error(str(exc))
     else:
         dataset_manifest_sha256 = "UNMANIFESTED-SMOKE"
         tokenizer_freeze_sha256 = "UNFROZEN-SMOKE"
 
+    device = "cuda" if torch.cuda.is_available() and torch.cuda.device_count() > 0 else "cpu"
+    if device == "cuda":
+        if local_rank >= torch.cuda.device_count():
+            ap.error(f"LOCAL_RANK {local_rank} but only {torch.cuda.device_count()} CUDA device(s) are visible")
+        torch.cuda.set_device(local_rank)
+        torch.backends.cuda.matmul.allow_tf32 = True
+        torch.backends.cudnn.allow_tf32 = True
+    if world > 1:
+        import torch.distributed as dist
+        dist.init_process_group("nccl" if device == "cuda" and os.name != "nt" else "gloo")
+
+    # Precision resolution
+    if args.precision == "auto":
+        use_bf16 = device == "cuda" and torch.cuda.is_bf16_supported()
+        autocast_dtype = torch.bfloat16 if use_bf16 else (torch.float16 if device == "cuda" else None)
+    elif args.precision == "bf16":
+        autocast_dtype = torch.bfloat16
+    elif args.precision == "fp16":
+        autocast_dtype = torch.float16
+    else:
+        autocast_dtype = None
+
+    if device == "cpu" and args.precision not in ("auto", "fp32"):
+        ap.error("explicit fp16/bf16 requires CUDA; use --precision fp32 on CPU")
+    if device == "cuda" and autocast_dtype == torch.bfloat16 and not torch.cuda.is_bf16_supported():
+        ap.error("requested bf16 is unsupported by this CUDA device")
+    use_scaler = (device == "cuda" and autocast_dtype == torch.float16)
+
+    random.seed(args.seed)
+    torch.manual_seed(args.seed)
+    rng = np.random.default_rng(args.seed if world == 1 else [args.seed, rank])
+
+    print(
+        f"[forge] tokens: train {len(train_data):,} / val {len(val_data):,} "
+        f"vocab {meta['vocab_size']} eos {meta['eos_id']} device {device} "
+        f"(precision: {autocast_dtype})"
+    )
+
+    dims = PRESETS[args.preset] if args.preset else dict(
+        d_model=args.embed_dim, n_layers=args.layers, n_heads=args.heads,
+        n_kv_heads=args.kv_heads, ffn_dim=args.ffn_dim)
+    cfg = ImcConfig(vocab_size=meta["vocab_size"], max_seq_len=args.max_seq_len,
+                    eos_token_id=meta["eos_id"], ffn_act=args.ffn_act, ternary=args.ternary, **dims)
+    model = ImcTransformer(cfg)
+    best_name, export = "imc.pt", save_imc
+    desc = (f"imc d={cfg.d_model} layers={cfg.n_layers} heads={cfg.n_heads}/{cfg.n_kv_heads}kv "
+            f"ffn={cfg.ffn_dim} act={cfg.ffn_act}")
+    if args.grad_checkpoint:
+        model.enable_gradient_checkpointing(True)
+    model = model.to(device)
+
+    print(f"[forge] model: {model.param_count()/1e6:.1f}M params | {desc} ternary={cfg.ternary} "
+          f"ctx={args.ctx} batch={args.batch}x{args.accum} (effective batch {args.batch * args.accum}) "
+          f"grad_checkpoint={args.grad_checkpoint} compile={args.compile}")
+
+    opt = torch.optim.AdamW(
+        param_groups(model, args.wd),
+        lr=args.lr,
+        betas=(args.beta1, args.beta2),
+        eps=args.adam_eps,
+    )
+    scaler = torch.amp.GradScaler("cuda", enabled=use_scaler)
+    start_step, best_val, tokens_seen = 0, float("inf"), 0
     signature = training_signature(
         args,
         device,
@@ -485,6 +541,8 @@ def main():
     )
     signature["dataset_manifest_sha256"] = dataset_manifest_sha256
     signature["tokenizer_freeze_sha256"] = tokenizer_freeze_sha256
+    if pilot is not None:
+        signature["qualified_pilot"] = pilot.binding
     signature["trainer_sha256"] = file_sha256(__file__)
     signature["imc_model_sha256"] = file_sha256(
         os.path.join(os.path.dirname(os.path.abspath(__file__)), "imc_model.py")
@@ -513,6 +571,11 @@ def main():
         model = torch.compile(model)
 
     if ck is not None:
+        if world > 1:
+            rank_rng = ck.get("rank_rng")
+            if not isinstance(rank_rng, list) or len(rank_rng) != world:
+                ap.error("distributed checkpoint has no RNG state for every rank; exact resume is unavailable")
+            ck["rng"] = rank_rng[rank]
         start_step, best_val, tokens_seen = restore_checkpoint(
             ck, raw_model, opt, scaler, rng, signature)
         best_export_sha256 = ck.get("best_export_sha256")
@@ -522,11 +585,14 @@ def main():
                 ap.error("best IMC export is missing or differs from the checkpoint; restore the matching run directory")
         print(f"[forge] resumed from {args.resume} @ step {start_step}")
         del ck
-        if world > 1:
-            # The checkpoint holds rank 0's sampler state; give every rank its own again.
-            rng = np.random.default_rng([args.seed, rank, start_step])
 
     os.makedirs(args.out, exist_ok=True)
+    if master and pilot is not None:
+        from data_contract import atomic_write_json
+        atomic_write_json(os.path.join(args.out, "qualified-pilot-run.json"), {
+            "format": getattr(pilot, "run_format", "ilaria-qualified-code-pilot-run-v1"), "status": pilot.binding["status"],
+            "promotable": False, "allocation_authorized": False, "binding": pilot.binding,
+            "wall_enforcement": "cooperative-checks-with-required-external-tree-supervisor"})
     if master and args.resume and math.isfinite(best_val):
         best_destination = os.path.join(args.out, best_name)
         if os.path.realpath(best_source) != os.path.realpath(best_destination):
@@ -540,7 +606,11 @@ def main():
             with atomic_binary_writer(tok_dst) as dst, open(tok_src, "rb") as src:
                 shutil.copyfileobj(src, dst)
 
-    log = open(os.path.join(args.out, "training.log"), "a") if master else None
+    log = (
+        open(os.path.join(args.out, "training.log"), "a", encoding="utf-8")
+        if master
+        else None
+    )
     model.train()
     t0 = time.time()
     tokens_this_run = 0
@@ -548,6 +618,8 @@ def main():
 
     stop_step = min(args.steps, start_step + args.stop_after) if args.stop_after else args.steps
     for step in range(start_step, stop_step):
+        if pilot is not None:
+            pilot.check(step=step, tokens=tokens_seen, reserve_tokens=pilot.binding["tokens_per_step"])
         lr = lr_at(
             step,
             args.warmup,
@@ -561,6 +633,8 @@ def main():
         opt.zero_grad(set_to_none=True)
         loss_acc = 0.0
         for micro in range(args.accum):
+            if pilot is not None:
+                pilot.check(step=step, tokens=tokens_seen, reserve_tokens=args.ctx * args.batch * world)
             x, y = batch_windows(train_data, args.ctx, args.batch, rng, device)
             # Gradients are all-reduced once per optimizer step, on the last micro-batch.
             sync = world == 1 or micro == args.accum - 1
@@ -579,6 +653,8 @@ def main():
             tokens_seen += x.numel() * world
             tokens_this_run += x.numel() * world
 
+        if pilot is not None:
+            pilot.check(step=step, tokens=tokens_seen)
         if use_scaler:
             scaler.unscale_(opt)
             gn = torch.nn.utils.clip_grad_norm_(raw_model.parameters(), args.grad_clip)
@@ -593,12 +669,14 @@ def main():
             print(f"step {step:6d} | loss {loss_acc:.4f} | lr {lr:.2e} | gn {gn:.2f} | "
                   f"{tokens_this_run/max(el,1e-9):,.0f} tok/s | {el/60:.1f} min")
         do_eval = (step + 1) % args.eval_every == 0 or step + 1 == args.steps
+        if pilot is not None:
+            pilot.check(step=step + 1, tokens=tokens_seen)
         if master and do_eval:
             # Fixed validation windows, independent of the training RNG and eval cadence.
             eval_rng = np.random.default_rng(np.random.SeedSequence([args.seed, 1]))
             # Under DDP the wrapper's forward is collective, so rank 0 evaluates the bare model.
             val = evaluate(model if world == 1 else raw_model, val_data, args.ctx, args.batch, device,
-                           args.eval_iters, eval_rng, autocast_dtype)
+                           args.eval_iters, eval_rng, autocast_dtype, args.chunked_loss)
             if not math.isfinite(val):
                 raise RuntimeError("non-finite validation loss; previous checkpoint was preserved")
             improved = val < best_val
@@ -609,18 +687,30 @@ def main():
                                   "ppl": math.exp(val), "lr": lr, "tokens": tokens_seen}) + "\n")
             log.flush()
             if improved:
+                if pilot is not None:
+                    pilot.check(step=step + 1, tokens=tokens_seen)
                 best_path = os.path.join(args.out, best_name)
                 export(raw_model, best_path)
                 best_export_sha256 = file_sha256(best_path)
         # A pause between evaluations saves resume state WITHOUT adding an eval
         # or changing which models qualify as best. Both files are individually
         # atomic; the hash detects mismatched publication after interruption.
-        if master and (do_eval or step + 1 == stop_step):
-            with atomic_binary_writer(os.path.join(args.out, "checkpoint.pt")) as checkpoint:
-                torch.save(make_checkpoint(raw_model, opt, scaler, rng, step + 1,
-                                           best_val, tokens_seen, signature, best_export_sha256), checkpoint)
-        if world > 1 and (do_eval or step + 1 == stop_step):
-            dist.barrier()   # nobody runs ahead while rank 0 evaluates and saves
+        if do_eval or step + 1 == stop_step:
+            rank_rng = None
+            if world > 1:
+                rank_rng = [None] * world if master else None
+                dist.gather_object(capture_rng(rng), rank_rng, dst=0)
+            if master:
+                state = make_checkpoint(raw_model, opt, scaler, rng, step + 1,
+                                        best_val, tokens_seen, signature, best_export_sha256)
+                if pilot is not None:
+                    state["qualified_pilot"] = pilot.checkpoint_metadata(step + 1, tokens_seen)
+                if rank_rng is not None:
+                    state["rank_rng"] = rank_rng
+                with atomic_binary_writer(os.path.join(args.out, "checkpoint.pt")) as checkpoint:
+                    torch.save(state, checkpoint)
+            if world > 1:
+                dist.barrier()   # nobody runs ahead while rank 0 evaluates and saves
 
     if master:
         log.close()
@@ -629,8 +719,8 @@ def main():
         dist.destroy_process_group()
     if not master:
         return
-    # Sanity sample straight from the forge (greedy, token ids only — the
-    # organism decodes; Go owns the tokenizer).
+    # Sanity sample straight from the forge (greedy token IDs; decode with
+    # the matching frozen IlariaLex tokenizer).
     if args.sample_tokens:
         ids = raw_model.generate_greedy([meta["eos_id"]], args.sample_tokens)
         print(f"[forge] greedy sample ids: {ids}")

@@ -1,6 +1,6 @@
 {
-  "attestation_sha256": "e70c709bced17a5a7da0fd07f3636e66a02df06041968a8a433fe0e49531f6ad",
-  "attested_by": "",
+  "attestation_sha256": "fa639d391f4305665346668ad6b41ca783e101999944d10bf8055d76ae3e6f73",
+  "attested_by": "project-owner",
   "files": [
     {
       "path": "runtime/connectome/connectome.go",
@@ -32,6 +32,6 @@
     }
   ],
   "format": "ilaria-first-party-attestation-v1",
-  "ownership_attested": false,
-  "review_ref": ""
+  "ownership_attested": true,
+  "review_ref": "chat-confirmation:2026-09-30T18:37+03:00;packet=21cb5fe4ea956009259aff668a0c09c1dd1aede0a9aa0a48a542ee59670c1639;attribution=2943b8c9ef398b3b50f7e0100aa0ec844f57bdeee66ad45d21483bdc86f0fdc9"
 }

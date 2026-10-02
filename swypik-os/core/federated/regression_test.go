@@ -6,8 +6,8 @@ import (
 )
 
 func TestAggregatorOwnsSnapshots(t *testing.T) {
-	agg := NewFederatedAggregator(1)
-	trainer := NewLocalTrainer("test-node", 35)
+	agg := aggregationFixture(t, 1, 32)
+	trainer := trainerFixture(t, "test-node", 35)
 	if err := agg.RegisterNodeKey(trainer.nodeID, trainer.PublicKey()); err != nil {
 		t.Fatal(err)
 	}

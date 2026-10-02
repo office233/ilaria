@@ -38,15 +38,23 @@ func NewLocalBackend(endpoint string) *LocalBackend {
 	}}
 }
 
-func (b *LocalBackend) Chat(ctx context.Context, prompt string, history []Message) (string, error) {
+func (b *LocalBackend) origin() (bool, error) {
 	u, err := url.Parse(b.endpoint)
 	if err != nil || u.User != nil || u.RawQuery != "" || u.Fragment != "" || u.Path != "" || u.Hostname() == "" {
-		return "", fmt.Errorf("invalid Ilaria endpoint")
+		return false, fmt.Errorf("invalid Ilaria endpoint")
 	}
-	local := u.Scheme == "http" && u.Hostname() == "127.0.0.1" && b.token == ""
+	local := u.Scheme == "http" && u.Hostname() == "127.0.0.1"
 	cloud := u.Scheme == "https" && len(b.token) >= 32 && strings.TrimSpace(b.token) == b.token
 	if !local && !cloud {
-		return "", fmt.Errorf("Ilaria requires loopback HTTP or authenticated HTTPS")
+		return false, fmt.Errorf("Ilaria requires loopback HTTP or authenticated HTTPS")
+	}
+	return cloud, nil
+}
+
+func (b *LocalBackend) Chat(ctx context.Context, prompt string, history []Message) (string, error) {
+	cloud, err := b.origin()
+	if err != nil {
+		return "", err
 	}
 	type turn struct {
 		Role    string `json:"role"`

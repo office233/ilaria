@@ -127,7 +127,8 @@ def _compatible_lane_inputs(
                     raise ValueError(
                         f"curriculum stream {prefix}: {key} differs from tokenizer contract"
                     )
-    assert reference is not None
+    if reference is None:
+        raise ValueError("curriculum has no positive-weight token stream")
     return reference, lane_metas
 
 

@@ -68,17 +68,8 @@ func draftCommand(args []string) error {
 	if err != nil {
 		return err
 	}
-	file, err := os.OpenFile(*out, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
-	if err != nil {
+	if err := writeNewModule(*out, []byte(source)); err != nil {
 		return err
-	}
-	_, writeErr := file.WriteString(source)
-	closeErr := file.Close()
-	if writeErr != nil {
-		return writeErr
-	}
-	if closeErr != nil {
-		return closeErr
 	}
 	fmt.Println("Saved checked draft:", *out, "(not executed; review behavior before use)")
 	return nil

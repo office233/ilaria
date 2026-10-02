@@ -13,6 +13,14 @@ except ImportError:  # direct script execution
 SAMPLE_FORMAT = "ilaria-licensed-tree-sample-v1"
 
 
+def _utf8_prefix(payload: bytes, max_bytes: int) -> str:
+    """Decode the largest valid UTF-8 prefix within a byte budget."""
+    cut = min(len(payload), max_bytes)
+    while 0 < cut < len(payload) and payload[cut] & 0xC0 == 0x80:
+        cut -= 1
+    return payload[:cut].decode("utf-8")
+
+
 def _build_sample_from_manifest(
     manifest: dict,
     *,
@@ -58,7 +66,12 @@ def _build_sample_from_manifest(
     with destination.open("w", encoding="utf-8", newline="\n") as stream:
         for record in selected:
             source = tree / record["path"]
-            text = source.read_text(encoding="utf-8", errors="ignore").strip()
+            try:
+                text = source.read_text(encoding="utf-8").strip()
+            except UnicodeDecodeError as exc:
+                raise ValueError(
+                    f"licensed-tree file is not valid UTF-8: {record['path']}"
+                ) from exc
             if not text:
                 continue
             header = f"\n<|source-file:{record['path']}|>\n"
@@ -66,8 +79,7 @@ def _build_sample_from_manifest(
             if written and written + len(payload) > max_bytes:
                 break
             if not written and len(payload) > max_bytes:
-                payload = payload[:max_bytes]
-                decoded = payload.decode("utf-8", errors="ignore")
+                decoded = _utf8_prefix(payload, max_bytes)
                 stream.write(decoded)
                 written = len(decoded.encode("utf-8"))
                 included.append(record["path"])

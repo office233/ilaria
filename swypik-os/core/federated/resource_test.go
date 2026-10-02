@@ -8,7 +8,7 @@ import (
 
 func TestPhoneTrainerRejectsOversizedDelta(t *testing.T) {
 	t.Setenv("SWYPIK_RESOURCE_PROFILE", "phone")
-	trainer := NewLocalTrainer("phone-node", 10)
+	trainer := trainerFixture(t, "phone-node", 10)
 	if trainer.maxParamCount != 32768 {
 		t.Fatalf("max params=%d want 32768", trainer.maxParamCount)
 	}
@@ -19,10 +19,10 @@ func TestPhoneTrainerRejectsOversizedDelta(t *testing.T) {
 }
 
 func TestAggregatorBoundsPendingRoundDeltas(t *testing.T) {
-	fa := NewFederatedAggregator(1)
+	fa := aggregationFixture(t, 1, 64)
 	fa.maxPendingDeltas = 1
 
-	first := NewLocalTrainer("node-a", 10)
+	first := trainerFixture(t, "node-a", 10)
 	if err := fa.RegisterNodeKey("node-a", first.PublicKey()); err != nil {
 		t.Fatal(err)
 	}
@@ -34,7 +34,7 @@ func TestAggregatorBoundsPendingRoundDeltas(t *testing.T) {
 		t.Fatalf("first delta rejected: %s", reason)
 	}
 
-	second := NewLocalTrainer("node-b", 10)
+	second := trainerFixture(t, "node-b", 10)
 	if err := fa.RegisterNodeKey("node-b", second.PublicKey()); err != nil {
 		t.Fatal(err)
 	}
@@ -70,11 +70,14 @@ func TestPhoneTransportBoundsResidentPeersAndInspectionQueue(t *testing.T) {
 		LayerName: "transformer.lora_a",
 		Values:    make([]float64, 32768),
 	}
-	if _, err := mesh.BroadcastGradient(delta); err != nil {
-		t.Fatal(err)
+	if sent, err := mesh.BroadcastGradient(delta); err == nil || sent != 0 {
+		t.Fatalf("unimplemented transport reported delivery: sent=%d err=%v", sent, err)
 	}
 	select {
 	case packet := <-mesh.packetStream:
+		if packet.PublicIP != "" || packet.NATType != "UNKNOWN" {
+			t.Fatalf("inspection packet fabricated network identity: %+v", packet)
+		}
 		if len(packet.Payload) > mesh.inspectMax {
 			t.Fatalf("inspection payload=%d > %d", len(packet.Payload), mesh.inspectMax)
 		}

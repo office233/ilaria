@@ -98,7 +98,7 @@ def build_image(
     resolved: list[dict[str, int]] = []
     cursor = metadata_end
     final_size = metadata_end
-    for index, segment in enumerate(segs):
+    for segment in segs:
         file_offset = segment.file_offset
         if file_offset is None:
             file_offset = cursor if segment.file_size else 0
@@ -462,7 +462,7 @@ def run_bounded(
             stream.close()
 
     readers = [threading.Thread(target=capture, args=(stream, buffer), daemon=True)
-               for stream, buffer in zip((process.stdout, process.stderr), buffers)]
+               for stream, buffer in zip((process.stdout, process.stderr), buffers, strict=True)]
     deadline = time.monotonic() + timeout
     reason = None
     try:

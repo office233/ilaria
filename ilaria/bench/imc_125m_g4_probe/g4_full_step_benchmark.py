@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import gc
 import json
 import sys
@@ -47,6 +48,9 @@ def optimizer_step(model, opt, *, seed: int) -> tuple[float, float]:
 
 
 def main():
+    parser = argparse.ArgumentParser(description="Locked G4 full-step benchmark with explicit output.")
+    parser.add_argument("--out", type=Path, required=True)
+    args = parser.parse_args()
     if not torch.cuda.is_available():
         raise SystemExit("CUDA unavailable")
     props = torch.cuda.get_device_properties(0)
@@ -95,7 +99,8 @@ def main():
         "peak_allocated_bytes": peak,
     }
     print(json.dumps(result, indent=2, sort_keys=True))
-    Path("/content/g4-full-step.json").write_text(
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    args.out.write_text(
         json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
 

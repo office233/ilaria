@@ -73,16 +73,23 @@ def load_lock(path: str | Path) -> dict:
         return validate_lock(json.load(stream))
 
 
-def resolve_remote(url: str, *, ref: str = "main") -> str:
+def resolve_remote(
+    url: str,
+    *,
+    ref: str = "main",
+    timeout_seconds: int = 60,
+) -> str:
     _require_https_url("git remote url", url)
     if not isinstance(ref, str) or not ref or any(ch.isspace() for ch in ref):
         raise ValueError("git remote ref is invalid")
+    if type(timeout_seconds) is not int or timeout_seconds < 1:
+        raise ValueError("git remote timeout must be a positive integer")
     proc = subprocess.run(
         ["git", "ls-remote", url, f"refs/heads/{ref}"],
         check=False,
         capture_output=True,
         text=True,
-        timeout=60,
+        timeout=timeout_seconds,
     )
     if proc.returncode != 0:
         raise RuntimeError(f"git ls-remote failed: {proc.stderr.strip()}")
@@ -98,6 +105,7 @@ def main() -> None:
     sub = parser.add_subparsers(dest="command", required=True)
     resolve = sub.add_parser("resolve")
     resolve.add_argument("--source", action="append", required=True, help="NAME=HTTPS_URL[@REF]")
+    resolve.add_argument("--timeout-seconds", type=int, default=60)
     resolve.add_argument("--out", required=True)
     validate = sub.add_parser("validate")
     validate.add_argument("--lock", required=True)
@@ -114,7 +122,15 @@ def main() -> None:
         url, at, ref = target.rpartition("@")
         if not at:
             url, ref = target, "main"
-        entries[name] = {"url": url, "ref": ref, "commit": resolve_remote(url, ref=ref)}
+        entries[name] = {
+            "url": url,
+            "ref": ref,
+            "commit": resolve_remote(
+                url,
+                ref=ref,
+                timeout_seconds=args.timeout_seconds,
+            ),
+        }
     lock = build_lock(entries)
     atomic_write_json(args.out, lock)
     print(f"[git-source-lock] {args.out}: {lock['source_lock_sha256']}")

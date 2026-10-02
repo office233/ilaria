@@ -68,6 +68,7 @@ type record struct {
 type Engine struct {
 	mu               sync.RWMutex
 	crawlMu          sync.Mutex
+	closed           bool
 	path             string
 	log              *os.File
 	logBytes         int64
@@ -230,6 +231,9 @@ func (e *Engine) applyLine(line []byte) error {
 	if err := d.Decode(&rec); err != nil {
 		return err
 	}
+	if err := d.Decode(new(json.RawMessage)); err != io.EOF {
+		return fmt.Errorf("record must contain exactly one JSON object")
+	}
 	switch rec.Op {
 	case "put":
 		if rec.Doc == nil {
@@ -346,6 +350,7 @@ func (e *Engine) compactLocked() error {
 func (e *Engine) Close() error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
+	e.closed = true
 	if e.log == nil {
 		return nil
 	}
@@ -445,9 +450,12 @@ func (e *Engine) Upsert(doc Document) error {
 	return err
 }
 
-// UpsertMany appends documents with one fsync. Unchanged documents (same URL,
-// title and content hash) are skipped. It returns the number written.
+// UpsertMany appends documents with one fsync. The last occurrence of each URL
+// wins. Unchanged documents (same title, text and non-empty hash) are skipped.
+// It returns the number of distinct documents written and leaves docs unchanged.
 func (e *Engine) UpsertMany(docs []Document) (int, error) {
+	docs = append([]Document(nil), docs...)
+	last := make(map[string]int, len(docs))
 	maxTextBytes := e.activeTextLimit()
 	for i := range docs {
 		if len(docs[i].Text) > maxTextBytes {
@@ -456,14 +464,21 @@ func (e *Engine) UpsertMany(docs []Document) (int, error) {
 		if err := validDocument(docs[i]); err != nil {
 			return 0, fmt.Errorf("%s: %w", docs[i].URL, err)
 		}
+		last[docs[i].URL] = i
 	}
 	e.mu.Lock()
 	defer e.mu.Unlock()
+	if e.closed {
+		return 0, fmt.Errorf("search index is closed")
+	}
 	var changed []Document
 	added := 0
-	for _, d := range docs {
+	for i, d := range docs {
+		if last[d.URL] != i {
+			continue
+		}
 		old, exists := e.docs[d.URL]
-		if exists && old.SHA256 == d.SHA256 && old.Title == d.Title && d.SHA256 != "" {
+		if exists && old.SHA256 == d.SHA256 && old.Title == d.Title && old.Text == d.Text && d.SHA256 != "" {
 			continue
 		}
 		if !exists {
@@ -498,6 +513,9 @@ func (e *Engine) UpsertMany(docs []Document) (int, error) {
 func (e *Engine) Delete(raw string) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
+	if e.closed {
+		return fmt.Errorf("search index is closed")
+	}
 	if _, ok := e.docs[raw]; !ok {
 		return nil
 	}

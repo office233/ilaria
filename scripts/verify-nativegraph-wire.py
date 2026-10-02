@@ -9,7 +9,6 @@ from pathlib import Path
 import shlex
 import shutil
 import subprocess
-import sys
 import tempfile
 from typing import Sequence
 

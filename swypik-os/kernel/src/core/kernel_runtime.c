@@ -16,6 +16,25 @@ static int swyp_kernel_runtime_ready(const SwypKernelRuntime *runtime) {
     return runtime != NULL && runtime->initialized != 0u;
 }
 
+static int swyp_kernel_runtime_faulted_epoch(const SwypKernelRuntime *runtime, uint64_t domain_id,
+                                             uint64_t lease_fence) {
+    return runtime->driver_fault.version != 0u && runtime->driver_fault.domain_id == domain_id &&
+           runtime->driver_fault.lease_fence == lease_fence;
+}
+
+static const SwypDriverDomain *swyp_kernel_runtime_domain(const SwypKernelRuntime *runtime, uint64_t domain_id,
+                                                          uint64_t lease_fence) {
+    uint32_t i;
+    for (i = 0u; i < SWYP_DRIVER_DOMAIN_CAPACITY; ++i) {
+        const SwypDriverDomain *domain = &runtime->driver_domains.domains[i];
+        if (domain->active != SWYP_DRIVER_DOMAIN_FREE && domain->domain_id == domain_id &&
+            domain->lease_fence == lease_fence) {
+            return domain;
+        }
+    }
+    return NULL;
+}
+
 static void swyp_kernel_runtime_clear_extended_slot(SwypKernelRuntime *runtime, uint32_t index) {
     uint32_t i;
     if (runtime == NULL || index >= SWYP_SCHEDULER_THREAD_CAPACITY) {
@@ -421,6 +440,10 @@ SwypStatus swyp_kernel_runtime_init(SwypKernelRuntime *runtime, SwypPageAllocato
     runtime->scheduler_ready = 0u;
     runtime->driver_continuation_active = 0u;
     runtime->driver_continuation_thread_id = 0u;
+    runtime->fault_thread_id = 0u;
+    runtime->fault_domain_id = 0u;
+    runtime->fault_lease_fence = 0u;
+    runtime->driver_fault = (SwypDriverFaultRecord){0};
     runtime->preemption_timer = NULL;
     runtime->extended_state_context = NULL;
     runtime->extended_state_ops = NULL;
@@ -490,6 +513,9 @@ static SwypStatus swyp_kernel_runtime_open_domain(SwypKernelRuntime *runtime, co
     }
     *out_domain = NULL;
     *out_address_space = NULL;
+    if (swyp_kernel_runtime_faulted_epoch(runtime, domain_id, lease_fence)) {
+        return SWYP_ERR_STALE;
+    }
     status = swyp_x86_64_driver_runtime_open_domain(&runtime->x86_driver_runtime, domain_id, lease_fence,
                                                     &address_space);
     if (status != SWYP_OK) {
@@ -552,6 +578,9 @@ SwypStatus swyp_kernel_runtime_activate_driver_domain(SwypKernelRuntime *runtime
     if (!swyp_kernel_runtime_ready(runtime) || domain_id == 0u || lease_fence == 0u) {
         return SWYP_ERR_INVALID;
     }
+    if (swyp_kernel_runtime_faulted_epoch(runtime, domain_id, lease_fence)) {
+        return SWYP_ERR_STALE;
+    }
     return swyp_x86_64_driver_runtime_activate_domain(&runtime->x86_driver_runtime, domain_id, lease_fence);
 }
 
@@ -563,6 +592,9 @@ SwypStatus swyp_kernel_runtime_load_driver_image(SwypKernelRuntime *runtime, uin
     if (!swyp_kernel_runtime_ready(runtime) || domain_id == 0u || lease_fence == 0u || image == NULL ||
         image_bytes == 0u || initial_context == NULL) {
         return SWYP_ERR_INVALID;
+    }
+    if (swyp_kernel_runtime_faulted_epoch(runtime, domain_id, lease_fence)) {
+        return SWYP_ERR_STALE;
     }
     if (swyp_kernel_runtime_find_image(runtime, domain_id, lease_fence) != NULL) {
         return SWYP_ERR_DENIED;
@@ -646,6 +678,11 @@ SwypStatus swyp_kernel_runtime_close_driver_domain(SwypKernelRuntime *runtime, u
         return runtime_status;
     }
     swyp_kernel_runtime_clear_extended_epoch(runtime, domain_id, lease_fence);
+    if (runtime->fault_domain_id == domain_id && runtime->fault_lease_fence == lease_fence) {
+        runtime->fault_thread_id = 0u;
+        runtime->fault_domain_id = 0u;
+        runtime->fault_lease_fence = 0u;
+    }
     return SWYP_OK;
 }
 
@@ -763,6 +800,9 @@ SwypStatus swyp_kernel_runtime_run_current_driver(SwypKernelRuntime *runtime, Sw
     if (thread == NULL || thread->kind != SWYP_SCHEDULER_THREAD_DRIVER) {
         return SWYP_ERR_DENIED;
     }
+    if (swyp_kernel_runtime_faulted_epoch(runtime, thread->domain_id, thread->lease_fence)) {
+        return SWYP_ERR_STALE;
+    }
     if (runtime->preemption_ready != 0u) {
         SwypX86LoadedDriverImage *image = swyp_kernel_runtime_find_image(runtime, thread->domain_id,
                                                                          thread->lease_fence);
@@ -774,7 +814,9 @@ SwypStatus swyp_kernel_runtime_run_current_driver(SwypKernelRuntime *runtime, Sw
                 runtime->x86_driver_runtime.hardware_context) != space->pml4_physical) {
             return SWYP_ERR_DENIED;
         }
-        status = swyp_x86_user_launch_prepare_interruptible(&thread->context, 1, &launch);
+        status = (thread->context.flags & SWYP_X86_CONTEXT_CAPTURED_USER) != 0u
+                     ? swyp_x86_user_resume_prepare(&thread->context, 1, &launch)
+                     : swyp_x86_user_launch_prepare_interruptible(&thread->context, 1, &launch);
         if (status == SWYP_OK && (!swyp_x86_driver_image_executable_address(image, launch.context.rip) ||
                                   !swyp_x86_driver_image_stack_pointer(image, launch.context.rsp))) {
             status = SWYP_ERR_DENIED;
@@ -818,7 +860,7 @@ SwypStatus swyp_kernel_runtime_run_current_driver(SwypKernelRuntime *runtime, Sw
     runtime->driver_continuation_active = 0u;
     runtime->driver_continuation_thread_id = 0u;
     if (resumed != SWYP_KERNEL_DRIVER_RUN_YIELD && resumed != SWYP_KERNEL_DRIVER_RUN_EXIT &&
-        resumed != SWYP_KERNEL_DRIVER_RUN_PREEMPT) {
+        resumed != SWYP_KERNEL_DRIVER_RUN_PREEMPT && resumed != SWYP_KERNEL_DRIVER_RUN_FAULT) {
         return SWYP_ERR_CORRUPT;
     }
     *reason = (SwypKernelDriverRunReason)resumed;
@@ -840,6 +882,9 @@ SwypStatus swyp_kernel_runtime_prepare_current_driver_launch(SwypKernelRuntime *
         thread->lease_fence == 0u) {
         return SWYP_ERR_DENIED;
     }
+    if (swyp_kernel_runtime_faulted_epoch(runtime, thread->domain_id, thread->lease_fence)) {
+        return SWYP_ERR_STALE;
+    }
     image = swyp_kernel_runtime_find_image(runtime, thread->domain_id, thread->lease_fence);
     if (image == NULL) {
         return SWYP_ERR_NOT_FOUND;
@@ -850,7 +895,9 @@ SwypStatus swyp_kernel_runtime_prepare_current_driver_launch(SwypKernelRuntime *
                              runtime->x86_driver_runtime.hardware_context) != space->pml4_physical) {
         return SWYP_ERR_DENIED;
     }
-    status = swyp_x86_user_launch_prepare(&thread->context, launch);
+    status = (thread->context.flags & SWYP_X86_CONTEXT_CAPTURED_USER) != 0u
+                 ? swyp_x86_user_resume_prepare(&thread->context, 0, launch)
+                 : swyp_x86_user_launch_prepare(&thread->context, launch);
     if (status != SWYP_OK) {
         return status;
     }
@@ -861,7 +908,8 @@ SwypStatus swyp_kernel_runtime_prepare_current_driver_launch(SwypKernelRuntime *
     return SWYP_OK;
 }
 
-SwypStatus swyp_kernel_runtime_capture_current_driver_trap(SwypKernelRuntime *runtime, const SwypX86TrapFrame *frame) {
+static SwypStatus swyp_kernel_runtime_capture_driver_trap(SwypKernelRuntime *runtime, const SwypX86TrapFrame *frame,
+                                                          int terminal) {
     const SwypSchedulerThread *thread;
     SwypX86LoadedDriverImage *image;
     SwypThreadContext updated;
@@ -879,7 +927,8 @@ SwypStatus swyp_kernel_runtime_capture_current_driver_trap(SwypKernelRuntime *ru
         return SWYP_ERR_NOT_FOUND;
     }
     updated = thread->context;
-    status = swyp_x86_user_context_capture_trap(&updated, frame);
+    status = terminal ? swyp_x86_user_context_capture_fault(&updated, frame)
+                      : swyp_x86_user_context_capture_trap(&updated, frame);
     if (status != SWYP_OK) {
         return status;
     }
@@ -899,11 +948,152 @@ SwypStatus swyp_kernel_runtime_capture_current_driver_trap(SwypKernelRuntime *ru
         updated_x86->gs_base = runtime->extended_state_ops->read_gs_base(runtime->extended_state_context);
     }
     context = (const SwypX86_64ThreadContext *)(const void *)updated.storage;
-    if (!swyp_x86_driver_image_executable_address(image, context->rip) ||
-        !swyp_x86_driver_image_stack_pointer(image, context->rsp)) {
+    if (!terminal && (!swyp_x86_driver_image_executable_address(image, context->rip) ||
+                      !swyp_x86_driver_image_stack_pointer(image, context->rsp))) {
         return SWYP_ERR_DENIED;
     }
     return swyp_scheduler_update_current_context(&runtime->scheduler, &updated);
+}
+
+SwypStatus swyp_kernel_runtime_capture_current_driver_trap(SwypKernelRuntime *runtime, const SwypX86TrapFrame *frame) {
+    return swyp_kernel_runtime_capture_driver_trap(runtime, frame, 0);
+}
+
+SwypStatus swyp_kernel_runtime_admit_fault_task(SwypKernelRuntime *runtime, uint64_t thread_id,
+                                                uint64_t domain_id, uint64_t lease_fence) {
+    const SwypSchedulerThread *thread;
+    const SwypDriverDomain *domain;
+    if (!swyp_kernel_runtime_ready(runtime) || runtime->scheduler_ready == 0u || thread_id == 0u ||
+        domain_id == 0u || lease_fence == 0u) {
+        return SWYP_ERR_INVALID;
+    }
+    thread = swyp_scheduler_thread(&runtime->scheduler, thread_id);
+    domain = swyp_kernel_runtime_domain(runtime, domain_id, lease_fence);
+    if (runtime->fault_thread_id != 0u || runtime->driver_fault.version != 0u ||
+        runtime->driver_continuation_active != 0u || runtime->preemption_ready == 0u ||
+        thread == NULL || thread->kind != SWYP_SCHEDULER_THREAD_DRIVER ||
+        thread->state != SWYP_SCHEDULER_STATE_READY || thread->domain_id != domain_id ||
+        thread->lease_fence != lease_fence || domain == NULL || domain->active != SWYP_DRIVER_DOMAIN_ACTIVE ||
+        domain->grant_count != 0u || swyp_kernel_runtime_find_image(runtime, domain_id, lease_fence) == NULL) {
+        return SWYP_ERR_DENIED;
+    }
+    runtime->fault_thread_id = thread_id;
+    runtime->fault_domain_id = domain_id;
+    runtime->fault_lease_fence = lease_fence;
+    return SWYP_OK;
+}
+
+SwypStatus swyp_kernel_runtime_stop_current_driver_fault(SwypKernelRuntime *runtime, const SwypX86TrapFrame *frame,
+                                                         uint64_t fault_address) {
+    const SwypSchedulerThread *thread;
+    const SwypDriverDomain *domain;
+    SwypX86AddressSpace *space;
+    const SwypX86AddressSpaceHardwareOps *ops;
+    SwypX86KernelRoot *root;
+    SwypStatus status;
+    int running_stopped = 0;
+    if (!swyp_kernel_runtime_ready(runtime) || runtime->scheduler_ready == 0u || frame == NULL) {
+        return SWYP_ERR_INVALID;
+    }
+    if (!swyp_x86_trap_from_user(frame) || !swyp_x86_trap_is_task_exception(frame->vector) ||
+        (!swyp_x86_trap_vector_has_error_code((uint32_t)frame->vector) && frame->error_code != 0u) ||
+        (frame->vector == 14u && ((frame->error_code & 4u) == 0u || (frame->error_code & 8u) != 0u)) ||
+        (frame->vector != 14u && fault_address != 0u)) {
+        return SWYP_ERR_DENIED;
+    }
+    thread = swyp_scheduler_current(&runtime->scheduler);
+    if (thread == NULL || thread->kind != SWYP_SCHEDULER_THREAD_DRIVER ||
+        thread->id != runtime->fault_thread_id || thread->domain_id != runtime->fault_domain_id ||
+        thread->lease_fence != runtime->fault_lease_fence || runtime->driver_fault.version != 0u ||
+        runtime->driver_continuation_active == 0u || runtime->driver_continuation_thread_id != thread->id ||
+        runtime->driver_continuation.rsp == 0u || runtime->driver_continuation.rip == 0u ||
+        runtime->preemption_ready == 0u || runtime->preemption_timer == NULL ||
+        runtime->preemption_timer->armed == 0u) {
+        return SWYP_ERR_DENIED;
+    }
+    domain = swyp_kernel_runtime_domain(runtime, thread->domain_id, thread->lease_fence);
+    space = swyp_x86_64_driver_runtime_x86_space(&runtime->x86_driver_runtime, thread->domain_id,
+                                                 thread->lease_fence);
+    ops = runtime->x86_driver_runtime.address_space_hardware_ops;
+    root = runtime->scheduler_address_runtime.kernel_root;
+    if (domain == NULL || domain->active != SWYP_DRIVER_DOMAIN_ACTIVE || domain->grant_count != 0u ||
+        space == NULL || ops == NULL || ops->current_root == NULL || root == NULL ||
+        root->active == 0u || root->failed != 0u || root->pml4_physical == 0u ||
+        ops->current_root(runtime->x86_driver_runtime.hardware_context) != space->pml4_physical) {
+        return SWYP_ERR_DENIED;
+    }
+    status = swyp_kernel_runtime_capture_driver_trap(runtime, frame, 1);
+    if (status != SWYP_OK) {
+        return status;
+    }
+    status = swyp_x86_lapic_timer_disarm(runtime->preemption_timer);
+    if (status != SWYP_OK) {
+        return status;
+    }
+    status = swyp_driver_domain_quiesce(&runtime->driver_domains, thread->domain_id, thread->lease_fence);
+    if (status != SWYP_OK) {
+        return status;
+    }
+    status = swyp_scheduler_stop_driver_epoch(&runtime->scheduler, thread->domain_id, thread->lease_fence,
+                                               &running_stopped);
+    if (status != SWYP_OK || !running_stopped) {
+        return SWYP_ERR_CORRUPT;
+    }
+    status = swyp_scheduler_repatriate_kernel(&runtime->scheduler);
+    if (status != SWYP_OK || ops->current_root(runtime->x86_driver_runtime.hardware_context) != root->pml4_physical) {
+        return SWYP_ERR_CORRUPT;
+    }
+    runtime->driver_fault = (SwypDriverFaultRecord){
+        .version = SWYP_DRIVER_FAULT_RECORD_VERSION, .struct_size = sizeof(SwypDriverFaultRecord),
+        .thread_id = thread->id, .domain_id = thread->domain_id, .lease_fence = thread->lease_fence,
+        .vector = frame->vector, .error_code = frame->error_code, .address = fault_address,
+        .rip = frame->rip, .cs = frame->cs, .kernel_cr3 = root->pml4_physical, .status = SWYP_ERR_FAULT
+    };
+    runtime->fault_thread_id = 0u;
+    runtime->fault_domain_id = 0u;
+    runtime->fault_lease_fence = 0u;
+    return SWYP_OK;
+}
+
+SwypStatus swyp_kernel_runtime_validate_fault_cleanup(const SwypKernelRuntime *runtime) {
+    uint32_t i;
+    const SwypDriverFaultRecord *fault;
+    const SwypX86AddressSpaceHardwareOps *ops;
+    if (!swyp_kernel_runtime_ready(runtime)) {
+        return SWYP_ERR_INVALID;
+    }
+    fault = &runtime->driver_fault;
+    ops = runtime->x86_driver_runtime.address_space_hardware_ops;
+    if (fault->version != SWYP_DRIVER_FAULT_RECORD_VERSION || fault->struct_size != sizeof(*fault) ||
+        fault->status != SWYP_ERR_FAULT || runtime->driver_continuation_active != 0u ||
+        runtime->driver_continuation_thread_id != 0u || runtime->fault_thread_id != 0u ||
+        runtime->fault_domain_id != 0u || runtime->fault_lease_fence != 0u ||
+        runtime->preemption_timer == NULL || runtime->preemption_timer->armed != 0u ||
+        runtime->scheduler.current_index != SWYP_SCHEDULER_NO_THREAD ||
+        ops == NULL || ops->current_root == NULL || fault->kernel_cr3 == 0u ||
+        fault->kernel_cr3 != runtime->x86_driver_runtime.kernel_pml4_physical ||
+        ops->current_root(runtime->x86_driver_runtime.hardware_context) != fault->kernel_cr3 ||
+        swyp_kernel_runtime_domain(runtime, fault->domain_id, fault->lease_fence) != NULL) {
+        return SWYP_ERR_CORRUPT;
+    }
+    for (i = 0u; i < SWYP_SCHEDULER_THREAD_CAPACITY; ++i) {
+        const SwypSchedulerThread *thread = &runtime->scheduler.threads[i];
+        if ((thread->state != SWYP_SCHEDULER_STATE_FREE && thread->domain_id == fault->domain_id &&
+             thread->lease_fence == fault->lease_fence) ||
+            (runtime->extended_states[i].active != 0u && runtime->extended_states[i].domain_id == fault->domain_id &&
+             runtime->extended_states[i].lease_fence == fault->lease_fence)) {
+            return SWYP_ERR_CORRUPT;
+        }
+    }
+    for (i = 0u; i < SWYP_X86_DRIVER_RUNTIME_DOMAIN_CAPACITY; ++i) {
+        const SwypX86DriverDomainRuntime *domain = &runtime->x86_driver_runtime.domains[i];
+        const SwypX86LoadedDriverImage *image = &runtime->driver_images[i];
+        if ((domain->active != 0u && domain->domain_id == fault->domain_id && domain->lease_fence == fault->lease_fence) ||
+            (image->active != 0u && image->domain_id == fault->domain_id && image->lease_fence == fault->lease_fence)) {
+            return SWYP_ERR_CORRUPT;
+        }
+    }
+    return SWYP_OK;
 }
 
 void swyp_kernel_runtime_enter_current_driver(SwypKernelRuntime *runtime) {

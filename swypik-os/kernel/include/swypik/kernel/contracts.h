@@ -24,7 +24,8 @@ enum {
     SWYP_BOOT_FLAG_INIT_EXITED = UINT64_C(1) << 14,
     SWYP_BOOT_FLAG_INIT_CLEANED = UINT64_C(1) << 15,
     SWYP_BOOT_FLAG_INIT_FAILED = UINT64_C(1) << 16,
-    SWYP_BOOT_FLAG_RUNTIME_HANDOFF_VALIDATED = UINT64_C(1) << 17
+    SWYP_BOOT_FLAG_RUNTIME_HANDOFF_VALIDATED = UINT64_C(1) << 17,
+    SWYP_BOOT_FLAG_INIT_FAULTED = UINT64_C(1) << 18
 };
 
 typedef enum SwypFirmwareKind {
@@ -64,6 +65,27 @@ typedef struct SwypPhysicalMemoryMap {
     uint64_t firmware_map_key;
 } SwypPhysicalMemoryMap;
 
+#define SWYP_DRIVER_FAULT_RECORD_VERSION 1u
+
+typedef struct SwypDriverFaultRecord {
+    uint32_t version;
+    uint32_t struct_size;
+    uint64_t thread_id;
+    uint64_t domain_id;
+    uint64_t lease_fence;
+    uint64_t vector;
+    uint64_t error_code;
+    uint64_t address; /* CR2 for #PF, zero for other exceptions. */
+    uint64_t rip;
+    uint64_t cs;
+    uint64_t kernel_cr3;
+    SwypStatus status;
+    uint32_t reserved0;
+} SwypDriverFaultRecord;
+
+_Static_assert(sizeof(SwypDriverFaultRecord) == 88u, "driver fault record size changed");
+_Static_assert(offsetof(SwypDriverFaultRecord, status) == 80u, "driver fault status offset changed");
+
 typedef struct SwypBootInfo {
     uint64_t magic;
     uint32_t abi_version;
@@ -86,11 +108,14 @@ typedef struct SwypBootInfo {
     uint64_t init_preemptions;
     uint64_t init_exit_code;
     uint64_t init_observed_domain;
+    SwypDriverFaultRecord init_fault;
 } SwypBootInfo;
 
 _Static_assert(offsetof(SwypBootInfo, boot_flags) == 160u, "boot evidence prefix changed");
 _Static_assert(offsetof(SwypBootInfo, init_image_address) == 168u, "init evidence layout changed");
-_Static_assert(sizeof(SwypBootInfo) == 232u, "init evidence size changed");
+_Static_assert(offsetof(SwypBootInfo, init_observed_domain) == 224u, "init evidence suffix changed");
+_Static_assert(offsetof(SwypBootInfo, init_fault) == 232u, "init fault evidence offset changed");
+_Static_assert(sizeof(SwypBootInfo) == 320u, "init evidence size changed");
 
 typedef struct SwypPageAllocatorOps {
     SwypStatus (*allocate)(void *context, uint64_t page_count, uint64_t alignment_pages, uint64_t *physical_address);

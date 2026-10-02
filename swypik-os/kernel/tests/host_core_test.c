@@ -698,6 +698,7 @@ typedef struct FakeX86Hardware {
     uint64_t last_invalidated;
     uint32_t activations;
     uint32_t invalidations;
+    uint32_t fail_activate_once;
 } FakeX86Hardware;
 
 static uint64_t fake_x86_page_physical(uint32_t index) {
@@ -786,6 +787,10 @@ static SwypStatus fake_x86_activate_root(void *context, uint64_t pml4_physical) 
     if (hardware == NULL || hardware->pool == NULL || !fake_x86_page_index(pml4_physical, &index) ||
         hardware->pool->used[index] == 0u) {
         return SWYP_ERR_INVALID;
+    }
+    if (hardware->fail_activate_once != 0u) {
+        hardware->fail_activate_once = 0u;
+        return SWYP_ERR_CORRUPT;
     }
     hardware->current_root = pml4_physical;
     hardware->activations += 1u;
@@ -1342,6 +1347,7 @@ typedef struct FakeApicHardware {
     uint64_t tsc;
     uint64_t tsc_deadline;
     uint32_t tsc_deadline_writes;
+    uint32_t fail_lapic_once;
 } FakeApicHardware;
 
 static SwypStatus fake_apic_ioapic_read(void *context, uint32_t reg, uint32_t *value) {
@@ -1372,6 +1378,10 @@ static SwypStatus fake_apic_lapic_write(void *context, uint32_t offset, uint32_t
     FakeApicHardware *hardware = (FakeApicHardware *)context;
     if (hardware == NULL) {
         return SWYP_ERR_INVALID;
+    }
+    if (hardware->fail_lapic_once != 0u) {
+        hardware->fail_lapic_once = 0u;
+        return SWYP_ERR_CORRUPT;
     }
     hardware->lapic_writes += 1u;
     hardware->last_lapic_offset = offset;
@@ -1514,6 +1524,43 @@ static void test_x86_lapic_timer_modes(void) {
     CHECK(swyp_x86_lapic_timer_arm_periodic(&timer) == SWYP_OK);
     CHECK(timer.armed != 0u && hardware.lapic_writes == 4u && hardware.last_lapic_offset == 0x320u);
     CHECK(swyp_x86_lapic_timer_disarm(&timer) == SWYP_OK && timer.armed == 0u);
+}
+
+static void test_x86_user_stack_resume(void) {
+    SwypThreadContext context = {.abi_version = SWYP_KERNEL_ABI_VERSION, .struct_size = sizeof(SwypThreadContext),
+                                 .arch = SWYP_ARCH_X86_64, .used_bytes = sizeof(SwypX86_64ThreadContext)};
+    SwypX86_64ThreadContext *x86 = (SwypX86_64ThreadContext *)(void *)context.storage;
+    SwypX86UserLaunch launch;
+    struct {
+        SwypX86TrapFrame frame;
+        uint64_t rsp, ss;
+    } trap = {0};
+    x86->rip = SWYP_X86_DRIVER_IMAGE_BASE;
+    x86->rsp = SWYP_X86_DRIVER_STACK_TOP - 8u;
+    x86->rflags = SWYP_X86_RFLAGS_FIXED;
+    CHECK(swyp_x86_user_launch_prepare_interruptible(&context, 1, &launch) == SWYP_ERR_INVALID);
+    CHECK(swyp_x86_user_resume_prepare(&context, 1, &launch) == SWYP_ERR_INVALID);
+    trap.frame.rip = x86->rip;
+    trap.frame.cs = SWYP_X86_SELECTOR_USER_CODE;
+    trap.frame.rflags = SWYP_X86_RFLAGS_FIXED | SWYP_X86_RFLAGS_IF;
+    trap.rsp = x86->rsp;
+    trap.ss = SWYP_X86_SELECTOR_USER_DATA;
+    CHECK(swyp_x86_user_context_capture_trap(&context, &trap.frame) == SWYP_OK);
+    CHECK((context.flags & SWYP_X86_CONTEXT_CAPTURED_USER) != 0u);
+    CHECK(swyp_x86_user_launch_prepare_interruptible(&context, 1, &launch) == SWYP_ERR_INVALID);
+    CHECK(swyp_x86_user_resume_prepare(&context, 1, &launch) == SWYP_OK);
+    CHECK(launch.context.rsp == trap.rsp && (launch.context.rflags & SWYP_X86_RFLAGS_IF) != 0u);
+    CHECK(swyp_x86_user_launch_validate(&launch) == SWYP_ERR_INVALID);
+    trap.rsp = SWYP_X86_DRIVER_STACK_TOP - 1u;
+    CHECK(swyp_x86_user_context_capture_trap(&context, &trap.frame) == SWYP_OK);
+    CHECK(swyp_x86_user_resume_prepare(&context, 1, &launch) == SWYP_OK);
+    trap.rsp = UINT64_C(0xffff800000000000);
+    CHECK(swyp_x86_user_context_capture_trap(&context, &trap.frame) == SWYP_ERR_DENIED);
+    trap.rsp = 0u;
+    CHECK(swyp_x86_user_context_capture_trap(&context, &trap.frame) == SWYP_ERR_DENIED);
+    CHECK(swyp_x86_user_context_capture_fault(&context, &trap.frame) == SWYP_OK);
+    CHECK((context.flags & SWYP_X86_CONTEXT_CAPTURED_USER) == 0u);
+    CHECK(swyp_x86_user_resume_prepare(&context, 1, &launch) == SWYP_ERR_INVALID);
 }
 
 static void test_x86_apic(void) {
@@ -3033,6 +3080,10 @@ static void test_x86_driver_image_parser_and_loader(void) {
     x86_context = (SwypX86_64ThreadContext *)(void *)initial_context.storage;
     CHECK(x86_context->rip == loaded.entry_address && x86_context->rsp == SWYP_X86_DRIVER_STACK_TOP &&
           x86_context->rflags == SWYP_X86_DRIVER_INITIAL_RFLAGS);
+    CHECK(swyp_x86_driver_image_stack_pointer(&loaded, SWYP_X86_DRIVER_STACK_TOP - 8u));
+    CHECK(swyp_x86_driver_image_stack_pointer(&loaded, SWYP_X86_DRIVER_STACK_TOP - 1u));
+    CHECK(!swyp_x86_driver_image_stack_pointer(&loaded, SWYP_X86_DRIVER_STACK_TOP + 1u));
+    CHECK(!swyp_x86_driver_image_stack_pointer(&loaded, SWYP_X86_DRIVER_STACK_TOP - 2u * SWYP_X86_64_PAGE_SIZE));
 
     space = swyp_x86_64_driver_runtime_x86_space(&runtime, 700u, 11u);
     CHECK(space != NULL);
@@ -3804,7 +3855,7 @@ static void test_kernel_runtime_driver_domain_lifecycle(void) {
     user_trap->rip = driver_x86_context->rip + 1u;
     user_trap->cs = SWYP_X86_SELECTOR_USER_CODE;
     user_trap->rflags = SWYP_X86_RFLAGS_FIXED | SWYP_X86_RFLAGS_IOPL_MASK | SWYP_X86_RFLAGS_NT;
-    user_tail[0] = SWYP_X86_DRIVER_STACK_TOP - UINT64_C(0x10);
+    user_tail[0] = SWYP_X86_DRIVER_STACK_TOP - UINT64_C(0x18);
     user_tail[1] = SWYP_X86_SELECTOR_USER_DATA;
     memset(&extended_hardware.hardware_fx, UINT8_C(0xa5), sizeof(extended_hardware.hardware_fx));
     extended_hardware.fs_base = UINT64_C(0x12345000);
@@ -3816,7 +3867,7 @@ static void test_kernel_runtime_driver_domain_lifecycle(void) {
           launch.context.rcx == UINT64_C(0x33) && launch.context.rdx == UINT64_C(0x44));
     CHECK(launch.context.r8 == UINT64_C(0x88) && launch.context.r15 == UINT64_C(0xff));
     CHECK(launch.context.rip == driver_x86_context->rip + 1u &&
-          launch.context.rsp == SWYP_X86_DRIVER_STACK_TOP - UINT64_C(0x10));
+          launch.context.rsp == SWYP_X86_DRIVER_STACK_TOP - UINT64_C(0x18));
     CHECK((launch.context.rflags & SWYP_X86_RFLAGS_IOPL_MASK) == 0u &&
           (launch.context.rflags & SWYP_X86_RFLAGS_NT) == 0u &&
           (launch.context.rflags & SWYP_X86_RFLAGS_IF) == 0u);
@@ -3911,6 +3962,46 @@ static void test_kernel_runtime_driver_domain_lifecycle(void) {
     CHECK(launch.context.rax == UINT64_C(0x6161));
     CHECK(launch.context.rip == driver_x86_context->rip + 4u);
 
+    /* A preempting deadline tick skips the in-frame rearm. Each new launch
+       disarms/rearms through the continuation path; nonpreempting ticks
+       rearm in timer dispatch itself. Exercise both paths repeatedly. */
+    CHECK(swyp_x86_lapic_timer_init_tsc_deadline(&timer, &timer_hardware, &fake_timer_hardware_ops,
+                                                 100u, NULL, NULL) == SWYP_OK);
+    CHECK(swyp_kernel_runtime_bind_preemption_timer(&runtime, &timer, &syscall_privilege) == SWYP_OK);
+    {
+        uint32_t cycle;
+        for (cycle = 0u; cycle < 3u; ++cycle) {
+            uint64_t deadline;
+            timer_hardware.tsc = 1000u + (uint64_t)cycle * 1000u;
+            CHECK(swyp_x86_lapic_timer_arm_periodic(&timer) == SWYP_OK);
+            CHECK(timer_hardware.tsc_deadline == timer_hardware.tsc + 100u);
+            runtime.driver_continuation_active = 1u;
+            runtime.driver_continuation_thread_id = 2u;
+            user_trap->vector = SWYP_X86_TIMER_VECTOR;
+            user_trap->rflags = SWYP_X86_RFLAGS_FIXED | SWYP_X86_RFLAGS_IF;
+            user_trap->rip = launch.context.rip;
+            user_tail[0] = SWYP_X86_DRIVER_STACK_TOP - 24u;
+            timer_hardware.tsc += 200u;
+            swyp_x86_lapic_timer_dispatch(user_trap);
+            CHECK(timer_hardware.tsc_deadline == timer_hardware.tsc + 100u);
+            deadline = timer_hardware.tsc_deadline;
+            preempt_reason = swyp_x86_kernel_continuation_capture(&runtime.driver_continuation);
+            if (preempt_reason == 0) {
+                swyp_x86_lapic_timer_dispatch(user_trap);
+                CHECK(0 && "deadline preemption unexpectedly returned");
+            }
+            runtime.driver_continuation_active = 0u;
+            runtime.driver_continuation_thread_id = 0u;
+            CHECK(preempt_reason == SWYP_KERNEL_DRIVER_RUN_PREEMPT);
+            CHECK(timer_hardware.tsc_deadline == deadline && hardware.current_root == kernel_root.pml4_physical);
+            CHECK(swyp_x86_lapic_timer_disarm(&timer) == SWYP_OK && timer_hardware.tsc_deadline == 0u);
+            CHECK(swyp_scheduler_dispatch(scheduler, &thread_id) == SWYP_OK && thread_id == 1u);
+            CHECK(swyp_scheduler_dispatch(scheduler, &thread_id) == SWYP_OK && thread_id == 2u);
+            CHECK(swyp_x86_user_resume_prepare(&swyp_scheduler_current(scheduler)->context, 1, &launch) == SWYP_OK);
+            CHECK(launch.context.rsp == user_tail[0] && (launch.context.rflags & SWYP_X86_RFLAGS_IF) != 0u);
+        }
+    }
+
     broker = swyp_kernel_runtime_device_broker(&runtime);
     CHECK(broker != NULL);
     CHECK(swyp_device_broker_bind_irq(broker, 700u, 11u, domain->grants[1], &irq_binding) == SWYP_OK);
@@ -3995,6 +4086,229 @@ static void test_kernel_runtime_driver_domain_lifecycle(void) {
     hardware.current_root = 0u;
     CHECK(swyp_x86_64_kernel_root_destroy(&kernel_root) == SWYP_OK);
     CHECK(fake_x86_used_pages(&pool) == 0u);
+}
+
+static void test_kernel_runtime_task_faults(void) {
+    static FakeX86PagePool pool;
+    static SwypKernelRuntime runtime;
+    uint32_t mode;
+    for (mode = 0u; mode < 7u; ++mode) {
+        uint8_t image[0x200];
+        FakeX86Hardware hardware = {.pool = &pool};
+        SwypPageAllocator allocator = {.context = &pool, .ops = &fake_x86_allocator_ops};
+        FakePlatformRuntime interrupts = {0};
+        SwypX86KernelRoot root;
+        SwypDeviceGraph graph;
+        SwypDeviceNode node = {.id = 1u, .device_class = SWYP_DEVICE_CLASS_COMPUTE, .bus = SWYP_DEVICE_BUS_PLATFORM};
+        const SwypDriverDomain *domain = NULL;
+        SwypAddressSpace *space = NULL;
+        SwypThreadContext initial;
+        SwypX86UserLaunch launch;
+        SwypX86PrivilegeState privilege;
+        FakeApicHardware timer_hardware = {0};
+        SwypX86LapicTimer timer;
+        FakeExtendedStateHardware extended = {0};
+        SwypX86FatalTrapRecord fatal = {0};
+        struct {
+            SwypX86TrapFrame frame;
+            uint64_t rsp, ss;
+        } trap = {0};
+        uint64_t selected = 0u, driver_root;
+        uint64_t fault_address = mode == 1u || mode == 4u ? UINT64_C(0xffffc00000001000) : 0u;
+        uint32_t kernel_pages;
+        volatile int64_t resumed = 0;
+        SwypBootInfo boot_info;
+        memset(&pool, 0, sizeof(pool));
+        interrupts.interrupts.context = &interrupts;
+        interrupts.interrupts.ops = &fake_platform_interrupt_ops;
+        build_test_driver_image(image, sizeof(image));
+        swyp_device_graph_init(&graph);
+        CHECK(swyp_device_graph_add_node(&graph, &node) == SWYP_OK);
+        CHECK(swyp_x86_64_kernel_root_init(&root, &allocator, &hardware, &fake_x86_hardware_ops,
+                                           SWYP_X86_64_DIRECT_MAP_BASE, UINT64_C(0x40000000)) == SWYP_OK);
+        CHECK(swyp_x86_64_kernel_root_map_identity(&root, UINT64_C(0x200000), SWYP_X86_64_PAGE_SIZE,
+                                                   SWYP_MMU_READ | SWYP_MMU_EXECUTE | SWYP_MMU_GLOBAL, 0) == SWYP_OK);
+        CHECK(swyp_x86_64_kernel_root_activate(&root) == SWYP_OK);
+        kernel_pages = fake_x86_used_pages(&pool);
+        CHECK(swyp_kernel_runtime_init(&runtime, &allocator, &hardware, &fake_x86_hardware_ops,
+                                       &interrupts.interrupts, NULL, NULL) == SWYP_OK);
+        CHECK(swyp_kernel_runtime_bind_kernel_root(&runtime, &root) == SWYP_OK);
+        CHECK(swyp_kernel_runtime_bind_extended_state(&runtime, &extended, &fake_extended_state_ops) == SWYP_OK);
+        CHECK(swyp_kernel_runtime_open_compute_domain(&runtime, &graph, 1u, 1u, 1u, &domain, &space) == SWYP_OK);
+        CHECK(domain != NULL && domain->grant_count == 0u);
+        CHECK(swyp_kernel_runtime_load_driver_image(&runtime, 1u, 1u, image, sizeof(image), 2u, &initial) == SWYP_OK);
+        CHECK(swyp_scheduler_add_thread(&runtime.scheduler, 1u, SWYP_SCHEDULER_THREAD_DRIVER,
+                                        1u, 1u, &initial) == SWYP_OK);
+        CHECK(swyp_scheduler_add_thread(&runtime.scheduler, 2u, SWYP_SCHEDULER_THREAD_DRIVER,
+                                        1u, 1u, &initial) == SWYP_OK);
+        CHECK(swyp_x86_privilege_init(&privilege, UINT64_C(0x700000)) == SWYP_OK);
+        CHECK(swyp_x86_lapic_timer_init(&timer, &timer_hardware, &fake_timer_hardware_ops,
+                                       1000u, 3u, NULL, NULL) == SWYP_OK);
+        CHECK(swyp_kernel_runtime_bind_preemption_timer(&runtime, &timer, &privilege) == SWYP_OK);
+        CHECK(swyp_kernel_runtime_admit_fault_task(&runtime, 1u, 2u, 1u) == SWYP_ERR_DENIED);
+        CHECK(swyp_kernel_runtime_admit_fault_task(&runtime, 1u, 1u, 2u) == SWYP_ERR_DENIED);
+        CHECK(swyp_kernel_runtime_admit_fault_task(&runtime, 1u, 1u, 1u) == SWYP_OK);
+        CHECK(swyp_kernel_runtime_admit_fault_task(&runtime, 1u, 1u, 1u) == SWYP_ERR_DENIED);
+        CHECK(swyp_scheduler_dispatch(&runtime.scheduler, &selected) == SWYP_OK && selected == 1u);
+        driver_root = hardware.current_root;
+        CHECK(swyp_kernel_runtime_restore_current_driver_extended_state(&runtime) == SWYP_OK);
+        CHECK(swyp_kernel_runtime_prepare_current_driver_launch(&runtime, &launch) == SWYP_OK);
+        CHECK(swyp_x86_lapic_timer_arm_periodic(&timer) == SWYP_OK);
+        trap.frame.cs = SWYP_X86_SELECTOR_USER_CODE;
+        trap.frame.rip = mode == 4u ? fault_address : launch.context.rip;
+        trap.frame.rflags = SWYP_X86_RFLAGS_FIXED | SWYP_X86_RFLAGS_IF;
+        trap.frame.vector = mode == 1u || mode == 4u ? 14u : mode == 2u ? 13u : 6u;
+        trap.frame.error_code = mode == 1u || mode == 4u ? 5u : 0u;
+        trap.frame.rax = 42u;
+        trap.rsp = mode == 3u ? 1u : launch.context.rsp;
+        trap.ss = SWYP_X86_SELECTOR_USER_DATA;
+        resumed = swyp_x86_kernel_continuation_capture(&runtime.driver_continuation);
+        if (resumed == 0) {
+            runtime.driver_continuation_active = 1u;
+            runtime.driver_continuation_thread_id = 1u;
+            if (mode == 0u) {
+                uint32_t i;
+                const uint32_t fatal_vectors[] = {2u, 8u, 18u, 7u, 15u, 29u, 30u, 31u, 32u};
+                trap.frame.cs = SWYP_X86_SELECTOR_KERNEL_CODE;
+                CHECK(swyp_kernel_runtime_stop_current_driver_fault(&runtime, &trap.frame, 0u) == SWYP_ERR_DENIED);
+                CHECK(swyp_x86_trap_record_fatal(&fatal, &trap.frame) == SWYP_ERR_CORRUPT && fatal.sequence == 1u);
+                trap.frame.cs = SWYP_X86_SELECTOR_USER_CODE;
+                for (i = 0u; i < sizeof(fatal_vectors) / sizeof(fatal_vectors[0]); ++i) {
+                    trap.frame.vector = fatal_vectors[i];
+                    CHECK(swyp_kernel_runtime_stop_current_driver_fault(&runtime, &trap.frame, 0u) == SWYP_ERR_DENIED);
+                }
+                trap.frame.vector = 6u;
+                runtime.driver_continuation_active = 0u;
+                CHECK(swyp_kernel_runtime_stop_current_driver_fault(&runtime, &trap.frame, 0u) == SWYP_ERR_DENIED);
+                runtime.driver_continuation_active = 1u;
+                runtime.driver_continuation_thread_id = 2u;
+                CHECK(swyp_kernel_runtime_stop_current_driver_fault(&runtime, &trap.frame, 0u) == SWYP_ERR_DENIED);
+                runtime.driver_continuation_thread_id = 1u;
+                runtime.fault_thread_id = 2u;
+                CHECK(swyp_kernel_runtime_stop_current_driver_fault(&runtime, &trap.frame, 0u) == SWYP_ERR_DENIED);
+                runtime.fault_thread_id = 1u;
+                runtime.fault_domain_id = 2u;
+                CHECK(swyp_kernel_runtime_stop_current_driver_fault(&runtime, &trap.frame, 0u) == SWYP_ERR_DENIED);
+                runtime.fault_domain_id = 1u;
+                runtime.fault_lease_fence = 2u;
+                CHECK(swyp_kernel_runtime_stop_current_driver_fault(&runtime, &trap.frame, 0u) == SWYP_ERR_DENIED);
+                runtime.fault_lease_fence = 1u;
+                runtime.driver_domains.domains[0].active = SWYP_DRIVER_DOMAIN_QUIESCED;
+                CHECK(swyp_kernel_runtime_stop_current_driver_fault(&runtime, &trap.frame, 0u) == SWYP_ERR_DENIED);
+                runtime.driver_domains.domains[0].active = SWYP_DRIVER_DOMAIN_ACTIVE;
+                runtime.driver_domains.domains[0].grant_count = 1u;
+                CHECK(swyp_kernel_runtime_stop_current_driver_fault(&runtime, &trap.frame, 0u) == SWYP_ERR_DENIED);
+                runtime.driver_domains.domains[0].grant_count = 0u;
+                hardware.current_root = root.pml4_physical;
+                CHECK(swyp_kernel_runtime_stop_current_driver_fault(&runtime, &trap.frame, 0u) == SWYP_ERR_DENIED);
+                hardware.current_root = driver_root;
+                trap.ss = SWYP_X86_SELECTOR_KERNEL_DATA;
+                CHECK(swyp_kernel_runtime_stop_current_driver_fault(&runtime, &trap.frame, 0u) == SWYP_ERR_DENIED);
+                trap.ss = SWYP_X86_SELECTOR_USER_DATA;
+                trap.frame.error_code = 1u;
+                CHECK(swyp_kernel_runtime_stop_current_driver_fault(&runtime, &trap.frame, 0u) == SWYP_ERR_DENIED);
+                trap.frame.vector = 14u;
+                CHECK(swyp_kernel_runtime_stop_current_driver_fault(&runtime, &trap.frame, 0u) == SWYP_ERR_DENIED);
+                trap.frame.error_code = 13u; /* Reserved page-table bits are a system defect. */
+                CHECK(swyp_kernel_runtime_stop_current_driver_fault(&runtime, &trap.frame, 0u) == SWYP_ERR_DENIED);
+                trap.frame.vector = 6u;
+                trap.frame.error_code = 0u;
+                CHECK(swyp_kernel_runtime_stop_current_driver_fault(&runtime, &trap.frame, 1u) == SWYP_ERR_DENIED);
+                CHECK(runtime.driver_fault.version == 0u && timer.armed == 1u);
+                CHECK(swyp_scheduler_current(&runtime.scheduler)->id == 1u);
+            }
+            if (mode == 5u || mode == 6u) {
+                if (mode == 5u) {
+                    timer_hardware.fail_lapic_once = 1u;
+                } else {
+                    hardware.fail_activate_once = 1u;
+                }
+                CHECK(swyp_kernel_runtime_stop_current_driver_fault(&runtime, &trap.frame, fault_address) ==
+                      SWYP_ERR_CORRUPT);
+                CHECK(runtime.driver_fault.version == 0u);
+                CHECK(swyp_x86_trap_record_fatal(&fatal, &trap.frame) == SWYP_ERR_CORRUPT);
+                CHECK(swyp_kernel_runtime_validate_fault_cleanup(&runtime) == SWYP_ERR_CORRUPT);
+                runtime.driver_continuation_active = 0u;
+                runtime.driver_continuation_thread_id = 0u;
+                CHECK(swyp_x86_lapic_timer_disarm(&timer) == SWYP_OK);
+                /* Host-only recovery to release the fixture after the native
+                   handler would have taken the non-returning fatal path. */
+                if (mode == 6u) {
+                    CHECK(swyp_scheduler_repatriate_kernel(&runtime.scheduler) == SWYP_OK);
+                }
+                CHECK(swyp_kernel_runtime_close_driver_domain(&runtime, 1u, 1u) == SWYP_OK);
+                hardware.current_root = 0u;
+                CHECK(swyp_x86_64_kernel_root_destroy(&root) == SWYP_OK);
+                CHECK(fake_x86_used_pages(&pool) == 0u);
+                continue;
+            }
+            CHECK(swyp_kernel_runtime_stop_current_driver_fault(&runtime, &trap.frame, fault_address) == SWYP_OK);
+            CHECK(swyp_kernel_runtime_validate_fault_cleanup(&runtime) == SWYP_ERR_CORRUPT);
+            swyp_x86_kernel_continuation_resume(&runtime.driver_continuation, SWYP_KERNEL_DRIVER_RUN_FAULT);
+        }
+        runtime.driver_continuation_active = 0u;
+        runtime.driver_continuation_thread_id = 0u;
+        CHECK(resumed == SWYP_KERNEL_DRIVER_RUN_FAULT);
+        CHECK(timer.armed == 0u && hardware.current_root == root.pml4_physical);
+        CHECK(swyp_scheduler_current(&runtime.scheduler) == NULL);
+        CHECK(swyp_scheduler_thread(&runtime.scheduler, 1u)->state == SWYP_SCHEDULER_STATE_STOPPED);
+        CHECK(swyp_scheduler_thread(&runtime.scheduler, 2u)->state == SWYP_SCHEDULER_STATE_STOPPED);
+        CHECK(swyp_scheduler_make_ready(&runtime.scheduler, 1u) == SWYP_ERR_INVALID);
+        CHECK(swyp_scheduler_dispatch(&runtime.scheduler, &selected) == SWYP_ERR_NOT_FOUND);
+        CHECK(swyp_kernel_runtime_stop_current_driver_fault(&runtime, &trap.frame, fault_address) == SWYP_ERR_DENIED);
+        CHECK(swyp_kernel_runtime_admit_fault_task(&runtime, 1u, 1u, 1u) == SWYP_ERR_DENIED);
+        CHECK(runtime.driver_fault.version == 1u && runtime.driver_fault.struct_size == 88u);
+        CHECK(runtime.driver_fault.thread_id == 1u && runtime.driver_fault.domain_id == 1u &&
+              runtime.driver_fault.lease_fence == 1u && runtime.driver_fault.cs == SWYP_X86_SELECTOR_USER_CODE);
+        CHECK(runtime.driver_fault.vector == trap.frame.vector && runtime.driver_fault.error_code == trap.frame.error_code);
+        CHECK(runtime.driver_fault.address == fault_address && runtime.driver_fault.rip == trap.frame.rip);
+        CHECK(runtime.driver_fault.status == SWYP_ERR_FAULT && runtime.driver_fault.kernel_cr3 == hardware.current_root);
+        CHECK(((const SwypX86_64ThreadContext *)(const void *)
+               swyp_scheduler_thread(&runtime.scheduler, 1u)->context.storage)->rsp == trap.rsp);
+        CHECK(swyp_kernel_runtime_activate_driver_domain(&runtime, 1u, 1u) == SWYP_ERR_STALE);
+        CHECK(swyp_kernel_runtime_close_driver_domain(&runtime, 1u, 1u) == SWYP_OK);
+        CHECK(swyp_kernel_runtime_validate_fault_cleanup(&runtime) == SWYP_OK);
+        swyp_boot_info_init(&boot_info, SWYP_ARCH_X86_64, SWYP_FIRMWARE_UEFI, 0u);
+        boot_info.physical_memory.source = SWYP_MEMORY_MAP_UEFI;
+        boot_info.boot_flags = (UINT64_C(1) << 10) - 1u;
+        boot_info.boot_flags |= SWYP_BOOT_FLAG_INIT_IMAGE_READY | SWYP_BOOT_FLAG_INIT_FAULTED |
+                                SWYP_BOOT_FLAG_INIT_FAILED | SWYP_BOOT_FLAG_INIT_CLEANED;
+        boot_info.init_status = SWYP_ERR_FAULT;
+        boot_info.init_fault = runtime.driver_fault;
+        CHECK(swyp_kernel_validate_runtime_handoff(&boot_info, &allocator, &runtime) == SWYP_OK);
+        boot_info.boot_flags &= ~SWYP_BOOT_FLAG_INIT_CLEANED;
+        CHECK(swyp_kernel_validate_runtime_handoff(&boot_info, &allocator, &runtime) == SWYP_ERR_CORRUPT);
+        boot_info.boot_flags |= SWYP_BOOT_FLAG_INIT_CLEANED | SWYP_BOOT_FLAG_INIT_EXITED;
+        CHECK(swyp_kernel_validate_runtime_handoff(&boot_info, &allocator, &runtime) == SWYP_ERR_CORRUPT);
+        boot_info.boot_flags &= ~SWYP_BOOT_FLAG_INIT_EXITED;
+        boot_info.init_status = SWYP_OK;
+        CHECK(swyp_kernel_validate_runtime_handoff(&boot_info, &allocator, &runtime) == SWYP_ERR_CORRUPT);
+        boot_info.init_status = SWYP_ERR_FAULT;
+        boot_info.init_fault.address ^= 1u;
+        CHECK(swyp_kernel_validate_runtime_handoff(&boot_info, &allocator, &runtime) == SWYP_ERR_CORRUPT);
+        boot_info.init_fault = runtime.driver_fault;
+        boot_info.boot_flags &= ~SWYP_BOOT_FLAG_INIT_FAULTED;
+        CHECK(swyp_kernel_validate_runtime_handoff(&boot_info, &allocator, &runtime) == SWYP_ERR_CORRUPT);
+        CHECK(swyp_scheduler_thread(&runtime.scheduler, 1u) == NULL &&
+              swyp_scheduler_thread(&runtime.scheduler, 2u) == NULL);
+        CHECK(swyp_kernel_runtime_unload_driver_image(&runtime, 1u, 1u) == SWYP_ERR_NOT_FOUND);
+        CHECK(swyp_x86_64_driver_runtime_x86_space(&runtime.x86_driver_runtime, 1u, 1u) == NULL);
+        CHECK(fake_x86_used_pages(&pool) == kernel_pages);
+        CHECK(swyp_kernel_runtime_open_compute_domain(&runtime, &graph, 1u, 1u, 1u, &domain, &space) == SWYP_ERR_STALE);
+        CHECK(swyp_kernel_runtime_load_driver_image(&runtime, 1u, 1u, image, sizeof(image), 2u, &initial) == SWYP_ERR_STALE);
+        CHECK(swyp_scheduler_add_thread(&runtime.scheduler, 1u, SWYP_SCHEDULER_THREAD_DRIVER,
+                                        1u, 1u, &initial) == SWYP_OK);
+        CHECK(swyp_scheduler_dispatch(&runtime.scheduler, &selected) == SWYP_ERR_DENIED);
+        CHECK(swyp_scheduler_stop(&runtime.scheduler, 1u) == SWYP_OK);
+        CHECK(swyp_scheduler_remove(&runtime.scheduler, 1u) == SWYP_OK);
+        timer.armed = 1u;
+        CHECK(swyp_kernel_runtime_validate_fault_cleanup(&runtime) == SWYP_ERR_CORRUPT);
+        timer.armed = 0u;
+        hardware.current_root = 0u;
+        CHECK(swyp_kernel_runtime_validate_fault_cleanup(&runtime) == SWYP_ERR_CORRUPT);
+        CHECK(swyp_x86_64_kernel_root_destroy(&root) == SWYP_OK);
+        CHECK(fake_x86_used_pages(&pool) == 0u);
+    }
 }
 
 static void test_kernel_runtime_vtd_auto_attach_and_dma(void) {
@@ -4694,6 +5008,7 @@ int main(void) {
     test_x86_trap_abi();
     test_x86_apic();
     test_x86_lapic_timer_modes();
+    test_x86_user_stack_resume();
     test_x86_iommu();
     test_x86_vtd_legacy_backend();
     test_x86_vtd_router_multi_drhd();
@@ -4707,6 +5022,7 @@ int main(void) {
     test_x86_driver_image_parser_and_loader();
     test_x86_driver_runtime_end_to_end();
     test_kernel_runtime_driver_domain_lifecycle();
+    test_kernel_runtime_task_faults();
     test_kernel_runtime_vtd_auto_attach_and_dma();
     test_kernel_runtime_rmrr_requires_explicit_shared_memory();
     test_scheduler_kernel_driver_cr3_dispatch();

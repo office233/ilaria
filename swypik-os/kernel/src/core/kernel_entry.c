@@ -39,6 +39,30 @@ SwypStatus swyp_kernel_validate_runtime_handoff(const SwypBootInfo *boot_info, c
             runtime->x86_driver_runtime.kernel_pml4_physical) {
         return SWYP_ERR_CORRUPT;
     }
+    if ((boot_info->boot_flags & SWYP_BOOT_FLAG_INIT_FAULTED) != 0u) {
+        const uint64_t fault_flags = SWYP_BOOT_FLAG_INIT_IMAGE_READY | SWYP_BOOT_FLAG_INIT_FAILED |
+                                     SWYP_BOOT_FLAG_INIT_CLEANED;
+        if ((boot_info->boot_flags & fault_flags) != fault_flags ||
+            (boot_info->boot_flags & (SWYP_BOOT_FLAG_INIT_EXITED | SWYP_BOOT_FLAG_INIT_REFUSED)) != 0u ||
+            boot_info->init_status != SWYP_ERR_FAULT || boot_info->init_exit_code != 0u ||
+            boot_info->init_fault.version != runtime->driver_fault.version ||
+            boot_info->init_fault.struct_size != sizeof(SwypDriverFaultRecord) ||
+            boot_info->init_fault.thread_id != runtime->driver_fault.thread_id ||
+            boot_info->init_fault.domain_id != runtime->driver_fault.domain_id ||
+            boot_info->init_fault.lease_fence != runtime->driver_fault.lease_fence ||
+            boot_info->init_fault.vector != runtime->driver_fault.vector ||
+            boot_info->init_fault.error_code != runtime->driver_fault.error_code ||
+            boot_info->init_fault.address != runtime->driver_fault.address ||
+            boot_info->init_fault.rip != runtime->driver_fault.rip ||
+            boot_info->init_fault.cs != runtime->driver_fault.cs ||
+            boot_info->init_fault.kernel_cr3 != runtime->driver_fault.kernel_cr3 ||
+            boot_info->init_fault.status != SWYP_ERR_FAULT ||
+            swyp_kernel_runtime_validate_fault_cleanup(runtime) != SWYP_OK) {
+            return SWYP_ERR_CORRUPT;
+        }
+    } else if (runtime->driver_fault.version != 0u) {
+        return SWYP_ERR_CORRUPT;
+    }
     return SWYP_OK;
 }
 

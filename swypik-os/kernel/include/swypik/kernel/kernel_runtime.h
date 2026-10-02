@@ -28,6 +28,10 @@ typedef struct SwypKernelRuntime {
     SwypX86IrqDispatcher irq_dispatcher;
     SwypX86KernelContinuation driver_continuation;
     uint64_t driver_continuation_thread_id;
+    uint64_t fault_thread_id;
+    uint64_t fault_domain_id;
+    uint64_t fault_lease_fence;
+    SwypDriverFaultRecord driver_fault;
     SwypX86LapicTimer *preemption_timer;
     void *extended_state_context;
     const SwypX86ExtendedStateOps *extended_state_ops;
@@ -51,7 +55,8 @@ typedef enum SwypKernelDriverRunReason {
     SWYP_KERNEL_DRIVER_RUN_NONE = 0,
     SWYP_KERNEL_DRIVER_RUN_YIELD = 1,
     SWYP_KERNEL_DRIVER_RUN_EXIT = 2,
-    SWYP_KERNEL_DRIVER_RUN_PREEMPT = 3
+    SWYP_KERNEL_DRIVER_RUN_PREEMPT = 3,
+    SWYP_KERNEL_DRIVER_RUN_FAULT = 4
 } SwypKernelDriverRunReason;
 
 SwypStatus swyp_kernel_runtime_init(SwypKernelRuntime *runtime, SwypPageAllocator *page_allocator,
@@ -88,6 +93,11 @@ SwypStatus swyp_kernel_runtime_restore_current_driver_extended_state(SwypKernelR
 SwypStatus swyp_kernel_runtime_run_current_driver(SwypKernelRuntime *runtime, SwypKernelDriverRunReason *reason);
 SwypStatus swyp_kernel_runtime_prepare_current_driver_launch(SwypKernelRuntime *runtime, SwypX86UserLaunch *launch);
 SwypStatus swyp_kernel_runtime_capture_current_driver_trap(SwypKernelRuntime *runtime, const SwypX86TrapFrame *frame);
+SwypStatus swyp_kernel_runtime_admit_fault_task(SwypKernelRuntime *runtime, uint64_t thread_id,
+                                                uint64_t domain_id, uint64_t lease_fence);
+SwypStatus swyp_kernel_runtime_stop_current_driver_fault(SwypKernelRuntime *runtime, const SwypX86TrapFrame *frame,
+                                                         uint64_t fault_address);
+SwypStatus swyp_kernel_runtime_validate_fault_cleanup(const SwypKernelRuntime *runtime);
 void swyp_kernel_runtime_enter_current_driver(SwypKernelRuntime *runtime) __attribute__((noreturn));
 
 #endif

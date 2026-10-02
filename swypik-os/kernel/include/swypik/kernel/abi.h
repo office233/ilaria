@@ -15,7 +15,8 @@ typedef enum SwypStatus {
     SWYP_ERR_DENIED = -4,
     SWYP_ERR_STALE = -5,
     SWYP_ERR_CORRUPT = -6,
-    SWYP_ERR_UNSUPPORTED = -7
+    SWYP_ERR_UNSUPPORTED = -7,
+    SWYP_ERR_FAULT = -8
 } SwypStatus;
 
 typedef enum SwypArch {

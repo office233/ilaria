@@ -27,11 +27,11 @@ static uint64_t swyp_x86_user_sanitize_rflags(uint64_t flags, int interrupts_ena
     return flags;
 }
 
-SwypStatus swyp_x86_user_launch_validate(const SwypX86UserLaunch *launch) {
+static SwypStatus swyp_x86_user_launch_check(const SwypX86UserLaunch *launch, int initial) {
     if (launch == NULL || launch->code_selector != SWYP_X86_SELECTOR_USER_CODE ||
         launch->data_selector != SWYP_X86_SELECTOR_USER_DATA ||
         !swyp_x86_user_address_valid(launch->context.rip) || !swyp_x86_user_address_valid(launch->context.rsp) ||
-        (launch->context.rsp & UINT64_C(0xf)) != 0u ||
+        (initial && (launch->context.rsp & UINT64_C(0xf)) != 0u) ||
         (launch->context.rflags & SWYP_X86_RFLAGS_FIXED) == 0u ||
         (launch->context.rflags & (SWYP_X86_RFLAGS_IOPL_MASK | SWYP_X86_RFLAGS_NT | SWYP_X86_RFLAGS_RF |
                                    SWYP_X86_RFLAGS_VM | SWYP_X86_RFLAGS_AC | SWYP_X86_RFLAGS_VIF |
@@ -41,16 +41,34 @@ SwypStatus swyp_x86_user_launch_validate(const SwypX86UserLaunch *launch) {
     return SWYP_OK;
 }
 
+SwypStatus swyp_x86_user_launch_validate(const SwypX86UserLaunch *launch) {
+    return swyp_x86_user_launch_check(launch, 1);
+}
+
+static SwypStatus swyp_x86_user_prepare(const SwypThreadContext *thread_context, int interrupts_enabled,
+                                        SwypX86UserLaunch *launch, int initial);
+
 SwypStatus swyp_x86_user_launch_prepare(const SwypThreadContext *thread_context, SwypX86UserLaunch *launch) {
     return swyp_x86_user_launch_prepare_interruptible(thread_context, 0, launch);
 }
 
 SwypStatus swyp_x86_user_launch_prepare_interruptible(const SwypThreadContext *thread_context,
                                                       int interrupts_enabled, SwypX86UserLaunch *launch) {
+    return swyp_x86_user_prepare(thread_context, interrupts_enabled, launch, 1);
+}
+
+SwypStatus swyp_x86_user_resume_prepare(const SwypThreadContext *thread_context, int interrupts_enabled,
+                                        SwypX86UserLaunch *launch) {
+    return swyp_x86_user_prepare(thread_context, interrupts_enabled, launch, 0);
+}
+
+static SwypStatus swyp_x86_user_prepare(const SwypThreadContext *thread_context, int interrupts_enabled,
+                                        SwypX86UserLaunch *launch, int initial) {
     const SwypX86_64ThreadContext *context;
     if (thread_context == NULL || launch == NULL || thread_context->abi_version != SWYP_KERNEL_ABI_VERSION ||
         thread_context->struct_size != sizeof(*thread_context) || thread_context->arch != SWYP_ARCH_X86_64 ||
-        thread_context->used_bytes != sizeof(SwypX86_64ThreadContext)) {
+        thread_context->used_bytes != sizeof(SwypX86_64ThreadContext) ||
+        (!initial && (thread_context->flags & SWYP_X86_CONTEXT_CAPTURED_USER) == 0u)) {
         return SWYP_ERR_INVALID;
     }
     context = (const SwypX86_64ThreadContext *)(const void *)thread_context->storage;
@@ -59,10 +77,11 @@ SwypStatus swyp_x86_user_launch_prepare_interruptible(const SwypThreadContext *t
     launch->code_selector = SWYP_X86_SELECTOR_USER_CODE;
     launch->data_selector = SWYP_X86_SELECTOR_USER_DATA;
     launch->reserved0 = 0u;
-    return swyp_x86_user_launch_validate(launch);
+    return swyp_x86_user_launch_check(launch, initial);
 }
 
-SwypStatus swyp_x86_user_context_capture_trap(SwypThreadContext *thread_context, const SwypX86TrapFrame *frame) {
+static SwypStatus swyp_x86_user_context_capture(SwypThreadContext *thread_context, const SwypX86TrapFrame *frame,
+                                                int resumable) {
     SwypX86_64ThreadContext *context;
     uint64_t user_rsp;
     uint64_t user_ss;
@@ -74,8 +93,9 @@ SwypStatus swyp_x86_user_context_capture_trap(SwypThreadContext *thread_context,
     }
     user_rsp = swyp_x86_trap_user_rsp(frame);
     user_ss = swyp_x86_trap_user_ss(frame);
-    if (user_ss != SWYP_X86_SELECTOR_USER_DATA || !swyp_x86_user_address_valid(frame->rip) ||
-        !swyp_x86_user_address_valid(user_rsp) || (user_rsp & UINT64_C(0xf)) != 0u) {
+    if (user_ss != SWYP_X86_SELECTOR_USER_DATA ||
+        (resumable && (!swyp_x86_user_address_valid(frame->rip) ||
+                       !swyp_x86_user_address_valid(user_rsp)))) {
         return SWYP_ERR_DENIED;
     }
     context = (SwypX86_64ThreadContext *)(void *)thread_context->storage;
@@ -97,5 +117,20 @@ SwypStatus swyp_x86_user_context_capture_trap(SwypThreadContext *thread_context,
     context->r15 = frame->r15;
     context->rip = frame->rip;
     context->rflags = swyp_x86_user_sanitize_rflags(frame->rflags, (frame->rflags & SWYP_X86_RFLAGS_IF) != 0u);
+    if (resumable) {
+        thread_context->flags |= SWYP_X86_CONTEXT_CAPTURED_USER;
+    } else {
+        thread_context->flags &= ~SWYP_X86_CONTEXT_CAPTURED_USER;
+    }
     return SWYP_OK;
+}
+
+SwypStatus swyp_x86_user_context_capture_trap(SwypThreadContext *thread_context, const SwypX86TrapFrame *frame) {
+    return swyp_x86_user_context_capture(thread_context, frame, 1);
+}
+
+SwypStatus swyp_x86_user_context_capture_fault(SwypThreadContext *thread_context, const SwypX86TrapFrame *frame) {
+    /* A terminal snapshot must accept the bad RIP/RSP that caused the fault.
+       It is never a launch context: the entire admitted epoch is stopped. */
+    return swyp_x86_user_context_capture(thread_context, frame, 0);
 }

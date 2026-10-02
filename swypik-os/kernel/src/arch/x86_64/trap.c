@@ -47,6 +47,27 @@ int swyp_x86_trap_from_user(const SwypX86TrapFrame *frame) {
     return frame != NULL && (frame->cs & UINT64_C(0x3)) == UINT64_C(0x3);
 }
 
+int swyp_x86_trap_is_task_exception(uint64_t vector) {
+    switch (vector) {
+    case 0u: case 1u: case 3u: case 4u: case 5u: case 6u:
+    case 10u: case 11u: case 12u: case 13u: case 14u:
+    case 16u: case 17u: case 19u: case 21u:
+        return 1;
+    default:
+        /* NMI, double fault, machine check and system/reserved exceptions
+           are not evidence of a confined task fault, even with user CS. */
+        return 0;
+    }
+}
+
+uint64_t swyp_x86_trap_fault_address(const SwypX86TrapFrame *frame) {
+    uint64_t address = 0u;
+    if (frame != NULL && frame->vector == 14u) {
+        __asm__ volatile("mov %%cr2, %0" : "=r"(address));
+    }
+    return address;
+}
+
 uint64_t swyp_x86_trap_user_rsp(const SwypX86TrapFrame *frame) {
     const uint64_t *hardware_tail;
     if (!swyp_x86_trap_from_user(frame)) {

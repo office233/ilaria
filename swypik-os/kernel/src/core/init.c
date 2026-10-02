@@ -49,6 +49,10 @@ static SwypStatus swyp_kernel_run_init_task(SwypBootInfo *boot_info, SwypKernelR
     if (status != SWYP_OK) {
         goto cleanup;
     }
+    status = swyp_kernel_runtime_admit_fault_task(runtime, SWYP_INIT_THREAD_ID, SWYP_INIT_DOMAIN_ID, 1u);
+    if (status != SWYP_OK) {
+        goto cleanup;
+    }
     for (i = 0u; i < SWYP_INIT_DISPATCH_LIMIT; ++i) {
         SwypKernelDriverRunReason reason;
         status = swyp_scheduler_dispatch(scheduler, &selected);
@@ -79,6 +83,18 @@ static SwypStatus swyp_kernel_run_init_task(SwypBootInfo *boot_info, SwypKernelR
             boot_info->boot_flags |= SWYP_BOOT_FLAG_INIT_EXITED;
             status = SWYP_OK;
             goto cleanup;
+        } else if (reason == SWYP_KERNEL_DRIVER_RUN_FAULT) {
+            const SwypDriverFaultRecord *fault = &runtime->driver_fault;
+            if (fault->version != SWYP_DRIVER_FAULT_RECORD_VERSION || fault->struct_size != sizeof(*fault) ||
+                fault->thread_id != SWYP_INIT_THREAD_ID || fault->domain_id != SWYP_INIT_DOMAIN_ID ||
+                fault->lease_fence != 1u || fault->status != SWYP_ERR_FAULT) {
+                status = SWYP_ERR_CORRUPT;
+                goto cleanup;
+            }
+            boot_info->init_fault = *fault;
+            boot_info->boot_flags |= SWYP_BOOT_FLAG_INIT_FAULTED;
+            status = SWYP_ERR_FAULT;
+            goto cleanup;
         } else {
             status = SWYP_ERR_CORRUPT;
             goto cleanup;
@@ -92,6 +108,11 @@ cleanup:
             return close_status;
         }
         boot_info->boot_flags |= SWYP_BOOT_FLAG_INIT_CLEANED;
+        if ((boot_info->boot_flags & SWYP_BOOT_FLAG_INIT_FAULTED) != 0u &&
+            swyp_kernel_runtime_validate_fault_cleanup(runtime) != SWYP_OK) {
+            boot_info->boot_flags &= ~SWYP_BOOT_FLAG_INIT_CLEANED;
+            return SWYP_ERR_CORRUPT;
+        }
     }
     return status;
 }

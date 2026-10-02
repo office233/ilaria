@@ -56,6 +56,8 @@ SwypStatus swyp_x86_trap_set_handler(SwypX86TrapDispatchTable *table, uint32_t v
 SwypStatus swyp_x86_trap_install_exception_idt(SwypX86PrivilegeState *privilege, uint32_t emergency_ist_index);
 int swyp_x86_trap_vector_has_error_code(uint32_t vector);
 int swyp_x86_trap_from_user(const SwypX86TrapFrame *frame);
+int swyp_x86_trap_is_task_exception(uint64_t vector);
+uint64_t swyp_x86_trap_fault_address(const SwypX86TrapFrame *frame);
 uint64_t swyp_x86_trap_user_rsp(const SwypX86TrapFrame *frame);
 uint64_t swyp_x86_trap_user_ss(const SwypX86TrapFrame *frame);
 SwypStatus swyp_x86_trap_bind_dispatch_table(SwypX86TrapDispatchTable *table);

@@ -50,6 +50,8 @@ SWYP_TRAP_ERR   30
 SWYP_TRAP_NOERR 31
 
 swyp_x86_trap_common:
+    /* #BP/#OF use trap gates; do not allow timer re-entry during teardown. */
+    cli
     cld
     pushq %r15
     pushq %r14

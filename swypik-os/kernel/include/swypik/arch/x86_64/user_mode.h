@@ -15,6 +15,7 @@
 #define SWYP_X86_RFLAGS_AC (UINT64_C(1) << 18)
 #define SWYP_X86_RFLAGS_VIF (UINT64_C(1) << 19)
 #define SWYP_X86_RFLAGS_VIP (UINT64_C(1) << 20)
+#define SWYP_X86_CONTEXT_CAPTURED_USER (UINT64_C(1) << 0)
 
 typedef struct SwypX86UserLaunch {
     SwypX86_64ThreadContext context;
@@ -27,7 +28,10 @@ SwypStatus swyp_x86_user_launch_prepare(const SwypThreadContext *thread_context,
 SwypStatus swyp_x86_user_launch_prepare_interruptible(const SwypThreadContext *thread_context,
                                                       int interrupts_enabled, SwypX86UserLaunch *launch);
 SwypStatus swyp_x86_user_launch_validate(const SwypX86UserLaunch *launch);
+SwypStatus swyp_x86_user_resume_prepare(const SwypThreadContext *thread_context, int interrupts_enabled,
+                                        SwypX86UserLaunch *launch);
 SwypStatus swyp_x86_user_context_capture_trap(SwypThreadContext *thread_context, const SwypX86TrapFrame *frame);
+SwypStatus swyp_x86_user_context_capture_fault(SwypThreadContext *thread_context, const SwypX86TrapFrame *frame);
 
 void SWYP_X86_NATIVE_ABI swyp_x86_enter_user(const SwypX86UserLaunch *launch) __attribute__((noreturn));
 

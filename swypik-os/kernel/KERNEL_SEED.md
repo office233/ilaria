@@ -251,6 +251,197 @@ termination and cleanup. `--init-outcome refused` requires invalid input to
 stay unexecuted. These are execution probes, not real hardware drivers, a
 general-purpose userspace, multicore task scheduling, or a signed boot chain.
 
+### Confined init-task faults (2026-10-02)
+
+Init explicitly admits `(thread=1, domain=1, lease=1)` for fault termination
+after loading its image and before dispatch. The existing exception table now
+routes synchronous CPL3 task exceptions through this exact admission, running
+scheduler thread, active zero-grant domain, loaded image, driver CR3 and live
+kernel continuation. Missing/stale admission, kernel-mode exceptions, NMI,
+double fault, machine check, reserved/system exceptions and reserved-bit page
+faults retain the fatal-record/emergency-halt path. There is no implicit
+workload, new capability, filesystem or network authority.
+
+On a confined fault the runtime captures terminal registers, disarms the LAPIC
+timer, quiesces the domain, stops **all threads of that epoch**, restores and
+checks kernel CR3, consumes the admission and resumes the kernel continuation
+with `SWYP_KERNEL_DRIVER_RUN_FAULT`, not EXIT. Terminal capture deliberately
+accepts a bad RIP/RSP; resumable contexts still require canonical addresses and
+the existing mapped image/stack bounds. Initial launch alignment remains strict.
+Init then removes the stopped threads, unloads/releases user image
+and stack pages, revokes the domain and clears extended state. Its separate
+supervisor entry stack and RSP0 are restored/cleaned by the existing wrapper.
+The failed epoch cannot be reopened, reloaded or activated through the runtime,
+and stopped threads cannot be made READY. A fresh lease is a different epoch;
+this milestone is not a general restart supervisor.
+
+`SwypBootInfo` ABI version remains 1, with the entire original 232-byte prefix
+preserved (`boot_flags` at 160, init input at 168, observed domain at 224).
+The appended 88-byte, version-1 `SwypDriverFaultRecord` at offset 232 makes the
+total size 320. It records thread/domain/lease, vector, hardware error code,
+CR2 for #PF (zero otherwise), RIP, CS, restored kernel CR3 and
+`SWYP_ERR_FAULT` (-8). `INIT_FAULTED` is bit 18; `INIT_FAILED` and `INIT_CLEANED`
+must also be present and `INIT_EXITED` must be absent. The final
+`RUNTIME_HANDOFF_VALIDATED` bit is withheld unless evidence agrees with the
+runtime record, the timer/continuation are inactive, kernel CR3 is current and
+the faulty epoch has no remaining scheduler, image, domain or extended-state
+slot. Any failed containment or cleanup remains fail-closed.
+
+The external image generator adds `ud2` (#UD, vector 6), `supervisor-read`
+(#PF, vector 14, error 5, CR2 `0xffffc00000001000`) and `privileged` (CLI,
+#GP, vector 13, error 0). Each checks CPL3/domain1 and yields before faulting;
+none calls successful EXIT. `bad-stack` sets RSP=1 then executes UD2, proving
+termination does not depend on a resumable user stack. The supervisor-read
+target is the mapped supervisor-only entry stack, not an arbitrary unmapped
+address. `call-loop` is a healthy CALL/prologue/balanced-push loop which checks
+user IF on every iteration. `--require-call-stack-preemption` requires repeated
+real CPL3 timer trace frames, at least one RSP%16=8 and saved IF=1 on every
+observed user timer. These are first-party, deterministic execution probes.
+
+The CALL probe reproduced a tightly coupled pre-existing defect: capture,
+stack-range validation and launch preparation required RSP%16=0 at arbitrary
+interrupt boundaries. Before the fix a healthy task halted on its first timer
+at RSP `0x4fffffffffe8`, with neither cleanup nor validated final handoff.
+Capture now marks a kernel-captured resumable context, and a separate resume
+preparation path accepts in-range unaligned stacks. Fresh launches still reject
+unaligned RSP, and stack guards, canonical checks, image W^X and CPL/SS checks
+are retained. No alignment restriction is added to arbitrary AMD64 execution
+points, where CALL/push/prologues legitimately change RSP.
+
+Run the Windows gates from the kernel directory with the already installed
+compiler (adjust only the compiler path if relocated):
+
+```powershell
+$Zig = 'E:\nexus\ramasite\local\tools\zig-0.16.0\zig.exe'
+powershell -NoProfile -ExecutionPolicy Bypass -File .\test-host.ps1 -Compiler $Zig
+powershell -NoProfile -ExecutionPolicy Bypass -File .\build-portable.ps1 -Zig $Zig
+python -B -m unittest discover -s tests -p 'test_*.py' -v
+$env:GOCACHE = Join-Path $PWD 'out\go-cache-windows'
+Push-Location ..
+go vet ./...
+go test -count=1 -timeout 180s ./...
+Pop-Location
+git diff --check
+```
+
+For Linux host C tests without PowerShell, from the same kernel directory in
+WSL Ubuntu (the installed Zig uses the assembly's explicit Microsoft ABI):
+
+```bash
+T="$HOME/.local/share/copilot-tools"
+mkdir -p out/host
+mapfile -t sources < <(find src -type f \( -name '*.c' -o -name '*.S' \) \
+  ! -name runtime_mem.c ! -name contract_check.c | sort)
+"$T/zig/zig" cc -std=c11 -Wall -Wextra -Werror -fno-pie -no-pie -Iinclude \
+  "${sources[@]}" tests/host_core_test.c tests/init_host_test.c -o out/host/core-tests-linux
+out/host/core-tests-linux
+python3 -B -m unittest discover -s tests -p 'test_*.py' -v
+export PATH="$T/go/bin:$PATH" GOMODCACHE="$T/gomodcache" GOCACHE="$PWD/out/go-cache-linux"
+cd ..
+go vet ./...
+go test -count=1 -timeout 180s ./...
+```
+
+Run the QEMU regression matrix from the kernel directory in WSL Ubuntu. Save
+Bash scripts with LF and invoke them with `wsl.exe -d Ubuntu -- bash SCRIPTFILE`
+from Windows rather than embedding Bash in PowerShell 5.1 command quoting.
+All emulator evidence is in a unique WSL-home directory, not the main checkout.
+No KVM, network, installation or deployment is used:
+
+```bash
+set -euo pipefail
+K="$PWD"
+P="$HOME/.local/share/copilot-tools/qemu-system"
+export LD_LIBRARY_PATH="$P/usr/lib/x86_64-linux-gnu:$P/lib/x86_64-linux-gnu"
+O=$(mktemp -d "$HOME/swypik-fault-XXXXXXXX")
+cp out/efi-portable/BOOTX64.EFI "$O/BOOTX64.EFI"
+for mode in success loop call-loop ud2 supervisor-read privileged bad-stack; do
+  python3 -B tools/make-init-image.py "$O/$mode.swd" --mode "$mode"
+done
+python3 -c 'from pathlib import Path; import sys; p=Path(sys.argv[1]); p.joinpath("corrupt.swd").write_bytes(b"invalid"); p.joinpath("oversized.swd").write_bytes(b"\0"*(1048576+1))' "$O"
+run() {
+  name="$1"; shift
+  python3 -B "$K/boot-qemu.py" --efi "$O/BOOTX64.EFI" \
+    --qemu "$P/usr/bin/qemu-system-x86_64" \
+    --qemu-data "$P/usr/share/qemu" --qemu-data "$P/usr/share/seabios" \
+    --ovmf-code "$P/usr/share/OVMF/OVMF_CODE_4M.fd" \
+    --ovmf-vars "$P/usr/share/OVMF/OVMF_VARS_4M.fd" \
+    --out "$O/$name" --timeout 90 "$@" > "$O/$name.json"
+}
+run no-init-1
+run no-init-4 --cpus 4
+run no-init-1-1024 --memory-mib 1024
+run no-init-4-1024 --cpus 4 --memory-mib 1024
+run no-init-iommu --iommu
+run success-1 --init "$O/success.swd"
+run success-4 --cpus 4 --init "$O/success.swd"
+run loop --init "$O/loop.swd" --init-outcome limited
+run corrupt --init "$O/corrupt.swd" --init-outcome refused
+run oversized --init "$O/oversized.swd" --init-outcome refused
+for cpus in 1 4; do
+  for mode in ud2 privileged bad-stack supervisor-read; do
+    vector=6; error=0; address=0
+    if [ "$mode" = privileged ]; then vector=13; fi
+    if [ "$mode" = supervisor-read ]; then vector=14; error=5; address=0xffffc00000001000; fi
+    run "$mode-$cpus" --cpus "$cpus" --init "$O/$mode.swd" --init-outcome fault \
+      --expected-fault-vector "$vector" --expected-fault-error "$error" \
+      --expected-fault-address "$address" --trace-interrupts
+  done
+done
+for cpus in 1 4; do
+  run "call-loop-$cpus" --cpus "$cpus" --init "$O/call-loop.swd" --init-outcome limited \
+    --require-call-stack-preemption --hmp "info lapic"
+done
+# Inspect the warning and LAPIC mode; requesting a feature does not prove it.
+run call-loop-tsc-requested --cpu max,+tsc-deadline --init "$O/call-loop.swd" --init-outcome limited \
+  --require-call-stack-preemption --hmp "info lapic"
+echo "Evidence: $O"
+```
+
+The harness accepts only known ABI/version-size combinations (168/232/320
+bytes), rejects truncated records, and never picks a favorable record among
+ambiguous live candidates. `--init-outcome fault` requires the expected vector,
+versioned fault record, exact task epoch/CPL, failed-not-exited status, cleanup,
+restored kernel CR3 and final validated handoff. Optional expected error/address
+arguments make the probes exact. The loop outcome requires exactly 128
+yield/preemption dispatch returns. Host tests also reject wrong identities,
+kernel/system exceptions, failed timer disarm/CR3 restoration, incomplete
+cleanup and replay; all allocated task pages return to the fixture baseline.
+The real repeated count-timer probe checks user IF rather than assuming that
+the continuation's kernel IF=0 persists after the next IRET. Deadline-mode host
+tests separately exercise three nonpreempting/preempting/disarm/rearm cycles
+through the actual scheduler/continuation interfaces. Real TSC-deadline
+delivery is not proven when QEMU TCG rejects that requested CPU feature; inspect
+`qemu_output` and `info lapic` before making any timer-mode claim.
+This is bounded single-init/BSP fault isolation, not production OS recovery,
+SMP userspace scheduling, full XSTATE coverage or physical-hardware validation.
+
+Verified local evidence: Windows and Linux C host gates and all 10 Python tests
+pass. The final portable EFI builds twice identically with SHA-256
+`42a0732c0befc0021c6c5b084e481676d2e36406fc5672f5d23bb0c0ca15014e`.
+All 21 QEMU expected outcomes pass: ten old-path cases, eight confined-fault
+cases, two healthy CALL-loop cases and one unsupported-deadline/count-fallback
+case. Fault cases record flags `0x7abff`, status -8, exact vector/error/address,
+cleanup and final handoff, without EXIT. Healthy CALL loops record one yield
+and 127 preemptions; all 127 observed user timer frames have RSP%16=8 and IF=1.
+LAPIC evidence is masked periodic mode with initial/current count zero after
+cleanup. Requesting TSC-deadline emits an explicit unsupported-TCG warning;
+that case is not evidence of real deadline delivery.
+
+The Windows full product `go vet ./...` and `go test -count=1 -timeout 180s ./...`
+pass. Linux full vet and relevant package vet/tests pass:
+`go vet ./internal/nativegraph ./core/boot ./core/controlkernel` and
+`go test -count=1 -timeout 180s ./internal/nativegraph ./core/boot ./core/controlkernel`.
+The broader Linux Go suite is **not clean**: unchanged
+`cmd/plan-supervisor/TestPlanCompletionRequiresTypedBoundValueAndCleanExit`
+intermittently reports completion/preflight failure (both with and without
+concurrent QEMU), while its isolated five-run test passes; a serial full run
+instead reports `internal/planprocess/TestOutputAndInputBoundsTerminateChild/stderr_limit`
+returning EOF before the expected stderr-limit error. These Go transport files
+are outside this milestone and were not modified or silently skipped. No
+whole-system, Go-daemon/native-kernel integration or physical hardware claim
+follows from these kernel probes.
+
 ## Reproducible local build
 
 `build.ps1` uses only locally installed `gcc`, `objdump` and `nasm`, writes only below `out/`, runs host core tests, compiles the three architecture contract probes, builds `out/efi/BOOTX64.EFI`, rejects unexpected DLL imports, checks PE32+/x86_64/EFI subsystem metadata and writes a SHA-256 hash.

@@ -84,7 +84,7 @@ int swyp_x86_driver_image_executable_address(const SwypX86LoadedDriverImage *loa
 
 int swyp_x86_driver_image_stack_pointer(const SwypX86LoadedDriverImage *loaded, uint64_t stack_pointer) {
     uint32_t i;
-    if (loaded == NULL || loaded->active == 0u || stack_pointer == 0u || (stack_pointer & UINT64_C(0xf)) != 0u) {
+    if (loaded == NULL || loaded->active == 0u || stack_pointer == 0u) {
         return 0;
     }
     if (stack_pointer == loaded->stack_pointer) {

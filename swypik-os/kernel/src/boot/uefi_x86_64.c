@@ -26,6 +26,15 @@ static SwypX86TrapDispatchTable g_trap_table;
 static SwypX86FatalTrapRecord g_fatal_trap_record;
 static SwypX86PlatformBoot g_platform_boot;
 
+static SwypStatus swyp_uefi_task_or_fatal_trap(void *context, SwypX86TrapFrame *frame) {
+    if (swyp_kernel_runtime_stop_current_driver_fault(&g_platform_boot.runtime, frame,
+                                                       swyp_x86_trap_fault_address(frame)) == SWYP_OK) {
+        swyp_x86_kernel_continuation_resume(&g_platform_boot.runtime.driver_continuation,
+                                             SWYP_KERNEL_DRIVER_RUN_FAULT);
+    }
+    return swyp_x86_trap_record_fatal(context, frame);
+}
+
 typedef struct SwypUefiContinuationContext {
     SwypBootInfo *boot_info;
     SwypUefiPageAllocator *page_allocator;
@@ -89,7 +98,7 @@ static void SWYP_EFIAPI swyp_uefi_after_takeover(void *context) {
     {
         uint32_t vector;
         for (vector = 0u; vector < SWYP_X86_EXCEPTION_COUNT; ++vector) {
-            if (swyp_x86_trap_set_handler(&g_trap_table, vector, swyp_x86_trap_record_fatal) != SWYP_OK) {
+            if (swyp_x86_trap_set_handler(&g_trap_table, vector, swyp_uefi_task_or_fatal_trap) != SWYP_OK) {
                 swyp_kernel_halt();
             }
         }

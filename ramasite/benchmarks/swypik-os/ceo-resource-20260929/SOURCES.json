@@ -1,0 +1,198 @@
+{
+  "schema_version": 1,
+  "imported_at": "2026-10-02T19:54:16.090425+00:00",
+  "source_root": "E:\\CEO",
+  "source_repository_head": "969e8952fc77d6f471bb5bc7a449d5686ae9609f",
+  "category": "swypik-os",
+  "classification": "Historical benchmark source and evidence; not current performance guarantees.",
+  "raw_byte_preservation": true,
+  "duplicate_raw_contents": [],
+  "files": [
+    {
+      "relative_path_under_ceo": "swypik-resource-bench\\resource-results.json",
+      "category": "swypik-os",
+      "byte_length": 684,
+      "sha256_raw": "206594d1b16534ac78b70c067101d6a2a35611ebcce12c1193bef0426271beac"
+    },
+    {
+      "relative_path_under_ceo": "swypik-resource-bench-v2\\resource-results-v2.json",
+      "category": "swypik-os",
+      "byte_length": 2739,
+      "sha256_raw": "87673b4c1278dcfa2f5f8ad9711bd3e1218404c99008e1407ca2ab87da8e3f64"
+    },
+    {
+      "relative_path_under_ceo": "swypik-resource-bench-v3\\resource-results-v3.json",
+      "category": "swypik-os",
+      "byte_length": 2055,
+      "sha256_raw": "4fb52ffb4492ed41e80b7e78fa6ec40fee4eb01586ffe3bdf67e2d2e0b43a952"
+    },
+    {
+      "relative_path_under_ceo": "swypik-resource-bench-v4\\resource-results-v4.json",
+      "category": "swypik-os",
+      "byte_length": 2066,
+      "sha256_raw": "114c68d2e4cada2cde2057cb5d0b961681007544271c7f3568c3f68465ffc289"
+    },
+    {
+      "relative_path_under_ceo": "swypik-resource-bench-v5\\resource-results.json",
+      "category": "swypik-os",
+      "byte_length": 7514,
+      "sha256_raw": "91b29b12e6469c24c646c562b2295bd635578a4cc3a3b1ab344b567a86c30e1e"
+    },
+    {
+      "relative_path_under_ceo": "swypik-resource-bench-v5\\run-01-balanced\\samples.json",
+      "category": "swypik-os",
+      "byte_length": 24400,
+      "sha256_raw": "8bd6d775c9fdac2bd7d3d819fb8e2ff7e25f1b198c03792b8d8ba1f412a71372"
+    },
+    {
+      "relative_path_under_ceo": "swypik-resource-bench-v5\\run-02-balanced\\samples.json",
+      "category": "swypik-os",
+      "byte_length": 26511,
+      "sha256_raw": "f49b9c622ac8fb38e466a4c80fd8471d0bb74fa3ef257639cf01fd5174182b6f"
+    },
+    {
+      "relative_path_under_ceo": "swypik-resource-bench-v5\\run-03-balanced\\samples.json",
+      "category": "swypik-os",
+      "byte_length": 26663,
+      "sha256_raw": "0715afcd7e968d8dd787c365f28fe91c682869acff25e48f49549971d04fd0d3"
+    },
+    {
+      "relative_path_under_ceo": "swypik-resource-bench-v5\\run-04-phone\\samples.json",
+      "category": "swypik-os",
+      "byte_length": 26545,
+      "sha256_raw": "434c062a3cc657cb543ee71e5540e82af86768e1a3ced1e96c60a99884f4bb02"
+    },
+    {
+      "relative_path_under_ceo": "swypik-resource-bench-v5\\run-05-phone\\samples.json",
+      "category": "swypik-os",
+      "byte_length": 26625,
+      "sha256_raw": "3d39d093e70d210661ac0f9eaa1f1169dc28376ce0f4af289b28748dac6a69de"
+    },
+    {
+      "relative_path_under_ceo": "swypik-resource-bench-v5\\run-06-phone\\samples.json",
+      "category": "swypik-os",
+      "byte_length": 26640,
+      "sha256_raw": "79b842c0d08ac2babd86b7538979cee9857804d80ad217449d6aae9289d4ae96"
+    },
+    {
+      "relative_path_under_ceo": "swypik-resource-bench-v5-smoke\\resource-results.json",
+      "category": "swypik-os",
+      "byte_length": 2260,
+      "sha256_raw": "63bcf8c8a2a3a41c02d9ff7e936a816220ba645d039fd219c8f35ca0cad0b4c3"
+    },
+    {
+      "relative_path_under_ceo": "swypik-resource-bench-v5-smoke\\run-01-balanced\\samples.json",
+      "category": "swypik-os",
+      "byte_length": 6663,
+      "sha256_raw": "8615cb6638ca8fb48303629ee57bd4769af7fd251df6da15434a42ddd8eb7312"
+    },
+    {
+      "relative_path_under_ceo": "swypik-resource-bench-v5-smoke2\\resource-results.json",
+      "category": "swypik-os",
+      "byte_length": 2251,
+      "sha256_raw": "b5976aaab4d4de48d619a1195853fca3148e7f36b4ffab0462c2729b9af32f4a"
+    },
+    {
+      "relative_path_under_ceo": "swypik-resource-bench-v5-smoke2\\run-01-phone\\samples.json",
+      "category": "swypik-os",
+      "byte_length": 5353,
+      "sha256_raw": "b70e721f1fd0b520d4041cfae7289acb938d46c55cf3a226781bfb219e478a1a"
+    },
+    {
+      "relative_path_under_ceo": "swypik-resource-bench-v6\\resource-results.json",
+      "category": "swypik-os",
+      "byte_length": 7516,
+      "sha256_raw": "61f8263acd2f16f677fae2949fbc65592cb9727bccf68fec294529db014336c4"
+    },
+    {
+      "relative_path_under_ceo": "swypik-resource-bench-v6\\run-01-balanced\\samples.json",
+      "category": "swypik-os",
+      "byte_length": 25047,
+      "sha256_raw": "b0c59f5ae303d5afa290a54fe11a26cb930212ce1feb7e604b3783cc06a0a560"
+    },
+    {
+      "relative_path_under_ceo": "swypik-resource-bench-v6\\run-02-balanced\\samples.json",
+      "category": "swypik-os",
+      "byte_length": 25856,
+      "sha256_raw": "5eda319d2bb2709bb3120569deb4950e14434233a58add4acd4a4b654f400f08"
+    },
+    {
+      "relative_path_under_ceo": "swypik-resource-bench-v6\\run-03-balanced\\samples.json",
+      "category": "swypik-os",
+      "byte_length": 26537,
+      "sha256_raw": "1ee8913d8668aaacdd6e5593a92d44e925f667f51e18009c2b8b06f51cf69127"
+    },
+    {
+      "relative_path_under_ceo": "swypik-resource-bench-v6\\run-04-phone\\samples.json",
+      "category": "swypik-os",
+      "byte_length": 26579,
+      "sha256_raw": "ee4c24f34e70f77a90ea4a82492eb469ad04c51f64708281a75eb4e30040b03a"
+    },
+    {
+      "relative_path_under_ceo": "swypik-resource-bench-v6\\run-05-phone\\samples.json",
+      "category": "swypik-os",
+      "byte_length": 26664,
+      "sha256_raw": "11fb29f08c872b5726e60208ee620a3abf26fba357956fccb1366bc8b40b70b7"
+    },
+    {
+      "relative_path_under_ceo": "swypik-resource-bench-v6\\run-06-phone\\samples.json",
+      "category": "swypik-os",
+      "byte_length": 26527,
+      "sha256_raw": "53d7ef2c1752b6462290712ea5562da1c513a63896062617b531ef85d39a0f31"
+    },
+    {
+      "relative_path_under_ceo": "swypik-resource-bench-v7\\resource-results.json",
+      "category": "swypik-os",
+      "byte_length": 8102,
+      "sha256_raw": "14acb02b408b6b2d39a1799a0ee1d4ab7d4bf941938740e6fc92a8f89e1daf2c"
+    },
+    {
+      "relative_path_under_ceo": "swypik-resource-bench-v7\\run-01-balanced\\samples.json",
+      "category": "swypik-os",
+      "byte_length": 24977,
+      "sha256_raw": "751f18e6b0085c8e8a2fd1d982c7b72b1efc98357d4ce3436290e7bd46bc5df3"
+    },
+    {
+      "relative_path_under_ceo": "swypik-resource-bench-v7\\run-02-balanced\\samples.json",
+      "category": "swypik-os",
+      "byte_length": 26567,
+      "sha256_raw": "fbffc4b6bfc464cbd24a53fdbfaa7d81cb70005ff9314c74632abecf209b7129"
+    },
+    {
+      "relative_path_under_ceo": "swypik-resource-bench-v7\\run-03-balanced\\samples.json",
+      "category": "swypik-os",
+      "byte_length": 26569,
+      "sha256_raw": "0011a609f1757f44be625805511c76a60d28084f7b64a72a4a9586b30635b176"
+    },
+    {
+      "relative_path_under_ceo": "swypik-resource-bench-v7\\run-04-phone\\samples.json",
+      "category": "swypik-os",
+      "byte_length": 26128,
+      "sha256_raw": "d43c9b39bf3c143ca0a140dcca1bf2b813a08c50707cd9ccddf030173571d4b1"
+    },
+    {
+      "relative_path_under_ceo": "swypik-resource-bench-v7\\run-05-phone\\samples.json",
+      "category": "swypik-os",
+      "byte_length": 26571,
+      "sha256_raw": "f9b3f067d4c8885ef3e78695ef208b699911a481a7bc90e572f24380776e1626"
+    },
+    {
+      "relative_path_under_ceo": "swypik-resource-bench-v7\\run-06-phone\\samples.json",
+      "category": "swypik-os",
+      "byte_length": 26442,
+      "sha256_raw": "dfad355f71bc8e6873a18871fc8c7687c54acb43a1a3352f88d2c21de0fe1cc7"
+    },
+    {
+      "relative_path_under_ceo": "swypik-resource-bench-v7-smoke\\resource-results.json",
+      "category": "swypik-os",
+      "byte_length": 2392,
+      "sha256_raw": "d34b903d848740b80f0fb7f75bfef42952f010597530c96b2911cbcc752749ba"
+    },
+    {
+      "relative_path_under_ceo": "swypik-resource-bench-v7-smoke\\run-01-balanced\\samples.json",
+      "category": "swypik-os",
+      "byte_length": 7003,
+      "sha256_raw": "90a88c0bcf964aa559a62d0f4d7018ab43e7807c2cda7b9cf9240f283646ce4c"
+    }
+  ]
+}

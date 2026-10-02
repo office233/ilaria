@@ -1,0 +1,5 @@
+
+#include <stdio.h>
+#include <stdlib.h>
+static double mandelbrot(double width){double height=width/2.0,py=0.0,checksum=0.0;while(py<height){double px=0.0;while(px<width){double cr=px*3.5/width-2.5;double ci=py*2.0/height-1.0;double zr=0.0,zi=0.0,count=0.0;while(count<80.0&&zr*zr+zi*zi<=4.0){double next=zr*zr-zi*zi+cr;zi=2.0*zr*zi+ci;zr=next;count+=1.0;}checksum+=count;px+=1.0;}py+=1.0;}return checksum;}
+int main(int argc,char**argv){if(argc!=2)return 2;printf("%.17g\n",mandelbrot(strtod(argv[1],0)));return 0;}

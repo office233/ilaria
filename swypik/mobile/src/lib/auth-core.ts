@@ -203,10 +203,16 @@ export class AuthController {
       const timer = setTimeout(() => { abort(); cleanup(); }, cancelling ? 2000 : Math.min(30_000, Math.max(1, Date.parse(record.expiresAt) - this.now())));
       disposers.add(cleanup);
       let delivered = false;
+      let rejectAborted: (() => void) | undefined;
       try {
-        const response = await fetcher(origin + path, { method: 'POST', body,
+        const cancelled = new Promise<never>((_, reject) => {
+          rejectAborted = () => reject(new AuthError('timeout'));
+          controller.signal.addEventListener('abort', rejectAborted, { once: true });
+          if (controller.signal.aborted) rejectAborted();
+        });
+        const response = await Promise.race([fetcher(origin + path, { method: 'POST', body,
           headers: { Accept: 'application/json', 'Content-Type': 'application/json', Authorization: 'Bearer ' + record.token },
-          credentials: 'omit', redirect: 'error', cache: 'no-store', signal: controller.signal });
+          credentials: 'omit', redirect: 'error', cache: 'no-store', signal: controller.signal }), cancelled]);
         if (response.redirected) throw new AuthError('invalid_response');
         if (!cancelling && !current()) throw new AuthError('expired');
         delivered = true;
@@ -215,6 +221,7 @@ export class AuthController {
         if (error instanceof AuthError) throw error;
         throw new AuthError(controller.signal.aborted ? 'timeout' : 'network');
       } finally {
+        if (rejectAborted) controller.signal.removeEventListener('abort', rejectAborted);
         if (!delivered) cleanup();
       }
     };

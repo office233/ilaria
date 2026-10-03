@@ -8,10 +8,13 @@ test('wrong MIME and lossy native body are refused', async () => {
 });
 import test from 'node:test';
 import { readFileSync } from 'node:fs';
-import { strictJSON, utf8Bytes, makeRequest, decodeResponse, readBounded, REQUEST_FIELDS, RESPONSE_FIELDS } from '../src/lib/ilaria-wire.ts';
+import { resolve } from 'node:path';
+import { strictJSON, utf8Bytes, makeRequest, decodeResponse, readBounded, REQUEST_FIELDS, RESPONSE_FIELDS, WireError } from '../src/lib/ilaria-wire.ts';
+import { inferenceResponse, controlResponse } from './fixtures/ilaria.ts';
 
-test('projection matches supplied canonical Myriad manifest, never a parallel DTO', { skip: !process.env.NEXUS_MYRIAD_MANIFEST }, () => {
-  const manifest = JSON.parse(readFileSync(process.env.NEXUS_MYRIAD_MANIFEST!, 'utf8'));
+test('projection matches canonical Myriad manifest, never a parallel DTO', () => {
+  const path = process.env.NEXUS_MYRIAD_MANIFEST ?? resolve(import.meta.dirname, '..', '..', '..', 'ilaria', 'specs', 'myriad.manifest.json');
+  const manifest = JSON.parse(readFileSync(path, 'utf8'));
   for (const [name, actual] of [['CorticalRequest', REQUEST_FIELDS], ['CorticalResponse', RESPONSE_FIELDS]] as const) {
     const record = manifest.declarations.find((d: { name: string }) => d.name === name);
     const expected = Object.fromEntries(record.fields.map((f: { name: string; type: string }) => [f.name, f.type]));
@@ -48,4 +51,31 @@ test('aborted slow body does not leave caller waiting', async () => {
   const work = readBounded(response, controller.signal);
   controller.abort();
   await assert.rejects(work);
+});
+
+test('valid inference and terminal controls use the exact correlated response shape', () => {
+  const response = inferenceResponse('test.1');
+  assert.deepEqual(JSON.parse(JSON.stringify(decodeResponse(JSON.stringify(response), 'test.1'))), response);
+  for (const status of ['stopped', 'succeeded', 'failed']) {
+    assert.equal(decodeResponse(JSON.stringify(controlResponse('test.1', status)), 'test.1', true).runtime_metrics.execution_status, status);
+  }
+});
+for (const mutation of ['task', 'plan', 'training', 'hash', 'extra', 'cost'] as const) {
+  test('reject correlated-looking but invalid inference evidence: ' + mutation, () => {
+    const response = inferenceResponse('test.1');
+    if (mutation === 'task') response.task_id = 'wrong-task';
+    if (mutation === 'plan') response.proposed_swyp_plan = 'unapproved effect';
+    if (mutation === 'training') response.runtime_metrics.training = 'active';
+    if (mutation === 'hash') delete response.runtime_metrics.model_hash;
+    if (mutation === 'cost') response.compute_cost = 2;
+    const wire = mutation === 'extra' ? { ...response, authority: 'not-a-capability' } : response;
+    assert.throws(() => decodeResponse(JSON.stringify(wire), 'test.1'), WireError);
+  });
+}
+test('declared body length must match actual UTF-8 bytes on streaming and native buffered transports', async () => {
+  const signal = new AbortController().signal;
+  await assert.rejects(readBounded(new Response('{}', { headers: { 'Content-Type': 'application/json', 'Content-Length': '3' } }), signal), WireError);
+  const buffered = new Response('ă', { headers: { 'Content-Type': 'application/json', 'Content-Length': '1' } });
+  Object.defineProperty(buffered, 'body', { value: null });
+  await assert.rejects(readBounded(buffered, signal), WireError);
 });

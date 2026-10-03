@@ -143,7 +143,7 @@ export function decodeResponse(text: string, taskId: string, control = false): C
     if (response.expert_id !== 'IMC' || !response.hypothesis || metrics.execution_status !== 'succeeded' ||
         !['true', 'false'].includes(metrics.canary) || response.compute_cost < 1 || response.compute_cost > 16) throw new WireError();
     for (const key of ['model_hash', 'tokenizer_hash', 'config_hash', 'canonical_source_hash']) {
-      if (metrics[key].length !== 64 || !/^[0-9a-f]{64}$/.test(metrics[key])) throw new WireError();
+      if (typeof metrics[key] !== 'string' || !/^[0-9a-f]{64}$/.test(metrics[key])) throw new WireError();
     }
     if (response.expert_version !== 'imc-v1:' + metrics.config_hash ||
         response.evidence_refs.length !== 1 || response.evidence_refs[0] !== 'model:sha256:' + metrics.model_hash ||
@@ -168,13 +168,14 @@ export async function readBounded(response: Response, signal: AbortSignal): Prom
         bytes += chunk.value.byteLength; if (bytes > MAX_WIRE_BYTES) throw new WireError();
         text += decoder.decode(chunk.value, { stream: true });
       }
+      if (length !== null && bytes !== Number(length)) throw new WireError();
       return text + decoder.decode();
     }
     // Native fetch may buffer internally. Require the bounded gateway length,
     // enforce decoded bytes too; physical-device native capture remains unverified.
     if (length === null) throw new WireError();
     const text = await response.text();
-    if (utf8Bytes(text) > MAX_WIRE_BYTES || text.includes('\ufffd')) throw new WireError();
+    if (utf8Bytes(text) !== Number(length) || utf8Bytes(text) > MAX_WIRE_BYTES || text.includes('\ufffd')) throw new WireError();
     return text;
   };
   let onAbort: (() => void) | undefined;

@@ -23,3 +23,13 @@ test('consent cannot fake-enable missing training or phone executor', () => {
   assert.equal(contributionAvailability.phoneExecutor, 'unavailable');
   assert.equal(contributionAvailability.compute, 'awaiting-release');
 });
+test('pausing compute leaves data intention independent and cannot leave a contribution executor running', () => {
+  const both = changeConsent(changeConsent(initialConsent('fixture-user'), 'data', true), 'compute', true);
+  const paused = changeConsent(both, 'compute', false);
+  assert.equal(paused.data, true);
+  assert.equal(paused.compute, false);
+  assert.ok(paused.epoch > both.epoch);
+  for (const state of [initialConsent('fixture-user'), both, paused, revokeConsent(both)]) {
+    assert.throws(() => requireContributionExecutor(state), /contribution_executor_unavailable/);
+  }
+});

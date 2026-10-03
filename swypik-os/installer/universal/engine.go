@@ -77,6 +77,17 @@ func NewInstallerEngine(halMgr *hal.Manager, synth *autogenesis.Synthesizer) *In
 	}
 }
 
+func currentUserHome() (string, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", fmt.Errorf("resolve user home: %w", err)
+	}
+	if home == "" {
+		return "", errors.New("resolve user home: empty path")
+	}
+	return home, nil
+}
+
 // ProbeTarget discovers the hardware environment and classifies the device type.
 func (i *InstallerEngine) ProbeTarget(ctx context.Context) (*TargetEnvironment, error) {
 	profile, err := i.halMgr.Scan(ctx)
@@ -115,16 +126,9 @@ func (i *InstallerEngine) ProbeTarget(ctx context.Context) (*TargetEnvironment, 
 	}
 
 	// User folders a future migration would have to preserve.
-	userProfile := os.Getenv("USERPROFILE")
-	if userProfile == "" {
-		userProfile = os.Getenv("HOME")
-	}
-	if userProfile == "" {
-		if home, err := os.UserHomeDir(); err == nil && home != "" {
-			userProfile = home
-		} else {
-			userProfile = "."
-		}
+	userProfile, err := currentUserHome()
+	if err != nil {
+		return nil, err
 	}
 	preserved := []string{
 		filepath.Join(userProfile, "Desktop"),
@@ -161,7 +165,9 @@ func (i *InstallerEngine) GenerateAdaptationPlan(env *TargetEnvironment) *Adapta
 			devicesynth.PlatformUnknown,
 		).Contract(),
 	}
+	platform := PlatformPC
 	if env != nil {
+		platform = env.PlatformType
 		facts, detectErr := resourcepolicy.DetectHardwareFacts()
 		if detectErr != nil {
 			facts = resourcepolicy.HardwareFacts{OS: env.OS, Arch: env.Arch, LogicalCPUs: env.CPUCount}
@@ -171,7 +177,7 @@ func (i *InstallerEngine) GenerateAdaptationPlan(env *TargetEnvironment) *Adapta
 		}
 	}
 
-	switch env.PlatformType {
+	switch platform {
 	case PlatformVehicle:
 		plan.TargetProfile = "SwypikOS-Vehicle-AutonomousGateway"
 		plan.ServicesToActivate = append(plan.ServicesToActivate, "CANBusManager", "ISO15765Diagnostics", "HiveMindMeshCompute", "PhysicalSafetyGovernor")
@@ -209,6 +215,12 @@ func (i *InstallerEngine) GenerateAdaptationPlan(env *TargetEnvironment) *Adapta
 // It installs nothing. No disk is partitioned, no bootloader, kernel or
 // service is installed, and the manifest says exactly that.
 func (i *InstallerEngine) Deploy(ctx context.Context, targetDir string, env *TargetEnvironment, plan *AdaptationPlan) error {
+	if env == nil {
+		return errors.New("target environment is required")
+	}
+	if plan == nil {
+		return errors.New("adaptation plan is required")
+	}
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -256,7 +268,7 @@ func (i *InstallerEngine) Deploy(ctx context.Context, targetDir string, env *Tar
 	}
 
 	manifestPath := filepath.Join(targetDir, "swypik_deployment_manifest.json")
-	if err := os.WriteFile(manifestPath, manifestBytes, 0644); err != nil {
+	if err := os.WriteFile(manifestPath, manifestBytes, 0600); err != nil {
 		return fmt.Errorf("failed to write deployment manifest: %w", err)
 	}
 
@@ -286,16 +298,10 @@ func (i *InstallerEngine) MapUserDataPartitions(userProfilePath string, targetWo
 	defer i.mu.Unlock()
 
 	if userProfilePath == "" {
-		userProfilePath = os.Getenv("USERPROFILE")
-		if userProfilePath == "" {
-			userProfilePath = os.Getenv("HOME")
-		}
-	}
-	if userProfilePath == "" {
-		if home, err := os.UserHomeDir(); err == nil && home != "" {
-			userProfilePath = home
-		} else {
-			userProfilePath = "."
+		var err error
+		userProfilePath, err = currentUserHome()
+		if err != nil {
+			return nil, err
 		}
 	}
 
@@ -315,7 +321,7 @@ func (i *InstallerEngine) MapUserDataPartitions(userProfilePath string, targetWo
 
 func (i *InstallerEngine) mapUserDataPartitionsInternal(folders []string, targetWorkspaceDir string) (*UserDataPartitionMapping, error) {
 	mountsDir := filepath.Join(targetWorkspaceDir, "mnt")
-	if err := os.MkdirAll(mountsDir, 0755); err != nil {
+	if err := os.MkdirAll(mountsDir, 0700); err != nil {
 		return nil, fmt.Errorf("failed to create mounts directory: %w", err)
 	}
 
@@ -352,13 +358,15 @@ func (i *InstallerEngine) mapUserDataPartitionsInternal(folders []string, target
 			if !e.Type().IsRegular() {
 				continue
 			}
-			if info, err := e.Info(); err == nil {
-				mapping.TopLevelFileBytes += info.Size()
+			info, err := e.Info()
+			if err != nil {
+				return nil, fmt.Errorf("stat %s: %w", filepath.Join(srcPath, e.Name()), err)
 			}
+			mapping.TopLevelFileBytes += info.Size()
 		}
 
 		descriptor := fmt.Sprintf("TYPE=DESCRIPTOR_ONLY\nSRC=%s\nMOUNTED=false\nDATA_LOSS_PROTECTION=%s\n", srcPath, dataLossUnverified)
-		if err := os.WriteFile(filepath.Join(mountsDir, folderName+".mount"), []byte(descriptor), 0644); err != nil {
+		if err := os.WriteFile(filepath.Join(mountsDir, folderName+".mount"), []byte(descriptor), 0600); err != nil {
 			return nil, fmt.Errorf("write descriptor for %s: %w", srcPath, err)
 		}
 	}
@@ -367,7 +375,7 @@ func (i *InstallerEngine) mapUserDataPartitionsInternal(folders []string, target
 	if err != nil {
 		return nil, fmt.Errorf("marshal user folder manifest: %w", err)
 	}
-	if err := os.WriteFile(filepath.Join(targetWorkspaceDir, "swypik_user_mounts.json"), manifestData, 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(targetWorkspaceDir, "swypik_user_mounts.json"), manifestData, 0600); err != nil {
 		return nil, fmt.Errorf("write user folder manifest: %w", err)
 	}
 

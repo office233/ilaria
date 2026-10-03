@@ -83,6 +83,18 @@ const (
 	DeviceCompute DeviceKind = "COMPUTE"
 )
 
+type DeviceResourceKind string
+
+const (
+	ResourceMMIO          DeviceResourceKind = "MMIO"
+	ResourcePortIO        DeviceResourceKind = "PORT_IO"
+	ResourceIRQ           DeviceResourceKind = "IRQ"
+	ResourceDMA           DeviceResourceKind = "DMA"
+	ResourceConfig        DeviceResourceKind = "CONFIG"
+	ResourceDeviceControl DeviceResourceKind = "DEVICE_CONTROL"
+	ResourceSharedMemory  DeviceResourceKind = "SHARED_MEMORY"
+)
+
 // PlatformClass describes the operational device class of the host. It is
 // deliberately coarse and carries no model/serial identity. Automotive means
 // infotainment/compute-domain policy only; it never grants actuator authority.
@@ -151,11 +163,25 @@ type DeviceEdge struct {
 	Relation string `json:"relation"`
 }
 
+// DeviceResource is one concrete hardware authority described by the probe.
+// Rights are deliberately not stored here: this is inventory, not authority.
+// A verified driver-domain policy later selects exact resources and a rights
+// subset before the kernel mints capability handles.
+type DeviceResource struct {
+	DeviceID string             `json:"device_id"`
+	Kind     DeviceResourceKind `json:"kind"`
+	Flags    uint16             `json:"flags,omitempty"`
+	Start    uint64             `json:"start"`
+	Length   uint64             `json:"length"`
+	Aux      uint64             `json:"aux,omitempty"`
+}
+
 type DeviceGraph struct {
-	SchemaVersion string          `json:"schema_version"`
-	Buses         []BusDescriptor `json:"buses,omitempty"`
-	Devices       []DeviceNode    `json:"devices"`
-	Edges         []DeviceEdge    `json:"edges,omitempty"`
+	SchemaVersion string           `json:"schema_version"`
+	Buses         []BusDescriptor  `json:"buses,omitempty"`
+	Devices       []DeviceNode     `json:"devices"`
+	Resources     []DeviceResource `json:"resources,omitempty"`
+	Edges         []DeviceEdge     `json:"edges,omitempty"`
 }
 
 type HardwareManifest struct {
@@ -251,6 +277,19 @@ func (m HardwareManifest) Validate() error {
 			}
 		}
 	}
+	for i, resource := range m.Graph.Resources {
+		if _, exists := deviceIDs[resource.DeviceID]; !exists {
+			return fmt.Errorf("resource %d references unknown device %q", i, resource.DeviceID)
+		}
+		if !validDeviceResource(resource) {
+			return fmt.Errorf("resource %d has invalid %s range", i, resource.Kind)
+		}
+		for j := 0; j < i; j++ {
+			if deviceResourcesConflict(m.Graph.Resources[j], resource) {
+				return fmt.Errorf("resource %d overlaps or duplicates resource %d", i, j)
+			}
+		}
+	}
 	edgeKeys := make(map[string]struct{}, len(m.Graph.Edges))
 	deviceAdjacency := make(map[string][]string, len(deviceIDs))
 	for _, edge := range m.Graph.Edges {
@@ -277,6 +316,51 @@ func (m HardwareManifest) Validate() error {
 		return fmt.Errorf("device dependency cycle detected at %q", cycle)
 	}
 	return nil
+}
+
+func validDeviceResource(resource DeviceResource) bool {
+	if strings.TrimSpace(resource.DeviceID) == "" || resource.Length == 0 {
+		return false
+	}
+	switch resource.Kind {
+	case ResourceMMIO:
+		return resource.Length <= ^uint64(0)-resource.Start
+	case ResourceDMA, ResourceSharedMemory:
+		return resource.Start%4096 == 0 && resource.Length%4096 == 0 &&
+			resource.Length <= ^uint64(0)-resource.Start
+	case ResourcePortIO:
+		return resource.Start <= 0xffff && resource.Length <= 0x10000-resource.Start
+	case ResourceIRQ:
+		return resource.Length == 1 && resource.Start <= uint64(^uint32(0))
+	case ResourceConfig:
+		return resource.Start < 4096 && resource.Length <= 4096-resource.Start
+	case ResourceDeviceControl:
+		return resource.Length == 1
+	default:
+		return false
+	}
+}
+
+func resourceRangesOverlap(left, right DeviceResource) bool {
+	leftEnd := left.Start + left.Length
+	rightEnd := right.Start + right.Length
+	return left.Start < rightEnd && right.Start < leftEnd
+}
+
+func deviceResourcesConflict(left, right DeviceResource) bool {
+	if left.Kind != right.Kind {
+		return false
+	}
+	switch left.Kind {
+	case ResourceMMIO, ResourcePortIO, ResourceDMA, ResourceSharedMemory:
+		return resourceRangesOverlap(left, right)
+	case ResourceConfig:
+		return left.DeviceID == right.DeviceID && resourceRangesOverlap(left, right)
+	case ResourceIRQ, ResourceDeviceControl:
+		return left.DeviceID == right.DeviceID && left.Start == right.Start
+	default:
+		return false
+	}
 }
 
 func directedParentCycle(parents map[string]string) string {
@@ -357,6 +441,7 @@ func HardwareBindingHash(m HardwareManifest) (string, error) {
 	clone.Firmware = append([]FirmwareDescriptor(nil), m.Firmware...)
 	clone.Graph.Buses = append([]BusDescriptor(nil), m.Graph.Buses...)
 	clone.Graph.Devices = append([]DeviceNode(nil), m.Graph.Devices...)
+	clone.Graph.Resources = append([]DeviceResource(nil), m.Graph.Resources...)
 	clone.Graph.Edges = append([]DeviceEdge(nil), m.Graph.Edges...)
 
 	sort.Slice(clone.Firmware, func(i, j int) bool {
@@ -372,6 +457,25 @@ func HardwareBindingHash(m HardwareManifest) (string, error) {
 		})
 	}
 	sort.Slice(clone.Graph.Devices, func(i, j int) bool { return clone.Graph.Devices[i].ID < clone.Graph.Devices[j].ID })
+	sort.Slice(clone.Graph.Resources, func(i, j int) bool {
+		a, b := clone.Graph.Resources[i], clone.Graph.Resources[j]
+		if a.DeviceID != b.DeviceID {
+			return a.DeviceID < b.DeviceID
+		}
+		if a.Kind != b.Kind {
+			return a.Kind < b.Kind
+		}
+		if a.Start != b.Start {
+			return a.Start < b.Start
+		}
+		if a.Length != b.Length {
+			return a.Length < b.Length
+		}
+		if a.Aux != b.Aux {
+			return a.Aux < b.Aux
+		}
+		return a.Flags < b.Flags
+	})
 	sort.Slice(clone.Graph.Edges, func(i, j int) bool {
 		a, b := clone.Graph.Edges[i], clone.Graph.Edges[j]
 		return a.From+"\x00"+a.To+"\x00"+a.Relation < b.From+"\x00"+b.To+"\x00"+b.Relation

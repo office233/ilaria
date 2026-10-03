@@ -77,6 +77,16 @@ func TestSynthesizedSourceHasNoFabricatedIO(t *testing.T) {
 	}
 }
 
+func TestSynthesizedSourceNeutralizesMetadataNewlines(t *testing.T) {
+	dev := vehicleDevice()
+	dev.Name = "gateway\npackage injected"
+	dev.Protocol = "ISO-15765-4\nfunc injected() {}"
+	_, driver, _ := synthesize(t, dev)
+	if strings.Contains(driver.SourceCode, "\npackage injected") || strings.Contains(driver.SourceCode, "\nfunc injected") {
+		t.Fatalf("device metadata escaped generated comments:\n%s", driver.SourceCode)
+	}
+}
+
 // Every generated class must at least type-check against the standard library,
 // so a later compile stage starts from code that builds.
 func TestSynthesizedSourceTypeChecks(t *testing.T) {

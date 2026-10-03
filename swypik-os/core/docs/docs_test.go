@@ -5,16 +5,31 @@ import (
 	"testing"
 )
 
-func TestAIDocs(t *testing.T) {
+func documentFixture(t *testing.T) *Manager {
+	t.Helper()
 	m := NewManager()
+	if _, err := m.CreateDocument("test-doc", "Test document", "Initial caller supplied content."); err != nil {
+		t.Fatal(err)
+	}
+	return m
+}
 
-	doc, err := m.GetDocument("doc_welcome")
+func TestAIDocs(t *testing.T) {
+	m := documentFixture(t)
+
+	doc, err := m.GetDocument("test-doc")
 	if err != nil {
 		t.Fatalf("Expected default document, got error: %v", err)
 	}
 
 	initialWords := doc.WordCount
-	m.AppendText("doc_welcome", "Additional verified paragraph.")
+	if err := m.AppendText("test-doc", "Additional verified paragraph."); err != nil {
+		t.Fatal(err)
+	}
+	doc, err = m.GetDocument("test-doc")
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	if doc.WordCount <= initialWords {
 		t.Errorf("Expected word count to increase")
@@ -22,13 +37,13 @@ func TestAIDocs(t *testing.T) {
 }
 
 func TestDocumentSizeLimit(t *testing.T) {
-	m := NewManager()
-	doc, err := m.GetDocument("doc_welcome")
+	m := documentFixture(t)
+	doc, err := m.GetDocument("test-doc")
 	if err != nil {
 		t.Fatal(err)
 	}
 	m.maxDocumentBytes = len(doc.Content) + 8
-	if err := m.AppendText("doc_welcome", strings.Repeat("x", 64)); err == nil {
+	if err := m.AppendText("test-doc", strings.Repeat("x", 64)); err == nil {
 		t.Fatal("oversized append unexpectedly accepted")
 	}
 	if len(doc.Content) > m.maxDocumentBytes {
@@ -43,13 +58,17 @@ func TestCountWordsNoFieldsAllocationSemantics(t *testing.T) {
 }
 
 func TestAppendWordCountMatchesFullRecount(t *testing.T) {
-	m := NewManager()
-	doc, err := m.GetDocument("doc_welcome")
+	m := documentFixture(t)
+	doc, err := m.GetDocument("test-doc")
 	if err != nil {
 		t.Fatal(err)
 	}
 	for _, text := range []string{"one two", "", "three\nfour five", "  six  "} {
-		if err := m.AppendText("doc_welcome", text); err != nil {
+		if err := m.AppendText("test-doc", text); err != nil {
+			t.Fatal(err)
+		}
+		doc, err = m.GetDocument("test-doc")
+		if err != nil {
 			t.Fatal(err)
 		}
 		if want := countWords(doc.Content); doc.WordCount != want {

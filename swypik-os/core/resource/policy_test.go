@@ -58,9 +58,6 @@ func TestProfilesStayBoundedAndConservative(t *testing.T) {
 		if p.MaxAppCatalogEntries < 16 || p.MaxAppCatalogEntries > 1024 {
 			t.Fatalf("%s app catalog=%d", p.Profile, p.MaxAppCatalogEntries)
 		}
-		if p.MaxWalletTransactions < 64 || p.MaxWalletTransactions > 1000 {
-			t.Fatalf("%s wallet transactions=%d", p.Profile, p.MaxWalletTransactions)
-		}
 		if p.MaxResidentPeers < 16 || p.MaxResidentPeers > 2048 {
 			t.Fatalf("%s resident peers=%d", p.Profile, p.MaxResidentPeers)
 		}

@@ -1,77 +1,60 @@
 <#
-Starts the local Ilaria model service from this Ilaria checkout and opens the
-SwypikOS desktop connected to it.
+Builds the native desktop and connects it to an explicitly configured Ilaria
+service. The service must already implement the stable HTTP protocol.
+No weights, tokenizer, pretrained architecture or missing server are assumed.
 
-  powershell -File swypik-os\scripts\start-with-ilaria.ps1          # GPU if available
-  powershell -File swypik-os\scripts\start-with-ilaria.ps1 -Cpu     # force CPU (slow)
-
-Nothing is downloaded: the model and tokenizer must already exist under the
-Ilaria data directory (see -Model and -Tokenizer). The service listens only on
-127.0.0.1 and is stopped when the desktop window closes.
+  powershell -File swypik-os\scripts\start-with-ilaria.ps1 -IlariaURL http://127.0.0.1:8091
 #>
 [CmdletBinding()]
 param(
-    [string]$IlariaRoot = '',
-    [string]$Model = '',
-    [string]$Tokenizer = '',
-    [int]$Port = 8091,
-    [int]$MaxTokens = 256,
-    [switch]$Cpu
+    [Parameter(Mandatory = $true)][string]$IlariaURL,
+    [string]$GoCommand = 'go',
+    [string]$Workspace = '',
+    [string]$DataDir = '',
+    [switch]$Check
 )
 $ErrorActionPreference = 'Stop'
+Set-StrictMode -Version Latest
 
 $swypik = Split-Path -Parent $PSScriptRoot
-if (-not $IlariaRoot) {
-    $workspaceRoot = Split-Path -Parent $swypik
-    $IlariaRoot = Join-Path $workspaceRoot 'ilaria'
+if (-not $DataDir) {
+    $DataDir = Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'SwypikOS'
 }
-if (-not $Model) { $Model = Join-Path $IlariaRoot 'data\forge\bitnet-2b4t\bitnet.nxtf' }
-if (-not $Tokenizer) { $Tokenizer = Join-Path $IlariaRoot 'data\pretrained\bitnet-b1.58-2B-4T\tokenizer.json' }
-foreach ($required in @($Model, $Tokenizer)) {
-    if (-not (Test-Path -LiteralPath $required -PathType Leaf)) { throw "Missing Ilaria file: $required" }
-}
-
-$useCuda = -not $Cpu -and [bool](Get-Command nvidia-smi -ErrorAction SilentlyContinue)
-$binDir = Join-Path $env:LOCALAPPDATA 'SwypikOS\bin'
-New-Item -ItemType Directory -Force -Path $binDir | Out-Null
-$serve = Join-Path $binDir ($(if ($useCuda) { 'ilaria-serve-gpu.exe' } else { 'ilaria-serve.exe' }))
+$DataDir = [IO.Path]::GetFullPath($DataDir)
+$binDir = Join-Path $DataDir 'bin'
+[void][IO.Directory]::CreateDirectory($binDir)
 $desktop = Join-Path $binDir 'swypik-os.exe'
-
-Write-Host "Building Ilaria service ($(if ($useCuda) { 'CUDA' } else { 'CPU' }))..."
-Push-Location $IlariaRoot
+$oldWork = $env:GOWORK
+$oldOS = $env:GOOS
+$oldArch = $env:GOARCH
+$oldCGO = $env:CGO_ENABLED
 try {
-    if ($useCuda) { $env:CGO_ENABLED = '1'; go build -tags gpu -o $serve ./cmd/ilaria-serve }
-    else { go build -o $serve ./cmd/ilaria-serve }
-    if ($LASTEXITCODE -ne 0) { throw 'ilaria-serve build failed' }
-} finally { Pop-Location; Remove-Item Env:\CGO_ENABLED -ErrorAction SilentlyContinue }
-
-Write-Host 'Building SwypikOS desktop...'
-Push-Location $swypik
-try {
-    go build -trimpath -ldflags '-H=windowsgui -X main.desktopGUI=true' -o $desktop ./cmd/swypik-os
-    if ($LASTEXITCODE -ne 0) { throw 'SwypikOS build failed' }
-} finally { Pop-Location }
-
-$serveArgs = @('-model', $Model, '-tokenizer', $Tokenizer, '-port', "$Port", '-max-tokens', "$MaxTokens")
-if ($useCuda) { $serveArgs = @('-cuda') + $serveArgs }
-$log = Join-Path $env:LOCALAPPDATA 'SwypikOS\logs'
-New-Item -ItemType Directory -Force -Path $log | Out-Null
-$server = Start-Process -FilePath $serve -ArgumentList $serveArgs -PassThru -WindowStyle Hidden `
-    -RedirectStandardError (Join-Path $log 'ilaria-serve.err.log') -RedirectStandardOutput (Join-Path $log 'ilaria-serve.out.log')
-try {
-    Write-Host 'Loading the model (up to 3 minutes on first start)...'
-    $deadline = (Get-Date).AddMinutes(3)
-    $ready = $false
-    while ((Get-Date) -lt $deadline -and -not $server.HasExited) {
-        try {
-            $health = Invoke-RestMethod -Uri "http://127.0.0.1:$Port/health" -TimeoutSec 2
-            if ($health.status -eq 'ready') { $ready = $true; break }
-        } catch { Start-Sleep -Seconds 2 }
+    $env:GOWORK = 'off'
+    $target = @(& $GoCommand env GOHOSTOS GOHOSTARCH)
+    if ($LASTEXITCODE -ne 0 -or $target.Count -ne 2 -or $target[0].Trim() -ne 'windows') {
+        throw 'This launcher requires a native Windows Go toolchain.'
     }
-    if (-not $ready) { throw "Ilaria did not become ready; see $log\ilaria-serve.err.log" }
-    Write-Host "Ilaria ready on http://127.0.0.1:$Port. Opening SwypikOS."
-    $ui = Start-Process -FilePath $desktop -ArgumentList @('-ilaria-url', "http://127.0.0.1:$Port") -PassThru
-    $ui.WaitForExit()
+    $env:GOOS = $target[0].Trim()
+    $env:GOARCH = $target[1].Trim()
+    $env:CGO_ENABLED = '0'
+    Write-Host 'Building the native SwypikOS desktop; no model service is started.'
+    Push-Location -LiteralPath $swypik
+    try {
+        & $GoCommand build -trimpath -o $desktop ./cmd/swypik-os
+        if ($LASTEXITCODE -ne 0) { throw 'SwypikOS build failed' }
+    } finally { Pop-Location }
+    $desktopArgs = @('-ilaria-url', $IlariaURL, '-data-dir', $DataDir)
+    if ($Workspace) { $desktopArgs += @('-workspace', $Workspace) }
+    # Validate the endpoint and paths without a window, network or settings edits.
+    & $desktop @desktopArgs -check
+    if ($LASTEXITCODE -ne 0) { throw 'Invalid desktop configuration' }
+    if (-not $Check) {
+        & $desktop @desktopArgs
+        if ($LASTEXITCODE -ne 0) { throw 'SwypikOS desktop exited with an error' }
+    }
 } finally {
-    if (-not $server.HasExited) { Stop-Process -Id $server.Id -Force }
+    $env:GOWORK = $oldWork
+    $env:GOOS = $oldOS
+    $env:GOARCH = $oldArch
+    $env:CGO_ENABLED = $oldCGO
 }

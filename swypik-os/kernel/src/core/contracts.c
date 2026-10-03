@@ -34,4 +34,5 @@ void swyp_boot_info_init(SwypBootInfo *boot_info, SwypArch arch, SwypFirmwareKin
     swyp_arch_info_init(&boot_info->arch, arch, SWYP_ENDIAN_LITTLE, 12u);
     boot_info->physical_memory.abi_version = SWYP_KERNEL_ABI_VERSION;
     boot_info->physical_memory.struct_size = (uint32_t)sizeof(boot_info->physical_memory);
+    boot_info->init_status = SWYP_ERR_NOT_FOUND;
 }

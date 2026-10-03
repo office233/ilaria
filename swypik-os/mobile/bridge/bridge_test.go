@@ -8,6 +8,7 @@ import (
 func TestMobileBridge(t *testing.T) {
 	t.Setenv("SWYPIK_STATE_DIR", t.TempDir())
 	b := NewMobileBridge()
+	defer b.Close()
 	if b == nil {
 		t.Fatal("expected non-nil MobileBridge")
 	}

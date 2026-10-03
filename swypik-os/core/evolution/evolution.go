@@ -33,11 +33,11 @@ type Mutant struct {
 
 // KernelEntry holds the active baseline kernel and its evolutionary lineage.
 type KernelEntry struct {
-	Name          string    `json:"name"`
+	Name          string     `json:"name"`
 	ActiveKernel  KernelFunc `json:"-"`
-	BaselineNs    int64     `json:"baseline_ns"`
-	Mutants       []*Mutant `json:"mutants"`
-	ActiveVersion string    `json:"active_version"`
+	BaselineNs    int64      `json:"baseline_ns"`
+	Mutants       []*Mutant  `json:"mutants"`
+	ActiveVersion string     `json:"active_version"`
 }
 
 // Engine coordinates Darwinian algorithmic evolution across the OS.

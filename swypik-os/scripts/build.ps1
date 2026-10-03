@@ -74,7 +74,7 @@ try {
     }
     $hashes = [ordered]@{}
     foreach ($file in @($gui, $console)) { $hashes[[IO.Path]::GetFileName($file)] = (Get-FileHash -LiteralPath $file -Algorithm SHA256).Hash }
-    [ordered]@{
+    $manifestJson = [ordered]@{
         version = $version
         built_utc = [DateTime]::UtcNow.ToString('o')
         toolchain = (& go version | Out-String).Trim()
@@ -86,7 +86,9 @@ try {
         version_check = $versionOutput
         native_configuration_check = 'passed'
         artifacts_sha256 = $hashes
-    } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $staging 'build-manifest.json') -Encoding UTF8
+    } | ConvertTo-Json -Depth 5
+    # UTF-8 without BOM: Windows PowerShell 5.1 '-Encoding UTF8' prepends one, which strict JSON parsers reject.
+    [IO.File]::WriteAllText($ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath((Join-Path $staging 'build-manifest.json')), $manifestJson + [Environment]::NewLine, (New-Object System.Text.UTF8Encoding $false))
     @($hashes.GetEnumerator() | ForEach-Object { "$($_.Value)  $($_.Key)" }) | Set-Content -LiteralPath (Join-Path $staging 'SHA256SUMS') -Encoding ASCII
     $archiveName = "swypik-os-windows-$hostArch.zip"
     Compress-Archive -Path @($gui, $console, (Join-Path $staging 'build-manifest.json'), (Join-Path $staging 'SHA256SUMS')) -DestinationPath (Join-Path $staging $archiveName)

@@ -21,7 +21,6 @@ type ResourcePolicy struct {
 	MaxChatHistoryMessages  uint64 `json:"max_chat_history_messages"`
 	MaxDocumentBytes        uint64 `json:"max_document_bytes"`
 	MaxAppCatalogEntries    uint64 `json:"max_app_catalog_entries"`
-	MaxWalletTransactions   uint64 `json:"max_wallet_transactions"`
 	MaxResidentPeers        uint64 `json:"max_resident_peers"`
 	MaxHiveTasks            uint64 `json:"max_hive_tasks"`
 	P2PInspectionQueue      uint64 `json:"p2p_inspection_queue"`

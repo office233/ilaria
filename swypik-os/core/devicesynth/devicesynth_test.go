@@ -3,11 +3,35 @@ package devicesynth
 import (
 	"bytes"
 	"context"
+	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"path/filepath"
 	"testing"
 )
+
+func testDriverImageV1() []byte {
+	image := make([]byte, 0x200)
+	copy(image[:8], []byte{'S', 'W', 'Y', 'D', 'R', 'V', '1', 0})
+	binary.LittleEndian.PutUint16(image[8:10], 1)
+	binary.LittleEndian.PutUint16(image[10:12], DriverImageHeaderBytes)
+	binary.LittleEndian.PutUint16(image[12:14], 2)
+	binary.LittleEndian.PutUint64(image[24:32], 0x100)
+	binary.LittleEndian.PutUint64(image[32:40], 0x3000)
+	binary.LittleEndian.PutUint64(image[64:72], 0)
+	binary.LittleEndian.PutUint64(image[72:80], 0x100)
+	binary.LittleEndian.PutUint64(image[80:88], 4)
+	binary.LittleEndian.PutUint64(image[88:96], 0x1000)
+	binary.LittleEndian.PutUint64(image[96:104], DriverImageSegmentRead|DriverImageSegmentExecute)
+	binary.LittleEndian.PutUint64(image[112:120], 0x2000)
+	binary.LittleEndian.PutUint64(image[120:128], 0x110)
+	binary.LittleEndian.PutUint64(image[128:136], 4)
+	binary.LittleEndian.PutUint64(image[136:144], 0x1000)
+	binary.LittleEndian.PutUint64(image[144:152], DriverImageSegmentRead|DriverImageSegmentWrite)
+	copy(image[0x100:0x104], []byte{0x90, 0x90, 0x90, 0xc3})
+	copy(image[0x110:0x114], []byte{0xde, 0xad, 0xbe, 0xef})
+	return image
+}
 
 type fakeSynthesizer struct {
 	candidate CandidateBundle
@@ -50,6 +74,13 @@ func TestUnknownDeviceSynthesisVerifyCanaryRollback(t *testing.T) {
 			SchemaVersion: DeviceGraphSchemaV1,
 			Buses:         []BusDescriptor{{ID: "pcie0", Kind: BusPCIe}},
 			Devices:       []DeviceNode{unknown},
+			Resources: []DeviceResource{
+				{DeviceID: unknown.ID, Kind: ResourceMMIO, Start: 0xfebf0000, Length: 0x1000},
+				{DeviceID: unknown.ID, Kind: ResourceIRQ, Start: 17, Length: 1},
+				{DeviceID: unknown.ID, Kind: ResourceDMA, Start: 0x20000000, Length: 0x2000},
+				{DeviceID: unknown.ID, Kind: ResourceConfig, Start: 0, Length: 0x100},
+				{DeviceID: unknown.ID, Kind: ResourceDeviceControl, Start: 1, Length: 1},
+			},
 		},
 		ProbeSource:  "fixture",
 		ProbeVersion: "1",
@@ -68,6 +99,7 @@ func TestUnknownDeviceSynthesisVerifyCanaryRollback(t *testing.T) {
 		t.Fatal(err)
 	}
 	tests := []TestContract{{ID: "protocol", Name: "fake-device protocol test", Required: true}, {ID: "fault", Name: "fault injection", Required: true}}
+	artifactBytes := testDriverImageV1()
 	candidate := CandidateBundle{
 		Manifest: DriverManifest{
 			SchemaVersion:        DriverManifestSchemaV1,
@@ -76,12 +108,13 @@ func TestUnknownDeviceSynthesisVerifyCanaryRollback(t *testing.T) {
 			Version:              "0.0.1",
 			Selector:             DeviceSelector{DeviceID: unknown.ID, Kind: unknown.Kind, VendorID: "1234", ProductID: "5678"},
 			UserMode:             true,
+			ImageFormat:          DriverImageFormatV1,
 			DeclaredCapabilities: []LogicalCapability{CapabilityMMIO, CapabilityIRQ, CapabilityDMA, CapabilityConfig, CapabilityPower},
 			Service:              ServiceInterface{Version: ServiceABIVersion1, Methods: []ServiceMethod{{Name: "Transmit", RequestSchemaHash: HashBytes([]byte("tx-req")), ResponseSchemaHash: HashBytes([]byte("tx-res"))}}},
 			HardwareBindingHash:  binding,
 			SourceHash:           HashBytes(source),
 			BuildManifestHash:    HashBytes(buildManifest),
-			BuildArtifactHash:    HashBytes([]byte("compiled-driver-fixture")),
+			BuildArtifactHash:    HashBytes(artifactBytes),
 			ToolchainHash:        HashBytes(toolchain),
 			ProvenanceHash:       provenanceHash,
 		},
@@ -136,13 +169,13 @@ func TestUnknownDeviceSynthesisVerifyCanaryRollback(t *testing.T) {
 		t.Fatalf("unverified candidate reached STAGE: %v", err)
 	}
 
-	artifactBytes := []byte("compiled-driver-fixture")
 	trustedTests := trustedTestsForCandidate(t, output.Candidate, artifactBytes)
 	observation := trustedObservationForCandidate(t, output.Candidate, artifactBytes, output.Candidate.RequestedCapabilities)
 	verification, err := verifier.Verify(context.Background(), VerificationRequest{
 		Hardware:              manifest,
 		Candidate:             output.Candidate,
 		AllowedCapabilities:   ABI1().LogicalCapabilities,
+		AllowedResourceGrants: testResourceGrants(manifest, output.Candidate),
 		ApprovedEvidence:      provenance,
 		BuiltArtifact:         artifactBytes,
 		TrustedTestEvidence:   trustedTests,
@@ -206,6 +239,7 @@ func TestVerifierRejectsUndeclaredCapabilityAndBindingMismatch(t *testing.T) {
 		Hardware:              manifest,
 		Candidate:             candidate,
 		AllowedCapabilities:   ABI1().LogicalCapabilities,
+		AllowedResourceGrants: testResourceGrants(manifest, candidate),
 		ApprovedEvidence:      candidate.Provenance,
 		BuiltArtifact:         artifactBytes,
 		TrustedTestEvidence:   trustedTestsForCandidate(t, candidate, artifactBytes),
@@ -230,6 +264,7 @@ func TestVerifierAcceptsIRCandidateWithoutSource(t *testing.T) {
 		Hardware:              manifest,
 		Candidate:             candidate,
 		AllowedCapabilities:   ABI1().LogicalCapabilities,
+		AllowedResourceGrants: testResourceGrants(manifest, candidate),
 		ApprovedEvidence:      candidate.Provenance,
 		BuiltArtifact:         artifactBytes,
 		TrustedTestEvidence:   trustedTestsForCandidate(t, candidate, artifactBytes),
@@ -281,7 +316,9 @@ func TestFabricatedVerificationResultCannotStage(t *testing.T) {
 
 func TestTamperedAndStaleVerifierAttestationsFailClosed(t *testing.T) {
 	manifest, candidate := verifierFixture(t)
-	artifactBytes := []byte("artifact")
+	artifactBytes := testDriverImageV1()
+	candidate.Manifest.ImageFormat = DriverImageFormatV1
+	candidate.Manifest.BuildArtifactHash = HashBytes(artifactBytes)
 	verifier := NewDeterministicVerifier("trusted-verifier")
 	verification := verifyCandidate(t, verifier, manifest, candidate, artifactBytes, StateActive, candidate.Provenance, candidate.RequestedCapabilities)
 	anchor, err := verifier.TrustAnchor()
@@ -400,8 +437,9 @@ func TestVerifierRejectsArtifactMismatchAndCapabilityBoundaryBypass(t *testing.T
 		observation := CapabilityObservation{ScannerID: "fixture-scanner", ScannerVersion: "1", CandidateDigest: candidateDigest, ArtifactDigest: HashBytes(artifactBytes), EvidenceHash: HashBytes([]byte("scan")), Capabilities: custom.RequestedCapabilities}
 		result, err := verifier.Verify(context.Background(), VerificationRequest{
 			Hardware: manifest, Candidate: custom,
-			AllowedCapabilities: append(append([]LogicalCapability(nil), ABI1().LogicalCapabilities...), forbidden),
-			ApprovedEvidence:    custom.Provenance, BuiltArtifact: artifactBytes,
+			AllowedCapabilities:   append(append([]LogicalCapability(nil), ABI1().LogicalCapabilities...), forbidden),
+			AllowedResourceGrants: testResourceGrants(manifest, custom),
+			ApprovedEvidence:      custom.Provenance, BuiltArtifact: artifactBytes,
 			TrustedTestEvidence: trustedTestsForCandidate(t, custom, artifactBytes), CapabilityObservation: observation, TargetState: StateStage,
 		})
 		if err != nil {
@@ -421,6 +459,38 @@ func TestVerifierRejectsArtifactMismatchAndCapabilityBoundaryBypass(t *testing.T
 			t.Fatal("candidate omission hid undeclared trusted scanner capability")
 		}
 	})
+}
+
+func TestCanaryRequiresStructurallyLoadableDriverImage(t *testing.T) {
+	manifest, candidate := verifierFixture(t)
+	artifactBytes := []byte("hash-valid-but-not-a-driver-image")
+	candidate.Manifest.ImageFormat = DriverImageFormatV1
+	candidate.Manifest.BuildArtifactHash = HashBytes(artifactBytes)
+	verifier := NewDeterministicVerifier("driver-image-verifier")
+
+	staged := verifyCandidateRaw(t, verifier, manifest, candidate, artifactBytes, StateStage,
+		candidate.Provenance, candidate.RequestedCapabilities, trustedTestsForCandidate(t, candidate, artifactBytes))
+	if err := staged.Error(); err != nil {
+		t.Fatalf("STAGE should permit structurally intermediate artifact: %v", err)
+	}
+
+	canary := verifyCandidateRaw(t, verifier, manifest, candidate, artifactBytes, StateCanary,
+		candidate.Provenance, candidate.RequestedCapabilities, trustedTestsForCandidate(t, candidate, artifactBytes))
+	if canary.OK {
+		t.Fatal("CANARY accepted a hash-valid artifact that is not Driver Image v1")
+	}
+	found := false
+	for _, check := range canary.Checks {
+		if check.Name == "driver_image_format" {
+			found = true
+			if check.Passed {
+				t.Fatal("driver image structural check unexpectedly passed")
+			}
+		}
+	}
+	if !found {
+		t.Fatal("driver_image_format verifier check missing")
+	}
 }
 
 func TestHardwareManifestRejectsInvalidTopology(t *testing.T) {
@@ -461,6 +531,126 @@ func TestHardwareManifestRejectsInvalidTopology(t *testing.T) {
 				t.Fatal("invalid topology was accepted")
 			}
 		})
+	}
+}
+
+func TestHardwareManifestResourceAuthorityValidation(t *testing.T) {
+	device := DeviceNode{ID: "dev0", Kind: DeviceNetwork, BusID: "pcie0", Identity: DeviceIdentity{StableID: PrivacySafeDeviceID("pcie", "dev0")}}
+	base := HardwareManifest{
+		SchemaVersion: HardwareManifestSchemaV1,
+		Architecture:  ArchX8664,
+		ABI:           "win64",
+		Endianness:    EndianLittle,
+		Graph: DeviceGraph{
+			SchemaVersion: DeviceGraphSchemaV1,
+			Buses:         []BusDescriptor{{ID: "pcie0", Kind: BusPCIe}},
+			Devices:       []DeviceNode{device},
+			Resources: []DeviceResource{
+				{DeviceID: device.ID, Kind: ResourceMMIO, Start: 0x1000, Length: 0x100},
+				{DeviceID: device.ID, Kind: ResourceIRQ, Start: 17, Length: 1},
+				{DeviceID: device.ID, Kind: ResourceConfig, Start: 0, Length: 0x100},
+				{DeviceID: device.ID, Kind: ResourceDMA, Start: 0x20000000, Length: 0x2000},
+				{DeviceID: device.ID, Kind: ResourceSharedMemory, Start: 0x30000000, Length: 0x4000},
+			},
+		},
+	}
+	if err := base.Validate(); err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		name string
+		edit func(*HardwareManifest)
+	}{
+		{"unknown device", func(m *HardwareManifest) { m.Graph.Resources[0].DeviceID = "missing" }},
+		{"zero length", func(m *HardwareManifest) { m.Graph.Resources[0].Length = 0 }},
+		{"wrapped mmio", func(m *HardwareManifest) { m.Graph.Resources[0].Start, m.Graph.Resources[0].Length = ^uint64(0)-7, 16 }},
+		{"invalid irq width", func(m *HardwareManifest) { m.Graph.Resources[1].Length = 2 }},
+		{"config aperture overflow", func(m *HardwareManifest) { m.Graph.Resources[2].Start, m.Graph.Resources[2].Length = 4095, 2 }},
+		{"unaligned dma", func(m *HardwareManifest) { m.Graph.Resources[3].Start++ }},
+		{"unaligned shared memory", func(m *HardwareManifest) { m.Graph.Resources[4].Length = 0x4100 }},
+		{"overlap", func(m *HardwareManifest) {
+			m.Graph.Resources = append(m.Graph.Resources, DeviceResource{DeviceID: device.ID, Kind: ResourceMMIO, Start: 0x1080, Length: 0x20})
+		}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			clone := base
+			clone.Graph.Resources = append([]DeviceResource(nil), base.Graph.Resources...)
+			tt.edit(&clone)
+			if err := clone.Validate(); err == nil {
+				t.Fatal("invalid resource authority was accepted")
+			}
+		})
+	}
+
+	reordered := base
+	reordered.Graph.Resources = []DeviceResource{base.Graph.Resources[4], base.Graph.Resources[2], base.Graph.Resources[0], base.Graph.Resources[3], base.Graph.Resources[1]}
+	left, err := HardwareBindingHash(base)
+	if err != nil {
+		t.Fatal(err)
+	}
+	right, err := HardwareBindingHash(reordered)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if left != right {
+		t.Fatalf("resource order changed hardware binding: %s != %s", left, right)
+	}
+}
+
+func TestProtectedVerificationRequiresConcreteCapabilityResources(t *testing.T) {
+	manifest, candidate := verifierFixture(t)
+	manifest.Graph.Resources = nil
+	binding, err := HardwareBindingHash(manifest)
+	if err != nil {
+		t.Fatal(err)
+	}
+	candidate.Manifest.HardwareBindingHash = binding
+	artifactBytes := []byte("artifact")
+	result := verifyCandidateRaw(t, NewDeterministicVerifier("resource-verifier"), manifest, candidate, artifactBytes, StateStage,
+		candidate.Provenance, candidate.RequestedCapabilities, trustedTestsForCandidate(t, candidate, artifactBytes))
+	if result.OK {
+		t.Fatal("protected verification accepted a capability with no concrete hardware resource")
+	}
+	found := false
+	for _, check := range result.Checks {
+		if check.Name == "concrete_resource_grants" {
+			found = true
+			if check.Passed {
+				t.Fatal("concrete resource check unexpectedly passed")
+			}
+		}
+	}
+	if !found {
+		t.Fatal("concrete resource verifier check missing")
+	}
+}
+
+func TestProtectedVerificationRejectsOverbroadResourceRights(t *testing.T) {
+	manifest, candidate := verifierFixture(t)
+	grants := testResourceGrants(manifest, candidate)
+	if len(grants) != 1 {
+		t.Fatalf("fixture grants=%d want 1", len(grants))
+	}
+	grants[0].Rights |= ResourceRightControl
+	artifactBytes := []byte("artifact")
+	result, err := NewDeterministicVerifier("resource-rights-verifier").Verify(context.Background(), VerificationRequest{
+		Hardware:              manifest,
+		Candidate:             candidate,
+		AllowedCapabilities:   ABI1().LogicalCapabilities,
+		AllowedResourceGrants: grants,
+		ApprovedEvidence:      candidate.Provenance,
+		BuiltArtifact:         artifactBytes,
+		TrustedTestEvidence:   trustedTestsForCandidate(t, candidate, artifactBytes),
+		CapabilityObservation: trustedObservationForCandidate(t, candidate, artifactBytes, candidate.RequestedCapabilities),
+		TargetState:           StateStage,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.OK {
+		t.Fatal("protected verification accepted rights outside the resource-kind ceiling")
 	}
 }
 
@@ -530,6 +720,18 @@ func trustedTestsForCandidate(t *testing.T, candidate CandidateBundle, artifactB
 	return out
 }
 
+func testResourceGrants(manifest HardwareManifest, candidate CandidateBundle) []ResourceGrant {
+	resources, err := ConcreteResourcesForCapabilities(manifest, candidate.Manifest.Selector.DeviceID, candidate.RequestedCapabilities)
+	if err != nil {
+		return nil
+	}
+	grants := make([]ResourceGrant, 0, len(resources))
+	for _, resource := range resources {
+		grants = append(grants, ResourceGrant{Resource: resource, Rights: AllowedRightsForResourceKind(resource.Kind)})
+	}
+	return grants
+}
+
 func trustedObservationForCandidate(t *testing.T, candidate CandidateBundle, artifactBytes []byte, capabilities []LogicalCapability) CapabilityObservation {
 	t.Helper()
 	candidateDigest, err := candidate.Digest()
@@ -564,6 +766,7 @@ func verifyCandidateRaw(t *testing.T, verifier DeterministicVerifier, manifest H
 		Hardware:              manifest,
 		Candidate:             candidate,
 		AllowedCapabilities:   ABI1().LogicalCapabilities,
+		AllowedResourceGrants: testResourceGrants(manifest, candidate),
 		ApprovedEvidence:      approved,
 		BuiltArtifact:         artifactBytes,
 		TrustedTestEvidence:   tests,
@@ -596,7 +799,7 @@ func journalAtVerify(t *testing.T, hardwareBinding string, anchor VerifierTrustA
 func verifierFixture(t *testing.T) (HardwareManifest, CandidateBundle) {
 	t.Helper()
 	device := DeviceNode{ID: "dev0", Kind: DeviceNetwork, BusID: "usb0", Identity: DeviceIdentity{StableID: PrivacySafeDeviceID("usb", "1", "2"), VendorID: "1", ProductID: "2"}}
-	manifest := HardwareManifest{SchemaVersion: HardwareManifestSchemaV1, Architecture: ArchARM64, ABI: "aapcs64", Endianness: EndianLittle, Graph: DeviceGraph{SchemaVersion: DeviceGraphSchemaV1, Buses: []BusDescriptor{{ID: "usb0", Kind: BusUSB}}, Devices: []DeviceNode{device}}}
+	manifest := HardwareManifest{SchemaVersion: HardwareManifestSchemaV1, Architecture: ArchARM64, ABI: "aapcs64", Endianness: EndianLittle, Graph: DeviceGraph{SchemaVersion: DeviceGraphSchemaV1, Buses: []BusDescriptor{{ID: "usb0", Kind: BusUSB}}, Devices: []DeviceNode{device}, Resources: []DeviceResource{{DeviceID: device.ID, Kind: ResourceConfig, Start: 0, Length: 0x100}}}}
 	binding, err := HardwareBindingHash(manifest)
 	if err != nil {
 		t.Fatal(err)

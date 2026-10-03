@@ -5,6 +5,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode"
 
 	resourcepolicy "swypik-os/core/resource"
 )
@@ -77,35 +78,26 @@ func (b *Broker) Ingest(source, sender, title, body string) Notification {
 	priority := PriorityDigest
 	reason := "Secondary background activity buffered"
 
-	// 1. Check for promotional spam
-	spamWords := []string{"discount", "voucher", "promo", "reducere", "oferta", "limited time", "cashback", "sale"}
-	for _, w := range spamWords {
-		if strings.Contains(content, w) {
-			priority = PrioritySpam
-			reason = fmt.Sprintf("Promotional spam blocked (%s)", w)
-			b.spamNeutralized++
-			return Notification{
-				ID:        fmt.Sprintf("notif_%d", time.Now().UnixNano()),
-				SourceApp: source,
-				Sender:    sender,
-				Title:     title,
-				Body:      body,
-				Priority:  priority,
-				Reason:    reason,
-				TimeStr:   time.Now().Format("15:04"),
-			}
-		}
-	}
-
-	// 2. Check for urgent alerts
+	// VIP and critical alerts take precedence over promotional words. An OTP
+	// or security warning must not disappear merely because it mentions a sale.
 	if senderLower != "" && b.vipSenders[senderLower] {
 		priority = PriorityUrgent
 		reason = "VIP Contact Priority"
-	} else if strings.Contains(" "+content+" ", " call ") || strings.Contains(content, "apel") ||
-		strings.Contains(content, "otp") || strings.Contains(content, "2fa") ||
-		strings.Contains(content, "security") || strings.Contains(content, "securitate") {
+	} else if containsKeyword(content, "call") || containsKeyword(content, "apel") ||
+		containsKeyword(content, "otp") || containsKeyword(content, "2fa") ||
+		containsKeyword(content, "security") || containsKeyword(content, "securitate") {
 		priority = PriorityUrgent
 		reason = "Critical / Security Event"
+	}
+	if priority != PriorityUrgent {
+		for _, word := range []string{"discount", "voucher", "promo", "reducere", "oferta", "limited time", "cashback", "sale"} {
+			if containsKeyword(content, word) {
+				priority = PrioritySpam
+				reason = fmt.Sprintf("Promotional spam blocked (%s)", word)
+				b.spamNeutralized++
+				break
+			}
+		}
 	}
 
 	notif := Notification{
@@ -125,7 +117,7 @@ func (b *Broker) Ingest(source, sender, title, body string) Notification {
 			copy(b.urgentQueue, b.urgentQueue[len(b.urgentQueue)-b.maxQueue:])
 			b.urgentQueue = b.urgentQueue[:b.maxQueue]
 		}
-	} else {
+	} else if priority == PriorityDigest {
 		b.digestQueue = append(b.digestQueue, notif)
 		if len(b.digestQueue) > b.maxQueue {
 			copy(b.digestQueue, b.digestQueue[len(b.digestQueue)-b.maxQueue:])
@@ -134,6 +126,15 @@ func (b *Broker) Ingest(source, sender, title, body string) Notification {
 	}
 
 	return notif
+}
+
+// Match complete words/phrases, including punctuation-separated words, without
+// classifying e.g. "wholesale" or "recall" by a substring inside a larger word.
+func containsKeyword(content, keyword string) bool {
+	words := strings.FieldsFunc(content, func(r rune) bool {
+		return !unicode.IsLetter(r) && !unicode.IsDigit(r)
+	})
+	return strings.Contains(" "+strings.Join(words, " ")+" ", " "+keyword+" ")
 }
 
 // GetUrgent returns active critical notifications.

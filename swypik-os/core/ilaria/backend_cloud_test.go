@@ -52,3 +52,18 @@ func TestCloudBackendDoesNotForwardTokenOnRedirect(t *testing.T) {
 		t.Fatal("followed redirect")
 	}
 }
+
+func TestCloudTokenIsNotSentToLoopbackHTTP(t *testing.T) {
+	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if auth := r.Header.Get("Authorization"); auth != "" {
+			t.Fatalf("loopback request leaked authorization header: %q", auth)
+		}
+		fmt.Fprint(w, `{"reply":"connected"}`)
+	}))
+	defer s.Close()
+
+	b := NewCloudBackend(s.URL, strings.Repeat("a", 32))
+	if reply, err := b.Chat(context.Background(), "hello", nil); err != nil || reply != "connected" {
+		t.Fatalf("%q %v", reply, err)
+	}
+}

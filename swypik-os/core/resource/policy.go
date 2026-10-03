@@ -41,7 +41,6 @@ type Policy struct {
 	MaxChatHistoryMessages  int
 	MaxDocumentBytes        int
 	MaxAppCatalogEntries    int
-	MaxWalletTransactions   int
 	MaxResidentPeers        int
 	MaxHiveTasks            int
 	P2PInspectionQueue      int
@@ -127,7 +126,6 @@ func ForProfile(profile Profile) Policy {
 			MaxChatHistoryMessages:  20,
 			MaxDocumentBytes:        128 << 10,
 			MaxAppCatalogEntries:    32,
-			MaxWalletTransactions:   128,
 			MaxResidentPeers:        16,
 			MaxHiveTasks:            16,
 			P2PInspectionQueue:      4,
@@ -152,7 +150,6 @@ func ForProfile(profile Profile) Policy {
 			MaxChatHistoryMessages:  100,
 			MaxDocumentBytes:        4 << 20,
 			MaxAppCatalogEntries:    512,
-			MaxWalletTransactions:   1000,
 			MaxResidentPeers:        512,
 			MaxHiveTasks:            256,
 			P2PInspectionQueue:      32,
@@ -177,7 +174,6 @@ func ForProfile(profile Profile) Policy {
 			MaxChatHistoryMessages:  60,
 			MaxDocumentBytes:        512 << 10,
 			MaxAppCatalogEntries:    128,
-			MaxWalletTransactions:   512,
 			MaxResidentPeers:        128,
 			MaxHiveTasks:            128,
 			P2PInspectionQueue:      8,
@@ -251,7 +247,6 @@ func (p Policy) Contract() controlkernelcontract.ResourcePolicy {
 		MaxChatHistoryMessages:  uint64(p.MaxChatHistoryMessages),
 		MaxDocumentBytes:        uint64(p.MaxDocumentBytes),
 		MaxAppCatalogEntries:    uint64(p.MaxAppCatalogEntries),
-		MaxWalletTransactions:   uint64(p.MaxWalletTransactions),
 		MaxResidentPeers:        uint64(p.MaxResidentPeers),
 		MaxHiveTasks:            uint64(p.MaxHiveTasks),
 		P2PInspectionQueue:      uint64(p.P2PInspectionQueue),

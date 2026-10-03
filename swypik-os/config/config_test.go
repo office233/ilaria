@@ -9,7 +9,7 @@ import (
 
 func TestConfigLoading(t *testing.T) {
 	tempEnv := filepath.Join(t.TempDir(), "test_swypik.env")
-	for _, key := range []string{"SWYPIK_PORT", "SWYPIK_BIND_HOST", "SWYPIK_SWARM_ENABLED", "SWYPIK_SWARM_REWARD_PER_TFLOP", "SWYPIK_DEFAULT_URL"} {
+	for _, key := range []string{"SWYPIK_PORT", "SWYPIK_BIND_HOST", "SWYPIK_SWARM_ENABLED", "SWYPIK_TEST_FLOAT_KNOB", "SWYPIK_DEFAULT_URL"} {
 		t.Setenv(key, "")
 		if err := os.Unsetenv(key); err != nil {
 			t.Fatal(err)
@@ -21,7 +21,7 @@ func TestConfigLoading(t *testing.T) {
 SWYPIK_PORT=9999
 SWYPIK_BIND_HOST=0.0.0.0
 SWYPIK_SWARM_ENABLED=false
-SWYPIK_SWARM_REWARD_PER_TFLOP=0.25
+SWYPIK_TEST_FLOAT_KNOB=0.25
 SWYPIK_DEFAULT_URL="https://test.swypik.com"
 `
 	if err := os.WriteFile(tempEnv, []byte(content), 0644); err != nil {
@@ -39,8 +39,8 @@ SWYPIK_DEFAULT_URL="https://test.swypik.com"
 	if GetBool("SWYPIK_SWARM_ENABLED", true) != false {
 		t.Errorf("expected swarm disabled")
 	}
-	if GetFloat("SWYPIK_SWARM_REWARD_PER_TFLOP", 0.1) != 0.25 {
-		t.Errorf("expected reward 0.25")
+	if GetFloat("SWYPIK_TEST_FLOAT_KNOB", 0.1) != 0.25 {
+		t.Errorf("expected float 0.25")
 	}
 	if GetString("SWYPIK_DEFAULT_URL", "") != "https://test.swypik.com" {
 		t.Errorf("expected stripped quotes URL")

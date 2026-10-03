@@ -5,9 +5,32 @@ import (
 	"testing"
 )
 
+func trainerFixture(t *testing.T, nodeID string, gpu float64) *LocalTrainer {
+	t.Helper()
+	trainer := NewLocalTrainer(nodeID, gpu)
+	if err := trainer.ConfigureSimulation(SimulationConfig{Version: SimulationConfigVersion,
+		Seed: 7, InitialLoss: 1.84, LossFloor: 0.12, LossDecay: 0.985,
+		GradientBias: 0.52, GradientScale: 0.05, TFLOPSEstimate: 0.25}); err != nil {
+		t.Fatal(err)
+	}
+	return trainer
+}
+
+func aggregationFixture(t *testing.T, round, params int) *FederatedAggregator {
+	t.Helper()
+	aggregator := NewFederatedAggregator(round)
+	if err := aggregator.ConfigureCandidate(map[string][]float64{
+		"transformer.lora_a": make([]float64, params),
+		"transformer.lora_b": make([]float64, params),
+	}, AggregationPolicy{LearningRate: 0.85, MaxGradientNorm: 2}); err != nil {
+		t.Fatal(err)
+	}
+	return aggregator
+}
+
 func TestFederatedLearningAndPoC(t *testing.T) {
 	// 1. Test Local GPU Micro-Batch Generation
-	trainer := NewLocalTrainer("worker_rtx_4070_node", 40.0) // 40% GPU allocation
+	trainer := trainerFixture(t, "worker_rtx_4070_node", 40.0) // synthetic GPU allocation
 	delta, err := trainer.ComputeMicroBatch(1, "transformer.lora_a", 32)
 	if err != nil {
 		t.Fatalf("Micro-batch computation failed: %v", err)
@@ -17,9 +40,9 @@ func TestFederatedLearningAndPoC(t *testing.T) {
 		t.Errorf("Invalid delta structure: %+v", delta)
 	}
 
-	// 2. Test Proof-of-Compute Verification
-	if !VerifyProofOfCompute(delta) {
-		t.Errorf("Legitimate Proof-of-Compute failed validation")
+	// 2. Test delta integrity Verification
+	if !VerifyDeltaIntegrity(delta) {
+		t.Errorf("Legitimate delta integrity failed validation")
 	}
 
 	// Tampering test: altering a gradient value should immediately fail PoC
@@ -28,12 +51,12 @@ func TestFederatedLearningAndPoC(t *testing.T) {
 	tamperedValues[0] += 1.0
 	tamperedDelta := *delta
 	tamperedDelta.Values = tamperedValues
-	if VerifyProofOfCompute(&tamperedDelta) {
-		t.Errorf("Tampered gradient unexpectedly passed Proof-of-Compute verification")
+	if VerifyDeltaIntegrity(&tamperedDelta) {
+		t.Errorf("Tampered gradient unexpectedly passed delta integrity verification")
 	}
 
 	// 3. Test Federated Aggregator & Byzantine Poisoning Filter
-	aggregator := NewFederatedAggregator(1)
+	aggregator := aggregationFixture(t, 1, 32)
 	if err := aggregator.RegisterNodeKey(trainer.nodeID, trainer.PublicKey()); err != nil {
 		t.Fatalf("Failed to register node key: %v", err)
 	}
@@ -45,7 +68,7 @@ func TestFederatedLearningAndPoC(t *testing.T) {
 	}
 
 	// Valid submission from Worker 2 (RTX 3080)
-	trainer2 := NewLocalTrainer("worker_rtx_3080_node", 50.0)
+	trainer2 := trainerFixture(t, "worker_rtx_3080_node", 50.0)
 	if err := aggregator.RegisterNodeKey(trainer2.nodeID, trainer2.PublicKey()); err != nil {
 		t.Fatalf("Failed to register worker 2 key: %v", err)
 	}
@@ -57,7 +80,7 @@ func TestFederatedLearningAndPoC(t *testing.T) {
 
 	// Malicious Byzantine Poisoning Attack:
 	// Rogue node attempts to inject massive destabilizing gradients (+50.0)
-	trainerRogue := NewLocalTrainer("rogue_cheat_node", 10.0)
+	trainerRogue := trainerFixture(t, "rogue_cheat_node", 10.0)
 	if err := aggregator.RegisterNodeKey(trainerRogue.nodeID, trainerRogue.PublicKey()); err != nil {
 		t.Fatalf("Failed to register rogue key: %v", err)
 	}
@@ -85,20 +108,14 @@ func TestFederatedLearningAndPoC(t *testing.T) {
 		t.Fatalf("Round aggregation failed: %v", err)
 	}
 
-	if checkpoint.RoundID != 2 || checkpoint.Version != "ilaria-v1.2" {
-		t.Errorf("Expected model to advance to ilaria-v1.2, got: %s (Round %d)", checkpoint.Version, checkpoint.RoundID)
+	if checkpoint.RoundID != 2 || checkpoint.Version != "candidate-v1.2" {
+		t.Errorf("Expected candidate to advance to candidate-v1.2, got: %s (Round %d)", checkpoint.Version, checkpoint.RoundID)
 	}
 	if checkpoint.Contributors != 2 {
 		t.Errorf("Expected exactly 2 valid contributors (rogue excluded), got: %d", checkpoint.Contributors)
 	}
 	if totalTflops <= 0 {
 		t.Errorf("Expected positive total TFLOPS aggregated, got: %.3f", totalTflops)
-	}
-
-	// 5. Test SWP Reward Calculation
-	reward := aggregator.CalculateReward(0.50) // 0.5 TFLOPS
-	if reward <= 0 || reward != 0.05 {
-		t.Errorf("Expected 0.05 SWP reward for 0.5 TFLOPS, got: %.3f", reward)
 	}
 
 	// 6. Test P2P Transport Mesh
@@ -119,8 +136,8 @@ func TestFederatedLearningAndPoC(t *testing.T) {
 
 	// Broadcast test
 	sent, err := mesh.BroadcastGradient(delta)
-	if err != nil || sent != 1 {
-		t.Errorf("Broadcast failed: sent=%d, err=%v", sent, err)
+	if err == nil || sent != 0 {
+		t.Errorf("unimplemented transport reported delivery: sent=%d, err=%v", sent, err)
 	}
 
 	// Penalize rogue peer

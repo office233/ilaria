@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"math"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -30,9 +31,8 @@ type Config struct {
 	ChromePath string
 
 	// Swarm
-	SwarmEnabled   bool
-	NodeID         string
-	RewardPerTflop float64
+	SwarmEnabled bool
+	NodeID       string
 }
 
 // EnvFileVar is the environment variable naming an explicit .env file path.
@@ -84,16 +84,35 @@ func Load(envPaths ...string) *Config {
 			DefaultURL:     GetString("SWYPIK_DEFAULT_URL", "https://swypik.com"),
 			AllowedOrigins: allowedList,
 
-			EdgePath:   GetString("SWYPIK_EDGE_PATH", filepath.Join(GetString("ProgramFiles(x86)", `C:\Program Files (x86)`), "Microsoft", "Edge", "Application", "msedge.exe")),
-			ChromePath: GetString("SWYPIK_CHROME_PATH", filepath.Join(GetString("ProgramFiles", `C:\Program Files`), "Google", "Chrome", "Application", "chrome.exe")),
+			EdgePath:   browserPath("SWYPIK_EDGE_PATH", []string{"msedge", "microsoft-edge"}, "ProgramFiles(x86)", "Microsoft", "Edge", "Application", "msedge.exe"),
+			ChromePath: browserPath("SWYPIK_CHROME_PATH", []string{"chrome", "google-chrome", "chromium"}, "ProgramFiles", "Google", "Chrome", "Application", "chrome.exe"),
 
-			SwarmEnabled:   GetBool("SWYPIK_SWARM_ENABLED", true),
-			NodeID:         GetString("SWYPIK_SWARM_NODE_ID", hostname),
-			RewardPerTflop: GetFloat("SWYPIK_SWARM_REWARD_PER_TFLOP", 0.10),
+			SwarmEnabled: GetBool("SWYPIK_SWARM_ENABLED", false),
+			NodeID:       GetString("SWYPIK_SWARM_NODE_ID", hostname),
 		}
 	})
 
 	return globalConfig
+}
+
+// Explicit configuration wins. Otherwise discover installed executables rather
+// than inventing a C: drive or returning a nonexistent browser path.
+func browserPath(key string, commands []string, directoryEnv string, components ...string) string {
+	if explicit := os.Getenv(key); explicit != "" {
+		return explicit
+	}
+	for _, command := range commands {
+		if path, err := exec.LookPath(command); err == nil {
+			return path
+		}
+	}
+	if directory := os.Getenv(directoryEnv); directory != "" && filepath.IsAbs(directory) {
+		path := filepath.Join(append([]string{directory}, components...)...)
+		if info, err := os.Stat(path); err == nil && info.Mode().IsRegular() {
+			return path
+		}
+	}
+	return ""
 }
 
 // Get returns the loaded singleton configuration.

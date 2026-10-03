@@ -88,6 +88,32 @@ func (k *Kernel) checkOpenLocked() error {
 	return nil
 }
 
+func (k *Kernel) authenticateVerifierLocked(credential, expectedID string) (VerifierPrincipal, error) {
+	if k.verifierAuthenticator == nil {
+		return VerifierPrincipal{}, fmt.Errorf("%w: no verifier authenticator configured", ErrVerifierUnauthorized)
+	}
+	principal, err := k.verifierAuthenticator.AuthenticateVerifier(credential)
+	if err != nil || principal.ID == "" {
+		return VerifierPrincipal{}, fmt.Errorf("%w: credential rejected", ErrVerifierUnauthorized)
+	}
+	if expectedID != "" && principal.ID != expectedID {
+		return VerifierPrincipal{}, fmt.Errorf("%w: authenticated verifier does not match expected identity", ErrVerifierUnauthorized)
+	}
+	return principal, nil
+}
+
+// ValidateVerifierCredential authenticates a verifier without recording a
+// verdict. Integration code uses this as a preflight before starting an
+// external side effect whose later commit will depend on that verifier.
+func (k *Kernel) ValidateVerifierCredential(credential, expectedID string) (VerifierPrincipal, error) {
+	k.mu.Lock()
+	defer k.mu.Unlock()
+	if err := k.checkOpenLocked(); err != nil {
+		return VerifierPrincipal{}, err
+	}
+	return k.authenticateVerifierLocked(credential, expectedID)
+}
+
 func (k *Kernel) appendLocked(events ...Event) error {
 	if err := k.checkOpenLocked(); err != nil {
 		return err
@@ -1076,12 +1102,9 @@ func (k *Kernel) RecordVerification(credential string, request VerificationReque
 	if err := k.checkOpenLocked(); err != nil {
 		return Verification{}, err
 	}
-	if k.verifierAuthenticator == nil {
-		return Verification{}, fmt.Errorf("%w: no verifier authenticator configured", ErrVerifierUnauthorized)
-	}
-	principal, err := k.verifierAuthenticator.AuthenticateVerifier(credential)
-	if err != nil || principal.ID == "" {
-		return Verification{}, fmt.Errorf("%w: credential rejected", ErrVerifierUnauthorized)
+	principal, err := k.authenticateVerifierLocked(credential, request.ExpectedVerifierID)
+	if err != nil {
+		return Verification{}, err
 	}
 	node, ok := k.projection.Nodes[request.NodeID]
 	if !ok {

@@ -388,6 +388,40 @@ func TestVerificationRequiredBeforeCommit(t *testing.T) {
 	}
 }
 
+func TestVerificationCanBindAuthenticatedVerifierIdentity(t *testing.T) {
+	clock := &fakeClock{now: time.Date(2026, 9, 30, 9, 0, 0, 0, time.UTC)}
+	kernel, _ := openTestKernel(t, clock)
+	defer kernel.Close()
+	createReadyNode(t, kernel, "task", "node")
+	lease, err := kernel.ClaimLease("node", "executor-credential", "executor", time.Minute)
+	if err != nil {
+		t.Fatal(err)
+	}
+	token := LeaseToken{LeaseID: lease.ID, Fence: lease.Fence}
+	for _, state := range []NodeState{NodePreparing, NodeExecuting, NodeVerifying} {
+		if err := kernel.TransitionNode("node", state, token); err != nil {
+			t.Fatal(err)
+		}
+	}
+	request := VerificationRequest{
+		NodeID:             "node",
+		Decision:           VerificationPassed,
+		EvidenceHash:       "sha256:identity-bound",
+		ExpectedVerifierID: "different-verifier",
+	}
+	if _, err := kernel.RecordVerification("verifier-credential", request); !errors.Is(err, ErrVerifierUnauthorized) {
+		t.Fatalf("mismatched verifier identity error=%v", err)
+	}
+	request.ExpectedVerifierID = "verifier-independent"
+	verification, err := kernel.RecordVerification("verifier-credential", request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if verification.VerifierID != request.ExpectedVerifierID {
+		t.Fatalf("verifier id=%q want %q", verification.VerifierID, request.ExpectedVerifierID)
+	}
+}
+
 func TestTaskGraphRejectsCycleAndQueriesReadyNodes(t *testing.T) {
 	clock := &fakeClock{now: time.Date(2026, 9, 28, 18, 0, 0, 0, time.UTC)}
 	kernel, _ := openTestKernel(t, clock)

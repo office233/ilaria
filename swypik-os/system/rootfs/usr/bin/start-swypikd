@@ -3,4 +3,7 @@
 # directory is removed. No model-controlled path is used here.
 [ -S /run/swypik/control.sock ] && rm -f /run/swypik/control.sock
 export GOMEMLIMIT=128MiB
-exec /usr/bin/swypikd
+# These RAM-only image paths are explicit deployment policy, not binary defaults.
+exec /usr/bin/swypikd -socket /run/swypik/control.sock \
+ -workspace /home/swypik/Workspace -index /var/lib/swypik/index.jsonl \
+ -state-dir /var/lib/swypik/agent

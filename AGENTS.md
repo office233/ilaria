@@ -7,6 +7,19 @@
   verification and code generation.
 - `swypik-os/` owns OS authority, Control Kernel, Compute Fabric, devices,
   drivers, sandboxing, UI and the first-party native kernel seed.
+- `swypik/commerce/` and `swypik/mobile/` own the commerce product and mobile pilot.
+- `site/` owns the public marketing site.
+
+## Repository organization
+
+- Keep product implementations, tests, READMEs and AGENTS.md in their product roots.
+- Write agent plans, handoffs and coordination records under `ramasite/agent-md/<product>/`.
+- Keep standalone benchmarks and their results under `ramasite/benchmarks/<product>/`.
+- Keep technical documentation under `ramasite/docs/<product>/`.
+- Shared validation scripts live in `ramasite/scripts/`.
+- Machine-local tools, environments, caches and conversation archives belong in
+  ignored `ramasite/local/`. Never read or commit secrets or generated binaries.
+- Preserve `ramasite/RELOCATIONS.json` as the path migration record.
 
 Do not create duplicate implementations across product roots.
 

@@ -49,8 +49,11 @@ Thumbs.db
 # Local credentials; sanitized examples remain reviewable.
 .env
 .env.*
+*.env
 !.env.example
 !.env.template
+!*.env.example
+!*.env.template
 
 # --- Model weights and checkpoints ---
 *.pt
@@ -78,11 +81,15 @@ ilaria/data/corpus/*.txt
 
 # Regenerable benchmark payloads/caches. Keep scripts, results, manifests and
 # provenance records trackable; preserve all existing local files on disk.
-ilaria/bench/**/*.sqlite
-ilaria/bench/**/*.sqlite-journal
-ilaria/bench/**/*.sqlite-wal
-ilaria/bench/**/*.sqlite-shm
-ilaria/bench/**/*.zip
-ilaria/bench/**/*.bin
-ilaria/bench/imc_125m_eval_frozen/*.jsonl
-ilaria/bench/imc_125m_tokenizer_candidate/sample/*.txt
+ramasite/benchmarks/ilaria/**/*.sqlite
+ramasite/benchmarks/ilaria/**/*.sqlite-journal
+ramasite/benchmarks/ilaria/**/*.sqlite-wal
+ramasite/benchmarks/ilaria/**/*.sqlite-shm
+ramasite/benchmarks/ilaria/**/*.zip
+ramasite/benchmarks/ilaria/**/*.bin
+ramasite/benchmarks/ilaria/imc_125m_eval_frozen/*.jsonl
+ramasite/benchmarks/ilaria/imc_125m_tokenizer_candidate/sample/*.txt
+
+# Machine-local tools, conversations, environments and caches.
+/ramasite/local/
+/ramasite/benchmarks/**/build/

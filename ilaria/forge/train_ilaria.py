@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import contextlib
+import hashlib
 import json
 import math
 import os
@@ -35,6 +36,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from imc_model import PRESETS, ImcConfig, ImcTransformer, save_imc  # noqa: E402
 from data_contract import (  # noqa: E402
     TOKEN_STREAM_FORMAT,
+    atomic_write_json,
     require_lower_sha256,
 )
 from dataset_manifest import validate_dataset_manifest_file  # noqa: E402
@@ -42,6 +44,57 @@ from tokenizer_freeze import validate_freeze_manifest  # noqa: E402
 from atomic_io import atomic_binary_writer  # noqa: E402
 from training_state import (file_sha256, training_signature, make_checkpoint, capture_rng,
                             restore_checkpoint, initialize_weights)  # noqa: E402
+
+
+def parse_first_party_attestations(values: list[str]) -> dict[str, str]:
+    result = {}
+    for value in values:
+        source, separator, path = value.partition("=")
+        if not separator or not source.strip() or not path.strip() or source in result:
+            raise ValueError("--first-party-attestation must be a unique SOURCE=PATH mapping")
+        result[source] = path
+    return result
+
+
+def load_resume_checkpoint(path: str, expected_sha256: str = "") -> dict:
+    """Verify and load one open generation, preserving the restricted unpickler.
+
+    Atomic checkpoint replacement may change the path after hashing; loading
+    the same descriptor prevents consuming an unverified replacement file.
+    """
+    if expected_sha256:
+        require_lower_sha256("resume SHA256", expected_sha256)
+    with open(path, "rb") as checkpoint:
+        if expected_sha256:
+            digest = hashlib.sha256()
+            for block in iter(lambda: checkpoint.read(8 * 1024 * 1024), b""):
+                digest.update(block)
+            if digest.hexdigest() != expected_sha256:
+                raise ValueError("resume checkpoint SHA256 differs from the launch pin")
+            checkpoint.seek(0)
+        return torch.load(checkpoint, map_location="cpu", weights_only=True)
+
+
+def publish_checkpoint_metadata(out_dir: str, *, step: int, tokens_seen: int,
+                                best_val: float, signature: dict,
+                                best_name: str, best_export_sha256: str | None) -> None:
+    """Publish a hash-pinned resume point after the checkpoint's atomic write."""
+    checkpoint_path = os.path.join(out_dir, "checkpoint.pt")
+    record = {
+        "format": "imc-checkpoint-publication-v1",
+        "step": step,
+        "tokens_seen": tokens_seen,
+        "best_val_loss": best_val if math.isfinite(best_val) else None,
+        "checkpoint": {
+            "filename": "checkpoint.pt",
+            "sha256": file_sha256(checkpoint_path),
+            "bytes": os.path.getsize(checkpoint_path),
+        },
+        "best_export": ({"filename": best_name, "sha256": best_export_sha256}
+                        if best_export_sha256 else None),
+        "signature": signature,
+    }
+    atomic_write_json(os.path.join(out_dir, "checkpoint.publish.json"), record)
 
 
 def load_stream(prefix: str):
@@ -256,6 +309,8 @@ def main():
     ap.add_argument("--tokenizer", default="", help="tokenizer.json to copy next to the brain (default: from stream meta)")
     ap.add_argument("--dataset-manifest", default="", help="content-addressed ilaria-dataset-manifest-v1 (required for production)")
     ap.add_argument("--tokenizer-freeze", default="", help="ilarialex-freeze-v1 manifest (required for production)")
+    ap.add_argument("--first-party-attestation", action="append", default=[], metavar="SOURCE=PATH")
+    ap.add_argument("--first-party-root", default="", help="immutable attested source snapshot root")
     ap.add_argument("--allow-unmanifested-data", action="store_true", help="smoke tests only: bypass the dataset-manifest gate")
     ap.add_argument("--qualified-pilot", default="", help="versioned, reviewed NON_PROMOTABLE code-only pilot v1 launch metadata")
     ap.add_argument("--qualified-pilot-v2", default="", help="reviewed clean split-before-tokenizer NON_PROMOTABLE pilot v2 launch metadata")
@@ -295,6 +350,7 @@ def main():
     ap.add_argument("--eval-iters", type=int, default=20)
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--resume", default="", help="versioned checkpoint .pt to resume exactly from")
+    ap.add_argument("--resume-sha256", default="", help="expected resume-file SHA256 (required for production resume)")
     ap.add_argument("--init-from", default="", help="warm start from matching legacy/current PT weights; resets optimizer and RNG")
     ap.add_argument("--stop-after", type=int, default=0,
                     help="stop after N steps in this invocation without changing the total LR horizon")
@@ -312,9 +368,18 @@ def main():
     )
     args = ap.parse_args()
     try:
+        first_party_attestations = parse_first_party_attestations(args.first_party_attestation)
+        if first_party_attestations and not args.first_party_root:
+            raise ValueError("--first-party-root is required with first-party attestations")
         validate_training_args(args)
         if args.resume and args.init_from:
             raise ValueError("--resume and --init-from are mutually exclusive")
+        if args.resume_sha256 and not args.resume:
+            raise ValueError("--resume-sha256 requires --resume")
+        if args.resume_sha256:
+            require_lower_sha256("resume SHA256", args.resume_sha256)
+        if args.resume and args.dataset_manifest and not args.resume_sha256:
+            raise ValueError("production resume requires --resume-sha256")
         if args.stop_after < 0:
             raise ValueError("--stop-after must be non-negative")
         if args.sample_tokens < 0:
@@ -441,6 +506,8 @@ def main():
             tokenizer_freeze = validate_freeze_manifest(
                 args.tokenizer_freeze,
                 rights_registry_path=rights_path,
+                first_party_attestations=first_party_attestations,
+                first_party_root=args.first_party_root or None,
             )
             if tokenizer_freeze["tokenizer"]["sha256"] != tokenizer_sha256:
                 raise ValueError(
@@ -543,6 +610,10 @@ def main():
     signature["tokenizer_freeze_sha256"] = tokenizer_freeze_sha256
     if pilot is not None:
         signature["qualified_pilot"] = pilot.binding
+    if first_party_attestations:
+        signature["first_party_attestations"] = {
+            source: file_sha256(path) for source, path in sorted(first_party_attestations.items())
+        }
     signature["trainer_sha256"] = file_sha256(__file__)
     signature["imc_model_sha256"] = file_sha256(
         os.path.join(os.path.dirname(os.path.abspath(__file__)), "imc_model.py")
@@ -559,7 +630,7 @@ def main():
         initialize_weights(torch.load(args.init_from, map_location="cpu", weights_only=True), model)
     if args.resume:
         # Never silently opt out of the restricted unpickler.
-        ck = torch.load(args.resume, map_location="cpu", weights_only=True)
+        ck = load_resume_checkpoint(args.resume, args.resume_sha256)
 
     # Save reference to raw model for checkpointing/saving before compilation
     raw_model = model
@@ -709,6 +780,11 @@ def main():
                     state["rank_rng"] = rank_rng
                 with atomic_binary_writer(os.path.join(args.out, "checkpoint.pt")) as checkpoint:
                     torch.save(state, checkpoint)
+                publish_checkpoint_metadata(
+                    args.out, step=step + 1, tokens_seen=tokens_seen,
+                    best_val=best_val, signature=signature,
+                    best_name=best_name, best_export_sha256=best_export_sha256,
+                )
             if world > 1:
                 dist.barrier()   # nobody runs ahead while rank 0 evaluates and saves
 

@@ -5,11 +5,12 @@ from pathlib import Path
 
 import production_readiness
 from production_readiness import assess_rights, assess_trajectory_quality
+from workspace_paths import benchmark_root
 
 
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG = Path(__file__).resolve().parent / "config"
-QUALITY = ROOT / "bench" / "imc_125m_trajectory_quality" / "RESULTS.json"
+QUALITY = benchmark_root(ROOT) / "imc_125m_trajectory_quality" / "RESULTS.json"
 
 
 def test_rights_readiness_reports_review_required_sources():

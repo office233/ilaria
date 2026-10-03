@@ -19,7 +19,7 @@ Do not introduce external pretrained language-model checkpoints or a second lang
 - `specs/myriad.manifest.json` — generated manifest; never hand-edit independently of the .swyp source.
 - `generated/myriad/types_gen.go` — generated protocol DTOs.
 - `internal/runtimeguard` — atomic/runtime safety utilities.
-- `docs/plans/MASTER_PLAN.md` — canonical execution plan.
+- `../ramasite/agent-md/ilaria/plans/MASTER_PLAN.md` — canonical execution plan.
 - `../swyp` — compiler/verifier and component DSL.
 - `../swypik-os` — OS, device authority and Compute Fabric.
 

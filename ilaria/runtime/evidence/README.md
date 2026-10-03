@@ -99,7 +99,7 @@ whether a lease remains live, manage keys or reconcile broker intents. The
 consumer must supply current expected context; the host control plane owns
 lease validity, commit and replay prevention.
 
-See the [workspace milestone](../../../docs/milestones/effects-v1.md) for the
+See the [workspace milestone](../../../ramasite/docs/workspace/milestones/effects-v1.md) for the
 complete vertical slice and its next implementation steps.
 
 The CLI includes `BenchmarkEvidenceFileVersusPersistentStream`, comparing

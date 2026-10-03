@@ -10,6 +10,22 @@ test boundaries:
 - `swypik-os/` — SwypikOS platform, Control Kernel, Compute Fabric, device
   synthesis, native kernel seed, UI and hardware authority.
 
+Supporting material is kept under `ramasite/`:
+
+| Directory | Purpose |
+|---|---|
+| `agent-md/<product>/` | Plans, handoffs and historical audits |
+| `benchmarks/<product>/` | Standalone benchmarks, fixtures and results |
+| `docs/<product>/` | Technical documentation |
+| `scripts/` | Shared validation tools |
+| `local/` | Ignored machine-local tools, environments and archives |
+
+Product sources, tests, README.md and AGENTS.md stay in their product roots.
+[`ramasite/RELOCATIONS.json`](ramasite/RELOCATIONS.json) preserves the migration
+record; signed historical evidence is not rewritten to imply a new validation.
+Commerce, mobile and site imports are retained locally for separate reviewed
+integration, not silently included in this core-product checkout.
+
 Swyp `.swyp` component specifications are also used as source-of-truth for
 cross-product protocol DTOs. CI regenerates their canonical JSON manifests and
 Go types and rejects drift.
@@ -30,6 +46,7 @@ may declare an older minimum language version.
 go test ./ilaria/...
 go test ./swyp/...
 go test ./swypik-os/...
+go test ./ramasite/benchmarks/ilaria/...
 ```
 
 For product-specific commands, read each product's README and AGENTS.md.
@@ -37,9 +54,9 @@ For product-specific commands, read each product's README and AGENTS.md.
 Run the complete local validation from the repository root:
 
 ```powershell
-./scripts/verify-workspace.ps1
+./ramasite/scripts/verify-workspace.ps1
 # Include the native kernel host tests with an installed GCC or Zig compiler:
-./scripts/verify-workspace.ps1 -KernelCompiler <compiler-path>
+./ramasite/scripts/verify-workspace.ps1 -KernelCompiler <compiler-path>
 ```
 
 The verifier runs each Go module independently (`GOWORK=off`), builds all
@@ -54,25 +71,25 @@ compiler fuzz smoke and the native C/assembly host gate. Local tool distribution
 bulk training data and regenerable benchmark caches remain outside Git; sources,
 tests, manifests and audit reports remain reviewable.
 
-The [2026-09-30 audit](docs/audit/2026-09-30.md) records the corrections,
+The [2026-09-30 audit](ramasite/agent-md/workspace/audit/2026-09-30.md) records the corrections,
 validation evidence, remaining production limits and measurable next steps.
 Passing these development gates does not establish model quality or real-device
 kernel/driver readiness; those require separate frozen evaluation and hardware
 validation.
 
-The [broker effects v1 milestone](docs/milestones/effects-v1.md) connects Swyp's
+The [broker effects v1 milestone](ramasite/docs/workspace/milestones/effects-v1.md) connects Swyp's
 safe interpreter to scoped SwypikOS `fs.read`/`clock.read` execution and Ilaria's
 signature verifier. Run its isolated integration gate without Forge dependencies:
 
 ```powershell
-./scripts/verify-effects.ps1
+./ramasite/scripts/verify-effects.ps1
 ```
 
-The [durable plan supervisor v1](docs/milestones/supervisor-v1.md) executes
+The [durable plan supervisor v1](ramasite/docs/workspace/milestones/supervisor-v1.md) executes
 complete immutable plans with cumulative persisted budgets, independent
 verification before commit, restart refusal and measured CPU/RAM. Its headless
 service uses event-driven idle operation and a persistent verifier:
 
 ```powershell
-./scripts/verify-supervisor.ps1
+./ramasite/scripts/verify-supervisor.ps1
 ```

@@ -49,3 +49,27 @@ def test_bundle_is_deterministic_and_content_addressed(tmp_path: Path):
         for item in manifest["files"]:
             assert hashlib.sha256(archive.read(item["path"])).hexdigest() == item["sha256"]
     assert first["manifest_sha256"] == sha256(first_manifest)
+
+
+def test_relocated_helpers_keep_portable_bundle_paths(tmp_path: Path):
+    workspace = tmp_path / "nexus"
+    root = workspace / "ilaria"
+    (root / "forge").mkdir(parents=True)
+    (root / "forge" / "imc_model.py").write_text("# synthetic model\n", encoding="utf-8")
+    benchmarks = workspace / "ramasite" / "benchmarks" / "ilaria"
+    (benchmarks / "imc_125m_g4_probe").mkdir(parents=True)
+    (benchmarks / "imc_125m_g4_probe" / "probe.py").write_text("# synthetic probe\n", encoding="utf-8")
+    (benchmarks / "nexus_ilaria_benchmark_paths.py").write_text("# synthetic helper\n", encoding="utf-8")
+    docs = workspace / "ramasite" / "docs" / "ilaria" / "runbooks"
+    docs.mkdir(parents=True)
+    (docs / "IMC_125M_GPU_TRAINING.md").write_text("# synthetic runbook\n", encoding="utf-8")
+    first = build_bundle(root, zip_path=tmp_path / "one.zip", manifest_path=tmp_path / "one.json")
+    second = build_bundle(root, zip_path=tmp_path / "two.zip", manifest_path=tmp_path / "two.json")
+    assert first["zip_sha256"] == second["zip_sha256"]
+    with zipfile.ZipFile(tmp_path / "one.zip") as archive:
+        assert set(archive.namelist()) == {
+            "forge/imc_model.py",
+            "bench/imc_125m_g4_probe/probe.py",
+            "bench/nexus_ilaria_benchmark_paths.py",
+            "docs/runbooks/IMC_125M_GPU_TRAINING.md",
+        }

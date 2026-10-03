@@ -8,6 +8,16 @@
 - `swypik-os/` owns OS authority, Control Kernel, Compute Fabric, devices,
   drivers, sandboxing, UI and the first-party native kernel seed.
 
+## Repository organization
+
+- Keep implementations, tests, README.md and AGENTS.md in their product roots.
+- Put plans and handoffs under `ramasite/agent-md/<product>/`.
+- Put standalone benchmarks and retained results under `ramasite/benchmarks/<product>/`.
+- Put technical documentation under `ramasite/docs/<product>/`.
+- Put shared verifiers under `ramasite/scripts/`.
+- Machine-local tools, environments and archives belong in ignored `ramasite/local/`.
+- Preserve `ramasite/RELOCATIONS.json`; do not rewrite signed historical evidence.
+
 Do not create duplicate implementations across product roots.
 
 ## Dependency rules

@@ -32,7 +32,7 @@ connection with bounded JSONL envelopes and correlated verification responses.
 Its explicit trust snapshot is loaded once per process.
 
 See the [Ilaria consumer guide](runtime/evidence/README.md) and the
-[cross-product effects v1 milestone](../docs/milestones/effects-v1.md) for the
+[cross-product effects v1 milestone](../ramasite/docs/workspace/milestones/effects-v1.md) for the
 wire contract, integration gate and remaining construction work.
 
 ## Model architecture

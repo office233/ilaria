@@ -24,14 +24,14 @@ function Resolve-Zig([string]$Requested) {
     if ($command) { return $command.Source }
 
     $workspaceRoot = Split-Path -Parent (Split-Path -Parent $Root)
-    $tools = Join-Path $workspaceRoot ".tools"
+    $tools = Join-Path $workspaceRoot "ramasite/local/tools"
     if (Test-Path -LiteralPath $tools) {
         foreach ($directory in Get-ChildItem -LiteralPath $tools -Directory -Filter "zig-*" | Sort-Object Name -Descending) {
             $candidate = Join-Path $directory.FullName "zig.exe"
             if (Test-Path -LiteralPath $candidate) { return $candidate }
         }
     }
-    throw "Zig compiler not found; pass -Zig, set SWYPIK_ZIG, install zig in PATH, or place it under .tools/zig-*"
+    throw "Zig compiler not found; pass -Zig, set SWYPIK_ZIG, install zig in PATH, or place it under ramasite/local/tools/zig-*"
 }
 $Zig = Resolve-Zig $Zig
 

@@ -28,7 +28,10 @@ jobs:
 
       - name: Verify required public checkout inputs
         shell: pwsh
-        run: ./scripts/verify-public-checkout.ps1
+        run: ./ramasite/scripts/verify-public-checkout.ps1
+
+      - name: Verify tracked repository organization
+        run: python ramasite/scripts/verify-repository-layout.py
 
   ilaria:
     name: Validate Ilaria
@@ -55,6 +58,12 @@ jobs:
       - name: Go test
         working-directory: ilaria
         run: go test -count=1 -timeout 180s ./...
+
+      - name: Validate relocated Ilaria benchmarks
+        working-directory: ramasite/benchmarks/ilaria
+        run: |
+          go vet ./...
+          go test -count=1 -timeout 180s ./...
 
       - name: Build all commands
         working-directory: ilaria
@@ -225,7 +234,7 @@ jobs:
 
       - name: Run independent CLI integration and refusal cases
         shell: pwsh
-        run: ./scripts/verify-effects.ps1
+        run: ./ramasite/scripts/verify-effects.ps1
 
   supervisor:
     name: Validate Durable Plan Supervisor
@@ -253,27 +262,27 @@ jobs:
       - name: Run complete plans and restart/budget/refusal cases (Windows)
         if: matrix.os == 'windows-latest'
         shell: pwsh
-        run: ./scripts/verify-supervisor.ps1
+        run: ./ramasite/scripts/verify-supervisor.ps1
 
       - name: Run real delegated cgroup supervisor cases (Linux)
         if: matrix.os == 'ubuntu-latest'
         shell: bash
-        run: bash ./scripts/with-delegated-cgroup.sh bash ./scripts/verify-supervisor.sh
+        run: bash ./ramasite/scripts/with-delegated-cgroup.sh bash ./ramasite/scripts/verify-supervisor.sh
 
       - name: Run delegated cgroup backend tests (Linux)
         if: matrix.os == 'ubuntu-latest'
         shell: bash
-        run: bash ./scripts/with-delegated-cgroup.sh bash -lc 'cd swypik-os && go test -count=1 -timeout 60s ./internal/planprocess -run "^TestLinux"'
+        run: bash ./ramasite/scripts/with-delegated-cgroup.sh bash -lc 'cd swypik-os && go test -count=1 -timeout 60s ./internal/planprocess -run "^TestLinux"'
 
       - name: Benchmark smoke (Windows)
         if: matrix.os == 'windows-latest'
         shell: pwsh
-        run: ./scripts/benchmark-supervisor.ps1 -Samples 5
+        run: ./ramasite/benchmarks/workspace/benchmark-supervisor.ps1 -Samples 5
 
       - name: Benchmark smoke with delegated cgroup (Linux)
         if: matrix.os == 'ubuntu-latest'
         shell: bash
-        run: bash ./scripts/with-delegated-cgroup.sh bash ./scripts/benchmark-supervisor.sh 5
+        run: bash ./ramasite/scripts/with-delegated-cgroup.sh bash ./ramasite/benchmarks/workspace/benchmark-supervisor.sh 5
 
   contracts:
     name: Validate Cross-Product Swyp Contracts
@@ -291,4 +300,4 @@ jobs:
 
       - name: Validate generated manifests and Go DTOs
         shell: pwsh
-        run: ./scripts/verify-contracts.ps1
+        run: ./ramasite/scripts/verify-contracts.ps1

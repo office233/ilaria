@@ -14,11 +14,12 @@ from production_review_decision import (
     validate_decision,
 )
 from test_production_review_packet import canonical_packet as fixture_packet, fixture_attestations
+from workspace_paths import benchmark_root
 
 
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG = Path(__file__).resolve().parent / "config"
-REVIEW_PACKET = ROOT / "bench" / "imc_125m_production_review" / "REVIEW_PACKET.json"
+REVIEW_PACKET = benchmark_root(ROOT) / "imc_125m_production_review" / "REVIEW_PACKET.json"
 
 
 def canonical_packet():

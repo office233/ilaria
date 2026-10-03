@@ -74,13 +74,13 @@ word-wrapped, scrollable, DPI-aware rendering:
 | Agent | Give a goal. Ilaria plans one step at a time using `workspace.read/write/edit/list`, `process.run` and `search.query`. **Every step is shown and needs approval** (F8 approve, F9 deny; a prompt must be visible for 500 ms first). Edits require the file hash from a prior read, so stale content is never overwritten. Runs are checkpointed and survive restarts (`/resume`). |
 | Căutare | Your own search engine: BM25F ranking, Romanian/Hungarian diacritic folding, prefix matching and snippets. `/index [dir]` indexes local text and code files; `/crawl URL [pages]` indexes a site after confirmation, honouring robots.txt and blocking private addresses. No Google, Bing or DuckDuckGo. |
 | Fișiere | Browse and preview files inside the workspace. |
-| Calcul | Detected NVIDIA GPUs and your consent for future Ilaria training contribution. No work runs yet; see [the design](docs/ILARIA_COMPUTE.md). |
+| Calcul | Detected NVIDIA GPUs and your consent for future Ilaria training contribution. No work runs yet; see [the design](../ramasite/docs/swypik-os/ILARIA_COMPUTE.md). |
 | Setări | `/ilaria https://…` switches the Ilaria endpoint, `/test` checks it, `/workspace DIR` saves the workspace for the next restart. |
 
 Connect Ilaria (for example the Azure deployment) as described in
-[docs/ILARIA_INTEGRATION.md](docs/ILARIA_INTEGRATION.md). Approved commands run
+[docs/ILARIA_INTEGRATION.md](../ramasite/docs/swypik-os/ILARIA_INTEGRATION.md). Approved commands run
 with your permissions inside a Windows Job Object; that is lifecycle control,
-not a sandbox. See [Windows architecture and limitations](docs/WINDOWS_DESKTOP.md).
+not a sandbox. See [Windows architecture and limitations](../ramasite/docs/swypik-os/WINDOWS_DESKTOP.md).
 
 ## Separate Linux OS prototype
 
@@ -169,7 +169,8 @@ Every tool then needs a fresh approval. Original deadlines and budgets remain.
 An interrupted tool with an unrecorded outcome cannot be resumed automatically.
 This stores only the last run, not a multi-run history; starting a new run replaces
 it. State is plaintext with restricted permissions, not encrypted. The RAM-only
-ISO still loses state at VM reboot. See [recovery design](docs/AGENT_RECOVERY.md).
+ISO still loses state at VM reboot. A separate agent-recovery design document
+is not included in this checkout.
 
 ## Linux: verification
 
@@ -204,9 +205,9 @@ Several older modules remain prototypes, including simulated distributed compute
 rewards and hardware synthesis. They do not supply real drivers, a bootloader or
 model training. The simulated installer now fails instead of reporting success.
 Older documents describe different migration stages; this README and
-[Windows desktop design](docs/WINDOWS_DESKTOP.md) define the current EXE target.
-For the separate Linux track, see [native OS design](docs/NATIVE_OS.md),
-[search limits](docs/OWN_SEARCH.md) and [repository audit](docs/NATIVE_AUDIT.md).
+[Windows desktop design](../ramasite/docs/swypik-os/WINDOWS_DESKTOP.md) define the current EXE target.
+For the separate Linux track, see [native OS design](../ramasite/docs/swypik-os/NATIVE_OS.md),
+[search limits](../ramasite/docs/swypik-os/OWN_SEARCH.md) and [repository audit](../ramasite/docs/swypik-os/NATIVE_AUDIT.md).
 
 ## Durable plan supervisor
 
@@ -215,11 +216,11 @@ Swyp plans: immutable IR, exact host scopes, durable cumulative budgets,
 independent persistent Ilaria verification and Control Kernel commit. It uses
 the existing resource governor and reports measured process CPU/RSS. It does
 not yet replace the native UI's agent path or implement automatic recovery.
-See the [supervisor v1 milestone](../docs/milestones/supervisor-v1.md) for host
+See the [supervisor v1 milestone](../ramasite/docs/workspace/milestones/supervisor-v1.md) for host
 configuration, the trusted JSONL service interface, measurements and limits.
 
 ```powershell
 go build ./cmd/plan-supervisor
 # From the Nexus repository root:
-./scripts/verify-supervisor.ps1
+./ramasite/scripts/verify-supervisor.ps1
 ```

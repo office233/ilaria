@@ -106,9 +106,9 @@ def evaluate_gate(
 
 def main() -> None:
     parser = argparse.ArgumentParser()
+    from workspace_paths import benchmark_root
     default_pattern = str(
-        Path(__file__).resolve().parents[1]
-        / "bench"
+        benchmark_root(Path(__file__).resolve().parents[1])
         / "myriad"
         / "pce_transfer_v2"
         / "result-seed*.json"

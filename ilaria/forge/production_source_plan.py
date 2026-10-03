@@ -203,6 +203,8 @@ def assess_plan(plan: dict, inventory: dict) -> dict:
 
 def main() -> None:
     root = Path(__file__).resolve().parents[1]
+    from workspace_paths import benchmark_root
+    benchmarks = benchmark_root(root)
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--plan",
@@ -215,7 +217,7 @@ def main() -> None:
     parser.add_argument(
         "--inventory",
         default=str(
-            root / "bench" / "imc_125m_data_inventory" / "candidate-inventory.json"
+            benchmarks / "imc_125m_data_inventory" / "candidate-inventory.json"
         ),
     )
     args = parser.parse_args()

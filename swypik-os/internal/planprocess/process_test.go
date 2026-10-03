@@ -94,6 +94,24 @@ func TestPlanProcessHelper(t *testing.T) {
 	case "stderr_limit":
 		fmt.Fprint(os.Stderr, strings.Repeat("e", MaxStderrBytes+1))
 		os.Exit(0)
+	case "stdout_closed_stderr", "frame_then_stdout_closed_stderr":
+		if mode == "frame_then_stdout_closed_stderr" {
+			fmt.Fprintln(os.Stdout, `{"ready":true}`)
+		}
+		if err := os.Stdout.Close(); err != nil {
+			os.Exit(20)
+		}
+		var request struct {
+			StderrBytes int `json:"stderr_bytes"`
+		}
+		if err := json.NewDecoder(os.Stdin).Decode(&request); err != nil ||
+			request.StderrBytes < 0 || request.StderrBytes > MaxStderrBytes+1 {
+			os.Exit(21)
+		}
+		if _, err := io.WriteString(os.Stderr, strings.Repeat("e", request.StderrBytes)); err != nil {
+			os.Exit(22)
+		}
+		os.Exit(0)
 	case "stall":
 		fmt.Fprintln(os.Stdout, `{"ready":true}`)
 		time.Sleep(30 * time.Second)

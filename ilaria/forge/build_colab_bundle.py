@@ -12,6 +12,28 @@ BUNDLE_FORMAT = "ilaria-colab-code-bundle-v1"
 _FIXED_ZIP_TIME = (1980, 1, 1, 0, 0, 0)
 
 
+def _benchmark_root(base: Path) -> Path:
+    relocated = base.parent / "ramasite" / "benchmarks" / "ilaria"
+    return relocated if relocated.is_dir() else base / "bench"
+
+
+def _documentation_root(base: Path) -> Path:
+    relocated = base.parent / "ramasite" / "docs" / "ilaria"
+    return relocated if relocated.is_dir() else base / "docs"
+
+
+def _bundle_relative(base: Path, path: Path) -> str:
+    if base in path.parents:
+        return path.relative_to(base).as_posix()
+    benchmarks = _benchmark_root(base)
+    if benchmarks in path.parents:
+        return "bench/" + path.relative_to(benchmarks).as_posix()
+    documentation = _documentation_root(base)
+    if documentation in path.parents:
+        return "docs/" + path.relative_to(documentation).as_posix()
+    raise ValueError(f"File lies outside the declared Colab bundle roots: {path}")
+
+
 def _sha256(path: Path) -> str:
     h = hashlib.sha256()
     with path.open("rb") as stream:
@@ -36,9 +58,6 @@ def collect_files(root: str | Path) -> list[Path]:
         "generated/myriad/*.go",
         "specs/myriad.swyp",
         "specs/myriad.manifest.json",
-        "bench/imc_125m_g4_probe/*.py",
-        "bench/imc_125m_gpu_smoke/*.py",
-        "docs/runbooks/IMC_125M_GPU_TRAINING.md",
     ):
         for path in base.glob(pattern):
             if not path.is_file():
@@ -46,7 +65,19 @@ def collect_files(root: str | Path) -> list[Path]:
             if "__pycache__" in path.parts:
                 continue
             files.add(path.resolve())
-    return sorted(files, key=lambda path: path.relative_to(base).as_posix())
+    benchmarks = _benchmark_root(base)
+    for pattern in (
+        "imc_125m_g4_probe/*.py",
+        "imc_125m_gpu_smoke/*.py",
+        "nexus_ilaria_benchmark_paths.py",
+    ):
+        for path in benchmarks.glob(pattern):
+            if path.is_file():
+                files.add(path.resolve())
+    runbook = _documentation_root(base) / "runbooks" / "IMC_125M_GPU_TRAINING.md"
+    if runbook.is_file():
+        files.add(runbook.resolve())
+    return sorted(files, key=lambda path: _bundle_relative(base, path))
 
 
 def build_bundle(
@@ -71,7 +102,7 @@ def build_bundle(
         compresslevel=9,
     ) as archive:
         for path in files:
-            relative = path.relative_to(base).as_posix()
+            relative = _bundle_relative(base, path)
             info = zipfile.ZipInfo(relative, date_time=_FIXED_ZIP_TIME)
             info.compress_type = zipfile.ZIP_DEFLATED
             info.external_attr = 0o100644 << 16
@@ -80,7 +111,7 @@ def build_bundle(
 
     records = [
         {
-            "path": path.relative_to(base).as_posix(),
+            "path": _bundle_relative(base, path),
             "bytes": path.stat().st_size,
             "sha256": _sha256(path),
         }

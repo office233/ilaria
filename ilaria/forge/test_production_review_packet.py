@@ -7,6 +7,7 @@ import pytest
 
 from data_contract import atomic_write_json, canonical_json_sha256
 from first_party_attestation import build_attestation_template
+from workspace_paths import benchmark_root
 
 from production_review_packet import (
     PACKET_FORMAT,
@@ -18,7 +19,7 @@ from production_review_packet import (
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG = Path(__file__).resolve().parent / "config"
 PLAN = CONFIG / "imc_125m_production_sources.json"
-INVENTORY = ROOT / "bench" / "imc_125m_data_inventory" / "candidate-inventory.json"
+INVENTORY = benchmark_root(ROOT) / "imc_125m_data_inventory" / "candidate-inventory.json"
 RIGHTS = CONFIG / "data_rights.json"
 EVIDENCE = CONFIG / "data_rights_evidence.json"
 HF_LOCK = CONFIG / "corpus_sources.lock.json"

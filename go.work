@@ -4,4 +4,6 @@ use (
 	./ilaria
 	./swyp
 	./swypik-os
+	./ramasite/benchmarks/ilaria
+	./ramasite/benchmarks/swyp
 )

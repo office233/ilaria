@@ -22,6 +22,7 @@ from model_manifest import load_tokenizer_identity
 from rights_evidence import load_and_validate_evidence
 from tokenizer_freeze import FREEZE_FORMAT, SAMPLE_FORMAT, validate_freeze_manifest
 import qualified_tokenizer_contract as tokenizer_contract
+from workspace_paths import benchmark_root
 
 FORMAT = "ilaria-qualified-code-pilot-adapter-v1"
 LAUNCH_FORMAT = "ilaria-qualified-code-pilot-launch-v1"
@@ -36,7 +37,7 @@ SUPERVISOR_SOURCE_PINS = {
 
 
 def _shared_supervisor():
-    root = Path(__file__).resolve().parent.parent / "bench" / "imc_nccl_bootstrap"
+    root = benchmark_root(Path(__file__).resolve().parent.parent) / "imc_nccl_bootstrap"
     if set(SUPERVISOR_SOURCE_PINS) != {"probe.py", "containment.py"}:
         raise ValueError(SUPERVISION_UNVERIFIED)
     verified = {}

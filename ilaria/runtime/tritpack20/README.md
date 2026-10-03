@@ -87,7 +87,7 @@ packed words, allocates no memory on a valid call, and never expands the matrix.
 
 ## Snapshot format
 
-See [TRITPACK20_V1.md](../../docs/architecture/TRITPACK20_V1.md) for the fixed
+See [TRITPACK20_V1.md](../../../ramasite/docs/ilaria/architecture/TRITPACK20_V1.md) for the fixed
 v1 binary header, hash and validation contract.
 
 Snapshots copy their input exactly once into package-owned canonical storage.

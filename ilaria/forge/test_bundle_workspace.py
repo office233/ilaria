@@ -5,6 +5,7 @@ import zipfile
 import pytest
 
 from bundle_workspace import extract_code_bundle
+from workspace_paths import benchmark_root
 
 
 def bundle(tmp_path, members):
@@ -73,6 +74,6 @@ def test_runtime_scripts_have_no_machine_specific_roots():
         "imc_125m_g4_probe/g4_full_step_benchmark.py",
     ]
     for name in names:
-        source = (root / "bench" / name).read_text(encoding="utf-8")
+        source = (benchmark_root(root) / name).read_text(encoding="utf-8")
         assert '"/content' not in source
         assert "rmtree(" not in source

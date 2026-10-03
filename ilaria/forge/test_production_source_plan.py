@@ -3,11 +3,12 @@ from __future__ import annotations
 from pathlib import Path
 
 from production_source_plan import assess_plan, load_inventory, load_plan
+from workspace_paths import benchmark_root
 
 
 ROOT = Path(__file__).resolve().parents[1]
 PLAN = Path(__file__).resolve().parent / "config" / "imc_125m_production_sources.json"
-INVENTORY = ROOT / "bench" / "imc_125m_data_inventory" / "candidate-inventory.json"
+INVENTORY = benchmark_root(ROOT) / "imc_125m_data_inventory" / "candidate-inventory.json"
 
 
 def test_canonical_production_source_plan_has_conservative_headroom():

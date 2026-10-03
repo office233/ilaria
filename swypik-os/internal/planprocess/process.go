@@ -443,6 +443,25 @@ func (p *Process) ReadLine(ctx context.Context) ([]byte, error) {
 			return nil, err
 		}
 		if !ok {
+			// Stdout can close before stderr is drained (or while the child
+			// still owns it). Do not publish a clean EOF before its bounded
+			// diagnostics have been validated. Waiting stays cancellable and
+			// does not delay delivery of any queued stdout frames.
+			select {
+			case <-p.stderrDone:
+			case <-ctx.Done():
+				p.fail(ctx.Err())
+				return nil, ctx.Err()
+			case <-p.aborted:
+				return nil, p.failureError()
+			}
+			if err := ctx.Err(); err != nil {
+				p.fail(err)
+				return nil, err
+			}
+			if err := p.failureError(); err != nil {
+				return nil, err
+			}
 			return nil, io.EOF
 		}
 		return result.line, nil

@@ -112,7 +112,7 @@ foreach ($Check in $Checks) {
 
 Write-Host "[3/5] benchmark schema emitter skeleton"
 $BenchExe = Join-Path $HostOut "benchmark_harness.exe"
-Invoke-Native $Gcc @("-std=c11", "-Wall", "-Wextra", "-Werror", "bench/benchmark_harness.c", "-o", $BenchExe)
+Invoke-Native $Gcc @("-std=c11", "-Wall", "-Wextra", "-Werror", "../../ramasite/benchmarks/swypik-os/kernel/benchmark_harness.c", "-o", $BenchExe)
 $Placeholder = & $BenchExe "swypik-seed" "host-contract-only" "0" "0" "0" "0" "placeholder"
 if ($LASTEXITCODE -ne 0) {
     throw "benchmark harness failed with exit code $LASTEXITCODE"

@@ -336,6 +336,8 @@ def build_report(
 
 def main() -> None:
     root = Path(__file__).resolve().parents[1]
+    from workspace_paths import benchmark_root
+    benchmarks = benchmark_root(root)
     config = Path(__file__).resolve().parent / "config"
     production = root / "data" / "production"
     parser = argparse.ArgumentParser()
@@ -350,7 +352,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--inventory",
-        default=str(root / "bench" / "imc_125m_data_inventory" / "candidate-inventory.json"),
+        default=str(benchmarks / "imc_125m_data_inventory" / "candidate-inventory.json"),
     )
     parser.add_argument("--git-source-lock", default=str(config / "git_sources.lock.json"))
     parser.add_argument(
@@ -367,7 +369,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--trajectory-quality",
-        default=str(root / "bench" / "imc_125m_trajectory_quality" / "RESULTS.json"),
+        default=str(benchmarks / "imc_125m_trajectory_quality" / "RESULTS.json"),
     )
     parser.add_argument(
         "--math-attestation",
@@ -379,7 +381,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--math-quality",
-        default=str(root / "bench" / "imc_125m_math_quality" / "RESULTS.json"),
+        default=str(benchmarks / "imc_125m_math_quality" / "RESULTS.json"),
     )
     parser.add_argument(
         "--benchmark-exclusions",

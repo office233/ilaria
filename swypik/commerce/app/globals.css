@@ -1,0 +1,187 @@
+/* Fontul Inter e încărcat prin next/font în components/layout/AppShell.tsx (variabila --font-sans). */
+@import "./styles/tokens.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* ─── Focus vizibil la tastatură (WCAG 2.4.7) ─── */
+:focus-visible {
+  outline: 2px solid rgb(var(--focus-ring));
+  outline-offset: 2px;
+}
+:focus:not(:focus-visible) { outline: none; }
+
+html {
+  background: rgb(var(--canvas));
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--font-sans), var(--font-sans-fallback);
+  background: rgb(var(--canvas));
+  color: rgb(var(--fg));
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* ─── Spațiul BottomNav: CSS pur, fără efecte JS (fără layout shift) ───
+   BottomNav randează [data-bottom-nav]; când lipsește, --bottom-inset = safe-area. */
+html:has([data-bottom-nav]) {
+  --bottom-inset: calc(var(--nav-h) + var(--safe-bottom));
+}
+#main-content {
+  min-height: 100dvh;
+  padding-bottom: var(--bottom-inset);
+}
+/* Suprafețele imersive (feed full-screen) își gestionează singure spațiul. */
+#main-content:has(> [data-immersive-fullscreen]) { padding-bottom: 0; }
+
+button, [role="button"] {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ─── Scrollbar — ChatGPT style ─── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgb(var(--border-strong)); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgb(var(--fg-subtle)); }
+
+/* ─── Selection ─── */
+::selection { background: rgb(var(--brand) / 0.18); color: inherit; }
+
+/* ─── Animations ─── */
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideDown { from { opacity: 0; transform: translateY(-8px); max-height: 0; } to { opacity: 1; transform: translateY(0); max-height: 500px; } }
+@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+
+.animate-fadeIn { animation: fadeIn 0.3s ease-out; }
+.animate-slideUp { animation: slideUp 0.3s ease-out; }
+.animate-slideDown { animation: slideDown 0.3s ease-out; }
+
+.shimmer {
+  background: linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.03) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* ─── No scrollbar ─── */
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+
+/* ─── Line clamp ─── */
+.line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* ─── Product Feed — Full-screen TikTok-style ─── */
+.feed-scroll {
+  width: 100%; height: 100vh; height: 100dvh;
+  overflow-y: scroll; overflow-x: hidden;
+  scroll-snap-type: y mandatory;
+  -webkit-overflow-scrolling: touch;
+  background: rgb(0 0 0);
+  scrollbar-width: none;
+}
+.feed-scroll::-webkit-scrollbar { display: none; }
+
+.feed-card {
+  position: relative; width: 100%; height: 100vh; height: 100dvh;
+  scroll-snap-align: start; scroll-snap-stop: always;
+  overflow: hidden; flex-shrink: 0;
+  background: rgb(0 0 0);
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+.feed-media {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  cursor: pointer;
+}
+.feed-media img, .feed-media video {
+  width: 100%; height: 100%;
+  object-fit: cover;
+}
+
+/* ─── Safe area insets for notch phones ─── */
+.safe-top { padding-top: env(safe-area-inset-top, 0px); }
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
+.safe-pb { padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px)); }
+.safe-pl { padding-left: max(0px, env(safe-area-inset-left, 0px)); }
+.safe-pr { padding-right: max(0px, env(safe-area-inset-right, 0px)); }
+
+/* ─── Bottom nav — respect safe area on iPhones with notch ─── */
+/* Legacy: #main-content rezervă deja spațiul BottomNav; păstrăm doar un mic spațiu de respiro. */
+.mobile-page-bottom {
+  padding-bottom: 1.5rem;
+}
+
+/* ─── Chat input bar — sits above bottom nav ─── */
+.chat-input-bar {
+  bottom: var(--bottom-inset);
+}
+
+/* ─── Heart burst ─── */
+@keyframes like-burst {
+  0% { opacity: 0; transform: scale(0.3); }
+  15% { opacity: 1; transform: scale(1.2); }
+  30% { transform: scale(0.95); }
+  45% { transform: scale(1.05); }
+  80% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.4); }
+}
+.animate-like-burst { animation: like-burst 1s ease-out forwards; filter: drop-shadow(0 0 20px rgba(239, 68, 68, 0.6)); }
+
+@keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.animate-spin-slow { animation: spin-slow 3s linear infinite; }
+
+@keyframes feed-slide-up { from { opacity: 0; transform: translateY(100%); } to { opacity: 1; transform: translateY(0); } }
+.animate-feed-slide { animation: feed-slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+
+@keyframes eq-bar { 0%, 100% { height: 4px; } 50% { height: 16px; } }
+.eq-bar-1 { animation: eq-bar 0.8s ease-in-out infinite; }
+.eq-bar-2 { animation: eq-bar 0.8s ease-in-out infinite 0.2s; }
+.eq-bar-3 { animation: eq-bar 0.8s ease-in-out infinite 0.4s; }
+
+/* ─── Responsive Product Cards — smaller on tiny phones ─── */
+@media (max-width: 374px) {
+  .product-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 0.5rem !important; }
+  .product-card-image { height: 9rem !important; }
+  .product-card-title { font-size: 12px !important; }
+  .product-card-price { font-size: 14px !important; }
+}
+
+/* ─── Carousel cards — tighter on small phones ─── */
+@media (max-width: 374px) {
+  .carousel-card { width: 9rem !important; }
+}
+
+/* ─── Responsive container — expand on tablet/desktop ─── */
+@media (min-width: 768px) {
+  .app-container { max-width: 768px !important; }
+}
+@media (min-width: 1024px) {
+  .app-container { max-width: 1024px !important; }
+  .product-grid { grid-template-columns: repeat(3, 1fr) !important; }
+}
+@media (min-width: 1280px) {
+  .app-container { max-width: 1280px !important; }
+  .product-grid { grid-template-columns: repeat(4, 1fr) !important; }
+}
+
+/* ─── Toast position — above bottom nav on all phones ─── */
+.toast-position {
+  bottom: calc(var(--bottom-inset) + 1.5rem);
+}
+
+/* Swypik Movies — fontul de afișare (Bebas Neue prin next/font, vezi components/movies/fonts.ts) */
+.movies-display {
+  font-family: var(--font-movies-display), Impact, "Arial Narrow", sans-serif;
+  letter-spacing: 0.02em;
+}

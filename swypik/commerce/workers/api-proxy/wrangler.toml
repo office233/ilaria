@@ -1,0 +1,8 @@
+name = "Swypik-products-proxy"
+main = "index.js"
+compatibility_date = "2024-01-01"
+workers_dev = false
+
+routes = [
+  { pattern = "Swypik.com/api/products*", zone_name = "Swypik.com" }
+]

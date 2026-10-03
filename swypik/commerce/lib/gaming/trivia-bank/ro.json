@@ -1,0 +1,16 @@
+[
+  {"category":"Jocuri video","difficulty":"easy","question":"Care este cel mai bine vândut joc video din toate timpurile?","options":["Minecraft","Tetris","Grand Theft Auto V","Super Mario Bros."],"correctAnswer":"Minecraft"},
+  {"category":"Jocuri video","difficulty":"medium","question":"În ce an a lansat Sony prima consolă PlayStation în Japonia?","options":["1994","1996","1992","1998"],"correctAnswer":"1994"},
+  {"category":"Jocuri video","difficulty":"easy","question":"Cum se numește eroul cu bonetă verde din seria The Legend of Zelda?","options":["Link","Zelda","Ganon","Luigi"],"correctAnswer":"Link"},
+  {"category":"Jocuri video","difficulty":"easy","question":"Ce companie a creat personajul Mario?","options":["Nintendo","Sega","Sony","Atari"],"correctAnswer":"Nintendo"},
+  {"category":"Jocuri video","difficulty":"medium","question":"Care este numele ariciului albastru, mascota Sega?","options":["Sonic","Knuckles","Tails","Shadow"],"correctAnswer":"Sonic"},
+  {"category":"Jocuri video","difficulty":"easy","question":"În ce joc construiești și aperi o bază din blocuri, iar noaptea apar creepers?","options":["Minecraft","Roblox","Terraria","Fortnite"],"correctAnswer":"Minecraft"},
+  {"category":"Jocuri video","difficulty":"medium","question":"Ce studio a dezvoltat seria The Witcher pentru console și PC?","options":["CD Projekt Red","Ubisoft","BioWare","Bethesda"],"correctAnswer":"CD Projekt Red"},
+  {"category":"Jocuri video","difficulty":"hard","question":"Studioul Ubisoft are o echipă mare în România. În ce oraș s-a deschis primul studiu Ubisoft din țară?","options":["București","Cluj-Napoca","Craiova","Iași"],"correctAnswer":"București"},
+  {"category":"Jocuri video","difficulty":"easy","question":"Ce culoare are fantoma Blinky din Pac-Man?","options":["Roșu","Roz","Portocaliu","Albastru"],"correctAnswer":"Roșu"},
+  {"category":"Jocuri video","difficulty":"medium","question":"Cum se numește modul de joc în care ultimul jucător rămas în viață câștigă, popularizat de Fortnite și PUBG?","options":["Battle royale","Tower defense","Roguelike","Sandbox"],"correctAnswer":"Battle royale"},
+  {"category":"Jocuri video","difficulty":"medium","question":"Ce consolă portabilă a lansat Nintendo în 2017, care se poate conecta și la televizor?","options":["Nintendo Switch","Nintendo 3DS","Wii U","Game Boy Advance"],"correctAnswer":"Nintendo Switch"},
+  {"category":"Jocuri video","difficulty":"easy","question":"În ce joc blocuri de forme diferite cad și trebuie să completezi linii orizontale?","options":["Tetris","Pong","Snake","Breakout"],"correctAnswer":"Tetris"},
+  {"category":"Jocuri video","difficulty":"medium","question":"Ce personaj din Pokémon este cunoscut ca fiind de tip electric și galben?","options":["Pikachu","Charmander","Bulbasaur","Squirtle"],"correctAnswer":"Pikachu"},
+  {"category":"Jocuri video","difficulty":"hard","question":"Care a fost primul joc video comercial de tip arcade de mare succes, lansat de Atari în 1972?","options":["Pong","Space Invaders","Asteroids","Pac-Man"],"correctAnswer":"Pong"}
+]

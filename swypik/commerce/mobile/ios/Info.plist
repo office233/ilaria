@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleDisplayName</key>
+    <string>Swypik</string>
+    <key>CFBundleIdentifier</key>
+    <string>com.swypik.app</string>
+    <key>CFBundleVersion</key>
+    <string>1.0.0</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0.0</string>
+    <key>NSCameraUsageDescription</key>
+    <string>Swypik are nevoie de acces la cameră pentru a filma videoclipuri reels 9:16 și pentru a scana coduri de bare EAN la produse.</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>Swypik are nevoie de microfon pentru a înregistra sunetul videoclipurilor.</string>
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>Swypik folosește locația pentru cursele Swypik Go și pentru a-ți arăta restaurantele și magazinele din apropiere.</string>
+    <key>UIStatusBarStyle</key>
+    <string>UIStatusBarStyleLightContent</string>
+    <key>UIViewControllerBasedStatusBarAppearance</key>
+    <false/>
+</dict>
+</plist>

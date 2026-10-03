@@ -1,0 +1,10 @@
+# Setup:
+# 1. Create R2 bucket 'swypik-backups' in Cloudflare.
+# 2. Add credentials to /root/.swypik-r2.env:
+#      export R2_ENDPOINT='https://<account>.r2.cloudflarestorage.com'
+#      export AWS_ACCESS_KEY_ID='...'
+#      export AWS_SECRET_ACCESS_KEY='...'
+#      export R2_BUCKET='swypik-backups'
+# 3. Install aws-cli: apt install awscli
+# 4. Add cron:
+#      0 3 * * * . /root/.swypik-r2.env && /opt/swypik/app/scripts/backup-postgres-r2.sh >> /opt/swypik/logs/backup-r2.log 2>&1

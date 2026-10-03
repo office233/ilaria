@@ -1,0 +1,28 @@
+# Example only. Copy the relevant values into the Shopify app configuration
+# managed by Shopify CLI / Dev Dashboard. Never commit the real client secret.
+
+client_id = "REPLACE_WITH_SHOPIFY_CLIENT_ID"
+name = "Swypik"
+application_url = "https://swypik.com/seller"
+embedded = false
+
+[access_scopes]
+# Add read_all_orders only after Shopify approves that protected scope; without
+# it Shopify exposes only the default recent order window.
+scopes = "read_products,read_customers,read_orders"
+
+[auth]
+redirect_urls = [
+  "https://swypik.com/api/seller/integrations/shopify/callback"
+]
+
+[webhooks]
+api_version = "2026-07"
+
+[[webhooks.subscriptions]]
+topics = ["app/uninstalled"]
+uri = "https://swypik.com/api/webhooks/commerce/shopify"
+
+[[webhooks.subscriptions]]
+compliance_topics = ["customers/data_request", "customers/redact", "shop/redact"]
+uri = "https://swypik.com/api/webhooks/commerce/shopify"

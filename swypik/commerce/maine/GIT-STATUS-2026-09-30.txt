@@ -1,0 +1,176 @@
+﻿ M .env.example
+ M app/(site)/admin/health/HealthRefresh.tsx
+ M app/(site)/admin/health/page.tsx
+ M app/[locale]/account/settings/SettingsClient.tsx
+ M app/api/admin/fulfillment/route.ts
+ M app/api/chat/route.ts
+ M app/api/dm/conversations/route.ts
+ M app/api/donations/route.ts
+ M app/api/fly/price-check/route.ts
+ M app/api/fly/search/route.ts
+ M app/api/live/streams/[id]/items/route.ts
+ M app/api/live/streams/[id]/pin/route.ts
+ M app/api/live/streams/[id]/route.ts
+ M app/api/live/streams/route.ts
+ M app/api/local-orders/[id]/status/route.ts
+ M app/api/search/suggest/route.ts
+ M app/api/seller/products/route.ts
+ M app/api/v1/events/batch/route.ts
+ M app/api/v1/events/compat.ts
+ M app/api/v1/events/route.ts
+ M app/api/videos/[id]/event/route.ts
+ M app/api/videos/[id]/products/route.ts
+ M app/api/videos/[id]/view/route.ts
+ M components/ChatInterface.tsx
+ M components/ProductFeed.tsx
+ M components/live/viewer/LiveChat.tsx
+ M components/live/viewer/LiveViewer.tsx
+ M components/messenger/chat/ChatHeader.tsx
+ M components/messenger/chat/ChatScreen.tsx
+ M components/messenger/inbox/ConversationList.tsx
+ M components/messenger/inbox/NewMessageSheet.tsx
+ M components/pwa/ServiceWorkerRegistrar.tsx
+ M components/seller/dashboard/SellerDashboard.tsx
+ M db/schema.sql
+ M docs/BACKLOG.md
+ M docs/SECURITY_AUDIT.md
+ D docs/qa/e2e/__pycache__/qa_common.cpython-312.pyc
+ M infra/hetzner/cron-worker/run.sh
+ M lib/auth/getAuthUser.ts
+ M lib/config/env.ts
+ M lib/creator/commission.ts
+ M lib/dm/config.ts
+ M lib/dm/repository.ts
+ M lib/dm/types.ts
+ M lib/feed/cards/optional.ts
+ M lib/feed/config.ts
+ M lib/feed/scoring.ts
+ M lib/fly/service.ts
+ M lib/food/refund.ts
+ M lib/health.ts
+ M lib/live/chat-moderation.ts
+ M lib/live/chat-stream.ts
+ M lib/live/config.ts
+ M lib/live/lifecycle.ts
+ M lib/live/queries.ts
+ M lib/movies/unlock.ts
+ M lib/music/unlock.ts
+ M lib/payments/mobility.ts
+ M lib/prewarm/config.ts
+ M lib/realtime/config.ts
+ M lib/rides/settings.ts
+ M lib/risk/thresholds.ts
+ M lib/security/abuse-limits.ts
+ M lib/security/rate-limit.ts
+ M lib/seller/config.ts
+ M lib/seller/dashboard.ts
+ M lib/seller/nav.ts
+ M lib/shop/checkout.ts
+ M lib/shop/config.ts
+ M lib/social/config.ts
+ M lib/stays/config.ts
+ M lib/stays/money.ts
+ M lib/stays/policy.ts
+ M lib/validation/schemas.ts
+ M lib/wallet/ledger.ts
+ M messages/de.json
+ M messages/en.json
+ M messages/es.json
+ M messages/fr.json
+ M messages/it.json
+ M messages/pt.json
+ M messages/ro.json
+ M next.config.mjs
+ M public/sw.js
+ M tests/unit/creator-payouts-cron.test.ts
+ M tests/unit/dm-repository.test.ts
+ M tests/unit/feed-rank.test.ts
+ M tests/unit/food-refund.test.ts
+ M tests/unit/live-chat-moderation.test.ts
+ M tests/unit/live-chat-realtime.test.ts
+ M tests/unit/live-items-validation.test.ts
+ M tests/unit/movies-unlock.test.ts
+ M tests/unit/music-unlock.test.ts
+ M tests/unit/stays-payment.test.ts
+ M tests/unit/stays-policy.test.ts
+?? app/(site)/seller/integrations/
+?? app/[locale]/account/wallet/
+?? app/api/account/wallet/
+?? app/api/admin/integration-health/
+?? app/api/cron/seller-integration-sync/
+?? app/api/dm/conversations/[id]/members/
+?? app/api/live/streams/[id]/tip/
+?? app/api/seller/integrations/
+?? app/api/webhooks/commerce/
+?? components/live/viewer/LiveTipButton.tsx
+?? components/messenger/chat/GroupManageSheet.tsx
+?? components/seller/dashboard/StoreMigrationCard.tsx
+?? db/migrations/20260929_0001_seller_catalog_integrations.sql
+?? db/migrations/20260929_0002_seller_crm_import.sql
+?? db/migrations/20260929_0003_seller_order_history_import.sql
+?? db/migrations/20260929_0004_seller_integration_webhooks.sql
+?? db/migrations/20260929_0005_seller_shopify_oauth.sql
+?? db/migrations/20260929_0006_shopify_privacy_requests.sql
+?? db/migrations/20260929_0006_shopify_privacy_webhooks.sql
+?? db/migrations/20260929_0007_video_view_dedupe.sql
+?? db/migrations/20260930_0001_live_creator_uuid.sql
+?? db/migrations/20260930_0002_live_tips.sql
+?? docs/integrations/
+?? lib/chat/request-identity.ts
+?? lib/dm/groups.ts
+?? lib/events/
+?? lib/fly/request-identity.ts
+?? lib/live/tips.ts
+?? lib/money/
+?? lib/seller/imports/
+?? lib/shop/order-lookup-token.ts
+?? lib/video/view-dedupe.ts
+?? lib/wallet/read-model.ts
+?? lib/webhooks/raw-body.ts
+?? maine/
+?? shopify.app.toml.example
+?? tests/unit/admin-fulfillment-validation.test.ts
+?? tests/unit/camera-gallery-fallback.test.ts
+?? tests/unit/chat-cost-control.test.ts
+?? tests/unit/config-env.test.ts
+?? tests/unit/dm-groups.test.ts
+?? tests/unit/donation-amount-schema.test.ts
+?? tests/unit/explore-auth-actions.test.ts
+?? tests/unit/fly-cost-guard.test.ts
+?? tests/unit/fly-search-cache.test.ts
+?? tests/unit/food-order-status-auth.test.ts
+?? tests/unit/live-creator-uuid-migration.test.ts
+?? tests/unit/live-tips.test.ts
+?? tests/unit/money-decimal.test.ts
+?? tests/unit/notifications-subscribe-ownership.test.ts
+?? tests/unit/order-lookup-token.test.ts
+?? tests/unit/platform-event-identity.test.ts
+?? tests/unit/product-feed-cart-feedback.test.ts
+?? tests/unit/pwa-update-lifecycle.test.ts
+?? tests/unit/search-suggest-rate-limit.test.ts
+?? tests/unit/seller-catalog-connections.test.ts
+?? tests/unit/seller-catalog-import-common.test.ts
+?? tests/unit/seller-catalog-import-sync.test.ts
+?? tests/unit/seller-customer-import-sync.test.ts
+?? tests/unit/seller-imported-sales-analytics.test.ts
+?? tests/unit/seller-integration-health.test.ts
+?? tests/unit/seller-integration-webhook-routes.test.ts
+?? tests/unit/seller-integration-webhook-setup.test.ts
+?? tests/unit/seller-integration-webhook-utils.test.ts
+?? tests/unit/seller-integration-worker.test.ts
+?? tests/unit/seller-order-import-sync.test.ts
+?? tests/unit/seller-order-provider-normalization.test.ts
+?? tests/unit/seller-product-create-atomic.test.ts
+?? tests/unit/seller-shopify-compliance.test.ts
+?? tests/unit/seller-shopify-oauth-callback.test.ts
+?? tests/unit/seller-shopify-oauth.test.ts
+?? tests/unit/seller-shopify-privacy-webhooks.test.ts
+?? tests/unit/seller-shopify-privacy.test.ts
+?? tests/unit/v1-events-identity.test.ts
+?? tests/unit/v1-events-zod-validation.test.ts
+?? tests/unit/video-event-existence.test.ts
+?? tests/unit/video-product-overlay-moderation.test.ts
+?? tests/unit/video-view-dedupe.test.ts
+?? tests/unit/video-watchdog-orphans.test.ts
+?? tests/unit/wallet-ledger.test.ts
+?? tests/unit/wallet-read-model.test.ts

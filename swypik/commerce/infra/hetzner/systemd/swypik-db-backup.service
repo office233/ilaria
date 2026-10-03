@@ -1,0 +1,18 @@
+[Unit]
+Description=Swypik PostgreSQL backup
+Documentation=file:/opt/swypik/app/infra/hetzner/backup-db.sh
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/swypik/app
+Environment=POSTGRES_CONTAINER=swypik-prod-postgres-1
+Environment=POSTGRES_DB=swypik
+Environment=POSTGRES_USER=swypik
+Environment=BACKUP_DIR=/opt/swypik/backups/postgres
+Environment=RETENTION_DAYS=14
+ExecStart=/bin/bash /opt/swypik/app/infra/hetzner/backup-db.sh
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7

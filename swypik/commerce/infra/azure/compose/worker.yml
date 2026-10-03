@@ -1,0 +1,52 @@
+# ============================================================================
+# Swypik — rolul WORKER: video-worker (FFmpeg) care consumă coada Redis
+# ============================================================================
+#   docker compose -p swypik-worker -f infra/azure/compose/worker.yml \
+#     --env-file /opt/swypik/env/compose.env up -d --scale video-worker=N
+#
+# Coada = Redis Stream (REDIS_STREAM_VIDEO_JOBS / VIDEO_QUEUE_NAME) cu consumer
+# group `video-workers` pe nodul data. Fiecare container = un consumator
+# (numele consumatorului = hostname-ul containerului, unic). Scalare:
+#   - vertical: VIDEO_WORKER_CPUS / --scale video-worker=2 pe același nod;
+#   - orizontal: mai multe VM-uri worker (workerCount în main.bicep).
+# Spot eviction / crash: mesajele neconfirmate rămân "pending" în grup și sunt
+# revendicate după VIDEO_STALE_PENDING_MS (implicit 10 min) de alt consumator.
+# Fără stare locală în afară de directorul temporar de transcodare.
+# ============================================================================
+
+name: swypik-worker
+
+services:
+
+  video-worker:
+    image: ${SWYPIK_IMAGE_PREFIX:-swypik}/video-worker:${SWYPIK_IMAGE_TAG:?SWYPIK_IMAGE_TAG lipsește (commit-ul imaginii)}
+    pull_policy: never
+    env_file:
+      - ${SWYPIK_ENV_FILE:-/opt/swypik/env/swypik.env}
+    environment:
+      VIDEO_WORK_DIR: /tmp/video-processing
+    volumes:
+      - /srv/data/video-processing:/tmp/video-processing
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - python -c 'import os,redis; redis.from_url(os.environ["REDIS_URL"]).ping()' || exit 1
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    # ffmpeg folosește toate nucleele vizibile; plafonul CFS lasă loc OS-ului.
+    # Implicit pentru D2as_v5 (2 vCPU/8 GiB); pe D4as_v5: VIDEO_WORKER_CPUS=3.5, _MEM_LIMIT=6g.
+    mem_limit: ${VIDEO_WORKER_MEM_LIMIT:-5g}
+    cpus: ${VIDEO_WORKER_CPUS:-1.8}
+    # Oprire grațioasă: job-ul curent apucă să termine sau rămâne pending.
+    stop_grace_period: 60s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+    restart: unless-stopped

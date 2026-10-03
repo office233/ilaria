@@ -1,0 +1,24 @@
+{
+  "_comment": "Taxonomia unică a bucătăriilor Swypik Food. Citită de lib/merchants/cuisines.ts (API + UI) și de scripts/data/import-osm-merchants.mjs (import OSM). Migrarea 20260926_0033 normalizează datele existente pe aceleași id-uri.",
+  "cuisines": [
+    { "id": "pizza", "chip": true, "aliases": ["pizza", "pizzeria"] },
+    { "id": "burgers", "chip": true, "aliases": ["burger", "burgers", "hamburger"] },
+    { "id": "asian", "chip": true, "aliases": ["asian", "asiatica", "chinese", "japanese", "thai", "vietnamese", "korean"] },
+    { "id": "romanian", "chip": true, "aliases": ["romanian", "romaneasca", "regional", "local", "traditional"] },
+    { "id": "desserts", "chip": true, "aliases": ["dessert", "desserts", "cofetarie", "cake", "ice_cream", "inghetata", "patiserie", "pastry", "bakery"] },
+    { "id": "healthy", "chip": true, "aliases": ["healthy", "salad", "vegetarian", "vegetariana", "vegan", "vegana"] },
+    { "id": "kebab", "chip": true, "aliases": ["kebab", "shaorma", "doner"] },
+    { "id": "sushi", "chip": true, "aliases": ["sushi"] },
+    { "id": "italian", "chip": true, "aliases": ["italian", "italiana", "pasta"] },
+    { "id": "grill", "chip": true, "aliases": ["grill", "gratar", "barbecue", "bbq"] },
+    { "id": "fast_food", "chip": true, "aliases": ["fast food", "fast_food", "sandwich", "sandvisuri", "chicken", "pui"] },
+    { "id": "cafe", "chip": true, "aliases": ["cafe", "cafenea", "coffee_shop", "coffee"] },
+    { "id": "fish", "chip": false, "aliases": ["fish", "peste", "seafood"] },
+    { "id": "turkish", "chip": false, "aliases": ["turkish", "turceasca"] },
+    { "id": "greek", "chip": false, "aliases": ["greek", "greceasca"] },
+    { "id": "american", "chip": false, "aliases": ["american", "americana"] },
+    { "id": "mexican", "chip": false, "aliases": ["mexican", "mexicana"] },
+    { "id": "indian", "chip": false, "aliases": ["indian", "indiana"] },
+    { "id": "international", "chip": false, "aliases": ["international", "internationala"] }
+  ]
+}

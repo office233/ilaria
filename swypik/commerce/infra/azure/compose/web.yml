@@ -1,0 +1,134 @@
+# ============================================================================
+# Swypik — rolul WEB (identic pe toate nodurile; stateless)
+# ============================================================================
+# Portabil: aceleași fișiere pe Azure sau Hetzner; diferă doar env-urile.
+#   docker compose -p swypik-web -f infra/azure/compose/web.yml \
+#     --env-file /opt/swypik/env/compose.env up -d
+# Profiluri (DOAR pe nodul de control, web-1 — setate în compose.env al lui):
+#   cron → cron-worker + dispatch-worker (joburile programate și tick-ul de
+#          dispecerat trebuie să ruleze O SINGURĂ dată)
+#
+# Tag-ul imaginilor e OBLIGATORIU (SWYPIK_IMAGE_TAG = commit-ul, exportat de
+# deploy.sh / web-up.sh) și nu se trage NICIODATĂ din registry (pull_policy:
+# never): un `:latest` implicit ar fi tras de pe Docker Hub un nume pe care nu-l
+# controlăm. Rulare manuală: SWYPIK_IMAGE_TAG=$(cat /opt/swypik/state/web.tag).
+#
+# Imaginile NU se construiesc aici: infra/azure/deploy.sh le construiește o dată
+# (din build-urile existente din infra/hetzner/docker-compose.prod.yml), le
+# etichetează cu commit-ul și le distribuie pe noduri (registry sau
+# `docker save | ssh docker load`). Aici doar rulează tag-ul primit.
+#
+# Postgres + Redis sunt pe nodul data (DATABASE_URL / REDIS_URL din
+# swypik.env indică IP-ul privat al nodului data). Nimic persistent local.
+# ============================================================================
+
+name: swypik-web
+
+x-hardening: &hardening
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+  cap_add:
+    - CHOWN
+    - SETUID
+    - SETGID
+  restart: unless-stopped
+
+services:
+
+  web-next:
+    <<: *hardening
+    image: ${SWYPIK_IMAGE_PREFIX:-swypik}/web-next:${SWYPIK_IMAGE_TAG:?SWYPIK_IMAGE_TAG lipsește (commit-ul imaginii)}
+    pull_policy: never
+    env_file:
+      - ${SWYPIK_ENV_FILE:-/opt/swypik/env/swypik.env}
+    environment:
+      # Heap V8 sub limita containerului → GC înainte de OOM-kill.
+      NODE_OPTIONS: "--max-old-space-size=${WEB_NODE_HEAP_MB:-2560}"
+      # platform-api local pe fiecare nod web (proxy social/upload).
+      SOCIAL_API_URL: http://platform-api:8080
+    ports:
+      # Doar loopback: traficul vine prin cloudflared de pe același nod.
+      - "127.0.0.1:3005:3000"
+    healthcheck:
+      # nosemgrep: trailofbits.generic.wget-unencrypted-url.wget-unencrypted-url - container-local healthcheck over loopback.
+      test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1:3000/api/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    mem_limit: ${WEB_MEM_LIMIT:-3584m}
+    cpus: ${WEB_CPUS:-1.8}
+
+  platform-api:
+    <<: *hardening
+    image: ${SWYPIK_IMAGE_PREFIX:-swypik}/platform-api:${SWYPIK_IMAGE_TAG:?SWYPIK_IMAGE_TAG lipsește (commit-ul imaginii)}
+    pull_policy: never
+    env_file:
+      - ${SWYPIK_ENV_FILE:-/opt/swypik/env/swypik.env}
+    environment:
+      ENVIRONMENT: production
+      NODE_ENV: production
+    ports:
+      - "127.0.0.1:8090:8080"
+    healthcheck:
+      # nosemgrep: trailofbits.generic.wget-unencrypted-url.wget-unencrypted-url - container-local healthcheck over loopback.
+      test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1:8080/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    mem_limit: ${PLATFORM_API_MEM_LIMIT:-768m}
+    cpus: ${PLATFORM_API_CPUS:-1.0}
+
+  cron-worker:
+    <<: *hardening
+    profiles: [cron]
+    build:
+      context: ../../hetzner/cron-worker
+    # Același run.sh ca pe Hetzner (inclusiv `prewarm-catalogs` la 15 min —
+    # cataloage externe + știri calde în Redis). Joburile noi apar după rebuild.
+    # Tag separat: cron-worker se reconstruiește doar cu --services cron-worker
+    # (deploy.sh îl construiește dacă lipsește). Nume local, niciodată tras din registry.
+    image: swypik/cron-worker:${CRON_IMAGE_TAG:-local}
+    pull_policy: never
+    env_file:
+      - ${SWYPIK_ENV_FILE:-/opt/swypik/env/swypik.env}
+    depends_on:
+      web-next:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "test $(($(date +%s) - $(cat /tmp/cron-heartbeat 2>/dev/null || echo 0))) -lt 180 || exit 1"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
+    mem_limit: 128m
+    cpus: 0.25
+
+  # Tick-ul de dispecerat Go/Food la 10 s (scripts/dispatch-worker.mjs →
+  # POST /api/cron/dispatch-tick cu CRON_SECRET din swypik.env). Doar pe web-1
+  # (profil cron); rularea dublă e oricum inofensivă — ruta ia un advisory lock.
+  # Imaginea web-next a commit-ului curent (are node); scriptul vine din clona
+  # de control (/opt/swypik/app), montat read-only.
+  dispatch-worker:
+    <<: *hardening
+    profiles: [cron]
+    image: ${SWYPIK_IMAGE_PREFIX:-swypik}/web-next:${SWYPIK_IMAGE_TAG:?SWYPIK_IMAGE_TAG lipsește (commit-ul imaginii)}
+    pull_policy: never
+    entrypoint: ["node"]
+    command: ["/opt/dispatch/dispatch-worker.mjs"]
+    env_file:
+      - ${SWYPIK_ENV_FILE:-/opt/swypik/env/swypik.env}
+    environment:
+      DISPATCH_TICK_URL: http://web-next:3000/api/cron/dispatch-tick
+      DISPATCH_TICK_INTERVAL_MS: ${DISPATCH_TICK_INTERVAL_MS:-10000}
+    volumes:
+      - ../../../scripts/dispatch-worker.mjs:/opt/dispatch/dispatch-worker.mjs:ro
+    depends_on:
+      web-next:
+        condition: service_healthy
+    healthcheck:
+      disable: true
+    mem_limit: 128m
+    cpus: 0.25

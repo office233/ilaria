@@ -19,11 +19,13 @@ function IlariaSessionPanel({ controller, config, authenticated }: {
   const [goal, setGoal] = useState('');
   const [remote, setRemote] = useState(false);
   const busy = state.status === 'running' || state.status === 'stopping';
-  const ready = config.enabled && authenticated && remote && !busy && goal.trim().length > 0;
+  const uncertain = state.status === 'uncertain';
+  const ready = config.enabled && authenticated && remote && !busy && !uncertain && goal.trim().length > 0;
   return <ScrollView style={s.screen} contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
     <Text style={s.eyebrow}>ILARIA · IMC</Text>
     <Text style={s.title}>Întreabă Ilaria</Text>
     <Text style={s.body}>Cererea merge către gazda Ilaria autenticată. Nu cere instalarea SwypikOS pe telefon și nu autorizează antrenarea cu conversația ta.</Text>
+    <Text style={s.body}>Inferența nativă pe telefon și antrenarea nu sunt disponibile. Conexiunea verifică protocolul gazdei, nu certifică nivelul de inteligență al modelului.</Text>
     {!config.enabled && <Text style={s.body}>{config.reason}</Text>}
     <View style={s.card}>
       <Text style={s.body}>Permit trimiterea acestei întrebări către gazda configurată pentru inferență.</Text>
@@ -36,10 +38,10 @@ function IlariaSessionPanel({ controller, config, authenticated }: {
         style={[s.button, !ready && { opacity: 0.45 }]} onPress={() => { void start(goal); }}>
         <Text style={s.buttonText}>Trimite către Ilaria</Text>
       </Pressable>
-      {busy && <Pressable accessibilityRole="button" style={s.button} onPress={() => { void cancel(); }}>
-        <Text style={s.buttonText}>Oprește cererea</Text>
+      {(busy || uncertain) && <Pressable accessibilityRole="button" style={s.button} onPress={() => { void cancel(); }}>
+        <Text style={s.buttonText}>{uncertain ? 'Reverifică oprirea' : 'Oprește cererea'}</Text>
       </Pressable>}
-      {!!state.message && <Text accessibilityLiveRegion="polite" style={state.status === 'error' || state.status === 'uncertain' ? s.error : s.body}>{state.message}</Text>}
+      {!!state.message && <Text accessibilityLiveRegion="polite" style={state.status === 'error' || state.status === 'offline' || uncertain ? s.error : s.body}>{state.message}</Text>}
       {state.response && authenticated && <View>
         <Text selectable style={s.body}>{state.response.hypothesis}</Text>
         <Text style={s.body}>Model: {state.response.expert_version}</Text>

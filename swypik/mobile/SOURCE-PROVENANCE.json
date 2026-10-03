@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "original_source": "E:\\Swypik\\swypik-mobile-pilot",
+  "original_branch": "audit/complete-20260930",
+  "original_commit": "ee64f47951010c614139b19065cebb72eb62b77f",
+  "migrated_source": "E:\\nexus\\swypik\\mobile",
+  "migration_import_sha256": "650ee6818cba1e712231cbd4368e4ce5b2997c89f605aee2c5c8357a908ed6a5",
+  "provisioned_source_files": 46,
+  "provisioned_tree_sha256": "3f5807b592c503236f0cf4ad6f792d7b93d7b91c067970a1a3f20e04528921d1",
+  "digest_format": "SHA256 of UTF-8 rows sorted by path: relative POSIX path, TAB, lowercase raw-file SHA256, TAB, byte length, LF",
+  "selection": "Original tracked and non-ignored source additions in assets/src/scripts/tests, plus explicitly enumerated application configuration and source-text files. Source frozen by migration owner; source and destination hashes matched after copying.",
+  "excluded": [
+    "environment files and local settings",
+    "credentials, keys, certificates and signing material",
+    "dependencies, caches and generated build outputs",
+    "private data",
+    "standalone docs relocated to ramasite",
+    "historical dependency-audit report"
+  ],
+  "versions": {
+    "expo": "~57.0.26",
+    "react_native": "0.86.3",
+    "react": "19.2.3",
+    "node_required": ">=24.3.0"
+  }
+}

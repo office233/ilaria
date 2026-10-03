@@ -1,33 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { AuthController, type AuthApi } from '../src/lib/auth-core.ts';
 import { IlariaClient, type IlariaState } from '../src/lib/ilaria-api.ts';
+import { fixtureAuth as auth, controlResponse as control, inferenceResponse as inference } from './fixtures/ilaria.ts';
 
-async function auth() {
-  const api: AuthApi = { inferenceOrigin: 'https://auth.example.test',
-    async login() { return { token: 'a'.repeat(64), expiresAt: '2030-01-01T00:00:00Z' }; },
-    async profile() { return { userId: 'fixture-user', role: 'shopper', email: null, displayName: null }; },
-    async refresh() { throw new Error('unused'); }, async revoke() {} };
-  const controller = new AuthController(api, { async read() { return null; }, async write() {} }, true);
-  await controller.signIn('fixture@example.test', 'synthetic-password');
-  return controller;
-}
-function control(task: string, status = 'stopped') {
-  return { protocol_version: 1, task_id: task, expert_id: 'GatewayControl', expert_version: 'gateway-v1',
-    hypothesis: '', claims: [], evidence_refs: [], contradictions: [], uncertainty_ppm: 1000000, confidence_ppm: 0,
-    next_expert_suggestions: [], verification_requirements: [], proposed_swyp_plan: '', latent_summary: '',
-    compute_cost: 0, runtime_metrics: { execution_status: status, training: 'unavailable', energy_joules: 'unmeasured' } };
-}
-function inference(task: string) {
-  const hash = 'a'.repeat(64);
-  return { protocol_version: 1, task_id: task, expert_id: 'IMC', expert_version: 'imc-v1:' + hash,
-    hypothesis: 'fixture answer', claims: [], evidence_refs: ['model:sha256:' + hash], contradictions: [],
-    uncertainty_ppm: 0, confidence_ppm: 1000000, next_expert_suggestions: [], verification_requirements: [],
-    proposed_swyp_plan: '', latent_summary: '', compute_cost: 1,
-    runtime_metrics: { execution_status: 'succeeded', training: 'unavailable', canary: 'false',
-      model_hash: hash, tokenizer_hash: hash, config_hash: hash, canonical_source_hash: hash,
-      forward_passes: '1', output_tokens: '1' } };
-}
 for (const event of ['background', 'logout', 'consent', 'unmount'] as const) {
   test('foreground client cancels and discards late inference after ' + event, async () => {
     const controller = await auth();
@@ -111,4 +86,130 @@ test('expired response continuation is cancelled even before the timeout callbac
   assert.notEqual(client.getState().status, 'succeeded');
   assert.equal(client.getState().response, null);
   client.close();
+});
+
+for (const failure of ['network', 'http', 'malformed', 'budget'] as const) {
+  test('failed inference reconciles remote execution before releasing its lease: ' + failure, async () => {
+    const controller = await auth();
+    let cancelled = 0;
+    const client = new IlariaClient(controller, () => {}, async (url, init) => {
+      const request = JSON.parse(String(init?.body));
+      if (String(url).endsWith('/cancel')) {
+        cancelled++;
+        return new Response(JSON.stringify(control(request.task_id)), { headers: { 'Content-Type': 'application/json' } });
+      }
+      if (failure === 'network') throw new TypeError('synthetic offline transport');
+      if (failure === 'http') return new Response('', { status: 503 });
+      if (failure === 'malformed') return new Response('{}', { headers: { 'Content-Type': 'application/json' } });
+      const answer = inference(request.task_id);
+      answer.compute_cost = 5;
+      answer.runtime_metrics.forward_passes = answer.runtime_metrics.output_tokens = '5';
+      return new Response(JSON.stringify(answer), { headers: { 'Content-Type': 'application/json' } });
+    });
+    try {
+      client.setForeground(true); client.setRemoteConsent(true);
+      await client.start('public fixture');
+      assert.equal(cancelled, 1, 'a failed response is not evidence that the executor stopped');
+      assert.ok(['error', 'offline'].includes(client.getState().status));
+      assert.equal(client.getState().response, null);
+    } finally { client.close(); }
+  });
+}
+
+test('unconfirmed execution survives preference changes and blocks retry until correlated reconciliation', async () => {
+  const controller = await auth();
+  let resolve!: (response: Response) => void;
+  let inferred = 0;
+  let confirmed = false;
+  const client = new IlariaClient(controller, () => {}, async (url, init) => {
+    const request = JSON.parse(String(init?.body));
+    if (String(url).endsWith('/cancel')) {
+      return new Response(JSON.stringify(control(request.task_id, confirmed ? 'stopped' : 'uncertain')),
+        { headers: { 'Content-Type': 'application/json' } });
+    }
+    inferred++;
+    return new Promise<Response>(yes => { resolve = yes; });
+  });
+  client.setForeground(true); client.setRemoteConsent(true);
+  const running = client.start('public fixture');
+  try {
+    await client.cancel();
+    client.setForeground(false); client.setRemoteConsent(false);
+    assert.equal(client.getState().status, 'uncertain');
+    client.setForeground(true); client.setRemoteConsent(true);
+    await client.start('must not be sent');
+    assert.equal(inferred, 1);
+    assert.equal(client.getState().status, 'uncertain');
+    confirmed = true;
+    await client.cancel();
+    assert.equal(client.getState().status, 'stopped');
+  } finally {
+    resolve(new Response('late reply')); await running; client.close();
+  }
+});
+
+test('abort-ignoring inference and cancellation transports still settle within the control deadline', async t => {
+  const controller = await auth();
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  let cancelled = 0;
+  const client = new IlariaClient(controller, () => {}, async url => {
+    if (String(url).endsWith('/cancel')) cancelled++;
+    return new Promise<Response>(() => {});
+  });
+  try {
+    client.setForeground(true); client.setRemoteConsent(true);
+    const running = client.start('public fixture');
+    const cancellation = client.cancel();
+    t.mock.timers.tick(2001);
+    await cancellation; await running;
+    assert.equal(cancelled, 1);
+    assert.equal(client.getState().status, 'uncertain');
+    await client.start('must not be sent');
+    assert.equal(cancelled, 1);
+  } finally {
+    client.close();
+    t.mock.timers.tick(2001);
+    await client.cancel();
+    t.mock.timers.reset();
+  }
+});
+
+test('screen remount and reauthentication cannot replay an unconfirmed execution', async () => {
+  const controller = await auth();
+  let calls = 0;
+  const transport: typeof fetch = async (_url, init) => {
+    calls++;
+    const request = JSON.parse(String(init?.body));
+    return new Response(JSON.stringify(control(request.task_id, 'uncertain')),
+      { headers: { 'Content-Type': 'application/json' } });
+  };
+  const first = new IlariaClient(controller, () => {}, transport);
+  first.setForeground(true); first.setRemoteConsent(true);
+  await first.start('public fixture');
+  first.close();
+  await first.cancel();
+  await controller.signOut();
+  await controller.signIn('fixture@example.test', 'synthetic-password');
+  const before = calls;
+  const second = new IlariaClient(controller, () => {}, transport);
+  try {
+    second.setForeground(true); second.setRemoteConsent(true);
+    await second.start('must not be sent');
+    assert.equal(calls, before);
+    assert.equal(second.getState().status, 'uncertain');
+    assert.equal(second.getState().response, null);
+  } finally { second.close(); }
+});
+
+test('session replacement withdraws inference consent instead of reusing it for a new login', async () => {
+  const controller = await auth();
+  let calls = 0;
+  const client = new IlariaClient(controller, () => {}, async () => { calls++; return new Response(); });
+  try {
+    client.setForeground(true); client.setRemoteConsent(true);
+    await controller.signOut();
+    await controller.signIn('fixture@example.test', 'synthetic-password');
+    await client.start('must not be sent');
+    assert.equal(calls, 0);
+  } finally { client.close(); }
 });

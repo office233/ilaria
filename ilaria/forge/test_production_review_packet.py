@@ -7,13 +7,13 @@ import pytest
 
 from data_contract import atomic_write_json, canonical_json_sha256
 from first_party_attestation import build_attestation_template
+from workspace_paths import benchmark_root
 
 from production_review_packet import (
     PACKET_FORMAT,
     build_review_packet,
     render_markdown,
 )
-from workspace_paths import benchmark_root
 
 
 ROOT = Path(__file__).resolve().parents[1]

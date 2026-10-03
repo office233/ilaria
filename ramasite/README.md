@@ -29,6 +29,7 @@ current location instead of rewriting signed or hashed evidence.
 Run shared checks from the repository root:
 
 ```powershell
+.\ramasite\scripts\verify-public-checkout.ps1
 .\ramasite\scripts\verify-workspace.ps1
 python .\ramasite\scripts\run-python-tests.py --list
 ```

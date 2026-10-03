@@ -2,6 +2,7 @@
 param(
     [string]$Executable = '',
     [string]$OutputDirectory = '',
+    [string]$ProductRoot = '',
     [ValidateSet('phone', 'balanced', 'performance')][string[]]$Profiles = @('balanced', 'phone'),
     [ValidateRange(1, 20)][int]$RunsPerProfile = 3,
     [ValidateRange(1, 60)][int]$StartupSeconds = 4,
@@ -14,8 +15,15 @@ param(
 $ErrorActionPreference = 'Stop'
 if ($env:OS -ne 'Windows_NT') { throw 'The native resource benchmark requires Windows.' }
 
-$workspaceRoot = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)))
-$root = Join-Path $workspaceRoot 'swypik-os'
+if (-not $ProductRoot) {
+    $workspaceRoot = $PSScriptRoot
+    for ($i = 0; $i -lt 4; $i++) { $workspaceRoot = Split-Path -Parent $workspaceRoot }
+    $ProductRoot = Join-Path $workspaceRoot 'swypik-os'
+}
+$root = [IO.Path]::GetFullPath($ProductRoot)
+if (-not (Test-Path -LiteralPath (Join-Path $root 'go.mod'))) {
+    throw "SwypikOS product root must contain go.mod: $root"
+}
 if (-not $OutputDirectory) {
     $OutputDirectory = Join-Path (Split-Path -Parent $PSScriptRoot) ('results\resource-bench-' + (Get-Date -Format 'yyyyMMdd-HHmmss') + '-' + [Guid]::NewGuid().ToString('N').Substring(0, 6))
 }

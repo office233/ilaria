@@ -169,7 +169,8 @@ Every tool then needs a fresh approval. Original deadlines and budgets remain.
 An interrupted tool with an unrecorded outcome cannot be resumed automatically.
 This stores only the last run, not a multi-run history; starting a new run replaces
 it. State is plaintext with restricted permissions, not encrypted. The RAM-only
-ISO still loses state at VM reboot. See [recovery design](../ramasite/docs/swypik-os/AGENT_RECOVERY.md).
+ISO still loses state at VM reboot. A separate agent-recovery design document
+is not included in this checkout.
 
 ## Linux: verification
 

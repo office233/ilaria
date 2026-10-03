@@ -17,7 +17,7 @@ def run(*args):
 def main():
     tool=benchmark_root(__file__)/"build/swyp.exe"
     run("go","build","-o",tool,"./cmd/swyp")
-    directory=Path(tempfile.mkdtemp(prefix="refinement-eval-",dir=ROOT/"bin"))
+    directory=Path(tempfile.mkdtemp(prefix="refinement-eval-",dir=benchmark_root(__file__)/"build"))
     cases=[("square",[0,1],[2,-3,0.5],lambda x:x*x),
            ("zero",[0],[1,2],lambda x:0),
            ("linear",[0],[1,2,-3],lambda x:2*x+1)]

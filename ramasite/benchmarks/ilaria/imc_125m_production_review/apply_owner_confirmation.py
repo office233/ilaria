@@ -5,7 +5,7 @@ _nexus_sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from nexus_ilaria_benchmark_paths import ilaria_root
 
 root = ilaria_root(__file__)
-review = root / "bench" / "imc_125m_production_review"
+review = Path(__file__).resolve().parent
 packet = json.loads((review / "REVIEW_PACKET.json").read_text(encoding="utf-8"))
 attribution = json.loads((review / "ATTRIBUTION.json").read_text(encoding="utf-8"))
 decision = json.loads((review / "DECISION_TEMPLATE.json").read_text(encoding="utf-8"))

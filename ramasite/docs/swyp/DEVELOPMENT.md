@@ -36,7 +36,7 @@ Build-ul si validatorul local folosesc `GOWORK=off`, astfel incat modulul sa
 ramana independent de celelalte produse din workspace.
 
 Gate-ul comun pentru Linux si Windows este definit in
-[`../../.github/workflows/ci.yml`](../../../.github/workflows/ci.yml). Workflow-ul
+[`../../../.github/workflows/ci.yml`](../../../.github/workflows/ci.yml). Workflow-ul
 STV2 anterior este pastrat numai ca istoric in
 [`history/STV2_VALIDATION_WORKFLOW_20260930.yml`](../../agent-md/swyp/history/STV2_VALIDATION_WORKFLOW_20260930.yml).
 

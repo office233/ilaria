@@ -30,6 +30,8 @@ jobs:
         shell: pwsh
         run: ./ramasite/scripts/verify-public-checkout.ps1
 
+      - name: Verify tracked repository organization
+        run: python ramasite/scripts/verify-repository-layout.py
   ilaria:
     name: Validate Ilaria
     needs: public-checkout

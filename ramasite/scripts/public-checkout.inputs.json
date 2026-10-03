@@ -15,6 +15,8 @@
   "required": [
     "ramasite/scripts/verify-public-checkout.ps1",
     "ramasite/scripts/test-verify-public-checkout.ps1",
+    "ramasite/scripts/verify-repository-layout.py",
+    "ramasite/scripts/test_verify_repository_layout.py",
     "ilaria/go.mod",
     "ramasite/benchmarks/ilaria/go.mod",
     "ramasite/benchmarks/swyp/go.mod",

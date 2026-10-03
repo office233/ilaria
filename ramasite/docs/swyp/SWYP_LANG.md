@@ -395,10 +395,10 @@ Copy referents, and `store(r, value)` mutates through `mutref<T>` only when `T`
 is Copy. `drop(r)` may end a lexical borrow early; otherwise it ends at scope
 exit. Mutable references cannot be copied into another binding.
 
-Call checking also rejects overlapping argument loans when either argument is
-exclusive, including passing the same existing `mutref` twice. Shared/shared,
-proven-disjoint and sequential calls remain valid. Rejection uses the stable
-`exclusive_call_alias` diagnostic; see `EXCLUSIVE_CALL_LOANS.md`.
+Call checking rejects duplicate use of the same existing `mutref` in a single
+call; existing overlapping-place loan checks remain in force. Shared/shared,
+proven-disjoint and sequential calls remain valid. Duplicate-exclusive rejection
+uses `exclusive_call_alias`; see [the regression](EXCLUSIVE_CALL_LOANS.md).
 
 Borrowed results now require an explicit source relationship on the function:
 

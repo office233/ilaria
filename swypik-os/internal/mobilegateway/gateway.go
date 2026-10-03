@@ -9,6 +9,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"mime"
 	"net/http"
@@ -526,7 +527,7 @@ func (g *Gateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		http.Error(w, "provider_failed", 503)
+		http.Error(w, fmt.Sprintf("provider_failed: %v", err), 503)
 		return
 	}
 	writeJSON(w, 200, response)

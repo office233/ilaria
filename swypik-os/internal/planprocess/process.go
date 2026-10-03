@@ -13,7 +13,9 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"sync"
+	"syscall"
 
 	"swypik-os/core/resource"
 )
@@ -529,14 +531,28 @@ func (p *Process) Usage() (resource.ProcessUsage, error) {
 	usage, err := p.sampler.Sample()
 	if err != nil {
 		p.mu.Unlock()
-		// Linux can reap /proc before awaitExit stores ProcessState. Wait on
-		// that exit event rather than treating a fast, normal exit as a failed
-		// resource observation. Running-process errors still fail immediately.
-		if errors.Is(err, os.ErrNotExist) {
-			<-p.done
+		select {
+		case <-p.done:
 			p.mu.Lock()
 			defer p.mu.Unlock()
 			return p.usage, nil
+		default:
+		}
+		// Linux can reap /proc before awaitExit stores ProcessState. Wait on
+		// that exit event rather than treating a fast, normal exit as a failed
+		// resource observation. Running-process errors still fail immediately.
+		if errors.Is(err, os.ErrNotExist) || errors.Is(err, syscall.ESRCH) ||
+			strings.Contains(err.Error(), "process stat") ||
+			strings.Contains(err.Error(), "process status") ||
+			strings.Contains(err.Error(), "no such process") {
+			select {
+			case <-p.done:
+				p.mu.Lock()
+				defer p.mu.Unlock()
+				return p.usage, nil
+			case <-p.aborted:
+				return resource.ProcessUsage{}, err
+			}
 		}
 		return resource.ProcessUsage{}, err
 	}

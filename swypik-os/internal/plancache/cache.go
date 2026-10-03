@@ -16,6 +16,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"swypik-os/internal/safepath"
 )
 
 const (
@@ -114,16 +116,29 @@ func Open(config Config) (*Cache, error) {
 	if err != nil || !info.IsDir() || info.Mode()&os.ModeSymlink != 0 {
 		return nil, fmt.Errorf("%w: root must be a real directory", ErrUnsafePath)
 	}
-	resolved, err := filepath.EvalSymlinks(absRoot)
+	parent := filepath.Dir(absRoot)
+	canonicalParent, err := safepath.Canonical(parent)
+	if err != nil {
+		return nil, fmt.Errorf("%w: resolve root parent: %v", ErrUnsafePath, err)
+	}
+	canonicalRoot := filepath.Join(canonicalParent, filepath.Base(absRoot))
+	if parent == absRoot {
+		canonicalRoot = canonicalParent
+	}
+	cInfo, err := os.Lstat(canonicalRoot)
+	if err != nil || !cInfo.IsDir() || cInfo.Mode()&os.ModeSymlink != 0 {
+		return nil, fmt.Errorf("%w: root must be a real directory", ErrUnsafePath)
+	}
+	resolved, err := filepath.EvalSymlinks(canonicalRoot)
 	if err != nil {
 		return nil, fmt.Errorf("%w: resolve root: %v", ErrUnsafePath, err)
 	}
 	resolved, err = filepath.Abs(resolved)
-	if err != nil || !samePath(absRoot, resolved) {
+	if err != nil || !samePath(canonicalRoot, resolved) {
 		return nil, fmt.Errorf("%w: root contains a symlink or reparse indirection", ErrUnsafePath)
 	}
 
-	base, err := os.OpenRoot(absRoot)
+	base, err := os.OpenRoot(canonicalRoot)
 	if err != nil {
 		return nil, fmt.Errorf("plancache: open root: %w", err)
 	}

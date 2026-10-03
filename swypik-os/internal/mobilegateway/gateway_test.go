@@ -380,6 +380,9 @@ func TestRealHTTPSCanonicalIMCCanaryAndNativeWorkerCancellation(t *testing.T) {
 		}
 	}
 	python, _ = filepath.Abs(python)
+	if err := exec.Command(python, "-c", "import torch").Run(); err != nil {
+		t.Skip("Python environment lacks PyTorch (torch) dependency for canonical IMC canary:", err)
+	}
 	script, _ := filepath.Abs(filepath.Join("..", "..", "..", "ilaria", "runtime", "mobileprovider", "provider.py"))
 	starts := make(chan struct{}, 4)
 	provider := ProcessProvider{Process: planprocess.Config{Executable: python, Args: []string{"-B", "-I", script, "--canary"}, MaxThreads: 1, MemoryLimitBytes: 1 << 30, GCPercent: 100, JSONLMaxBytes: MaxBytes},

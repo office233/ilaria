@@ -397,7 +397,7 @@ func (e *engine) executeGuest(ctx context.Context, p configuredPlan, moduleHash 
 	for {
 		raw, err := process.ReadLine(ctx)
 		if err != nil {
-			return fmt.Errorf("guest transport ended before completion")
+			return fmt.Errorf("guest transport ended before completion: %w", err)
 		}
 		var request wire.EffectRequest
 		if err := effects.DecodeStrict(raw, &request); err == nil {
@@ -446,6 +446,9 @@ func (e *engine) executeGuest(ctx context.Context, p configuredPlan, moduleHash 
 		}
 		var done completion
 		if err := decodeFrame(raw, &done); err != nil || done.ProtocolVersion != 1 || done.Type != "completion" || done.RunID != p.RunID || done.ModuleHash != moduleHash || done.Status != "succeeded" || done.Result == nil || done.Diagnostic != nil || done.Steps < 0 || done.Steps > p.Fuel {
+			if err != nil {
+				return fmt.Errorf("guest completion rejected: %w", err)
+			}
 			return fmt.Errorf("guest completion rejected")
 		}
 		if err := validateLiteral(*done.Result); err != nil {
@@ -453,10 +456,13 @@ func (e *engine) executeGuest(ctx context.Context, p configuredPlan, moduleHash 
 		}
 		// A valid completion must also be the last frame and have a clean exit.
 		if _, err := process.ReadLine(ctx); !errors.Is(err, io.EOF) {
+			if err != nil {
+				return fmt.Errorf("guest emitted data after completion: %w", err)
+			}
 			return fmt.Errorf("guest emitted data after completion")
 		}
 		if err := process.Wait(ctx); err != nil {
-			return fmt.Errorf("guest failed after completion")
+			return fmt.Errorf("guest failed after completion: %w", err)
 		}
 		err = stop()
 		stopped = true
@@ -466,10 +472,10 @@ func (e *engine) executeGuest(ctx context.Context, p configuredPlan, moduleHash 
 		accounted = true
 		e.activeGuest = nil
 		if err != nil {
-			return err
+			return fmt.Errorf("guest monitor failed: %w", err)
 		}
 		if usageErr != nil {
-			return usageErr
+			return fmt.Errorf("guest usage measurement failed: %w", usageErr)
 		}
 		if metrics.SwypCPU+metrics.VerifierCPU > time.Duration(e.config.CPUTimeMS)*time.Millisecond {
 			return fmt.Errorf("plan CPU budget exhausted")
@@ -553,6 +559,7 @@ func (e *engine) run(ctx context.Context, id string, statusOnly bool) runReport 
 				e.verifier.metrics = &report.Metrics
 				err = e.execute(ctx, p, compiled, snapshot, s, &report.Metrics)
 				if err != nil {
+					fmt.Fprintf(os.Stderr, "engine execute plan %s failed: %v\n", p.ID, err)
 					if errors.Is(err, supervisor.ErrRecoveryRequired) {
 						report.ErrorCode = "recovery_required"
 					} else if errors.Is(err, supervisor.ErrVerification) {

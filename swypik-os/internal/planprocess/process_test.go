@@ -349,7 +349,12 @@ func TestReadAndWriteCancellationDoNotLeaveBlockedTransport(t *testing.T) {
 func TestActivityCPUUsesBaselineAndSurvivesChildExit(t *testing.T) {
 	p, ctx := helperProcess(t, "echo")
 	awaitReady(t, p, ctx)
-	first := p.Monitor(ctx, time.Second, 128<<20, 10*time.Millisecond)
+	baseline, _ := p.Usage()
+	rssLimit := baseline.PeakRSSBytes + 128<<20
+	if rssLimit < 128<<20 {
+		rssLimit = 128 << 20
+	}
+	first := p.Monitor(ctx, time.Second, rssLimit, 10*time.Millisecond)
 	if err := p.SendJSON(ctx, map[string]any{"spin_ms": 100}); err != nil {
 		t.Fatal(err)
 	}
@@ -359,7 +364,7 @@ func TestActivityCPUUsesBaselineAndSurvivesChildExit(t *testing.T) {
 	if err := first(); err != nil {
 		t.Fatal(err)
 	}
-	second := p.Monitor(ctx, 80*time.Millisecond, 128<<20, 10*time.Millisecond)
+	second := p.Monitor(ctx, 80*time.Millisecond, rssLimit, 10*time.Millisecond)
 	if err := p.SendJSON(ctx, map[string]any{"spin_ms": 20, "exit": true}); err != nil {
 		t.Fatal(err)
 	}

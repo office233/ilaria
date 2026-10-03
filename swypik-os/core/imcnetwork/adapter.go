@@ -23,6 +23,7 @@ import (
 	"swypik-os/core/resource"
 	"swypik-os/generated/myriad"
 	"swypik-os/internal/planprocess"
+	"swypik-os/internal/safepath"
 	"time"
 )
 
@@ -709,17 +710,21 @@ func checkedSyntheticPhaseProbe(config NodeConfig) (*syntheticPhaseProbe, error)
 		return nil, err
 	}
 	clean := filepath.Clean(config.State)
-	for path := clean; ; path = filepath.Dir(path) {
-		info, err := os.Lstat(path)
-		if err != nil || !info.IsDir() || info.Mode()&os.ModeSymlink != 0 {
-			return nil, errors.New("synthetic phase probe state symlink or invalid directory")
-		}
-		if filepath.Dir(path) == path {
-			break
-		}
+	info, err := os.Lstat(clean)
+	if err != nil || !info.IsDir() || info.Mode()&os.ModeSymlink != 0 {
+		return nil, errors.New("synthetic phase probe state symlink or invalid directory")
 	}
-	resolved, err := filepath.EvalSymlinks(clean)
-	if err != nil || !strings.EqualFold(resolved, clean) {
+	parent := filepath.Dir(clean)
+	canonicalParent, err := safepath.Canonical(parent)
+	if err != nil {
+		return nil, errors.New("synthetic phase probe state symlink or invalid directory")
+	}
+	expected := filepath.Join(canonicalParent, filepath.Base(clean))
+	if parent == clean {
+		expected = canonicalParent
+	}
+	resolved, err := safepath.Canonical(clean)
+	if err != nil || !strings.EqualFold(resolved, expected) {
 		return nil, errors.New("synthetic phase probe state alias")
 	}
 	path := filepath.Join(clean, "synthetic-phase.json")

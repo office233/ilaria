@@ -1,0 +1,392 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-10-03T11:15:00+03:00",
+  "environment": {
+    "os": "Windows 11 (Windows PowerShell 5.1)",
+    "nexus_root": "E:\\nexus",
+    "swypik_root": "E:\\Swypik",
+    "scratch_dir": "E:\\nexus\\ramasite\\local\\swypik-import",
+    "archive_dir": "E:\\nexus\\ramasite\\local\\archive"
+  },
+  "nexus_isolation_compliance": {
+    "working_tree_touched": false,
+    "index_touched": false,
+    "active_branch_touched": false,
+    "active_branch": "chore/nexus-unify-20261003",
+    "nexus_is_shallow_repository": false,
+    "refs_created": [
+      "refs/imports/swypik-commerce",
+      "refs/imports/swypik-mobile",
+      "refs/imports/swypik-site"
+    ]
+  },
+  "imports": {
+    "commerce": {
+      "ref": "refs/imports/swypik-commerce",
+      "source_repo": "E:\\Swypik\\swypik-commerce-platform",
+      "source_branch": "fix/p0-security-ci-integrated",
+      "scratch_path": "E:\\nexus\\ramasite\\local\\swypik-import\\commerce",
+      "is_shallow": false,
+      "fsck_status": "clean",
+      "original_root_commit": "cfd2db0d4154819fc74f5b57c088fa5936ca55cd",
+      "rewritten_root_commit": "afa756464945d8e4a67096fc20f57b6ee24a0e9f",
+      "root_parents_count": 0,
+      "root_tree_sha": "b73f8f1df2d350f3051375e2e1ed83fcd0fc3be3",
+      "original_tip_commit": "3fbaf9f642dbb4e0cba31a7f798da72d466ed974",
+      "imported_tip_commit": "0dc64e42bc8d676f805ab27e31a4b136c7669a74",
+      "tip_tree_sha": "de3c7ad0e50e6d906b5f6ef7dc84c92d06d2c911",
+      "tree_equality_proof": {
+        "original_tip_tree": "de3c7ad0e50e6d906b5f6ef7dc84c92d06d2c911",
+        "imported_tip_tree": "de3c7ad0e50e6d906b5f6ef7dc84c92d06d2c911",
+        "identical": true
+      },
+      "commit_counts": {
+        "branch_commits": 4,
+        "all_reachable_commits": 27
+      },
+      "secret_check": {
+        "status": "PASS",
+        "total_unique_files_scanned": 3211,
+        "violations_found": 0,
+        "allowed_templates": [
+          ".env.example",
+          ".env.social.example",
+          "infra/azure/staging.env.example",
+          "infra/hetzner/env.example",
+          "workers/video-worker/.env.example"
+        ]
+      }
+    },
+    "mobile": {
+      "ref": "refs/imports/swypik-mobile",
+      "source_repo": "E:\\Swypik\\swypik-mobile-pilot",
+      "source_branch": "audit/complete-20260930",
+      "scratch_path": "E:\\nexus\\ramasite\\local\\swypik-import\\mobile",
+      "is_shallow": false,
+      "fsck_status": "clean",
+      "root_commit": "35d88dcb0faf46ea86ec61d58709724c684af102",
+      "original_tip_commit": "ee64f47951010c614139b19065cebb72eb62b77f",
+      "imported_tip_commit": "ee64f47951010c614139b19065cebb72eb62b77f",
+      "tip_tree_sha": "31485f741364f65b7634d5225e7ae12e3a2089b3",
+      "tree_equality_proof": {
+        "original_tip_tree": "31485f741364f65b7634d5225e7ae12e3a2089b3",
+        "imported_tip_tree": "31485f741364f65b7634d5225e7ae12e3a2089b3",
+        "identical": true
+      },
+      "commit_counts": {
+        "branch_commits": 2,
+        "all_reachable_commits": 2
+      },
+      "secret_check": {
+        "status": "PASS",
+        "total_unique_files_scanned": 39,
+        "violations_found": 0,
+        "allowed_templates": [
+          ".env.example"
+        ]
+      }
+    },
+    "site": {
+      "ref": "refs/imports/swypik-site",
+      "source_repo": "E:\\Swypik\\swypik-site",
+      "source_branch": "audit/complete-20260930",
+      "scratch_path": "E:\\nexus\\ramasite\\local\\swypik-import\\site",
+      "is_shallow": false,
+      "fsck_status": "clean",
+      "root_commit": "9460a5c1040febcdf6590cb56e451c01a04c6653",
+      "original_tip_commit": "c165ae98b55937e2e8f3905ca8fc4dd47e5f9c66",
+      "imported_tip_commit": "c165ae98b55937e2e8f3905ca8fc4dd47e5f9c66",
+      "tip_tree_sha": "f56685a53f2d407960a2f76e33257f97abd95f33",
+      "tree_equality_proof": {
+        "original_tip_tree": "f56685a53f2d407960a2f76e33257f97abd95f33",
+        "imported_tip_tree": "f56685a53f2d407960a2f76e33257f97abd95f33",
+        "identical": true
+      },
+      "commit_counts": {
+        "branch_commits": 2,
+        "all_reachable_commits": 2
+      },
+      "secret_check": {
+        "status": "PASS",
+        "total_unique_files_scanned": 25,
+        "violations_found": 0,
+        "allowed_templates": []
+      }
+    }
+  },
+  "bundles": [
+    {
+      "repo": "swypik-commerce-platform",
+      "bundle_path": "E:\\nexus\\ramasite\\local\\archive\\swypik-repos\\swypik-commerce-platform.bundle",
+      "size_bytes": 6847097,
+      "size_mb": 6.53,
+      "refs_count": 40,
+      "verify_result": "is okay (complete history)"
+    },
+    {
+      "repo": "swypik-mobile-pilot",
+      "bundle_path": "E:\\nexus\\ramasite\\local\\archive\\swypik-repos\\swypik-mobile-pilot.bundle",
+      "size_bytes": 643757,
+      "size_mb": 0.61,
+      "refs_count": 14,
+      "verify_result": "is okay (complete history)"
+    },
+    {
+      "repo": "swypik-site",
+      "bundle_path": "E:\\nexus\\ramasite\\local\\archive\\swypik-repos\\swypik-site.bundle",
+      "size_bytes": 119855,
+      "size_mb": 0.11,
+      "refs_count": 4,
+      "verify_result": "is okay (complete history)"
+    },
+    {
+      "repo": "_p0-fix",
+      "bundle_path": "E:\\nexus\\ramasite\\local\\archive\\swypik-repos\\_p0-fix.bundle",
+      "size_bytes": 6237328,
+      "size_mb": 5.95,
+      "refs_count": 40,
+      "verify_result": "is okay (complete history)"
+    },
+    {
+      "repo": "swypik-app-fix-20260929",
+      "bundle_path": "E:\\nexus\\ramasite\\local\\archive\\swypik-repos\\swypik-app-fix-20260929.bundle",
+      "size_bytes": 120453969,
+      "size_mb": 114.87,
+      "refs_count": 12,
+      "verify_result": "is okay (complete history)"
+    },
+    {
+      "repo": "swypik-p0",
+      "bundle_path": "E:\\nexus\\ramasite\\local\\archive\\swypik-repos\\swypik-p0.bundle",
+      "size_bytes": 121654685,
+      "size_mb": 116.02,
+      "refs_count": 16,
+      "verify_result": "is okay (complete history, 1350 commits, full offline archive)"
+    }
+  ],
+  "worktree_leftovers": {
+    "total_worktrees_scanned": 42,
+    "worktrees_with_leftovers": 24,
+    "total_files_copied": 3377,
+    "total_bytes_copied": 47536435,
+    "total_mb_copied": 45.33,
+    "sha256_verified_count": 3377,
+    "verification_rate": 1.0,
+    "destination_root": "E:\\nexus\\ramasite\\local\\archive\\swypik-worktree-leftovers",
+    "manifest_path": "E:\\nexus\\ramasite\\local\\archive\\swypik-worktree-leftovers\\manifest.json",
+    "worktree_breakdown": [
+      {
+        "repo": "swypik-commerce-platform",
+        "worktree": "swypik-commerce-platform",
+        "files": 324,
+        "bytes": 4467554
+      },
+      {
+        "repo": "swypik-commerce-platform",
+        "worktree": "battles-e2e-20260930",
+        "files": 20,
+        "bytes": 204364
+      },
+      {
+        "repo": "swypik-commerce-platform",
+        "worktree": "cares-e2e-20260930",
+        "files": 16,
+        "bytes": 184512
+      },
+      {
+        "repo": "swypik-commerce-platform",
+        "worktree": "deploy-converge-node-state-20260930",
+        "files": 2461,
+        "bytes": 37946268
+      },
+      {
+        "repo": "swypik-commerce-platform",
+        "worktree": "food-e2e-20260930",
+        "files": 22,
+        "bytes": 236891
+      },
+      {
+        "repo": "swypik-commerce-platform",
+        "worktree": "go-e2e-20260930",
+        "files": 21,
+        "bytes": 248102
+      },
+      {
+        "repo": "swypik-commerce-platform",
+        "worktree": "integration-modules-20260930",
+        "files": 207,
+        "bytes": 1561245
+      },
+      {
+        "repo": "swypik-commerce-platform",
+        "worktree": "live-e2e-20260930",
+        "files": 30,
+        "bytes": 284109
+      },
+      {
+        "repo": "swypik-commerce-platform",
+        "worktree": "messenger-e2e-20260930",
+        "files": 3,
+        "bytes": 21405
+      },
+      {
+        "repo": "swypik-commerce-platform",
+        "worktree": "missions-e2e-20260930",
+        "files": 2,
+        "bytes": 14210
+      },
+      {
+        "repo": "swypik-commerce-platform",
+        "worktree": "seller-e2e-20260930",
+        "files": 8,
+        "bytes": 76540
+      },
+      {
+        "repo": "swypik-commerce-platform",
+        "worktree": "shop-e2e-20260930",
+        "files": 24,
+        "bytes": 221876
+      },
+      {
+        "repo": "swypik-commerce-platform",
+        "worktree": "stays-e2e-20260930",
+        "files": 24,
+        "bytes": 241902
+      },
+      {
+        "repo": "swypik-commerce-platform",
+        "worktree": "claude-audit-fixes-20261002",
+        "files": 76,
+        "bytes": 874120
+      },
+      {
+        "repo": "swypik-mobile-pilot",
+        "worktree": "swypik-mobile-pilot",
+        "files": 16,
+        "bytes": 52410
+      },
+      {
+        "repo": "swypik-mobile-pilot",
+        "worktree": "codex-mobile-contribution-governor-20261002",
+        "files": 3,
+        "bytes": 18450
+      },
+      {
+        "repo": "swypik-mobile-pilot",
+        "worktree": "codex-mobile-memory-20261002",
+        "files": 34,
+        "bytes": 168240
+      },
+      {
+        "repo": "swypik-mobile-pilot",
+        "worktree": "codex-mobile-native-build-20261002",
+        "files": 6,
+        "bytes": 31204
+      },
+      {
+        "repo": "swypik-mobile-pilot",
+        "worktree": "codex-mobile-reconciled-20261002",
+        "files": 16,
+        "bytes": 52410
+      },
+      {
+        "repo": "swypik-mobile-pilot",
+        "worktree": "codex-mobile-session-lifecycle-20261001",
+        "files": 28,
+        "bytes": 124580
+      },
+      {
+        "repo": "_p0-fix",
+        "worktree": "dispatch-gps-eligibility-20260930",
+        "files": 4,
+        "bytes": 62140
+      },
+      {
+        "repo": "_p0-fix",
+        "worktree": "food-merchant-settings-20260930",
+        "files": 11,
+        "bytes": 112450
+      },
+      {
+        "repo": "_p0-fix",
+        "worktree": "fraud-fulfillment-hold-20260929",
+        "files": 3,
+        "bytes": 29840
+      },
+      {
+        "repo": "_p0-fix",
+        "worktree": "stays-digital-checkin-20260930",
+        "files": 18,
+        "bytes": 168923
+      }
+    ]
+  },
+  "non_git_content": {
+    "items": [
+      {
+        "name": "_conversatii-claude",
+        "type": "directory",
+        "description": "Historical Claude Code subagent session transcripts from August-September 2026 (1,079 files)",
+        "source_path": "E:\\Swypik\\_conversatii-claude",
+        "is_regenerable": false,
+        "archived_to": "E:\\nexus\\ramasite\\local\\archive\\swypik-non-git\\conversatii-claude.tar",
+        "size_bytes": 362359808,
+        "sha256": "bdd62e185d7b57418a35e1d196735c0733a4bfb9e95453e1eb32c49c71a39d89"
+      },
+      {
+        "name": "CUM-SE-CONECTEAZA-AGENTII.md",
+        "type": "file",
+        "description": "Documentation on agent SSH keys, reverse tunnels, and port forwarding",
+        "source_path": "E:\\Swypik\\CUM-SE-CONECTEAZA-AGENTII.md",
+        "is_regenerable": false,
+        "archived_to": "E:\\nexus\\ramasite\\local\\archive\\swypik-non-git\\CUM-SE-CONECTEAZA-AGENTII.md",
+        "size_bytes": 3474,
+        "sha256": "10e399955857be141db70358c4e225439c2e0b5710aa3933c1626f2f3d6ce748"
+      },
+      {
+        "name": "HANDOFF-2026-09-30-SWYPIK-PRODUCTION.md",
+        "type": "file",
+        "description": "Production handoff report detailing Azure cutover, Key Vault, and DNS migration",
+        "source_path": "E:\\Swypik\\HANDOFF-2026-09-30-SWYPIK-PRODUCTION.md",
+        "is_regenerable": false,
+        "archived_to": "E:\\nexus\\ramasite\\local\\archive\\swypik-non-git\\HANDOFF-2026-09-30-SWYPIK-PRODUCTION.md",
+        "size_bytes": 16584,
+        "sha256": "418e4b0c202754351c73f727e417937dae6da2088f172aa796cb4ba7258f4865"
+      }
+    ]
+  },
+  "deletion_readiness_verdict": {
+    "verdict": "READY FOR DELETION (NON-DESTRUCTIVE ARCHIVAL COMPLETE)",
+    "deleted_anything_in_swypik": false,
+    "what_would_be_lost": "Nothing beyond regenerable dependencies (node_modules ~50 GB), build artifacts (.next, dist, build, .expo), Python virtual environments/caches (__pycache__, .venv), and test runner caches. 100% of unique Git histories, branches, tags, uncommitted worktree changes, and non-git documents are preserved offline and in nexus import refs."
+  },
+  "attached_history_merges": [
+    {
+      "product": "commerce",
+      "merge_commit": "0ffd794a9ed2adf868bf044a2d4e816bee662191",
+      "import_ref": "refs/imports/swypik-commerce-prefixed",
+      "import_tip": "26b9edcb5804f184aab57ac21ffd37a119013b13",
+      "parent_head": "d6498ac2ea51e1c8184480d635a050da99676706",
+      "tree_sha": "70b476a3e1f51bf64559ea26b551aa6de959be18",
+      "diff_empty": true
+    },
+    {
+      "product": "mobile",
+      "merge_commit": "4cecfcd34f1adcf147b15fabb8193484cbd17f8e",
+      "import_ref": "refs/imports/swypik-mobile-prefixed",
+      "import_tip": "f923b1122e4680fad8eed05e17eef1dbff95e93f",
+      "parent_head": "0ffd794a9ed2adf868bf044a2d4e816bee662191",
+      "tree_sha": "70b476a3e1f51bf64559ea26b551aa6de959be18",
+      "diff_empty": true
+    },
+    {
+      "product": "site",
+      "merge_commit": "25b7c65d39955ae221f9e9e368458038103fcd27",
+      "import_ref": "refs/imports/swypik-site-prefixed",
+      "import_tip": "f91d442368774b017b50402f7f065c11e9caf916",
+      "parent_head": "4cecfcd34f1adcf147b15fabb8193484cbd17f8e",
+      "tree_sha": "70b476a3e1f51bf64559ea26b551aa6de959be18",
+      "diff_empty": true
+    }
+  ]
+}

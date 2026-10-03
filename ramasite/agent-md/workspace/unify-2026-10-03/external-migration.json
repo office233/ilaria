@@ -1,0 +1,4162 @@
+{
+  "summary": {
+    "total_moves": 88,
+    "total_moved_files": 440417,
+    "total_moved_bytes": 14971280093,
+    "total_moved_gb": 13.943,
+    "incoming_holding_files": 6535,
+    "incoming_holding_bytes": 129266558,
+    "all_verified": true,
+    "nexus_sources_removed": true,
+    "nexus_training_removed": true
+  },
+  "moves": [
+    {
+      "source": "E:\\arhiva-ceo\\tools\\mingw64",
+      "destination": "E:\\nexus\\ramasite\\local\\tools\\mingw64",
+      "type": "directory",
+      "file_count": 11636,
+      "total_bytes": 945194796,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\tools\\nasm-2.16.03",
+      "destination": "E:\\nexus\\ramasite\\local\\tools\\nasm-2.16.03",
+      "type": "directory",
+      "file_count": 3,
+      "total_bytes": 2777102,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\tools\\nasm.zip",
+      "destination": "E:\\nexus\\ramasite\\local\\tools\\nasm.zip",
+      "type": "directory",
+      "file_count": 1,
+      "total_bytes": 513543,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\tools\\qemu",
+      "destination": "E:\\nexus\\ramasite\\local\\tools\\qemu",
+      "type": "directory",
+      "file_count": 3385,
+      "total_bytes": 1255998954,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\tools\\qemu-w64-setup-20260811.exe",
+      "destination": "E:\\nexus\\ramasite\\local\\tools\\qemu-w64-setup-20260811.exe",
+      "type": "file",
+      "file_count": 1,
+      "total_bytes": 206615928,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\tools\\smoke",
+      "destination": "E:\\nexus\\ramasite\\local\\tools\\smoke",
+      "type": "directory",
+      "file_count": 5,
+      "total_bytes": 3519003,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\tools\\winlibs.sha256",
+      "destination": "E:\\nexus\\ramasite\\local\\tools\\winlibs.sha256",
+      "type": "directory",
+      "file_count": 1,
+      "total_bytes": 129,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\tools\\winlibs.zip",
+      "destination": "E:\\nexus\\ramasite\\local\\tools\\winlibs.zip",
+      "type": "directory",
+      "file_count": 1,
+      "total_bytes": 267593703,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\swyp-arm64-cross",
+      "destination": "E:\\nexus\\ramasite\\local\\archive\\arhiva-ceo-benchmarks\\swyp-arm64-cross",
+      "type": "directory",
+      "file_count": 3,
+      "total_bytes": 29041927,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\swyp-arm64-cross-calls",
+      "destination": "E:\\nexus\\ramasite\\local\\archive\\arhiva-ceo-benchmarks\\swyp-arm64-cross-calls",
+      "type": "directory",
+      "file_count": 3,
+      "total_bytes": 29283153,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\swyp-bench-20260929-081804",
+      "destination": "E:\\nexus\\ramasite\\local\\archive\\arhiva-ceo-benchmarks\\swyp-bench-20260929-081804",
+      "type": "directory",
+      "file_count": 17,
+      "total_bytes": 11977840,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\swyp-cache-bench-20260929-081946",
+      "destination": "E:\\nexus\\ramasite\\local\\archive\\arhiva-ceo-benchmarks\\swyp-cache-bench-20260929-081946",
+      "type": "directory",
+      "file_count": 9,
+      "total_bytes": 11919001,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\swyp-cache-bench2-20260929-082039",
+      "destination": "E:\\nexus\\ramasite\\local\\archive\\arhiva-ceo-benchmarks\\swyp-cache-bench2-20260929-082039",
+      "type": "directory",
+      "file_count": 11,
+      "total_bytes": 12041741,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\swyp-core-aot-bench",
+      "destination": "E:\\nexus\\ramasite\\local\\archive\\arhiva-ceo-benchmarks\\swyp-core-aot-bench",
+      "type": "directory",
+      "file_count": 6,
+      "total_bytes": 11547727,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\swyp-core-aot-bench2",
+      "destination": "E:\\nexus\\ramasite\\local\\archive\\arhiva-ceo-benchmarks\\swyp-core-aot-bench2",
+      "type": "directory",
+      "file_count": 6,
+      "total_bytes": 11550287,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\swyp-core-aot-bench3",
+      "destination": "E:\\nexus\\ramasite\\local\\archive\\arhiva-ceo-benchmarks\\swyp-core-aot-bench3",
+      "type": "directory",
+      "file_count": 6,
+      "total_bytes": 11548836,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\swyp-core-aot-bench4",
+      "destination": "E:\\nexus\\ramasite\\local\\archive\\arhiva-ceo-benchmarks\\swyp-core-aot-bench4",
+      "type": "directory",
+      "file_count": 5,
+      "total_bytes": 11490995,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\swyp-core-aot-evidence-20260929",
+      "destination": "E:\\nexus\\ramasite\\local\\archive\\arhiva-ceo-benchmarks\\swyp-core-aot-evidence-20260929",
+      "type": "directory",
+      "file_count": 12,
+      "total_bytes": 11749792,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\swyp-core-aot-evidence-20260929-v2",
+      "destination": "E:\\nexus\\ramasite\\local\\archive\\arhiva-ceo-benchmarks\\swyp-core-aot-evidence-20260929-v2",
+      "type": "directory",
+      "file_count": 14,
+      "total_bytes": 11847968,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\swyp-core-aot-evidence-hotpath",
+      "destination": "E:\\nexus\\ramasite\\local\\archive\\arhiva-ceo-benchmarks\\swyp-core-aot-evidence-hotpath",
+      "type": "directory",
+      "file_count": 12,
+      "total_bytes": 11775199,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\swyp-core-f64-bench",
+      "destination": "E:\\nexus\\ramasite\\local\\archive\\arhiva-ceo-benchmarks\\swyp-core-f64-bench",
+      "type": "directory",
+      "file_count": 5,
+      "total_bytes": 11493439,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\swyp-core-native-bench",
+      "destination": "E:\\nexus\\ramasite\\local\\archive\\arhiva-ceo-benchmarks\\swyp-core-native-bench",
+      "type": "directory",
+      "file_count": 6,
+      "total_bytes": 11550294,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\swyp-fast-bench",
+      "destination": "E:\\nexus\\ramasite\\local\\archive\\arhiva-ceo-benchmarks\\swyp-fast-bench",
+      "type": "directory",
+      "file_count": 4,
+      "total_bytes": 11518160,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\swyp-ieee64-bench",
+      "destination": "E:\\nexus\\ramasite\\local\\archive\\arhiva-ceo-benchmarks\\swyp-ieee64-bench",
+      "type": "directory",
+      "file_count": 7,
+      "total_bytes": 11587469,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\swyp-inline-call-bench-20260929-112743",
+      "destination": "E:\\nexus\\ramasite\\local\\archive\\arhiva-ceo-benchmarks\\swyp-inline-call-bench-20260929-112743",
+      "type": "directory",
+      "file_count": 4,
+      "total_bytes": 125289,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\swyp-inline-call-bench2-20260929-112931",
+      "destination": "E:\\nexus\\ramasite\\local\\archive\\arhiva-ceo-benchmarks\\swyp-inline-call-bench2-20260929-112931",
+      "type": "directory",
+      "file_count": 9,
+      "total_bytes": 252192,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\swyp-native-call-bench-20260929-111417",
+      "destination": "E:\\nexus\\ramasite\\local\\archive\\arhiva-ceo-benchmarks\\swyp-native-call-bench-20260929-111417",
+      "type": "directory",
+      "file_count": 4,
+      "total_bytes": 123720,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\swyp-server-bench-20260929-082308",
+      "destination": "E:\\nexus\\ramasite\\local\\archive\\arhiva-ceo-benchmarks\\swyp-server-bench-20260929-082308",
+      "type": "directory",
+      "file_count": 25,
+      "total_bytes": 12862727,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\swyp-server-run-bench-20260929-082412",
+      "destination": "E:\\nexus\\ramasite\\local\\archive\\arhiva-ceo-benchmarks\\swyp-server-run-bench-20260929-082412",
+      "type": "directory",
+      "file_count": 3,
+      "total_bytes": 11501459,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\swyp-spill-proof",
+      "destination": "E:\\nexus\\ramasite\\local\\archive\\arhiva-ceo-benchmarks\\swyp-spill-proof",
+      "type": "directory",
+      "file_count": 4,
+      "total_bytes": 65581,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\swyp-x64-bench-20260929-092149",
+      "destination": "E:\\nexus\\ramasite\\local\\archive\\arhiva-ceo-benchmarks\\swyp-x64-bench-20260929-092149",
+      "type": "directory",
+      "file_count": 12,
+      "total_bytes": 12311568,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\swyp-x64-compile-20260929-094233",
+      "destination": "E:\\nexus\\ramasite\\local\\archive\\arhiva-ceo-benchmarks\\swyp-x64-compile-20260929-094233",
+      "type": "directory",
+      "file_count": 22,
+      "total_bytes": 623254,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\swypik-resource-bench",
+      "destination": "E:\\nexus\\ramasite\\local\\archive\\arhiva-ceo-benchmarks\\swypik-resource-bench",
+      "type": "directory",
+      "file_count": 8,
+      "total_bytes": 9256192,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\swypik-resource-bench-v2",
+      "destination": "E:\\nexus\\ramasite\\local\\archive\\arhiva-ceo-benchmarks\\swypik-resource-bench-v2",
+      "type": "directory",
+      "file_count": 20,
+      "total_bytes": 9261533,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\swypik-resource-bench-v3",
+      "destination": "E:\\nexus\\ramasite\\local\\archive\\arhiva-ceo-benchmarks\\swypik-resource-bench-v3",
+      "type": "directory",
+      "file_count": 14,
+      "total_bytes": 9260237,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\swypik-resource-bench-v4",
+      "destination": "E:\\nexus\\ramasite\\local\\archive\\arhiva-ceo-benchmarks\\swypik-resource-bench-v4",
+      "type": "directory",
+      "file_count": 14,
+      "total_bytes": 9260248,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\swypik-resource-bench-v5",
+      "destination": "E:\\nexus\\ramasite\\local\\archive\\arhiva-ceo-benchmarks\\swypik-resource-bench-v5",
+      "type": "directory",
+      "file_count": 26,
+      "total_bytes": 9925209,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\swypik-resource-bench-v5-debug",
+      "destination": "E:\\nexus\\ramasite\\local\\archive\\arhiva-ceo-benchmarks\\swypik-resource-bench-v5-debug",
+      "type": "directory",
+      "file_count": 4,
+      "total_bytes": 9755581,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\swypik-resource-bench-v5-smoke",
+      "destination": "E:\\nexus\\ramasite\\local\\archive\\arhiva-ceo-benchmarks\\swypik-resource-bench-v5-smoke",
+      "type": "directory",
+      "file_count": 7,
+      "total_bytes": 9765447,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\swypik-resource-bench-v5-smoke2",
+      "destination": "E:\\nexus\\ramasite\\local\\archive\\arhiva-ceo-benchmarks\\swypik-resource-bench-v5-smoke2",
+      "type": "directory",
+      "file_count": 6,
+      "total_bytes": 9763180,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\swypik-resource-bench-v6",
+      "destination": "E:\\nexus\\ramasite\\local\\archive\\arhiva-ceo-benchmarks\\swypik-resource-bench-v6",
+      "type": "directory",
+      "file_count": 26,
+      "total_bytes": 9925037,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\swypik-resource-bench-v7",
+      "destination": "E:\\nexus\\ramasite\\local\\archive\\arhiva-ceo-benchmarks\\swypik-resource-bench-v7",
+      "type": "directory",
+      "file_count": 26,
+      "total_bytes": 9925667,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\swypik-resource-bench-v7-smoke",
+      "destination": "E:\\nexus\\ramasite\\local\\archive\\arhiva-ceo-benchmarks\\swypik-resource-bench-v7-smoke",
+      "type": "directory",
+      "file_count": 6,
+      "total_bytes": 9764976,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\swyp-cmd-arm64-v011.test",
+      "destination": "E:\\nexus\\ramasite\\local\\archive\\arhiva-ceo-benchmarks\\swyp-cmd-arm64-v011.test",
+      "type": "file",
+      "file_count": 1,
+      "total_bytes": 11634359,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\swyp-cmd-arm64.test",
+      "destination": "E:\\nexus\\ramasite\\local\\archive\\arhiva-ceo-benchmarks\\swyp-cmd-arm64.test",
+      "type": "file",
+      "file_count": 1,
+      "total_bytes": 11634359,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\swyp-coreir-arm64-fp.test",
+      "destination": "E:\\nexus\\ramasite\\local\\archive\\arhiva-ceo-benchmarks\\swyp-coreir-arm64-fp.test",
+      "type": "file",
+      "file_count": 1,
+      "total_bytes": 6528440,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\swyp-coreir-arm64-v011.test",
+      "destination": "E:\\nexus\\ramasite\\local\\archive\\arhiva-ceo-benchmarks\\swyp-coreir-arm64-v011.test",
+      "type": "file",
+      "file_count": 1,
+      "total_bytes": 6451594,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\swyp-coreir-arm64.test",
+      "destination": "E:\\nexus\\ramasite\\local\\archive\\arhiva-ceo-benchmarks\\swyp-coreir-arm64.test",
+      "type": "file",
+      "file_count": 1,
+      "total_bytes": 6451594,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\swyp-inline-call.exe",
+      "destination": "E:\\nexus\\ramasite\\local\\archive\\arhiva-ceo-benchmarks\\swyp-inline-call.exe",
+      "type": "file",
+      "file_count": 1,
+      "total_bytes": 11970048,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\swyp-inline-call2.exe",
+      "destination": "E:\\nexus\\ramasite\\local\\archive\\arhiva-ceo-benchmarks\\swyp-inline-call2.exe",
+      "type": "file",
+      "file_count": 1,
+      "total_bytes": 11970048,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\swyp-linux-arm64",
+      "destination": "E:\\nexus\\ramasite\\local\\archive\\arhiva-ceo-benchmarks\\swyp-linux-arm64",
+      "type": "directory",
+      "file_count": 1,
+      "total_bytes": 10788577,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\swyp-linux-arm64-fp",
+      "destination": "E:\\nexus\\ramasite\\local\\archive\\arhiva-ceo-benchmarks\\swyp-linux-arm64-fp",
+      "type": "directory",
+      "file_count": 1,
+      "total_bytes": 10797055,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\swyp-linux-arm64-v011",
+      "destination": "E:\\nexus\\ramasite\\local\\archive\\arhiva-ceo-benchmarks\\swyp-linux-arm64-v011",
+      "type": "directory",
+      "file_count": 1,
+      "total_bytes": 10788577,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\swyp-native-call.exe",
+      "destination": "E:\\nexus\\ramasite\\local\\archive\\arhiva-ceo-benchmarks\\swyp-native-call.exe",
+      "type": "file",
+      "file_count": 1,
+      "total_bytes": 11949568,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\swyp-x64-bench.exe",
+      "destination": "E:\\nexus\\ramasite\\local\\archive\\arhiva-ceo-benchmarks\\swyp-x64-bench.exe",
+      "type": "file",
+      "file_count": 1,
+      "total_bytes": 11776512,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\nexus-head-a5a8175.tar",
+      "destination": "E:\\nexus\\ramasite\\local\\archive\\arhiva-ceo-root\\nexus-head-a5a8175.tar",
+      "type": "file",
+      "file_count": 1,
+      "total_bytes": 41420800,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\repo-separation-swyp2.patch",
+      "destination": "E:\\nexus\\ramasite\\local\\archive\\arhiva-ceo-root\\repo-separation-swyp2.patch",
+      "type": "file",
+      "file_count": 1,
+      "total_bytes": 172382,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\_cloud-transfer\\nexus.tgz",
+      "destination": "E:\\nexus\\ramasite\\local\\archive\\arhiva-ceo-root\\nexus.tgz",
+      "type": "file",
+      "file_count": 1,
+      "total_bytes": 219848366,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\_cloud-transfer\\nexus.err",
+      "destination": "E:\\nexus\\ramasite\\local\\archive\\arhiva-ceo-root\\nexus.err",
+      "type": "file",
+      "file_count": 1,
+      "total_bytes": 0,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\_cloud-transfer\\Swypik.tgz",
+      "destination": "E:\\nexus\\ramasite\\local\\archive\\arhiva-ceo-root\\Swypik.tgz",
+      "type": "file",
+      "file_count": 1,
+      "total_bytes": 292670533,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\_cloud-transfer\\Swypik.err",
+      "destination": "E:\\nexus\\ramasite\\local\\archive\\arhiva-ceo-root\\Swypik.err",
+      "type": "file",
+      "file_count": 1,
+      "total_bytes": 0,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\swyp-execute-before-fastblock.go",
+      "destination": "E:\\nexus\\ramasite\\local\\incoming\\ramasite\\agent-md\\swyp\\history\\swyp-execute-before-fastblock.go",
+      "type": "file",
+      "file_count": 1,
+      "total_bytes": 8376,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\projects\\swos",
+      "destination": "E:\\nexus\\ramasite\\local\\incoming\\ramasite\\agent-md\\workspace\\swos-historical",
+      "type": "directory",
+      "file_count": 54,
+      "total_bytes": 665604,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\specs\\mission-swypikos-ilaria.md",
+      "destination": "E:\\nexus\\ramasite\\local\\incoming\\ramasite\\agent-md\\workspace\\mission-swypikos-ilaria.md",
+      "type": "file",
+      "file_count": 1,
+      "total_bytes": 12049,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\_move_logs",
+      "destination": "E:\\nexus\\ramasite\\local\\incoming\\ramasite\\agent-md\\workspace\\migration-history",
+      "type": "directory",
+      "file_count": 11,
+      "total_bytes": 14305,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\_conversatii-claude\\2026-09-28_62c42f62.jsonl",
+      "destination": "E:\\nexus\\ramasite\\local\\conversatii-claude\\2026-09-28_62c42f62.jsonl",
+      "type": "file",
+      "file_count": 1,
+      "total_bytes": 98016,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\_conversatii-claude\\2026-09-28_62c42f62_raspunde-doar-cu-ok.md",
+      "destination": "E:\\nexus\\ramasite\\local\\conversatii-claude\\2026-09-28_62c42f62_raspunde-doar-cu-ok.md",
+      "type": "file",
+      "file_count": 1,
+      "total_bytes": 259,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\_conversatii-claude\\2026-09-28_9ba64672.jsonl",
+      "destination": "E:\\nexus\\ramasite\\local\\conversatii-claude\\2026-09-28_9ba64672.jsonl",
+      "type": "file",
+      "file_count": 1,
+      "total_bytes": 1049042,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\_conversatii-claude\\2026-09-28_9ba64672_subagenti",
+      "destination": "E:\\nexus\\ramasite\\local\\conversatii-claude\\2026-09-28_9ba64672_subagenti",
+      "type": "directory",
+      "file_count": 2,
+      "total_bytes": 263163,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\_conversatii-claude\\2026-09-28_9ba64672_verifica-toate-proiectele-mele-si-vreau-sa-imi-creezi-un-meg.md",
+      "destination": "E:\\nexus\\ramasite\\local\\conversatii-claude\\2026-09-28_9ba64672_verifica-toate-proiectele-mele-si-vreau-sa-imi-creezi-un-meg.md",
+      "type": "file",
+      "file_count": 1,
+      "total_bytes": 18990,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\_conversatii-claude\\diverse",
+      "destination": "E:\\nexus\\ramasite\\local\\conversatii-claude\\diverse",
+      "type": "directory",
+      "file_count": 26,
+      "total_bytes": 9025502,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\_conversatii-claude\\INDEX.md",
+      "destination": "E:\\nexus\\ramasite\\local\\conversatii-claude\\INDEX.from-arhiva-ceo.md",
+      "type": "file",
+      "file_count": 1,
+      "total_bytes": 773,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\wt\\swyp-hir-p3-20260929",
+      "destination": "E:\\nexus\\ramasite\\local\\incoming\\_code-snapshots\\swyp-hir-p3-20260929",
+      "type": "directory",
+      "file_count": 276,
+      "total_bytes": 53398728,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\wt\\swypik-os-swyp-broker-20260929",
+      "destination": "E:\\nexus\\ramasite\\local\\incoming\\_code-snapshots\\swypik-os-swyp-broker-20260929",
+      "type": "directory",
+      "file_count": 297,
+      "total_bytes": 2593522,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\arhiva-ceo\\wt\\swyp-broker-integration-20260929",
+      "destination": "E:\\nexus\\ramasite\\local\\incoming\\_code-snapshots\\swyp-broker-integration-20260929",
+      "type": "directory",
+      "file_count": 1,
+      "total_bytes": 107,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\nexus-sources\\apache-nuttx-locked",
+      "destination": "E:\\nexus\\ramasite\\local\\sources\\apache-nuttx-locked",
+      "type": "directory",
+      "file_count": 27806,
+      "total_bytes": 513318927,
+      "sampled": true,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\nexus-sources\\freebsd-locked",
+      "destination": "E:\\nexus\\ramasite\\local\\sources\\freebsd-locked",
+      "type": "directory",
+      "file_count": 115704,
+      "total_bytes": 2038877178,
+      "sampled": true,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\nexus-sources\\staging",
+      "destination": "E:\\nexus\\ramasite\\local\\sources\\staging",
+      "type": "directory",
+      "file_count": 229300,
+      "total_bytes": 3492529522,
+      "sampled": true,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\nexus-sources\\zephyr",
+      "destination": "E:\\nexus\\ramasite\\local\\sources\\zephyr",
+      "type": "directory",
+      "file_count": 20908,
+      "total_bytes": 203774435,
+      "sampled": true,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\nexus-sources\\apache-nuttx-locked.licensed.json",
+      "destination": "E:\\nexus\\ramasite\\local\\incoming\\ramasite\\docs\\ilaria\\licensed_sources\\apache-nuttx-locked.licensed.json",
+      "type": "file",
+      "file_count": 1,
+      "total_bytes": 3673483,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\nexus-sources\\freebsd-locked.licensed.json",
+      "destination": "E:\\nexus\\ramasite\\local\\incoming\\ramasite\\docs\\ilaria\\licensed_sources\\freebsd-locked.licensed.json",
+      "type": "file",
+      "file_count": 1,
+      "total_bytes": 2274188,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\nexus-sources\\zephyr.current.licensed.json",
+      "destination": "E:\\nexus\\ramasite\\local\\incoming\\ramasite\\docs\\ilaria\\licensed_sources\\zephyr.current.licensed.json",
+      "type": "file",
+      "file_count": 1,
+      "total_bytes": 2709331,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\nexus-sources\\zephyr.licensed-tree.json",
+      "destination": "E:\\nexus\\ramasite\\local\\incoming\\ramasite\\docs\\ilaria\\licensed_sources\\zephyr.licensed-tree.json",
+      "type": "file",
+      "file_count": 1,
+      "total_bytes": 2709266,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\nexus-sources\\benchmarks",
+      "destination": "E:\\nexus\\ramasite\\local\\incoming\\ramasite\\benchmarks\\ilaria\\eval-benchmarks",
+      "type": "directory",
+      "file_count": 139,
+      "total_bytes": 39986045,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\nexus-training\\mobile-native-tools-20261002",
+      "destination": "E:\\nexus\\ramasite\\local\\tools\\mobile-native",
+      "type": "directory",
+      "file_count": 2974,
+      "total_bytes": 520828734,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\nexus-training\\new-public-20261001",
+      "destination": "E:\\nexus\\ramasite\\local\\training-data\\new-public-20261001",
+      "type": "directory",
+      "file_count": 18152,
+      "total_bytes": 3062506609,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\nexus-training\\integration-receipts",
+      "destination": "E:\\nexus\\ramasite\\local\\incoming\\ramasite\\agent-md\\ilaria\\integration-receipts",
+      "type": "directory",
+      "file_count": 15,
+      "total_bytes": 164874,
+      "sampled": false,
+      "verification_status": "VERIFIED",
+      "description": ""
+    },
+    {
+      "source": "E:\\nexus-training\\evidence",
+      "destination": "E:\\nexus\\ramasite\\local\\training-evidence",
+      "type": "directory",
+      "file_count": 9324,
+      "total_bytes": 1296060170,
+      "sampled": true,
+      "verification_status": "VERIFIED (sample 200 files + extended-length lstat on all entries)",
+      "description": "Large training evidence tree (156 reparse points/symlinks handled)"
+    }
+  ],
+  "incoming_holding_summary": {
+    "ramasite/agent-md/ilaria": {
+      "files": 15,
+      "bytes": 164874
+    },
+    "ramasite/agent-md/swyp": {
+      "files": 1,
+      "bytes": 8376
+    },
+    "ramasite/agent-md/workspace": {
+      "files": 66,
+      "bytes": 691958
+    },
+    "ramasite/benchmarks/ilaria": {
+      "files": 5875,
+      "bytes": 61042725
+    },
+    "ramasite/docs/ilaria": {
+      "files": 4,
+      "bytes": 11366268
+    },
+    "_code-snapshots/swyp-broker-integration-20260929/go.work": {
+      "files": 1,
+      "bytes": 107
+    },
+    "_code-snapshots/swyp-hir-p3-20260929/.gitignore": {
+      "files": 1,
+      "bytes": 111
+    },
+    "_code-snapshots/swyp-hir-p3-20260929/AGENTS.md": {
+      "files": 1,
+      "bytes": 556
+    },
+    "_code-snapshots/swyp-hir-p3-20260929/go.mod": {
+      "files": 1,
+      "bytes": 26
+    },
+    "_code-snapshots/swyp-hir-p3-20260929/README.md": {
+      "files": 1,
+      "bytes": 6661
+    },
+    "_code-snapshots/swyp-hir-p3-20260929/swyp.cmd": {
+      "files": 1,
+      "bytes": 243
+    },
+    "_code-snapshots/swyp-hir-p3-20260929/.github": {
+      "files": 1,
+      "bytes": 3961
+    },
+    "_code-snapshots/swyp-hir-p3-20260929/agent-lab": {
+      "files": 9,
+      "bytes": 41381085
+    },
+    "_code-snapshots/swyp-hir-p3-20260929/benchmarks": {
+      "files": 16,
+      "bytes": 65538
+    },
+    "_code-snapshots/swyp-hir-p3-20260929/bin": {
+      "files": 1,
+      "bytes": 10354688
+    },
+    "_code-snapshots/swyp-hir-p3-20260929/bridge": {
+      "files": 3,
+      "bytes": 5720
+    },
+    "_code-snapshots/swyp-hir-p3-20260929/cmd": {
+      "files": 55,
+      "bytes": 213470
+    },
+    "_code-snapshots/swyp-hir-p3-20260929/docs": {
+      "files": 45,
+      "bytes": 443881
+    },
+    "_code-snapshots/swyp-hir-p3-20260929/examples": {
+      "files": 26,
+      "bytes": 64859
+    },
+    "_code-snapshots/swyp-hir-p3-20260929/internal": {
+      "files": 111,
+      "bytes": 837468
+    },
+    "_code-snapshots/swyp-hir-p3-20260929/protocol": {
+      "files": 2,
+      "bytes": 5606
+    },
+    "_code-snapshots/swyp-hir-p3-20260929/scripts": {
+      "files": 2,
+      "bytes": 14855
+    },
+    "_code-snapshots/swypik-os-swyp-broker-20260929/.env.example": {
+      "files": 1,
+      "bytes": 855
+    },
+    "_code-snapshots/swypik-os-swyp-broker-20260929/.gitattributes": {
+      "files": 1,
+      "bytes": 144
+    },
+    "_code-snapshots/swypik-os-swyp-broker-20260929/.gitignore": {
+      "files": 1,
+      "bytes": 286
+    },
+    "_code-snapshots/swypik-os-swyp-broker-20260929/AGENTS.md": {
+      "files": 1,
+      "bytes": 661
+    },
+    "_code-snapshots/swypik-os-swyp-broker-20260929/go.mod": {
+      "files": 1,
+      "bytes": 126
+    },
+    "_code-snapshots/swypik-os-swyp-broker-20260929/go.sum": {
+      "files": 1,
+      "bytes": 312
+    },
+    "_code-snapshots/swypik-os-swyp-broker-20260929/README.md": {
+      "files": 1,
+      "bytes": 11556
+    },
+    "_code-snapshots/swypik-os-swyp-broker-20260929/Start-SwypikOS.bat": {
+      "files": 1,
+      "bytes": 276
+    },
+    "_code-snapshots/swypik-os-swyp-broker-20260929/.github": {
+      "files": 2,
+      "bytes": 4312
+    },
+    "_code-snapshots/swypik-os-swyp-broker-20260929/cmd": {
+      "files": 8,
+      "bytes": 60368
+    },
+    "_code-snapshots/swypik-os-swyp-broker-20260929/config": {
+      "files": 5,
+      "bytes": 14832
+    },
+    "_code-snapshots/swypik-os-swyp-broker-20260929/core": {
+      "files": 160,
+      "bytes": 787397
+    },
+    "_code-snapshots/swypik-os-swyp-broker-20260929/docs": {
+      "files": 26,
+      "bytes": 275333
+    },
+    "_code-snapshots/swypik-os-swyp-broker-20260929/generated": {
+      "files": 2,
+      "bytes": 3898
+    },
+    "_code-snapshots/swypik-os-swyp-broker-20260929/installer": {
+      "files": 4,
+      "bytes": 21279
+    },
+    "_code-snapshots/swypik-os-swyp-broker-20260929/internal": {
+      "files": 4,
+      "bytes": 4193
+    },
+    "_code-snapshots/swypik-os-swyp-broker-20260929/kernel": {
+      "files": 37,
+      "bytes": 535680
+    },
+    "_code-snapshots/swypik-os-swyp-broker-20260929/mobile": {
+      "files": 2,
+      "bytes": 2673
+    },
+    "_code-snapshots/swypik-os-swyp-broker-20260929/scripts": {
+      "files": 8,
+      "bytes": 34056
+    },
+    "_code-snapshots/swypik-os-swyp-broker-20260929/specs": {
+      "files": 4,
+      "bytes": 13843
+    },
+    "_code-snapshots/swypik-os-swyp-broker-20260929/system": {
+      "files": 9,
+      "bytes": 2763
+    },
+    "_code-snapshots/swypik-os-swyp-broker-20260929/ui": {
+      "files": 18,
+      "bytes": 818679
+    }
+  },
+  "hardcoded_path_references": {
+    "total_references": 399,
+    "total_files": 60,
+    "references_by_file": {
+      "ramasite/README.md": [
+        {
+          "line": 42,
+          "patterns": [
+            "nexus-sources"
+          ],
+          "text": "`E:\\nexus-sources` holds licensed source material referenced by training records."
+        },
+        {
+          "line": 43,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "`E:\\nexus-training` holds training and integration evidence."
+        },
+        {
+          "line": 47,
+          "patterns": [
+            "CEO"
+          ],
+          "text": "The former `E:\\CEO` multi-project coordination repository is preserved intact at"
+        },
+        {
+          "line": 48,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "`E:\\arhiva-ceo`, outside Nexus. Its organizational documents, private material,"
+        }
+      ],
+      "ramasite/agent-md/ilaria/audit/2026-09-30.md": [
+        {
+          "line": 30,
+          "patterns": [
+            "nexus-sources"
+          ],
+          "text": "| P2 | Testele de review/attribution depindeau de fișiere live aprobate, de `data/candidate-corpus` și de `E:/nexus-sources`. Modificarea legitimă a sursei invalida teste care simulau review istoric. | Fixture-uri sintetice izolate pentru attestări și manifestele sursă. Dovezile reale de aprobare rămân intacte; validările de producție continuă să refuze scope-uri modificate. |"
+        }
+      ],
+      "ramasite/agent-md/ilaria/bench/imc_nccl_bootstrap/supervision-handoff.md": [
+        {
+          "line": 5,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "Baseline/pre-edit source and RED proof are durable at E:/nexus-training/evidence/imc-supervisor-containment-20261002."
+        }
+      ],
+      "ramasite/agent-md/ilaria/bench/licensed_code_pilot_package/HANDOFF.md": [
+        {
+          "line": 5,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "The frozen package is `E:\\nexus-training\\evidence\\licensed-code-pilot-20261002-seed1`. Its manifest's canonical `package_sha256` is `54dbb183953b8bec3461c35d47050557df5ee016e03b6a162a10d1236da4bfcc`; the manifest file SHA-256 is `8a606282daf8c53ebd040b3aff6d54cc08bdd0dd99d5ab72a0cfdaf08c991f22`. The producer snapshot used for this run is `E:\\nexus-training\\evidence\\licensed-code-pilot-20261002-seed1-producer.py`, SHA-256 `d0e31bc3dc0c8624d58fc20af3d91dcd53fbbcd7dcb3bedecf06c5e27c5a78ce`."
+        }
+      ],
+      "ramasite/agent-md/ilaria/handoff/2026-09-30-imc125-genesis-inventory.md": [
+        {
+          "line": 58,
+          "patterns": [
+            "nexus-sources"
+          ],
+          "text": "| zephyr (SPDX-filtered, `E:\\nexus-sources\\staging\\zephyr-corpus`) | `f0bdf59a0b7d1b4dadbec339662d764cba78138a` | REVIEW_REQUIRED | 13,417 | 13,417 | 104,931,325 | 26.2M–32.8M | shards `3b2bd1d3…`, `a865a9ff…`; tree manifest `48bd68f7…` |"
+        }
+      ],
+      "ramasite/agent-md/swypik-mobile/docs/ILARIA-RECONCILIATION-HANDOFF-2026-10-02.md": [
+        {
+          "line": 66,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "Final external evidence root: E:/nexus-training/evidence/mobile-reconciliation-20261002/whitespace-final"
+        },
+        {
+          "line": 74,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "`C:/Python312/python.exe E:/nexus-training/evidence/mobile-reconciliation-20261002/whitespace-final/run_bounded_https.py`"
+        }
+      ],
+      "ramasite/agent-md/workspace/AGENT_HANDOFF_2026-09-29.md": [
+        {
+          "line": 602,
+          "patterns": [
+            "CEO"
+          ],
+          "text": "Benchmark binaries/results were kept outside the repo under E:\\CEO."
+        },
+        {
+          "line": 605,
+          "patterns": [
+            "CEO"
+          ],
+          "text": "- E:\\CEO\\projects\\swos\\analysis\\19-swypikos-low-resource-baseline.md"
+        },
+        {
+          "line": 606,
+          "patterns": [
+            "CEO"
+          ],
+          "text": "- E:\\CEO\\swypik-resource-bench-v2\\resource-results-v2.json"
+        },
+        {
+          "line": 607,
+          "patterns": [
+            "CEO"
+          ],
+          "text": "- E:\\CEO\\swypik-resource-bench-v4\\resource-results-v4.json"
+        },
+        {
+          "line": 834,
+          "patterns": [
+            "CEO"
+          ],
+          "text": "- E:\\CEO\\projects\\swos\\analysis\\17-swyp-performance-0.10.md"
+        },
+        {
+          "line": 835,
+          "patterns": [
+            "CEO"
+          ],
+          "text": "- E:\\CEO\\projects\\swos\\analysis\\18-swyp-native-backend-spills-inlining.md"
+        },
+        {
+          "line": 836,
+          "patterns": [
+            "CEO"
+          ],
+          "text": "- E:\\CEO\\projects\\swos\\analysis\\19-swypikos-low-resource-baseline.md"
+        }
+      ],
+      "ramasite/agent-md/workspace/ceo-handoff/CLEANUP_HANDOFF.md": [
+        {
+          "line": 27,
+          "patterns": [
+            "CEO"
+          ],
+          "text": "`E:\\CEO` no longer exists. It was archived without deleting files at"
+        },
+        {
+          "line": 28,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "`E:\\arhiva-ceo`, preserving its independent Git history, dirty coordination"
+        },
+        {
+          "line": 33,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "All twelve Nexus-linked worktrees now register under `E:\\arhiva-ceo\\wt`."
+        },
+        {
+          "line": 61,
+          "patterns": [
+            "nexus-sources",
+            "nexus-training"
+          ],
+          "text": "`E:\\nexus-sources`, `E:\\nexus-training` and the other Nexus worktrees retain"
+        }
+      ],
+      "ramasite/agent-md/workspace/coordination/chrome-2026-10-01/LIVE_STATE.md": [
+        {
+          "line": 7,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "- CI: `qemu-user` + `SWYP_QEMU_AARCH64` în job-ul swyp Ubuntu. Dovezi: `E:\\nexus-training\\evidence\\copilot-swyp-runtime-20261002\\`. Branch `copilot/swyp-runtime-20261002` @ `9a79a12`. ARM64 = emulare, nu hardware."
+        },
+        {
+          "line": 28,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "receipts: `E:/nexus-training/evidence/brev-lifecycle-guard-20261002/`."
+        },
+        {
+          "line": 47,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "- Dovezi: `E:/nexus-training/evidence/clean-v2-real-local-pilot-20261002/`;"
+        },
+        {
+          "line": 68,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "- **Dovezi durabile:** `E:/nexus-training/evidence/nexus-takeover-20261002/` — baseline,ownership,contamination-replay,clean-data-independent,current-resource-readback,*.check.json/logs. `run_checks.py` înregistrează exitcode/deadline/PID; probe reale nu se relansează după timeout fără cleanup."
+        },
+        {
+          "line": 95,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "- Aprobare: „ai aprobari sa repari! vreau totul curat si calumea!”. Claim închis: `E:\\nexus-training\\evidence\\claude-audit-20261002\\ownership.json`; acceptare: `acceptance-fixes.json`. Fără commit/push."
+        },
+        {
+          "line": 215,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "Dovezi: E:\\nexus-training\\evidence\\claude-takeover-20261002\\final-acceptance.json."
+        },
+        {
+          "line": 223,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "Registru: E:\\nexus-training\\evidence\\claude-takeover-20261002\\ownership-claim.json."
+        },
+        {
+          "line": 260,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "E:\\nexus-training\\evidence\\h200-recovery-coordination-20261002\\current-authorization.json."
+        },
+        {
+          "line": 320,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "E:\\nexus-training\\evidence\\qualified-tokenizer-contract-20261002\\baseline.json."
+        },
+        {
+          "line": 354,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "Evidence E:\\nexus-training\\evidence\\linux-qualified-pilot-runtime-20261002;"
+        },
+        {
+          "line": 367,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "E:\\nexus-training\\evidence\\supervision-p2p-admission-20261002,"
+        },
+        {
+          "line": 410,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "E:\\nexus-training\\evidence\\supervision-p2p-admission-20261002."
+        },
+        {
+          "line": 518,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "E:\\nexus-training\\evidence\\brev-budget-preflight-20261002\\dry-run-receipt.json."
+        },
+        {
+          "line": 582,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": ".nexus-p2p-rollback-baseline.json și E:\\nexus-training\\evidence\\p2p-rollback-resume-20261002."
+        },
+        {
+          "line": 588,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "report/toolroot E:\\nexus-training\\mobile-native-tools-20261002. App corect Expo57/"
+        },
+        {
+          "line": 656,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "Receipt E:\\nexus-training\\evidence\\p2p-bounded-tcp-20261002\\bounded-tcp-pktztjdf\\receipt.json,"
+        },
+        {
+          "line": 696,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "E:\\nexus-training\\evidence\\imc-nccl-bootstrap-review-20261002."
+        },
+        {
+          "line": 739,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "E:\\nexus-training\\evidence\\p2p-resume-genesis-fix-20261001."
+        },
+        {
+          "line": 764,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "E:\\nexus-training\\evidence\\mobile-current-review-20261002. Receipt"
+        },
+        {
+          "line": 791,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "Receipt fără secrete și screenshot în E:\\nexus-training\\evidence\\brev-cli-preflight-20261002."
+        },
+        {
+          "line": 802,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "+ diff-check PASS. Receipt E:\\nexus-training\\integration-receipts\\brev-budget-policy-20261002T010000."
+        },
+        {
+          "line": 822,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "păstrate. Receipt E:\\nexus-training\\integration-receipts\\inference-cache-20261002T011500."
+        },
+        {
+          "line": 853,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "Receipt E:\\nexus-training\\evidence\\openmath-root-review-20261002\\receipt.json PASS."
+        },
+        {
+          "line": 859,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "Pachet cod REAL frozen: E:\\nexus-training\\evidence\\licensed-code-pilot-20261002-seed1,"
+        },
+        {
+          "line": 872,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "totalbench35teste. Receipt E:\\nexus-training\\integration-receipts\\pilot-math-20261002T003800\\integration.json."
+        },
+        {
+          "line": 874,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "E:\\nexus-training\\evidence\\accepted-public-sources-20261002\\snapshot.manifest.json;"
+        },
+        {
+          "line": 885,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "E:\\nexus-training\\evidence\\acquisition-root-review-20261001\\receipt.json."
+        },
+        {
+          "line": 889,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "E:\\nexus-training\\integration-receipts\\new-benches-20261001T211000Z\\integration.json."
+        },
+        {
+          "line": 956,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "brev_data_package.py/test/config + ownedhandoff. Output E:\\nexus-training\\brev-20261001."
+        },
+        {
+          "line": 1085,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "`E:\\nexus-training\\brev-20261001` nu există. Pilotul IMC-125M precedent este"
+        },
+        {
+          "line": 1316,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "- data_source_audit are ownership exclusiv pentru E:\\nexus-training\\new-public-20261001\\common-corpus și fișiere NOI bench/common_corpus_acquisition în WT ilaria-brev-data. Download public pinned subset_100_1.parquet 429962586B, expected SHA256 4ee719a130b7f86978b08c20cc9f490309e2bae2a5c0df4f04fd427365530f07; cap 2GiB/20min pentru primul shard. Metadata counts întâi; candidat numai Public Domain/Open Culture, excludere government/courts, proveniență/hashes și diagnostic IlariaLex. Fără tensorii modelului, pilot corpus, secrets/Bridge/GPU/training."
+        },
+        {
+          "line": 1322,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "- Common Corpus: fișierul pinned `common_corpus_1/subset_100_1.parquet` este pe disc în `E:\\nexus-training\\new-public-20261001\\common-corpus`, 429.962.586 bytes; SHA256 `4ee719a130b7f86978b08c20cc9f490309e2bae2a5c0df4f04fd427365530f07` coincide cu LFS upstream. Selecția conservatoare Public Domain/Open Culture din cele patru colecții de cărți produce 13.889 fragmente, 10.518.749 tokenuri IlariaLex diagnostic, fișier 47.933.386 bytes, SHA256 `510b70c737e30e759ae728124c18c70fcab2f67a9bf9ffe6705ae7da9871b58b`. Verificarea root: hashuri, filtre, zero duplicate exacte și după normalizarea canonică, zero referințe row/segment ambigue. Cele 246 rânduri românești existente în întregul shard nu sunt această selecție de cărți."
+        },
+        {
+          "line": 1323,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "- VoxPopuli RO: arhivă oficială `asr_ro.tsv.gz`, 5.766.861 bytes, SHA256 observat `328018d32d40d48188bf6e752389d0e5b7a80332faed9d657e9824570adf902c`; sursa nu publică un checksum independent. README fixat la revizia `f7a3bb98d664e1d031763ec4f7639c4a530c64e9` distinge data CC0 de code/models CC-BY-NC și LM Europarl separat. Din 24.259 rânduri train: 23.252 transcrieri curate/deduplicate, 1.709.030 tokenuri IlariaLex diagnostic, 20.714.259 bytes, SHA256 `ea41a98d2a7d99dd96a5deb9f45e95b4a158446a663332bffdfa5793c71881a5`. Spliturile dev/test și metadata vorbitor/session/gender sunt excluse din JSONL; sursa se află în `E:\\nexus-training\\new-public-20261001\\voxpopuli-ro`."
+        },
+        {
+          "line": 1333,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "- Root a găsit 11 diferențe PREEXISTENTE Main↔WT în runners/benchmark/bundle/concat; nu le-a copiat sau anulat. A păstrat hashurile actuale ale tuturor celor202 inputs protejate înainte/după. După integrare, 80 teste Main curator/manifest/concat/data_audit PASS și diff-check pe4claims PASS. WT avea deja64 targeted tests și gates generale de mai sus. Receipt și backupuri doar pentru4fișiere publice: `E:\\nexus-training\\integration-receipts\\provenance-20261001T202400Z\\integration.json`. Main HEAD/branch/index neschimbate, 0staged."
+        },
+        {
+          "line": 1339,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "- Root a confirmat15/15hashuri ale surselor Main acceptate13:43 și le-a păstrat în snapshot public separat;18logs/metadata scalare836.573bytes în `E:\\nexus-training\\evidence\\p2p-local-20261001-134335`, toateSHAcoincid. Fără inspecția/copierea checkpointurilor, tensorilor, runtime state ori cheilor; fără demo nou și fără commit. Raportul root include operator template fără pathuri personale și limitele dependency lock. Snapshotul nu reprezintă o copie Git publicată ori backup extern."
+        },
+        {
+          "line": 1341,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "- review_provenance a primit ownership NOU/disjunct exclusiv `ilaria/bench/p2p_quality_adversarial/` în WT ilaria-brev-data și `E:\\nexus-training\\evidence\\p2p-quality-adversarial-20261001`; evaluator/IMC Main read-only, SHA pinned, tiny public synthetic backprop in-memory, cap2threads/1GiB/10min. Scop: probe reale sign-inverted delta și CEimproves/anchor-regresses; fără fake metrics, fără editarea testelor/runtime/schema/OS existente. Dacă un caz nu se poate construi, se raportează pending. Acesta nu este training/model de producție."
+        }
+      ],
+      "ramasite/agent-md/workspace/coordination/chrome-2026-10-01/RESTART_HERE.md": [
+        {
+          "line": 20,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "Dovezi + backup + receipt: `E:\\nexus-training\\evidence\\copilot-swyp-runtime-20261002\\`."
+        },
+        {
+          "line": 78,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "`E:/nexus-training/evidence/clean-v2-real-local-pilot-20261002/` și"
+        },
+        {
+          "line": 86,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "- Commerce mai are 24 de fișiere tipate de Claude (necommitate); lista în `E:\\nexus-training\\evidence\\claude-typing-20261002\\receipt.json`. Warning-urile ESLint rămase (35) sunt doar în fișierele altor agenți."
+        },
+        {
+          "line": 92,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "- Commerce are modificări necommitate de la Claude (C1/C2); listele exacte în `E:\\nexus-training\\evidence\\claude-audit-20261002\\fix-c1|fix-c2\\receipt.json`."
+        },
+        {
+          "line": 146,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "- **Dovezi durabile:** `E:/nexus-training/evidence/nexus-takeover-20261002/` — baseline,ownership,contamination-replay,clean-data-independent,current-resource-readback,*.check.json/logs. `run_checks.py` înregistrează exitcode/deadline/PID; probe reale nu se relansează după timeout fără cleanup."
+        },
+        {
+          "line": 165,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "- **Dovezi:** E:\\nexus-training\\evidence\\claude-takeover-20261002\\."
+        },
+        {
+          "line": 186,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "[Acceptare anterioară](E:/nexus-training/evidence/qualified-tokenizer-contract-20261002/final-acceptance.json): 4 claims, **334 Python PASS / 1 SKIP**, Go test/vet, syntax și whitespace verificate."
+        },
+        {
+          "line": 195,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "[Baseline public 38 surse](E:/nexus-training/evidence/production-tokenizer-lineage-20261002/baseline.json); compară protejatele înainte/după integrare."
+        },
+        {
+          "line": 198,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "Output data-agent exclusiv NEW: `E:\\nexus-training\\evidence\\h200-independent-data-qualification-20261002`; fără Main sau cloud."
+        },
+        {
+          "line": 210,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "Root first-party acceptat: `E:\\nexus-training\\evidence\\first-party-source-readback-20261002\\frozen-first-party-source-root` (7 surse exacte)."
+        },
+        {
+          "line": 212,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "[Receipts first-party](E:/nexus-training/evidence/first-party-source-readback-20261002/root-acceptance.json)."
+        },
+        {
+          "line": 245,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "[Helper integrare](E:/nexus-training/evidence/trainer-preflight-20261002/integrate_claims.py); nu face checkout/reset/clean sau cherry-pick larg."
+        }
+      ],
+      "ramasite/agent-md/workspace/coordination/chrome-2026-10-01/STATUS_AND_NEXT_GATES.md": [
+        {
+          "line": 79,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "`E:\\nexus-training\\evidence\\p2p-local-20261001-134335\\public-source-snapshot`,"
+        }
+      ],
+      "ramasite/agent-md/workspace/coordination/chrome-2026-10-01/brev-billing-terms-acceptance-20261002.md": [
+        {
+          "line": 41,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "E:\\nexus-training\\evidence\\brev-billing-terms-20261002"
+        }
+      ],
+      "ramasite/agent-md/workspace/coordination/chrome-2026-10-01/brev-billing-terms-handoff.md": [
+        {
+          "line": 79,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "E:\\nexus-training\\evidence\\brev-billing-terms-20261002"
+        }
+      ],
+      "ramasite/agent-md/workspace/coordination/chrome-2026-10-01/brev-offer-selector-acceptance-20261002.md": [
+        {
+          "line": 38,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "E:\\nexus-training\\evidence\\brev-offer-selector-20261002\\selection.json"
+        }
+      ],
+      "ramasite/agent-md/workspace/coordination/chrome-2026-10-01/brev-offer-selector-handoff.md": [
+        {
+          "line": 48,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "E:\\nexus-training\\evidence\\brev-offer-selector-20261002\\selection.json."
+        }
+      ],
+      "ramasite/agent-md/workspace/coordination/chrome-2026-10-01/claude-audit-fixes-handoff.md": [
+        {
+          "line": 3,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "Raport: `E:\\nexus-training\\evidence\\claude-audit-20261002\\AUDIT-proiect-2026-10-02.md`. Acceptare: `…\\claude-audit-20261002\\acceptance-fixes.json`. Chitanțe și backup-uri: `…\\fix-n1`, `…\\fix-c1`, `…\\fix-c2`. Fără commit/push."
+        },
+        {
+          "line": 34,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "- 78 de `any` eliminate din 24 de fișiere curate (rânduri DB, Duffel Flights/Stays, Kiwi, RateHawk, orchestrator, search-pg, feed-normalize, pagini). Chitanță: `E:\\nexus-training\\evidence\\claude-typing-20261002\\receipt.json`."
+        }
+      ],
+      "ramasite/agent-md/workspace/coordination/chrome-2026-10-01/clean-v2-real-local-pilot-acceptance-20261002.md": [
+        {
+          "line": 52,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "`E:\\nexus-training\\evidence\\clean-v2-real-local-pilot-20261002\\real-local-proof.json`."
+        },
+        {
+          "line": 55,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "`E:\\nexus-training\\evidence\\clean-v2-real-local-pilot-20261002\\scope-receipt.json`."
+        },
+        {
+          "line": 58,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "`E:\\nexus-training\\evidence\\clean-v2-real-local-pilot-20261002\\independent-process-exit-readback.json`."
+        }
+      ],
+      "ramasite/agent-md/workspace/coordination/chrome-2026-10-01/coordinator.md": [
+        {
+          "line": 732,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "Receipt și login.png în E:\\nexus-training\\evidence\\brev-cli-preflight-20261002."
+        },
+        {
+          "line": 736,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "Receipt E:\\nexus-training\\integration-receipts\\brev-budget-policy-20261002T010000."
+        },
+        {
+          "line": 753,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "E:\\nexus-training\\integration-receipts\\inference-cache-20261002T011500."
+        },
+        {
+          "line": 784,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "E:\\nexus-training\\evidence\\brev-cli-preflight-20261002, inclusiv late-instance-readback.json"
+        },
+        {
+          "line": 790,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "PROGRESS: reluare P2P corectată numai în fork independent codex/p2p-resume-genesis-fix. Regresie RED a reprodus suprascrierea genesis; patru cazuri GREEN replay root PASS. Checkpoint immutable existent păstrează genesis și parent separat; sequence3->4/session/lineage păstrate. Candidate adapter3c44567784ebc6e3df739f2341ec88e8ab5d793acac88db1011631b8b456ee61; testsdc23eb2944e0c0375a58a8d49d07501f2188b51a34c32719f036ad696525e5a8. OS vet PASS, full OS FAIL pe două așteptări federated vechi ale snapshotului HEAD. Fără overlay târziu/Main integration/release OC3. Root receipt b6d8f91547dea026814d565cbdb69f21fc7030fc3242dda6d268b927f8082883 în E:\\nexus-training\\evidence\\p2p-resume-genesis-fix-20261001; trei surse publice și logs păstrate.206Maininputs/18drafts/27deps/index/HEAD intacte."
+        },
+        {
+          "line": 792,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "Mobile revizie actuală:136TS PASS/1skip, apoi19PASS/0skip cu manifest explicit, total137cazuri distincte. Typecheck/lint offline/gateway8Go/vet/diff-check PASS. HTTPS4forwards canary real și worker cancellation verified_stopped; workerCPU2,375s/peakRSS205.238.272B, energie nemăsurată.450inputs protejate neschimbate;17/21claimshashes frozen,4drift fără freshhandoff.21surse publice/copii și receipt b0e1c7ea83d14aef477e64bd42f2a3f8eda71512860823cbb1e6c45696197d5b în E:\\nexus-training\\evidence\\mobile-current-review-20261002. Nu Main model source nou/APK/IPA/device/mobiletraining. Repo corect Expo swypik-mobile-pilot; lipsesc CNG projects/JDK/SDK, nu confunda legacyCapacitor commerce cu această aplicație."
+        },
+        {
+          "line": 806,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "PROGRESS: harness NCCL8 implementat și strict4fișiere NOI acceptate pe Main după STOP. Verifică hardware/allreduce, execută trainerul canonic full6/pause3/resume6 și separă bitwise de numerical-only. Root a găsit și agentul a reparat pierderea opțiunii --precision în wrapper;7cazuri RED discriminante au devenit GREEN. Checkpoint CPU loads/comparison sunt procese supravegheate separat cu deadline cumulativ, timeout/cleanup/results fail-closed.84testsWT PASS2,24s și Main PASS2,41s; pycompile/whitespace PASS. Root helper CLI real cu20canonicalpins și vectori sintetici PROPRII CPU PASS; dummy metadata nu este training/GPU. Defaultdryrun nu creează output.206Mainbaseline/HEAD/index/staged0 păstrate. Surse publice și receipts: E:\\nexus-training\\evidence\\imc-nccl-bootstrap-review-20261002, root-integration SHA3e635d05a935cbbe14bd37dc5d731bdfd1394bae7c1bc2ed6f24ec29289af54f, root-final-local SHA512ba63d8722d416c50ae1fad1a1e11e72e36b6f1c70c3924869e52bdbaf95b4."
+        },
+        {
+          "line": 814,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "PROGRESS verificat numai în candidatul dedicat: opt-in Swarm reparat (2RED→GREEN/fullpackage+vet), issuer ACK/progress și journal-bound committed/uncertain recovery reparate (8regresii/fullOS+vet). Actual tinyIMC TCP wall52,725s/115s: două acceptări+reject, replay restart refuzat, restart în procese noi seq4/5/6 și progress identic. CE3,2246127→2,6398823→2,2535920; rollback separat la runda1/CE2,9212317.11PIDuri absente/sourcepins fără drift. Receipt f90d38eca1264ae6bb45d4a47607e916661466b479c804d2ee77841b818c8728 în E:\\nexus-training\\evidence\\p2p-bounded-tcp-20261002. Rollback→resume refuzat, rămâne blocant; fără generalizare/twohost/Internet/mobile125M/energie claim. Root actualSwypcompiler generează27declarations și păstrează toate25Main; outputurile schema/DTO identice. CANDIDATE_NOT_MAIN; read-only review independent în curs, runner claims redeschise doar pentru validarea explicită a receiptului progress/PID. H200 fără VM nou, cutoff trecut,100USD/120min planul este păstrat. Goal ACTIVE/Bridge/Main206publicinputs/HEAD/index/staged0 intacte."
+        },
+        {
+          "line": 818,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "PROGRESS: exact19sourceclaims (12existente/7noi) integrate,481alteinputs publice/HEAD/branch/index/staged0 păstrate. Review a găsit consent-afterReceive și ACK-role/lineage, reparate cu probe RED/GREEN. Primul Main fullOS FAIL numai lifecycle snapshot implicit; configurația Main explicită și configurarea simulatorului/accounting au fost păstrate în testul finalda3241cb. FinalMain216Python/24runner PASS; GoIlaria tests/vet și fullOS count1timeout180s/vet PASS. Proba reală Main wall59,854s în115s,299pins fără drift,seq1/2accept+3reject,replaydenied,freshprocessseq4/5accept+6reject,progressagrees.8children/drainsstopped,11observedPIDuriabsente. Mainreceipt5293f1f107d54836a3350ddc8d638107270401cfd8bf1ad9c1fa75a036763c46/sourcepinsea96bc75b03d58b378420c737379f8ba0c438d3ca8a8b8da52203f3f33b75467.57WT/Mainpublicdifferences au fost păstrate, nicio suprascriere de snapshot; Mainruntimeprobă separată. Raport p2p-tcp-main-acceptance.md și dovezi E:\\nexus-training\\evidence\\p2p-bounded-tcp-20261002/root-main-integration. Acceptat doar prototip sintetic local, fără promovare; rollback→resume refuzat/twohost/Internet/125M/mobile/energie încă nedovedite. Toți ownerii STOP și zero procese proprii rămase. Goal integral ACTIVE, Bridge neatins, fără GPU/promptAzure nou. H200100USD/120minute totale rămâne PREPARATION_ONLY, pendinglogin/newwindow/deletion/export/freshprice/NCCL; nu extinde vechiul cutoff prin faptul că hostul răspunde."
+        }
+      ],
+      "ramasite/agent-md/workspace/coordination/chrome-2026-10-01/ilaria-brev-h200-budget-1.json": [
+        {
+          "line": 84,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "\"realPilotFirstPartySourceRootReceipt\": \"E:/nexus-training/evidence/first-party-source-readback-20261002/root-acceptance.json\","
+        },
+        {
+          "line": 101,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "\"coordinationReceipt\": \"E:/nexus-training/evidence/h200-recovery-coordination-20261002/current-authorization.json\""
+        }
+      ],
+      "ramasite/agent-md/workspace/coordination/chrome-2026-10-01/ilaria-brev-h200-launch-plan.md": [
+        {
+          "line": 77,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "`E:\\nexus-training\\evidence\\brev-cli-preflight-20261002\\receipt.json`."
+        }
+      ],
+      "ramasite/agent-md/workspace/coordination/chrome-2026-10-01/ilaria-data-acquisition-plan.md": [
+        {
+          "line": 118,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "E:\\nexus-training\\evidence\\acquisition-root-review-20261001\\receipt.json."
+        },
+        {
+          "line": 132,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "| `E:\\nexus-training\\new-public-20261001\\common-corpus` | Public Domain + Open Culture, patru colecții de cărți, SHA LFS verificat | 13.889 | 10.518.749 | Carantină, provenance și hashes; fără train |"
+        },
+        {
+          "line": 133,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "| `E:\\nexus-training\\new-public-20261001\\voxpopuli-ro` | Transcrieri originale RO, numai train; fără audio/LM/dev/test | 23.252 | 1.709.030 | Carantină, data CC0 declarată în README; aviz EP încă neverificat |"
+        }
+      ],
+      "ramasite/agent-md/workspace/coordination/chrome-2026-10-01/ilaria-inference-cache-budget-fix-handoff.md": [
+        {
+          "line": 67,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "Evidence directory: `E:\\nexus-training\\evidence\\inference-cache-review-20261002`."
+        },
+        {
+          "line": 138,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "`E:\\nexus-training\\evidence\\inference-cache-review-20261002\\imc-incremental-inference-producer-fe4fb7b.py`,"
+        }
+      ],
+      "ramasite/agent-md/workspace/coordination/chrome-2026-10-01/imc-nccl-bootstrap-handoff.md": [
+        {
+          "line": 15,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "Root independently tested real WSL Linux normal exit, timeout and cooperatively reaped descendant cleanup for the earlier probe revision3bcde96ce837610dbafd16d2a6f34c6c4b497e97147afaa65bc3134a62d498cd (PIDs498-501/PGIDs absent). Receipt: E:\\nexus-training\\evidence\\imc-nccl-bootstrap-review-20261002\\20261001T231611795627Z\\receipt.json. This does not certify current full orchestration or CUDA/NCCL."
+        }
+      ],
+      "ramasite/agent-md/workspace/coordination/chrome-2026-10-01/imc-nccl-hardware-gate-acceptance-20261002.md": [
+        {
+          "line": 67,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "E:\\nexus-training\\evidence\\imc-nccl-hardware-gate-20261002"
+        }
+      ],
+      "ramasite/agent-md/workspace/coordination/chrome-2026-10-01/imc-nccl-hardware-gate-handoff.md": [
+        {
+          "line": 112,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "E:\\nexus-training\\evidence\\imc-nccl-hardware-gate-20261002"
+        }
+      ],
+      "ramasite/agent-md/workspace/coordination/chrome-2026-10-01/linux-canonical-tokenizer-acceptance-20261002.md": [
+        {
+          "line": 7,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "Root evidence: `E:\\nexus-training\\evidence\\linux-qualified-pilot-runtime-20261002`."
+        },
+        {
+          "line": 35,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "`E:\\nexus-training\\evidence\\tokenizer-lineage-readonly-20261002` accepted after root"
+        }
+      ],
+      "ramasite/agent-md/workspace/coordination/chrome-2026-10-01/opencode-budget-1.json": [
+        {
+          "line": 80,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "\"coordinationReceipt\": \"E:/nexus-training/evidence/h200-recovery-coordination-20261002/current-authorization.json\""
+        }
+      ],
+      "ramasite/agent-md/workspace/coordination/chrome-2026-10-01/p2p-consent-cancel-handoff.md": [
+        {
+          "line": 106,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "`E:\\nexus-training\\evidence\\p2p-consent-cancel-20261002\\owner-gates-cleanup-errors`."
+        }
+      ],
+      "ramasite/agent-md/workspace/coordination/chrome-2026-10-01/p2p-consent-revocation-handoff.md": [
+        {
+          "line": 108,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "`E:\\nexus-training\\evidence\\p2p-consent-revocation-20261002\\owner-gates`."
+        }
+      ],
+      "ramasite/agent-md/workspace/coordination/chrome-2026-10-01/p2p-main-acceptance.md": [
+        {
+          "line": 107,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "`E:\\nexus-training\\evidence\\p2p-local-20261001-134335`; see"
+        }
+      ],
+      "ramasite/agent-md/workspace/coordination/chrome-2026-10-01/p2p-revocation-acceptance-20261002.md": [
+        {
+          "line": 37,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "`E:\\nexus-training\\evidence\\supervision-p2p-admission-20261002`."
+        }
+      ],
+      "ramasite/agent-md/workspace/coordination/chrome-2026-10-01/p2p-rollback-main-acceptance.md": [
+        {
+          "line": 52,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "Evidence root: E:\\nexus-training\\evidence\\p2p-rollback-resume-20261002."
+        }
+      ],
+      "ramasite/agent-md/workspace/coordination/chrome-2026-10-01/p2p-rollback-resume-handoff.md": [
+        {
+          "line": 149,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "`E:\\nexus-training\\evidence\\p2p-rollback-resume-20261002\\owner-gates-repeated-checkpoint`."
+        },
+        {
+          "line": 152,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "`E:\\nexus-training\\evidence\\p2p-rollback-resume-20261002\\bounded-tcp-5s1wtbux\\receipt.json`,"
+        }
+      ],
+      "ramasite/agent-md/workspace/coordination/chrome-2026-10-01/p2p-rollback-tcp-handoff.md": [
+        {
+          "line": 11,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "Public producer baseline: runner `145401d72bde812bce259835c07e8830c0afe77dcda1420e5143ac5598b460e6`, tests `606a98ba059d1d20ec6b64afda5c5a3cb18b7ce64df3393e743e8ed80802dfc1`. The historical sources are preserved under `E:\\nexus-training\\evidence\\p2p-rollback-resume-20261002`. Root dependency/protection manifest `.nexus-p2p-rollback-baseline.json` SHA256 `fd1786bee0e57a7c9aa911fa74bbf2b2e645f74c27f281bd50bf9ba836e6dbab` records the allowed Main CLI closure refresh and 299 protected Main source pins."
+        },
+        {
+          "line": 27,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "Corrected actual: 2026-10-02 01:03:27.926 UTC to 01:04:05.167 UTC, 37.109 seconds inside the runner and 37.236 seconds including interpreter startup. Overall PASS, still within 115 seconds with 10 reserved for cleanup. New directory `E:\\nexus-training\\evidence\\p2p-rollback-resume-20261002\\corrected-20261002T0103279014901Z\\bounded-tcp-e2w4gffc`; receipt SHA256 `24e1f6663d35b1d9cfb23987e260aec778dee97eea8909acadf0e17deda11a67`; 247 public source pins SHA256 `bc67f16f06e5f571eeb0ac3713cf886e4479cb4c128150937207826e20157159`. Producer runner remains `13dfecacf74230fb1e39fdb9681ea30a3febf685cdb0b197a95f4c3b9b774994`; canonical IMC remains `650f4cad06d80760a03fa4396bb2cce27364bd596b8002f39ec02d595205274c`. Both real proof and independent pure receipt replay PASS. No source drift."
+        }
+      ],
+      "ramasite/agent-md/workspace/coordination/chrome-2026-10-01/p2p-tcp-main-acceptance.md": [
+        {
+          "line": 60,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "Durable evidence root: `E:\\nexus-training\\evidence\\p2p-bounded-tcp-20261002`."
+        }
+      ],
+      "ramasite/agent-md/workspace/coordination/chrome-2026-10-01/production-contamination-clearance-handoff.md": [
+        {
+          "line": 71,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "E:\\nexus-training\\evidence\\production-contamination-clearance-20261002\\interop"
+        }
+      ],
+      "ramasite/agent-md/workspace/coordination/chrome-2026-10-01/production-strategy-alignment-handoff.md": [
+        {
+          "line": 47,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "E:\\nexus-training\\evidence\\production-strategy-alignment-20261002\\alignment-proof.json"
+        }
+      ],
+      "ramasite/agent-md/workspace/coordination/chrome-2026-10-01/production-tokenizer-lineage-handoff.md": [
+        {
+          "line": 10,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "`E:\\nexus-training\\evidence\\production-tokenizer-lineage-20261002\\owner\\source-pins.json`."
+        },
+        {
+          "line": 144,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "under `E:/nexus-training/evidence/h200-recovery-code-acceptance-20261002`."
+        }
+      ],
+      "ramasite/agent-md/workspace/coordination/chrome-2026-10-01/qualified-code-pilot-adapter-handoff.md": [
+        {
+          "line": 16,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "`E:\\nexus-training\\evidence\\qualified-pilot-adapter-20261002`."
+        }
+      ],
+      "ramasite/agent-md/workspace/coordination/chrome-2026-10-01/qualified-tokenizer-contract-acceptance-20261002.md": [
+        {
+          "line": 52,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "`E:\\nexus-training\\evidence\\qualified-tokenizer-contract-20261002`."
+        }
+      ],
+      "ramasite/agent-md/workspace/coordination/chrome-2026-10-01/qualified-tokenizer-contract-handoff.md": [
+        {
+          "line": 103,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "External logs: `E:\\nexus-training\\evidence\\qualified-tokenizer-contract-20261002\\owner`."
+        }
+      ],
+      "ramasite/agent-md/workspace/coordination/chrome-2026-10-01/reconciled-main-acceptance-20261002.md": [
+        {
+          "line": 61,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "Evidence durabil: `E:/nexus-training/evidence/reconciled-main-20261002`."
+        },
+        {
+          "line": 66,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "Receipt owner mobil final: `E:/nexus-training/evidence/mobile-reconciliation-20261002/whitespace-final/owner-stop.json`,"
+        }
+      ],
+      "ramasite/agent-md/workspace/coordination/chrome-2026-10-01/supervision-p2p-admission-acceptance-20261002.md": [
+        {
+          "line": 45,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "Evidence durabil: `E:\\nexus-training\\evidence\\supervision-p2p-admission-20261002`."
+        }
+      ],
+      "ramasite/agent-md/workspace/coordination/chrome-2026-10-01/swypik-ilaria-reconciliation-handoff.md": [
+        {
+          "line": 66,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "Final external evidence root: E:/nexus-training/evidence/mobile-reconciliation-20261002/whitespace-final"
+        },
+        {
+          "line": 74,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "`C:/Python312/python.exe E:/nexus-training/evidence/mobile-reconciliation-20261002/whitespace-final/run_bounded_https.py`"
+        }
+      ],
+      "ramasite/agent-md/workspace/coordination/chrome-2026-10-01/trainer-data-admission-order-handoff.md": [
+        {
+          "line": 25,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "Evidence: `E:/nexus-training/evidence/trainer-preflight-20261002`."
+        }
+      ],
+      "ramasite/agent-md/workspace/coordination/chrome-2026-10-01/trainer-v2-migration-acceptance-20261002.md": [
+        {
+          "line": 38,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "`E:\\nexus-training\\evidence\\trainer-v2-migration-20261002`."
+        }
+      ],
+      "ramasite/agent-md/workspace/coordination/chrome-2026-10-01/trainer-v2-migration-handoff.md": [
+        {
+          "line": 17,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "`E:\\nexus-training\\evidence\\trainer-v2-migration-20261002\\baseline.json`."
+        },
+        {
+          "line": 71,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "`E:\\nexus-training\\evidence\\trainer-v2-migration-20261002`."
+        }
+      ],
+      "ramasite/agent-md/workspace/coordination/chrome-2026-10-01/trainer-v2-supervision-entry-handoff.md": [
+        {
+          "line": 16,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "`E:\\nexus-training\\evidence\\trainer-v2-supervision-entry-20261002\\baseline.json`."
+        },
+        {
+          "line": 55,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "`E:\\nexus-training\\evidence\\trainer-v2-supervision-entry-20261002\\synthetic-supervised-proof.json`."
+        }
+      ],
+      "ramasite/agent-md/workspace/coordination/chrome-2026-10-01/training-launch-gate-handoff.md": [
+        {
+          "line": 53,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "`E:\\nexus-training\\evidence\\training-launch-gates-20261002\\actual-pilot-pending-final`."
+        },
+        {
+          "line": 74,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "`E:\\nexus-training\\evidence\\training-launch-gates-20261002`."
+        }
+      ],
+      "ramasite/agent-md/workspace/git-order-2026-10-03.md": [
+        {
+          "line": 26,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "- `E:\\arhiva-ceo` has its own Git repository, no remote, 32 modified and 15,522"
+        }
+      ],
+      "ramasite/agent-md/workspace/unify-2026-10-03/STATUS.md": [
+        {
+          "line": 4,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "Ținta: **un singur folder `E:\\nexus`**, cu Git curat și la zi pe GitHub. În `E:\\arhiva-ceo` nu mai rămâne nimic legat de Nexus."
+        },
+        {
+          "line": 9,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "3. Ce ține de Nexus din CEO și din folderele externe se mută în `ramasite/`. Uneltele, datele și binarele ajung în `ramasite/local`, care e ignorat de Git. Sursele externe se șterg după verificarea hash-urilor. Meister ERP, GPT Bridge și materialele CEO generale rămân în `E:\\arhiva-ceo`."
+        },
+        {
+          "line": 27,
+          "patterns": [
+            "nexus-sources",
+            "nexus-training",
+            "arhiva-ceo"
+          ],
+          "text": "- **Migratorul de active externe:** mută `E:\\arhiva-ceo\\tools`, benchmark-urile vechi, `E:\\nexus-sources` și `E:\\nexus-training` în `ramasite/local/...`. Ce trebuie urmărit în Git stă temporar în `ramasite/local/incoming/`. Log: `external-migration.md`."
+        },
+        {
+          "line": 32,
+          "patterns": [
+            "nexus-sources",
+            "nexus-training",
+            "arhiva-ceo"
+          ],
+          "text": "2. Comiterea elementelor din `ramasite/local/incoming/` (documente, înregistrări, dovezi mici) și a snapshot-urilor de cod ca ramuri `archive/*`. Corectarea căilor hardcodate către `E:\\nexus-sources`, `E:\\nexus-training` și `E:\\arhiva-ceo`."
+        },
+        {
+          "line": 33,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "3. Comiterea, în repo-ul `E:\\arhiva-ceo`, a eliminării fișierelor Nexus mutate."
+        }
+      ],
+      "ramasite/agent-md/workspace/unify-2026-10-03/external-inventory.json": [
+        {
+          "line": 56,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\.claude\","
+        },
+        {
+          "line": 57,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 68,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\.git\","
+        },
+        {
+          "line": 69,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 80,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\.gitignore\","
+        },
+        {
+          "line": 81,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 92,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\BACKLOG.md\","
+        },
+        {
+          "line": 93,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 104,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\BOOTLOADER.md\","
+        },
+        {
+          "line": 105,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 116,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\CHATGPT-ORCHESTRATOR.md\","
+        },
+        {
+          "line": 117,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 128,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\CONSTITUTION.md\","
+        },
+        {
+          "line": 129,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 140,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\COWORK-CEO-PROMPT.md\","
+        },
+        {
+          "line": 141,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 152,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\COWORK-SCHEDULES.md\","
+        },
+        {
+          "line": 153,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 164,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\DAILY-BRIEF.md\","
+        },
+        {
+          "line": 165,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 176,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\DEPLOY-GATE.md\","
+        },
+        {
+          "line": 177,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 188,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\INBOX-OWNER.md\","
+        },
+        {
+          "line": 189,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 200,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\LIMITS.md\","
+        },
+        {
+          "line": 201,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 212,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\OS.md\","
+        },
+        {
+          "line": 213,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 224,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\PLAYBOOK.md\","
+        },
+        {
+          "line": 225,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 236,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\PORTFOLIO.md\","
+        },
+        {
+          "line": 237,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 248,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\_cloud-transfer\","
+        },
+        {
+          "line": 249,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 260,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\_conversatii-claude\","
+        },
+        {
+          "line": 261,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 272,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\_move_logs\","
+        },
+        {
+          "line": 273,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 284,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\memory\","
+        },
+        {
+          "line": 285,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 296,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\nexus-head-a5a8175.tar\","
+        },
+        {
+          "line": 297,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 308,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\org\","
+        },
+        {
+          "line": 309,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 320,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\projects\","
+        },
+        {
+          "line": 321,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 332,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\repo-separation-swyp2.patch\","
+        },
+        {
+          "line": 333,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 344,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\research\","
+        },
+        {
+          "line": 345,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 356,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\runs\","
+        },
+        {
+          "line": 357,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 368,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\specs\","
+        },
+        {
+          "line": 369,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 380,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\swyp-arm64-cross\","
+        },
+        {
+          "line": 381,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 392,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\swyp-arm64-cross-calls\","
+        },
+        {
+          "line": 393,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 404,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\swyp-bench-20260929-081804\","
+        },
+        {
+          "line": 405,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 416,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\swyp-cache-bench-20260929-081946\","
+        },
+        {
+          "line": 417,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 428,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\swyp-cache-bench2-20260929-082039\","
+        },
+        {
+          "line": 429,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 440,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\swyp-cmd-arm64-v011.test\","
+        },
+        {
+          "line": 441,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 452,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\swyp-cmd-arm64.test\","
+        },
+        {
+          "line": 453,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 464,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\swyp-core-aot-bench\","
+        },
+        {
+          "line": 465,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 476,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\swyp-core-aot-bench2\","
+        },
+        {
+          "line": 477,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 488,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\swyp-core-aot-bench3\","
+        },
+        {
+          "line": 489,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 500,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\swyp-core-aot-bench4\","
+        },
+        {
+          "line": 501,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 512,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\swyp-core-aot-evidence-20260929\","
+        },
+        {
+          "line": 513,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 524,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\swyp-core-aot-evidence-20260929-v2\","
+        },
+        {
+          "line": 525,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 536,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\swyp-core-aot-evidence-hotpath\","
+        },
+        {
+          "line": 537,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 548,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\swyp-core-f64-bench\","
+        },
+        {
+          "line": 549,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 560,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\swyp-core-native-bench\","
+        },
+        {
+          "line": 561,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 572,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\swyp-coreir-arm64-fp.test\","
+        },
+        {
+          "line": 573,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 584,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\swyp-coreir-arm64-v011.test\","
+        },
+        {
+          "line": 585,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 596,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\swyp-coreir-arm64.test\","
+        },
+        {
+          "line": 597,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 608,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\swyp-execute-before-fastblock.go\","
+        },
+        {
+          "line": 609,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 620,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\swyp-fast-bench\","
+        },
+        {
+          "line": 621,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 632,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\swyp-ieee64-bench\","
+        },
+        {
+          "line": 633,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 644,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\swyp-inline-call-bench-20260929-112743\","
+        },
+        {
+          "line": 645,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 656,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\swyp-inline-call-bench2-20260929-112931\","
+        },
+        {
+          "line": 657,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 668,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\swyp-inline-call.exe\","
+        },
+        {
+          "line": 669,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 680,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\swyp-inline-call2.exe\","
+        },
+        {
+          "line": 681,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 692,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\swyp-linux-arm64\","
+        },
+        {
+          "line": 693,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 704,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\swyp-linux-arm64-fp\","
+        },
+        {
+          "line": 705,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 716,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\swyp-linux-arm64-v011\","
+        },
+        {
+          "line": 717,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 728,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\swyp-native-call-bench-20260929-111417\","
+        },
+        {
+          "line": 729,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 740,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\swyp-native-call.exe\","
+        },
+        {
+          "line": 741,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 752,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\swyp-server-bench-20260929-082308\","
+        },
+        {
+          "line": 753,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 764,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\swyp-server-run-bench-20260929-082412\","
+        },
+        {
+          "line": 765,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 776,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\swyp-spill-proof\","
+        },
+        {
+          "line": 777,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 788,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\swyp-x64-bench-20260929-092149\","
+        },
+        {
+          "line": 789,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 800,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\swyp-x64-bench.exe\","
+        },
+        {
+          "line": 801,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 812,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\swyp-x64-compile-20260929-094233\","
+        },
+        {
+          "line": 813,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 824,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\swypik-resource-bench\","
+        },
+        {
+          "line": 825,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 836,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\swypik-resource-bench-v2\","
+        },
+        {
+          "line": 837,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 848,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\swypik-resource-bench-v3\","
+        },
+        {
+          "line": 849,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 860,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\swypik-resource-bench-v4\","
+        },
+        {
+          "line": 861,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 872,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\swypik-resource-bench-v5\","
+        },
+        {
+          "line": 873,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 884,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\swypik-resource-bench-v5-debug\","
+        },
+        {
+          "line": 885,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 896,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\swypik-resource-bench-v5-smoke\","
+        },
+        {
+          "line": 897,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 908,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\swypik-resource-bench-v5-smoke2\","
+        },
+        {
+          "line": 909,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 920,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\swypik-resource-bench-v6\","
+        },
+        {
+          "line": 921,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 932,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\swypik-resource-bench-v7\","
+        },
+        {
+          "line": 933,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 944,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\swypik-resource-bench-v7-smoke\","
+        },
+        {
+          "line": 945,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 956,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\tools\","
+        },
+        {
+          "line": 957,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 968,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\\\\wt\","
+        },
+        {
+          "line": 969,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"location\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 980,
+          "patterns": [
+            "nexus-sources"
+          ],
+          "text": "\"path\": \"E:/nexus-sources\\\\apache-nuttx-locked\","
+        },
+        {
+          "line": 981,
+          "patterns": [
+            "nexus-sources"
+          ],
+          "text": "\"location\": \"E:/nexus-sources\","
+        },
+        {
+          "line": 992,
+          "patterns": [
+            "nexus-sources"
+          ],
+          "text": "\"path\": \"E:/nexus-sources\\\\apache-nuttx-locked.licensed.json\","
+        },
+        {
+          "line": 993,
+          "patterns": [
+            "nexus-sources"
+          ],
+          "text": "\"location\": \"E:/nexus-sources\","
+        },
+        {
+          "line": 1004,
+          "patterns": [
+            "nexus-sources"
+          ],
+          "text": "\"path\": \"E:/nexus-sources\\\\benchmarks\","
+        },
+        {
+          "line": 1005,
+          "patterns": [
+            "nexus-sources"
+          ],
+          "text": "\"location\": \"E:/nexus-sources\","
+        },
+        {
+          "line": 1016,
+          "patterns": [
+            "nexus-sources"
+          ],
+          "text": "\"path\": \"E:/nexus-sources\\\\freebsd-locked\","
+        },
+        {
+          "line": 1017,
+          "patterns": [
+            "nexus-sources"
+          ],
+          "text": "\"location\": \"E:/nexus-sources\","
+        },
+        {
+          "line": 1028,
+          "patterns": [
+            "nexus-sources"
+          ],
+          "text": "\"path\": \"E:/nexus-sources\\\\freebsd-locked.licensed.json\","
+        },
+        {
+          "line": 1029,
+          "patterns": [
+            "nexus-sources"
+          ],
+          "text": "\"location\": \"E:/nexus-sources\","
+        },
+        {
+          "line": 1040,
+          "patterns": [
+            "nexus-sources"
+          ],
+          "text": "\"path\": \"E:/nexus-sources\\\\staging\","
+        },
+        {
+          "line": 1041,
+          "patterns": [
+            "nexus-sources"
+          ],
+          "text": "\"location\": \"E:/nexus-sources\","
+        },
+        {
+          "line": 1052,
+          "patterns": [
+            "nexus-sources"
+          ],
+          "text": "\"path\": \"E:/nexus-sources\\\\zephyr\","
+        },
+        {
+          "line": 1053,
+          "patterns": [
+            "nexus-sources"
+          ],
+          "text": "\"location\": \"E:/nexus-sources\","
+        },
+        {
+          "line": 1064,
+          "patterns": [
+            "nexus-sources"
+          ],
+          "text": "\"path\": \"E:/nexus-sources\\\\zephyr.current.licensed.json\","
+        },
+        {
+          "line": 1065,
+          "patterns": [
+            "nexus-sources"
+          ],
+          "text": "\"location\": \"E:/nexus-sources\","
+        },
+        {
+          "line": 1076,
+          "patterns": [
+            "nexus-sources"
+          ],
+          "text": "\"path\": \"E:/nexus-sources\\\\zephyr.licensed-tree.json\","
+        },
+        {
+          "line": 1077,
+          "patterns": [
+            "nexus-sources"
+          ],
+          "text": "\"location\": \"E:/nexus-sources\","
+        },
+        {
+          "line": 1088,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "\"path\": \"E:/nexus-training\\\\evidence\","
+        },
+        {
+          "line": 1089,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "\"location\": \"E:/nexus-training\","
+        },
+        {
+          "line": 1100,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "\"path\": \"E:/nexus-training\\\\integration-receipts\","
+        },
+        {
+          "line": 1101,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "\"location\": \"E:/nexus-training\","
+        },
+        {
+          "line": 1112,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "\"path\": \"E:/nexus-training\\\\mobile-native-tools-20261002\","
+        },
+        {
+          "line": 1113,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "\"location\": \"E:/nexus-training\","
+        },
+        {
+          "line": 1124,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "\"path\": \"E:/nexus-training\\\\new-public-20261001\","
+        },
+        {
+          "line": 1125,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "\"location\": \"E:/nexus-training\","
+        },
+        {
+          "line": 2694,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo/wt/repo-separation-swyp2\","
+        },
+        {
+          "line": 2750,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo/wt/swos-compute-fabric-m1\","
+        },
+        {
+          "line": 2770,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo/wt/swos-control-kernel-m1\","
+        },
+        {
+          "line": 2790,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo/wt/swos-device-synthesis-m1\","
+        },
+        {
+          "line": 2812,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo/wt/swos-ilaria-cognitive-m1\","
+        },
+        {
+          "line": 2836,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo/wt/swos-install-adapt-m1\","
+        },
+        {
+          "line": 2854,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo/wt/swos-native-kernel-seed-m1\","
+        },
+        {
+          "line": 2872,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo/wt/swos-os-platform-m1\","
+        },
+        {
+          "line": 2910,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo/wt/swos-security-p0\","
+        },
+        {
+          "line": 2933,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo/wt/swos-swyp-broker-host-v1\","
+        },
+        {
+          "line": 2947,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo/wt/swos-swyp-effects-m1\","
+        },
+        {
+          "line": 2981,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo/wt/swos-universal-adaptive-m2\","
+        },
+        {
+          "line": 3816,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo\","
+        },
+        {
+          "line": 4123,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo/_cloud-transfer\","
+        },
+        {
+          "line": 4171,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo/tools\","
+        },
+        {
+          "line": 4208,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo/wt\","
+        }
+      ],
+      "ramasite/agent-md/workspace/unify-2026-10-03/external-inventory.md": [
+        {
+          "line": 21,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "| `non-nexus` | 21 | 668.59 MB | 455 | Preserve in `E:\\arhiva-ceo` (Meister ERP, GPT Bridge, CEO governance) |"
+        },
+        {
+          "line": 73,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "| `E:/arhiva-ceo/wt/repo-separation-swyp2` | `agent/repo-separation-swyp2` | 0 | 762 | **NO** | BLOCKER: Uncommitted unique work (differs: .github/workflows/ci.yml, differs: .gitignore) |"
+        },
+        {
+          "line": 74,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "| `E:/arhiva-ceo/wt/swos-compute-fabric-m1` | `chatgpt/swos/compute-fabric-m1` | 0 | 2 | **NO** | BLOCKER: Uncommitted unique work (new: swypik-os\\core\\computefabric\\adversarial_test.go, new: swypik-os/docs/COMPUTE_FABRIC.md) |"
+        },
+        {
+          "line": 75,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "| `E:/arhiva-ceo/wt/swos-control-kernel-m1` | `chatgpt/swos/control-kernel-m1` | 0 | 2 | **NO** | BLOCKER: Uncommitted unique work (differs: swypik-os\\core\\controlkernel\\event_store.go, new: swypik-os/docs/ADR_CONTROL_KERNEL_EVENT_STORE.md) |"
+        },
+        {
+          "line": 76,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "| `E:/arhiva-ceo/wt/swos-device-synthesis-m1` | `chatgpt/swos/device-synthesis-m1` | 0 | 3 | **NO** | BLOCKER: Uncommitted unique work (differs: swypik-os\\core\\devicesynth\\abi.go, new: swypik-os/docs/DRIVER_SYNTHESIS_SECURITY.md) |"
+        },
+        {
+          "line": 77,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "| `E:/arhiva-ceo/wt/swos-ilaria-cognitive-m1` | `chatgpt/swos/ilaria-cognitive-m1` | 0 | 4 | **NO** | BLOCKER: Uncommitted unique work (new: cortex/cognitive_runner.go, new: cortex/cognitive_runtime.go) |"
+        },
+        {
+          "line": 78,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "| `E:/arhiva-ceo/wt/swos-install-adapt-m1` | `chatgpt/swos/install-adapt-m1` | 0 | 1 | **NO** | BLOCKER: Uncommitted unique work (new: swypik-os\\core\\installadapt\\control_adapter.go) |"
+        },
+        {
+          "line": 79,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "| `E:/arhiva-ceo/wt/swos-native-kernel-seed-m1` | `chatgpt/swos/native-kernel-seed-m1` | 0 | 1 | **NO** | BLOCKER: Uncommitted unique work (new: swypik-kernel\\.gitignore) |"
+        },
+        {
+          "line": 80,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "| `E:/arhiva-ceo/wt/swos-os-platform-m1` | `chatgpt/swos/os-platform-m1` | 0 | 12 | **NO** | BLOCKER: Uncommitted unique work (differs: swypik-os/cmd/swypikd/main_linux.go, new: swypik-os/docs/NATIVE_OS.md) |"
+        },
+        {
+          "line": 81,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "| `E:/arhiva-ceo/wt/swos-security-p0` | `chatgpt/swos/security-p0` | 0 | 5 | **NO** | BLOCKER: Uncommitted unique work (differs: swypik-os/core/agent/workspace_tools.go, new: swypik-os/docs/COMMAND_LIFECYCLE.md) |"
+        },
+        {
+          "line": 82,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "| `E:/arhiva-ceo/wt/swos-swyp-broker-host-v1` | `agent/swyp-broker-host-v1` | 3 | 0 | **YES** | SAFE: `git worktree remove` (Commits in git; clean or duplicate dirty files) |"
+        },
+        {
+          "line": 83,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "| `E:/arhiva-ceo/wt/swos-swyp-effects-m1` | `chatgpt/swos/swyp-effects-m1` | 0 | 9 | **NO** | BLOCKER: Uncommitted unique work (new: swyp/docs/ARCHITECTURE.md, new: swyp/docs/SEMANTIC_CORE.md) |"
+        },
+        {
+          "line": 84,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "| `E:/arhiva-ceo/wt/swos-universal-adaptive-m2` | `feat/universal-adaptive-runtime` | 0 | 69 | **NO** | BLOCKER: Uncommitted unique work (differs: AGENTS.md, differs: swypik-os/README.md) |"
+        },
+        {
+          "line": 109,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "## 3. Deep Dive: `E:\\arhiva-ceo`"
+        },
+        {
+          "line": 111,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "`E:\\arhiva-ceo` is an independent Git repository (`master`, dirty) containing 77 top-level entries."
+        },
+        {
+          "line": 114,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "The 10 tracked commits govern multi-project operations (Meister ERP, GPT Bridge, Therapium Movies, Nexus, Swypik). None of the tracked files are exclusively Nexus code. All top-level management files (`CONSTITUTION.md`, `PLAYBOOK.md`, `OS.md`, `PORTFOLIO.md`, `org/`, `memory/`, `runs/`) belong to generic company-level administration and **must stay in `E:\\arhiva-ceo`**."
+        },
+        {
+          "line": 119,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "- The leftover files inside `E:\\arhiva-ceo\\swyp-*-bench*` and `swypik-resource-bench*` consist of compiled test executables (`.exe`, `.test`, `swyp-linux-*`) and runtime run logs (`run-balanced/data/`). These are regenerable build artifacts."
+        },
+        {
+          "line": 120,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "- **Recommendation:** Mark all 35 benchmark directories in `E:\\arhiva-ceo` as `discard: regenerable/duplicate` since the historical evidence is already safely in `ramasite/benchmarks/`."
+        },
+        {
+          "line": 138,
+          "patterns": [
+            "nexus-sources",
+            "nexus-training"
+          ],
+          "text": "## 4. Deep Dive: `E:\\nexus-sources` & `E:\\nexus-training`"
+        },
+        {
+          "line": 140,
+          "patterns": [
+            "nexus-sources"
+          ],
+          "text": "### `E:\\nexus-sources` (~6.0 GB, ~393,000 files)"
+        },
+        {
+          "line": 149,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "### `E:\\nexus-training` (~4.6 GB, ~30,400 files)"
+        },
+        {
+          "line": 159,
+          "patterns": [
+            "nexus-sources"
+          ],
+          "text": "1. **Large External Training Source Trees (6.0 GB in `E:\\nexus-sources`):**"
+        },
+        {
+          "line": 161,
+          "patterns": [
+            "nexus-sources"
+          ],
+          "text": "- *Option B:* Keep `E:\\nexus-sources` external as a persistent read-only training reference volume."
+        },
+        {
+          "line": 163,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "2. **Large Scraped Training Dataset (2.9 GB in `E:\\nexus-training\\new-public-20261001`):**"
+        },
+        {
+          "line": 167,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "3. **Compilers and Toolchains (2.55 GB in `E:\\arhiva-ceo\\tools`):**"
+        },
+        {
+          "line": 181,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "- `E:/arhiva-ceo/wt/swos-swyp-broker-host-v1`"
+        },
+        {
+          "line": 202,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "2. **Historical Source & Agent Records from `E:\\arhiva-ceo`:**"
+        },
+        {
+          "line": 203,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "- `E:\\arhiva-ceo\\swyp-execute-before-fastblock.go` -> `E:\\nexus\\ramasite\\agent-md\\swyp\\history\\`"
+        },
+        {
+          "line": 204,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "- `E:\\arhiva-ceo\\projects\\swos\\` -> `E:\\nexus\\ramasite\\agent-md\\workspace\\swos-historical\\`"
+        },
+        {
+          "line": 205,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "- `E:\\arhiva-ceo\\specs\\mission-swypikos-ilaria.md` -> `E:\\nexus\\ramasite\\agent-md\\workspace\\`"
+        },
+        {
+          "line": 206,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "- `E:\\arhiva-ceo\\_move_logs\\` -> `E:\\nexus\\ramasite\\agent-md\\workspace\\migration-history\\`"
+        },
+        {
+          "line": 207,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "- `E:\\arhiva-ceo\\_conversatii-claude\\` -> `E:\\nexus\\ramasite\\local\\conversatii-claude\\` (merged)"
+        },
+        {
+          "line": 208,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "3. **Historical Component Snapshots in `E:\\arhiva-ceo\\wt`:**"
+        },
+        {
+          "line": 209,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "- `E:\\arhiva-ceo\\wt\\swyp-hir-p3-20260929` -> `E:\\nexus\\ramasite\\agent-md\\swyp\\history\\swyp-hir-p3-snapshot\\`"
+        },
+        {
+          "line": 210,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "- `E:\\arhiva-ceo\\wt\\swypik-os-swyp-broker-20260929` -> `E:\\nexus\\ramasite\\agent-md\\swypik-os\\history\\swyp-broker-snapshot\\`"
+        },
+        {
+          "line": 212,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "- `E:\\nexus-training\\integration-receipts\\` -> `E:\\nexus\\ramasite\\agent-md\\ilaria\\integration-receipts\\`"
+        },
+        {
+          "line": 213,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "- `E:\\nexus-training\\evidence\\` -> `E:\\nexus\\ramasite\\benchmarks\\ilaria\\training-evidence\\`"
+        },
+        {
+          "line": 214,
+          "patterns": [
+            "nexus-sources"
+          ],
+          "text": "- `E:\\nexus-sources\\benchmarks\\` -> `E:\\nexus\\ramasite\\benchmarks\\ilaria\\eval-benchmarks\\`"
+        },
+        {
+          "line": 215,
+          "patterns": [
+            "nexus-sources"
+          ],
+          "text": "- `E:\\nexus-sources\\*.licensed.json` -> `E:\\nexus\\ramasite\\docs\\ilaria\\licensed_sources\\`"
+        },
+        {
+          "line": 218,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "1. `E:\\arhiva-ceo\\tools\\` -> `E:\\nexus\\ramasite\\local\\tools\\` (~2.55 GB)"
+        },
+        {
+          "line": 219,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "2. `E:\\nexus-training\\mobile-native-tools-20261002\\` -> `E:\\nexus\\ramasite\\local\\tools\\mobile-native\\` (~497 MB)"
+        },
+        {
+          "line": 220,
+          "patterns": [
+            "nexus-sources"
+          ],
+          "text": "3. `E:\\nexus-sources\\apache-nuttx-locked\\`, `freebsd-locked\\`, `staging\\`, `zephyr\\` -> `E:\\nexus\\ramasite\\local\\sources\\` (~6.0 GB)"
+        },
+        {
+          "line": 221,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "4. `E:\\nexus-training\\new-public-20261001\\` -> `E:\\nexus\\ramasite\\local\\training-data\\` (~2.9 GB)"
+        },
+        {
+          "line": 226,
+          "patterns": [
+            "nexus-sources",
+            "nexus-training"
+          ],
+          "text": "3. Safely delete outside directories (`E:\\nexus-sources`, `E:\\nexus-training`, `E:\\nexus-worktrees`, `C:\\Users\\abel\\.copilot\\repos\\copilot-worktrees\\nexus`)."
+        },
+        {
+          "line": 227,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "4. Keep `E:\\arhiva-ceo` containing only non-Nexus CEO portfolio documents."
+        }
+      ],
+      "ramasite/agent-md/workspace/unify-2026-10-03/worktree-preservation.json": [
+        {
+          "line": 1303,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo/wt/repo-separation-swyp2\","
+        },
+        {
+          "line": 2084,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo/wt/swos-compute-fabric-m1\","
+        },
+        {
+          "line": 2109,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo/wt/swos-control-kernel-m1\","
+        },
+        {
+          "line": 2135,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo/wt/swos-device-synthesis-m1\","
+        },
+        {
+          "line": 2157,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo/wt/swos-ilaria-cognitive-m1\","
+        },
+        {
+          "line": 2175,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo/wt/swos-install-adapt-m1\","
+        },
+        {
+          "line": 2194,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo/wt/swos-native-kernel-seed-m1\","
+        },
+        {
+          "line": 2233,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo/wt/swos-os-platform-m1\","
+        },
+        {
+          "line": 2274,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo/wt/swos-security-p0\","
+        },
+        {
+          "line": 2293,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo/wt/swos-swyp-broker-host-v1\","
+        },
+        {
+          "line": 2306,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo/wt/swos-swyp-effects-m1\","
+        },
+        {
+          "line": 2329,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "\"path\": \"E:/arhiva-ceo/wt/swos-universal-adaptive-m2\","
+        }
+      ],
+      "ramasite/agent-md/workspace/unify-2026-10-03/worktree-preservation.md": [
+        {
+          "line": 18,
+          "patterns": [
+            "arhiva-ceo"
+          ],
+          "text": "- `E:\\arhiva-ceo\\wt (retained, contains 3 items: ['swyp-broker-integration-20260929', 'swyp-hir-p3-20260929', 'swypik-os-swyp-broker-20260929'])`"
+        }
+      ],
+      "ramasite/benchmarks/ilaria/licensed_code_pilot_package/README.md": [
+        {
+          "line": 14,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "$NEXUS_TRAINING = 'E:\\nexus-training'"
+        },
+        {
+          "line": 29,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "python -c \"import sys; from pathlib import Path; sys.path.insert(0, r'ilaria\\bench\\licensed_code_pilot_package'); from package import validate_package_manifest; print(validate_package_manifest(Path(r'E:\\nexus-training\\evidence\\licensed-code-pilot-20261002-seed1'))['package_sha256'])\""
+        }
+      ],
+      "ramasite/benchmarks/ilaria/p2p_quality_adversarial/README.md": [
+        {
+          "line": 10,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "python run.py --canonical-root E:\\nexus --output E:\\nexus-training\\evidence\\p2p-quality-adversarial-20261001\\receipt.json"
+        }
+      ],
+      "ramasite/docs/swypik-os/UNIVERSAL_NATIVE.md": [
+        {
+          "line": 272,
+          "patterns": [
+            "CEO"
+          ],
+          "text": "- `E:\\CEO\\projects\\swos\\analysis\\12-control-kernel-r2-qa.md` — VERIFIED;"
+        },
+        {
+          "line": 273,
+          "patterns": [
+            "CEO"
+          ],
+          "text": "- `E:\\CEO\\projects\\swos\\analysis\\13-device-kernel-repair-qa.md` — Device"
+        }
+      ],
+      "ramasite/scripts/__pycache__/test_verify_imc_network.cpython-312-pytest-9.1.1.pyc": [
+        {
+          "line": 333,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "\u0001\u0000\u0000\u0000\u0000\u0000\u0000n\u0001d\u0010t\u0005\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000j\u000e\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000|\u0003\u0001\u0000\u0000\u0000\u0000\u0000\u0000t\u0005\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000j\u000e\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000|\b\u0001\u0000\u0000\u0000\u0000\u0000\u0000d\u001c\u0007z\u0006\u0000\u0000}\u0014t\u0011\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000t\u0005\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000j\u0012\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000|\u0014\u0001\u0000\u0000\u0000\u0000\u0000\u0000\u0001\u0000\u0000\u0000\u0000\u0000\u0000\u0001d\u0000x\u0001}\u0000x\u0001}\u000fx\u0001}\u0004x\u0001}\u0003x\u0001}\u0012x\u0001}\b}\u0013y\u0000)\u001dNz\u0017E:/nexus-training/x y/zz\u001b/mnt/e/nexus-training/x y/zr#\u0000\u0000\u0000)\u0001zN%(py6)s"
+        }
+      ],
+      "ramasite/scripts/test_verify_imc_network.py": [
+        {
+          "line": 291,
+          "patterns": [
+            "nexus-training"
+          ],
+          "text": "assert runner.wsl_path('E:/nexus-training/x y/z') == '/mnt/e/nexus-training/x y/z'"
+        }
+      ]
+    }
+  },
+  "arhiva_ceo_remaining": [
+    {
+      "name": ".claude",
+      "type": "directory",
+      "file_count": 2,
+      "total_bytes": 10263,
+      "retention_reason": "Generic CEO governance"
+    },
+    {
+      "name": ".git",
+      "type": "directory",
+      "file_count": 367,
+      "total_bytes": 500825,
+      "retention_reason": "Arhiva-CEO Git repository database"
+    },
+    {
+      "name": ".gitignore",
+      "type": "file",
+      "file_count": 1,
+      "total_bytes": 4,
+      "retention_reason": "Generic CEO governance"
+    },
+    {
+      "name": "BACKLOG.md",
+      "type": "file",
+      "file_count": 1,
+      "total_bytes": 4169,
+      "retention_reason": "Generic CEO governance"
+    },
+    {
+      "name": "BOOTLOADER.md",
+      "type": "file",
+      "file_count": 1,
+      "total_bytes": 712,
+      "retention_reason": "Generic CEO governance"
+    },
+    {
+      "name": "CHATGPT-ORCHESTRATOR.md",
+      "type": "file",
+      "file_count": 1,
+      "total_bytes": 3349,
+      "retention_reason": "ChatGPT Bridge portfolio asset"
+    },
+    {
+      "name": "CONSTITUTION.md",
+      "type": "file",
+      "file_count": 1,
+      "total_bytes": 5256,
+      "retention_reason": "Generic CEO governance"
+    },
+    {
+      "name": "COWORK-CEO-PROMPT.md",
+      "type": "file",
+      "file_count": 1,
+      "total_bytes": 477,
+      "retention_reason": "Generic CEO governance"
+    },
+    {
+      "name": "COWORK-SCHEDULES.md",
+      "type": "file",
+      "file_count": 1,
+      "total_bytes": 844,
+      "retention_reason": "Generic CEO governance"
+    },
+    {
+      "name": "DAILY-BRIEF.md",
+      "type": "file",
+      "file_count": 1,
+      "total_bytes": 42,
+      "retention_reason": "Generic CEO governance"
+    },
+    {
+      "name": "DEPLOY-GATE.md",
+      "type": "file",
+      "file_count": 1,
+      "total_bytes": 2864,
+      "retention_reason": "Generic CEO governance"
+    },
+    {
+      "name": "INBOX-OWNER.md",
+      "type": "file",
+      "file_count": 1,
+      "total_bytes": 5063,
+      "retention_reason": "Generic CEO governance"
+    },
+    {
+      "name": "LIMITS.md",
+      "type": "file",
+      "file_count": 1,
+      "total_bytes": 2434,
+      "retention_reason": "Generic CEO governance"
+    },
+    {
+      "name": "memory",
+      "type": "directory",
+      "file_count": 4,
+      "total_bytes": 4473,
+      "retention_reason": "Generic CEO operational governance logs and charters"
+    },
+    {
+      "name": "org",
+      "type": "directory",
+      "file_count": 52,
+      "total_bytes": 58305,
+      "retention_reason": "Generic CEO operational governance logs and charters"
+    },
+    {
+      "name": "OS.md",
+      "type": "file",
+      "file_count": 1,
+      "total_bytes": 4012,
+      "retention_reason": "Generic CEO governance"
+    },
+    {
+      "name": "PLAYBOOK.md",
+      "type": "file",
+      "file_count": 1,
+      "total_bytes": 1706,
+      "retention_reason": "Generic CEO governance"
+    },
+    {
+      "name": "PORTFOLIO.md",
+      "type": "file",
+      "file_count": 1,
+      "total_bytes": 7435,
+      "retention_reason": "Generic CEO governance"
+    },
+    {
+      "name": "research",
+      "type": "directory",
+      "file_count": 2,
+      "total_bytes": 1497,
+      "retention_reason": "Generic CEO technology radar (ADOPTION-GATE.md, RADAR.md)"
+    },
+    {
+      "name": "runs",
+      "type": "directory",
+      "file_count": 8,
+      "total_bytes": 32926,
+      "retention_reason": "Generic CEO operational governance logs and charters"
+    },
+    {
+      "name": "specs",
+      "type": "directory",
+      "file_count": 3,
+      "total_bytes": 8087,
+      "retention_reason": "Meister ERP & CEO baseline specs (eng-001, eng-003, qa-chatgpt)"
+    },
+    {
+      "name": "wt",
+      "type": "directory",
+      "file_count": 0,
+      "total_bytes": 0,
+      "retention_reason": "Worktree folder (worktrees cleaned up by worktree agent)"
+    },
+    {
+      "name": "_cloud-transfer",
+      "type": "directory",
+      "file_count": 2,
+      "total_bytes": 187921170,
+      "retention_reason": "ChatGPT Bridge backup tarball (chat-gpt-bridge.tgz)"
+    }
+  ]
+}

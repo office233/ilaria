@@ -1,0 +1,3689 @@
+{
+  "metadata": {
+    "analysis_date": "2026-10-03",
+    "base_head": "06a5f39f805cf36897e05ffe306d05ed212a5a3a",
+    "total_local_branches": 108,
+    "unmerged_branches_count": 37,
+    "branches_to_integrate": 5,
+    "branches_superseded": 16,
+    "branches_drop_candidates": 16
+  },
+  "branches": {
+    "agent/bitnet-gpu-decode-perf": {
+      "name": "agent/bitnet-gpu-decode-perf",
+      "tip_sha": "b467392463fc4aae820871d22709cab19532a89b",
+      "tip_date": "2026-09-24T14:07:00+03:00",
+      "unique_commit_count": 1,
+      "commits": [
+        {
+          "full_sha": "b467392463fc4aae820871d22709cab19532a89b",
+          "sha": "b4673924",
+          "date": "2026-09-24T14:07:00+03:00",
+          "author": "office233",
+          "subject": "perf(cortex/gpu): BitNet GPU decode 120 round trips/token \u2014 fused QKV + GateUp, pinned staging, one stream, unpadded batch"
+        }
+      ],
+      "merge_base": "ea4f02d49f2b9d4213b1286af6fe40558c89054d",
+      "diff_stat_summary": " 6 files changed, 1025 insertions(+), 127 deletions(-)",
+      "changed_files_count": 6,
+      "relocated_files_count": 0,
+      "products": [
+        "workspace"
+      ],
+      "cherry_status": {
+        "plus_count": 1,
+        "minus_count": 0
+      },
+      "merge_tree_head": {
+        "exit_code": 1,
+        "has_conflicts": true,
+        "conflict_count": 3,
+        "conflict_files": [
+          "cortex/bitnet_gpu.go",
+          "cortex/compute/cublas_int8_dyn.go",
+          "cortex/compute/cublas_int8_stub.go"
+        ]
+      },
+      "containment": {
+        "ancestor_of": [],
+        "descendant_of": [],
+        "commits_subset_of": [],
+        "patch_equivalent_in": []
+      },
+      "assessment": {
+        "feature_summary": "BitNet GPU decode micro-optimization (commit b4673924) in legacy cortex/ package from Sep 24.",
+        "quality": "Specialized CUDA/Go optimizations.",
+        "superseded": true,
+        "superseded_by": "Product split (commit c9ea8802)",
+        "evidence": "Legacy cortex/ package was deleted in c9ea8802 when model runtime was moved exclusively to ilaria/.",
+        "risk": "Obsolete codebase path.",
+        "recommendation": "DROP-CANDIDATE",
+        "order": null,
+        "batch": null,
+        "suggested_method": "Drop (legacy cortex package retired).",
+        "tests_to_run": "None"
+      }
+    },
+    "agent/ceo-benchmark-evidence": {
+      "name": "agent/ceo-benchmark-evidence",
+      "tip_sha": "81324a6a5ede6f298bc841b981ee7cb4c5d2ead0",
+      "tip_date": "2026-10-02T22:56:11+03:00",
+      "unique_commit_count": 1,
+      "commits": [
+        {
+          "full_sha": "81324a6a5ede6f298bc841b981ee7cb4c5d2ead0",
+          "sha": "81324a6a",
+          "date": "2026-10-02T22:56:11+03:00",
+          "author": "office233",
+          "subject": "bench: preserve curated CEO source and dated evidence"
+        }
+      ],
+      "merge_base": "06a5f39f805cf36897e05ffe306d05ed212a5a3a",
+      "diff_stat_summary": " 98 files changed, 16351 insertions(+)",
+      "changed_files_count": 98,
+      "relocated_files_count": 0,
+      "products": [
+        "ramasite/benchmarks"
+      ],
+      "cherry_status": {
+        "plus_count": 1,
+        "minus_count": 0
+      },
+      "merge_tree_head": {
+        "exit_code": 0,
+        "has_conflicts": false,
+        "conflict_count": 0,
+        "conflict_files": []
+      },
+      "containment": {
+        "ancestor_of": [],
+        "descendant_of": [],
+        "commits_subset_of": [],
+        "patch_equivalent_in": []
+      },
+      "assessment": {
+        "feature_summary": "Preserves curated CEO benchmark source and dated evidence across Swyp and SwypikOS under ramasite/benchmarks/ (commit 81324a6a). 98 files changed, 16,351 insertions.",
+        "quality": "Curated benchmark data and results, clean provenance, no binaries.",
+        "superseded": false,
+        "superseded_by": null,
+        "evidence": "",
+        "risk": "Low. Touches only ramasite/benchmarks/. Zero merge conflicts with HEAD and integration branch.",
+        "recommendation": "INTEGRATE",
+        "order": 3,
+        "batch": 3,
+        "suggested_method": "Cherry-pick commit 81324a6a (or merge).",
+        "tests_to_run": "git diff --check ramasite/benchmarks"
+      }
+    },
+    "agent/ceo-save-repo-separation-swyp2": {
+      "name": "agent/ceo-save-repo-separation-swyp2",
+      "tip_sha": "da658c8f950180f3809360708beb061b48b3e0e9",
+      "tip_date": "2026-10-02T23:38:25+03:00",
+      "unique_commit_count": 2,
+      "commits": [
+        {
+          "full_sha": "da658c8f950180f3809360708beb061b48b3e0e9",
+          "sha": "da658c8f",
+          "date": "2026-10-02T23:38:25+03:00",
+          "author": "office233",
+          "subject": "WIP archive: repo-separation-swyp2 safe working source version"
+        },
+        {
+          "full_sha": "e3d1288eb171609bdd407f3b40f55a818bf5ce54",
+          "sha": "e3d1288e",
+          "date": "2026-10-02T23:38:02+03:00",
+          "author": "office233",
+          "subject": "WIP archive: repo-separation-swyp2 safe preexisting staged version"
+        }
+      ],
+      "merge_base": "a5a8175a5cd1ff9bb7f43d90ff9800856ea4f1fa",
+      "diff_stat_summary": " 603 files changed, 2608 insertions(+), 1237 deletions(-)",
+      "changed_files_count": 603,
+      "relocated_files_count": 52,
+      "products": [
+        "ilaria",
+        "ramasite/agent-md",
+        "ramasite/benchmarks",
+        "ramasite/docs",
+        "swyp",
+        "swypik-os",
+        "workspace"
+      ],
+      "cherry_status": {
+        "plus_count": 2,
+        "minus_count": 0
+      },
+      "merge_tree_head": {
+        "exit_code": 1,
+        "has_conflicts": true,
+        "conflict_count": 576,
+        "conflict_files": [
+          "DE_CITIT_URGENT_CLAUDE_OPUS.md",
+          "Merge",
+          "bench/swypik-v1/README.md",
+          "cmd/bitnet-run/main.go",
+          "cmd/broca-eval/main.go",
+          "cmd/broca-probe/main.go",
+          "cmd/bulk-ingest/main.go",
+          "cmd/continual-bench/main.go",
+          "cmd/corpus-coverage/main.go",
+          "cmd/corpus-eval-coverage/main.go",
+          "cmd/corpus-tokenize/main.go",
+          "cmd/cortex-autonomous/main.go",
+          "cmd/cortex-broca-train/main.go",
+          "cmd/cortex-diagnose/main.go",
+          "cmd/cortex-eval/main.go",
+          "cmd/cortex-learn-demo/main.go",
+          "cmd/cortex-tokenizer/main.go",
+          "cmd/cortex-train/main.go",
+          "cmd/cortex/demo.go",
+          "cmd/cortex/demo_test.go",
+          "cmd/cortex/interactive.go",
+          "cmd/cortex/main.go",
+          "cmd/distill/main.go",
+          "cmd/gpt2-import/main.go",
+          "cmd/ilaria-biomed/main.go",
+          "cmd/ilaria-chat/main.go",
+          "cmd/ilaria-chat/main_test.go",
+          "cmd/ilaria-chat/testdata/notes.txt",
+          "cmd/ilaria-grounding-data/main.go",
+          "cmd/ilaria-hear/main.go",
+          "cmd/ilaria-pilot-data/main.go",
+          "cmd/ilaria-see/main.go",
+          "cmd/ilaria-serve/cloud.go",
+          "cmd/ilaria-serve/cloud_test.go",
+          "cmd/ilaria-serve/main.go",
+          "cmd/ilaria-serve/main_test.go",
+          "cmd/ilaria-swyp/batch.go",
+          "cmd/ilaria-swyp/batch_test.go",
+          "cmd/ilaria-swyp/main.go",
+          "cmd/nxtf-ppl/main.go",
+          "cmd/nxtf-ppl/main_test.go",
+          "cmd/nxtf-run/main.go",
+          "cmd/swyp-forge/main.go",
+          "cmd/swyp-forge/main_test.go",
+          "cmd/swyp-forge/mutate.go",
+          "cmd/tinystories-convert/main.go",
+          "cmd/tok-encode/main.go",
+          "cmd/tok-stats/main.go",
+          "cmd/train/main.go",
+          "cortex/analogy.go",
+          "cortex/analogy_test.go",
+          "cortex/attention.go",
+          "cortex/attention_test.go",
+          "cortex/audio_wav.go",
+          "cortex/audio_whisper.go",
+          "cortex/audio_whisper_gpu.go",
+          "cortex/audio_whisper_gpu_stub.go",
+          "cortex/audio_whisper_gpu_test.go",
+          "cortex/audio_whisper_persist.go",
+          "cortex/audio_whisper_test.go",
+          "cortex/autonomous.go",
+          "cortex/beam_search.go",
+          "cortex/beam_search_test.go",
+          "cortex/benchmark_test.go",
+          "cortex/biomed/chembl.go",
+          "cortex/biomed/chembl_test.go",
+          "cortex/biomed/client.go",
+          "cortex/biomed/client_test.go",
+          "cortex/biomed/consult.go",
+          "cortex/biomed/consult_review_test.go",
+          "cortex/biomed/consult_test.go",
+          "cortex/biomed/errors.go",
+          "cortex/biomed/fhir.go",
+          "cortex/biomed/fhir_test.go",
+          "cortex/biomed/graph.go",
+          "cortex/biomed/graph_test.go",
+          "cortex/biomed/openfda.go",
+          "cortex/biomed/openfda_exists_test.go",
+          "cortex/biomed/openfda_review_test.go",
+          "cortex/biomed/openfda_single_test.go",
+          "cortex/biomed/openfda_test.go",
+          "cortex/biomed/opentargets.go",
+          "cortex/biomed/opentargets_test.go",
+          "cortex/biomed/pk_extract.go",
+          "cortex/biomed/pk_extract_review_test.go",
+          "cortex/biomed/pk_extract_test.go",
+          "cortex/biomed/pkpd.go",
+          "cortex/biomed/pkpd_test.go",
+          "cortex/biomed/pubmed.go",
+          "cortex/biomed/pubmed_test.go",
+          "cortex/biomed/romanian.go",
+          "cortex/biomed/romanian_test.go",
+          "cortex/biomed/rxnorm.go",
+          "cortex/biomed/rxnorm_test.go",
+          "cortex/biomed/testdata/chembl/act_CHEMBL939.json",
+          "cortex/biomed/testdata/chembl/act_unchecked_first.json",
+          "cortex/biomed/testdata/chembl/mech_CHEMBL939.json",
+          "cortex/biomed/testdata/chembl/search_gefitinib.json",
+          "cortex/biomed/testdata/chembl/target_CHEMBL203.json",
+          "cortex/biomed/testdata/openfda/label_aspirin_combo_first.json",
+          "cortex/biomed/testdata/openfda/label_aspirin_multi.json",
+          "cortex/biomed/testdata/openfda/label_gefitinib.json",
+          "cortex/biomed/testdata/openfda/label_gefitinib_nopk.json",
+          "cortex/biomed/testdata/openfda/label_stub.json",
+          "cortex/biomed/testdata/opentargets/disease_NSCLC.json",
+          "cortex/biomed/testdata/opentargets/search_disease.json",
+          "cortex/biomed/testdata/opentargets/search_target.json",
+          "cortex/biomed/testdata/opentargets/target_EGFR.json",
+          "cortex/biomed/testdata/pubmed/esearch.json",
+          "cortex/biomed/testdata/pubmed/esummary.json",
+          "cortex/biomed/testdata/rxnorm/approx_gefitinib.json",
+          "cortex/biomed/testdata/rxnorm/approx_none.json",
+          "cortex/biomed/testdata/rxnorm/approx_warfarin.json",
+          "cortex/biomed/testdata/rxnorm/displaynames.json",
+          "cortex/biomed/testdata/rxnorm/props_11289.json",
+          "cortex/biomed/testdata/rxnorm/props_328134.json",
+          "cortex/biomed/types.go",
+          "cortex/biomed_tool.go",
+          "cortex/biomed_tool_review_test.go",
+          "cortex/biomed_tool_test.go",
+          "cortex/bitnet.go",
+          "cortex/bitnet_backend.go",
+          "cortex/bitnet_bench_test.go",
+          "cortex/bitnet_cuda.go",
+          "cortex/bitnet_cuda_stub.go",
+          "cortex/bitnet_cuda_test.go",
+          "cortex/bitnet_decode.go",
+          "cortex/bitnet_decode_test.go",
+          "cortex/bitnet_equivalence_test.go",
+          "cortex/bitnet_gpu.go",
+          "cortex/bitnet_gpu_stub.go",
+          "cortex/bitnet_gpu_test.go",
+          "cortex/bitnet_gpu_timing_test.go",
+          "cortex/bitnet_linear.go",
+          "cortex/bitnet_lora.go",
+          "cortex/bitnet_lora_cuda.go",
+          "cortex/bitnet_lora_cuda_test.go",
+          "cortex/bitnet_lora_test.go",
+          "cortex/bitnet_persist.go",
+          "cortex/bitnet_test.go",
+          "cortex/brain.go",
+          "cortex/brain_test.go",
+          "cortex/broca.go",
+          "cortex/calc.go",
+          "cortex/cerebellum.go",
+          "cortex/cognitive_bridge.go",
+          "cortex/cognitive_bridge_test.go",
+          "cortex/compute/cpu_engine.go",
+          "cortex/compute/cublas_dyn.go",
+          "cortex/compute/cublas_int8_dyn.go",
+          "cortex/compute/cublas_int8_dyn_test.go",
+          "cortex/compute/cublas_int8_stub.go",
+          "cortex/compute/cublas_matmul.go",
+          "cortex/compute/cublas_stub.go",
+          "cortex/compute/cuda_driver_dyn.go",
+          "cortex/compute/cuda_engine.go",
+          "cortex/compute/cuda_stub.go",
+          "cortex/compute/engine.go",
+          "cortex/compute/engine_test.go",
+          "cortex/compute/mmap_storage.go",
+          "cortex/compute/nvrtc_dyn.go",
+          "cortex/compute/nvrtc_stub.go",
+          "cortex/compute/webgpu_engine.go",
+          "cortex/compute/webgpu_stub.go",
+          "cortex/confidence.go",
+          "cortex/confidence_test.go",
+          "cortex/config.go",
+          "cortex/config_flags.go",
+          "cortex/config_loader.go",
+          "cortex/config_loader_test.go",
+          "cortex/config_test.go",
+          "cortex/continual_learning_test.go",
+          "cortex/cot.go",
+          "cortex/cot_test.go",
+          "cortex/curiosity.go",
+          "cortex/curriculum.go",
+          "cortex/curriculum_test.go",
+          "cortex/decoder.go",
+          "cortex/embedding.go",
+          "cortex/emotion.go",
+          "cortex/encoder.go",
+          "cortex/encoder_test.go",
+          "cortex/error_learning.go",
+          "cortex/error_learning_test.go",
+          "cortex/eval.go",
+          "cortex/eval_test.go",
+          "cortex/evalsuite/score.go",
+          "cortex/evalsuite/score_test.go",
+          "cortex/evalsuite/suite.go",
+          "cortex/expert_cache.go",
+          "cortex/expert_shard.go",
+          "cortex/expert_shard_test.go",
+          "cortex/forge_brain_equivalence_test.go",
+          "cortex/forge_equivalence_test.go",
+          "cortex/fractal_cortex.go",
+          "cortex/fractal_cortex_test.go",
+          "cortex/fractal_cortex_train.go",
+          "cortex/fractal_neurogenesis_test.go",
+          "cortex/fuzz_test.go",
+          "cortex/headless_regression_test.go",
+          "cortex/hippocampus.go",
+          "cortex/hippocampus_bitindex_test.go",
+          "cortex/linear_scan.go",
+          "cortex/linear_scan_test.go",
+          "cortex/motor.go",
+          "cortex/network.go",
+          "cortex/neuro_radio_cortex.go",
+          "cortex/neuro_radio_cortex_test.go",
+          "cortex/neuro_radio_persist.go",
+          "cortex/neuro_radio_persist_test.go",
+          "cortex/neuro_radio_tile.go",
+          "cortex/neuron.go",
+          "cortex/neurotexture.go",
+          "cortex/neurotexture_test.go",
+          "cortex/organism.go",
+          "cortex/organism_bridge_test.go",
+          "cortex/organism_open.go",
+          "cortex/organism_save_format_test.go",
+          "cortex/organism_test.go",
+          "cortex/persistence_test.go",
+          "cortex/predictor.go",
+          "cortex/predictor_saturation_test.go",
+          "cortex/prefrontal.go",
+          "cortex/prefrontal_stability_test.go",
+          "cortex/provenance.go",
+          "cortex/provenance_test.go",
+          "cortex/quantum_tile.go",
+          "cortex/quantum_tile_test.go",
+          "cortex/radio_bus.go",
+          "cortex/radio_cortex.go",
+          "cortex/radio_cortex_test.go",
+          "cortex/radio_cuda.go",
+          "cortex/radio_cuda_stub.go",
+          "cortex/radio_generate.go",
+          "cortex/radio_neuron.go",
+          "cortex/radio_persist.go",
+          "cortex/reasoning.go",
+          "cortex/reasoning_test.go",
+          "cortex/reward.go",
+          "cortex/rhythm.go",
+          "cortex/rmsnorm.go",
+          "cortex/sdr.go",
+          "cortex/sdr_attention.go",
+          "cortex/sdr_attention_test.go",
+          "cortex/sdr_fast.go",
+          "cortex/sdr_fast_test.go",
+          "cortex/sdr_pool.go",
+          "cortex/sdr_pool_test.go",
+          "cortex/self.go",
+          "cortex/self_evaluator.go",
+          "cortex/self_training.go",
+          "cortex/self_training_adam_test.go",
+          "cortex/semantic_freq.go",
+          "cortex/semantic_memory.go",
+          "cortex/semantic_memory_test.go",
+          "cortex/semantic_query_test.go",
+          "cortex/sensory.go",
+          "cortex/sequence_memory.go",
+          "cortex/sequence_memory_test.go",
+          "cortex/signal_codec.go",
+          "cortex/sleep_consolidation.go",
+          "cortex/sleep_consolidation_test.go",
+          "cortex/stabilizer_test.go",
+          "cortex/swe/codegraph.go",
+          "cortex/swe/process_other.go",
+          "cortex/swe/process_unix.go",
+          "cortex/swe/sandbox_executor.go",
+          "cortex/swe/sandbox_test.go",
+          "cortex/swe/security_regression_test.go",
+          "cortex/swe/types.go",
+          "cortex/swyp_solve.go",
+          "cortex/swyp_solve_test.go",
+          "cortex/swyp_tool.go",
+          "cortex/swyp_tool_test.go",
+          "cortex/tensor.go",
+          "cortex/tensor_gpu_resident.go",
+          "cortex/tensor_gpu_test.go",
+          "cortex/tensor_parallel.go",
+          "cortex/tensor_test.go",
+          "cortex/ternary.go",
+          "cortex/ternary_pack_fixture_test.go",
+          "cortex/ternary_test.go",
+          "cortex/ternary_train.go",
+          "cortex/test_config_test.go",
+          "cortex/testdata/fakeswyp/main.go",
+          "cortex/thousand_brains.go",
+          "cortex/tokenizer.go",
+          "cortex/tokenizer_gpt2.go",
+          "cortex/tokenizer_gpt2_test.go",
+          "cortex/tokenizer_llama3.go",
+          "cortex/tokenizer_llama3_test.go",
+          "cortex/tokenizer_pretok_test.go",
+          "cortex/tokenizer_test.go",
+          "cortex/toolloop.go",
+          "cortex/toolloop_history_test.go",
+          "cortex/toolloop_sampling_test.go",
+          "cortex/toolloop_test.go",
+          "cortex/tools.go",
+          "cortex/tools_test.go",
+          "cortex/transformer.go",
+          "cortex/transformer_backward.go",
+          "cortex/transformer_backward_test.go",
+          "cortex/transformer_bench_test.go",
+          "cortex/transformer_bias_test.go",
+          "cortex/transformer_cache.go",
+          "cortex/transformer_cache_test.go",
+          "cortex/transformer_gpu.go",
+          "cortex/transformer_optimizer.go",
+          "cortex/transformer_optimizer_persist.go",
+          "cortex/transformer_optimizer_test.go",
+          "cortex/transformer_persist.go",
+          "cortex/transformer_persist_binary.go",
+          "cortex/transformer_persist_binary_test.go",
+          "cortex/transformer_regularization_test.go",
+          "cortex/transformer_rope.go",
+          "cortex/transformer_sampling.go",
+          "cortex/transformer_sampling_test.go",
+          "cortex/transformer_test.go",
+          "cortex/ultra_deep_test.go",
+          "cortex/vision_siglip.go",
+          "cortex/vision_siglip_gpu.go",
+          "cortex/vision_siglip_gpu_stub.go",
+          "cortex/vision_siglip_gpu_test.go",
+          "cortex/vision_siglip_persist.go",
+          "cortex/vision_siglip_test.go",
+          "cortex/vocab.go",
+          "cortex/vocab_test.go",
+          "cortex/web_learner.go",
+          "cortex/web_learner_test.go",
+          "cortex/wernicke.go",
+          "cortex/working_memory.go",
+          "cortex/working_memory_test.go",
+          "cortex/workspace.go",
+          "docs/DESIGN.md",
+          "docs/HARDCODING_AND_LIMITATIONS.md",
+          "docs/HEADLESS_OPERATION.md",
+          "docs/NEUROTEXTURE_SUPERAI_PLAN.md",
+          "docs/benchmarks/RADIO_CORTEX_V0.md",
+          "docs/benchmarks/arena_en.md",
+          "docs/benchmarks/baseline_2026-05-24.md",
+          "docs/benchmarks/tools_eval.md",
+          "docs/funding/2026-09-24-eurohpc-fast-lane.md",
+          "docs/funding/investitori-si-programe.md",
+          "docs/funding/make_pitch_deck.py",
+          "docs/handoff/2026-09-25-azure-handoff.md",
+          "docs/handoff/2026-09-28-colab-preflight.md",
+          "docs/handoff/2026-09-28-next-agent-prompt.md",
+          "docs/handoff/2026-09-28-swyp-forge.md",
+          "docs/plans/2026-05-25-cursa-D-postmortem.md",
+          "docs/plans/2026-05-26-eos-degeneration-investigation.md",
+          "docs/plans/2026-05-26-integration-audit.md",
+          "docs/plans/2026-09-02-cursa-E-prime-kit.md",
+          "docs/plans/2026-09-02-improvement-roadmap.md",
+          "docs/plans/2026-09-27-ilaria-behavior-v2.md",
+          "docs/plans/2026-09-27-ilaria-grounding-fix.md",
+          "docs/plans/2026-09-27-ilaria-pilot-comparison.md",
+          "docs/plans/2026-09-27-ilaria-project-english-curriculum.md",
+          "docs/plans/2026-09-27-ilaria-project-v6-run.md",
+          "docs/plans/2026-09-27-swypikos-english-integration.md",
+          "docs/plans/2026-09-28-volunteer-gpu-tasks.md",
+          "docs/research/2026-09-14-memorie-si-gandire-cercetare.md",
+          "docs/research/2026-09-24-arena-en-design.md",
+          "docs/research/2026-09-24-ilaria-1.58-multimodal-studiu.md",
+          "docs/research/2026-09-27-ilaria-promptless-cognition-jev-architecture.md",
+          "docs/superpowers/plans/2026-05-21-ilaria-non-llm-agi-roadmap.md",
+          "docs/superpowers/plans/2026-09-21-biomed-real-sources.md",
+          "docs/superpowers/specs/2026-09-21-biomed-real-sources-design.md",
+          "forge/COLAB_GUIDE.md",
+          "forge/bench/build_swypik_bench_v1.py",
+          "forge/bench/swypik_eval.py",
+          "forge/bench/test_swypik_bench.py",
+          "forge/bench/test_swypik_eval.py",
+          "forge/bitnet_reference.py",
+          "forge/bitnet_tiny_reference.py",
+          "forge/colab/aligned-v4-result.txt",
+          "forge/colab/aligned-v4-run.py",
+          "forge/colab/aligned-v4-verification.txt",
+          "forge/colab/aligned-v4-verify.py",
+          "forge/colab/arena_en.sh",
+          "forge/colab/arena_t4.sh",
+          "forge/colab/behavior-examples-v2/README.md",
+          "forge/colab/behavior-examples-v2/manifest.json",
+          "forge/colab/behavior-v2-result.txt",
+          "forge/colab/behavior-v2-run.py",
+          "forge/colab/behavior-v2-setup.py",
+          "forge/colab/behavior-v2-verification.txt",
+          "forge/colab/build_aligned_notebook.py",
+          "forge/colab/build_behavior_data.py",
+          "forge/colab/build_drafting_data.py",
+          "forge/colab/build_final_fresh_eval.py",
+          "forge/colab/build_grounding_data.py",
+          "forge/colab/build_grounding_eval.py",
+          "forge/colab/build_pilot_eval.py",
+          "forge/colab/build_project_notebook_v6.py",
+          "forge/colab/build_project_pilot_v7.py",
+          "forge/colab/build_project_v6.py",
+          "forge/colab/build_swyp_forge_notebook.py",
+          "forge/colab/build_swypikos_notebook.py",
+          "forge/colab/check_project_code_v6.py",
+          "forge/colab/drafting-examples-v5/README.md",
+          "forge/colab/drafting-examples-v5/manifest.json",
+          "forge/colab/drafting-v5-result.txt",
+          "forge/colab/drafting-v5-run.py",
+          "forge/colab/drafting-v5-verification.txt",
+          "forge/colab/drafting-v5-verify.py",
+          "forge/colab/ears_stage1.sh",
+          "forge/colab/evaluate_drafting_v5.py",
+          "forge/colab/extract_grounding_eval.py",
+          "forge/colab/extract_pilot_eval.py",
+          "forge/colab/extract_project_v6.py",
+          "forge/colab/eyes_stage2.sh",
+          "forge/colab/grounding-examples-v3/README.md",
+          "forge/colab/grounding-examples-v3/manifest.json",
+          "forge/colab/grounding-v3-result.txt",
+          "forge/colab/grounding-v3-run.py",
+          "forge/colab/grounding-v3-verification.txt",
+          "forge/colab/pilot-examples-v1/README.md",
+          "forge/colab/pilot-examples-v1/manifest.json",
+          "forge/colab/pilot-result.txt",
+          "forge/colab/pilot-run-cell.py",
+          "forge/colab/pilot-verification.txt",
+          "forge/colab/pilot_preflight.py",
+          "forge/colab/project-examples-v6/manifest.json",
+          "forge/colab/project-v6-result.txt",
+          "forge/colab/project-v6-run.py",
+          "forge/colab/project-v6-verification.txt",
+          "forge/colab/project-v6-verify.py",
+          "forge/colab/python-go-probe.txt",
+          "forge/colab/review_drafting_v5.py",
+          "forge/colab/review_pilot_eval.py",
+          "forge/colab/review_project_v6.py",
+          "forge/colab/run_all.sh",
+          "forge/colab/run_all_v3.sh",
+          "forge/colab/speedtest.sh",
+          "forge/colab/swyp-forge-eval-20260928/tools-eval-base.txt",
+          "forge/colab/swyp-forge-eval-20260928/tools-eval-sf1-step105.txt",
+          "forge/colab/swyp-forge-examples-v1/manifest.json",
+          "forge/colab/tokenize_local.sh",
+          "forge/colab/train_a.sh",
+          "forge/colab/v8_cells.r3.py",
+          "forge/colab/v8_train.r4.py",
+          "forge/concat_streams.py",
+          "forge/diloco.py",
+          "forge/distill_cot.py",
+          "forge/dump_logits.py",
+          "forge/eval/arena_en.py",
+          "forge/eval/arena_ilaria_adapter.py",
+          "forge/eval/fetch_heldout_wiki.py",
+          "forge/eval/heldout_wiki_2025.manifest.json",
+          "forge/eval/heldout_wiki_2025.txt",
+          "forge/fixtures/bitnet_linear_tiny.json",
+          "forge/fixtures/bitnet_tiny.json",
+          "forge/fixtures/resize_bilinear_fixture.json",
+          "forge/fixtures/ternary_pack_fixture.json",
+          "forge/fixtures/tiny_gpt2.json",
+          "forge/fixtures/tiny_modern.json",
+          "forge/hf_tokenizer.py",
+          "forge/hfmix/build_mix.py",
+          "forge/hfmix/filter_length.py",
+          "forge/hfmix/fixtures/CohereLabs_aya_dataset.json",
+          "forge/hfmix/fixtures/NousResearch_hermes-function-calling-v1.json",
+          "forge/hfmix/fixtures/OpenAssistant_oasst2.json",
+          "forge/hfmix/fixtures/glaiveai_glaive-function-calling-v2.json",
+          "forge/hfmix/fixtures/ise-uiuc_Magicoder-OSS-Instruct-75K.json",
+          "forge/hfmix/fixtures/meta-math_MetaMathQA.json",
+          "forge/hfmix/fixtures/openai_gsm8k.json",
+          "forge/hfmix/test_build_mix.py",
+          "forge/hfmix/test_filter_length.py",
+          "forge/ilaria_model.py",
+          "forge/import_bitnet.py",
+          "forge/llama3_tokenizer_reference.py",
+          "forge/make_colab_notebook.py",
+          "forge/make_fixture.py",
+          "forge/multimodal/audio_adapter.py",
+          "forge/multimodal/data.py",
+          "forge/multimodal/data_audio.py",
+          "forge/multimodal/data_instruct.py",
+          "forge/multimodal/dump_audio_reference.py",
+          "forge/multimodal/dump_vision_reference.py",
+          "forge/multimodal/export_adapter.py",
+          "forge/multimodal/export_audio_adapter.py",
+          "forge/multimodal/export_stage2.py",
+          "forge/multimodal/export_tower.py",
+          "forge/multimodal/export_whisper_tower.py",
+          "forge/multimodal/lora_bitlinear.py",
+          "forge/multimodal/mm_model.py",
+          "forge/multimodal/tests/test_audio_adapter.py",
+          "forge/multimodal/tests/test_lora_bitlinear.py",
+          "forge/multimodal/tests/test_train_stage2.py",
+          "forge/multimodal/train_stage1.py",
+          "forge/multimodal/train_stage1_audio.py",
+          "forge/multimodal/train_stage2.py",
+          "forge/multimodal/vision_adapter.py",
+          "forge/nxtf.py",
+          "forge/nxtf3.py",
+          "forge/ppl.py",
+          "forge/test_audit_regressions.py",
+          "forge/test_colab_pilot.py",
+          "forge/test_concat_streams.py",
+          "forge/test_diloco.py",
+          "forge/test_distributed_tools.py",
+          "forge/test_hf_tokenizer.py",
+          "forge/test_remediation.py",
+          "forge/test_train_tools.py",
+          "forge/train_ilaria.py",
+          "forge/train_tools.py",
+          "scratch_video/slides.html",
+          "scratch_video/slides.txt",
+          "scripts/analyze-gen-length/main.go",
+          "scripts/benchmark-supervisor.ps1",
+          "scripts/benchmark-supervisor.py",
+          "scripts/benchmark-supervisor.sh",
+          "scripts/build-cuda-cmd.bat",
+          "scripts/build_video.js",
+          "scripts/check-eos-rate/main.go",
+          "scripts/compare-dual/main.go",
+          "scripts/corpus-length-dist/main.go",
+          "scripts/diff-evals/main.go",
+          "scripts/download_hf_corpus.py",
+          "scripts/eval-C-vs-D.ps1",
+          "scripts/export-evalsuite-jsonl/main.go",
+          "scripts/generate_pitch_audio.js",
+          "scripts/inspect-tokenizer/main.go",
+          "scripts/mockteacher/main.go",
+          "scripts/native-driver-image/c_probe.c",
+          "scripts/native-driver-image/go_probe/main.go",
+          "scripts/plot_training.py",
+          "scripts/populate-hippocampus/main.go",
+          "scripts/run-D.ps1",
+          "scripts/verify-contracts.ps1",
+          "scripts/verify-effects.ps1",
+          "scripts/verify-effects.py",
+          "scripts/verify-native-cleanup.py",
+          "scripts/verify-native-driver-image.py",
+          "scripts/verify-nativegraph-wire.py",
+          "scripts/verify-supervisor-v3.ps1",
+          "scripts/verify-supervisor-v3.py",
+          "scripts/verify-supervisor-v3.sh",
+          "scripts/verify-supervisor.ps1",
+          "scripts/verify-supervisor.py",
+          "scripts/verify-supervisor.sh",
+          "scripts/verify-workspace.ps1",
+          "scripts/watch-training.ps1",
+          "scripts/with-delegated-cgroup.sh",
+          "train_full.bat"
+        ]
+      },
+      "containment": {
+        "ancestor_of": [],
+        "descendant_of": [],
+        "commits_subset_of": [],
+        "patch_equivalent_in": []
+      },
+      "assessment": {
+        "feature_summary": "WIP archive of repo-separation-swyp2 external worktree (commits e3d1288e, da658c8f).",
+        "quality": "External worktree backup.",
+        "superseded": true,
+        "superseded_by": "Current unified repository layout",
+        "evidence": "Explicitly marked 'WIP archive: ... Historical/nonintegrated Nexus source checkpoint; not ready-for-Main integration.'",
+        "risk": "Severe conflict (545 conflicting files).",
+        "recommendation": "DROP-CANDIDATE",
+        "order": null,
+        "batch": null,
+        "suggested_method": "Drop (or keep as historical archive branch).",
+        "tests_to_run": "None"
+      }
+    },
+    "agent/ceo-save-swos-compute-fabric-m1": {
+      "name": "agent/ceo-save-swos-compute-fabric-m1",
+      "tip_sha": "b86d969f39cdb7086dade0931e2d8de69ea4909d",
+      "tip_date": "2026-10-02T23:38:27+03:00",
+      "unique_commit_count": 1,
+      "commits": [
+        {
+          "full_sha": "b86d969f39cdb7086dade0931e2d8de69ea4909d",
+          "sha": "b86d969f",
+          "date": "2026-10-02T23:38:27+03:00",
+          "author": "office233",
+          "subject": "WIP archive: swos-compute-fabric-m1 safe working source version"
+        }
+      ],
+      "merge_base": "f0b244a1fc3e4325a6f3f2bdd3235d52ac4bb319",
+      "diff_stat_summary": " 11 files changed, 2436 insertions(+)",
+      "changed_files_count": 11,
+      "relocated_files_count": 1,
+      "products": [
+        "ramasite/docs",
+        "swypik-os"
+      ],
+      "cherry_status": {
+        "plus_count": 1,
+        "minus_count": 0
+      },
+      "merge_tree_head": {
+        "exit_code": 0,
+        "has_conflicts": false,
+        "conflict_count": 0,
+        "conflict_files": []
+      },
+      "containment": {
+        "ancestor_of": [],
+        "descendant_of": [],
+        "commits_subset_of": [],
+        "patch_equivalent_in": []
+      },
+      "assessment": {
+        "feature_summary": "WIP archive of swos-compute-fabric-m1 external worktree (commit b86d969f).",
+        "quality": "Worktree backup.",
+        "superseded": false,
+        "superseded_by": "DECISION NEEDED (contains swypik-os/core/computefabric)",
+        "evidence": "Marked 'WIP archive: ... not ready-for-Main integration'. However, swypik-os/core/computefabric/ is not present in HEAD. Needs architectural review if feature is desired.",
+        "risk": "Medium (adds new unreviewed package).",
+        "recommendation": "DROP-CANDIDATE",
+        "order": null,
+        "batch": null,
+        "suggested_method": "Drop or hold for architectural review (DECISION NEEDED).",
+        "tests_to_run": "None"
+      }
+    },
+    "agent/ceo-save-swos-control-kernel-m1": {
+      "name": "agent/ceo-save-swos-control-kernel-m1",
+      "tip_sha": "af40e72e38cfe847be99a8940d99c2990f5cf9a6",
+      "tip_date": "2026-10-02T23:38:28+03:00",
+      "unique_commit_count": 1,
+      "commits": [
+        {
+          "full_sha": "af40e72e38cfe847be99a8940d99c2990f5cf9a6",
+          "sha": "af40e72e",
+          "date": "2026-10-02T23:38:28+03:00",
+          "author": "office233",
+          "subject": "WIP archive: swos-control-kernel-m1 safe working source version"
+        }
+      ],
+      "merge_base": "cc688ddc90df6afc2d2ba42ed42f8f215727c550",
+      "diff_stat_summary": " 12 files changed, 3714 insertions(+)",
+      "changed_files_count": 12,
+      "relocated_files_count": 1,
+      "products": [
+        "ramasite/docs",
+        "swypik-os"
+      ],
+      "cherry_status": {
+        "plus_count": 1,
+        "minus_count": 0
+      },
+      "merge_tree_head": {
+        "exit_code": 1,
+        "has_conflicts": true,
+        "conflict_count": 5,
+        "conflict_files": [
+          "Merge"
+        ]
+      },
+      "containment": {
+        "ancestor_of": [],
+        "descendant_of": [],
+        "commits_subset_of": [],
+        "patch_equivalent_in": []
+      },
+      "assessment": {
+        "feature_summary": "WIP archive of swos-control-kernel-m1 external worktree (commit af40e72e).",
+        "quality": "Worktree backup.",
+        "superseded": true,
+        "superseded_by": "Current swypik-os kernel in integration branch",
+        "evidence": "Marked 'WIP archive: ... not ready-for-Main integration'. Kernel work superseded by integration/nexus-git-order-20261003.",
+        "risk": "Conflict with current kernel.",
+        "recommendation": "DROP-CANDIDATE",
+        "order": null,
+        "batch": null,
+        "suggested_method": "Drop (archival worktree snapshot).",
+        "tests_to_run": "None"
+      }
+    },
+    "agent/ceo-save-swos-device-synthesis-m1": {
+      "name": "agent/ceo-save-swos-device-synthesis-m1",
+      "tip_sha": "c587c93b1e99bed91e9dd0afc7c8b650325c27f4",
+      "tip_date": "2026-10-02T23:38:30+03:00",
+      "unique_commit_count": 1,
+      "commits": [
+        {
+          "full_sha": "c587c93b1e99bed91e9dd0afc7c8b650325c27f4",
+          "sha": "c587c93b",
+          "date": "2026-10-02T23:38:30+03:00",
+          "author": "office233",
+          "subject": "WIP archive: swos-device-synthesis-m1 safe working source version"
+        }
+      ],
+      "merge_base": "f0b244a1fc3e4325a6f3f2bdd3235d52ac4bb319",
+      "diff_stat_summary": " 8 files changed, 2363 insertions(+)",
+      "changed_files_count": 8,
+      "relocated_files_count": 2,
+      "products": [
+        "ramasite/docs",
+        "swypik-os"
+      ],
+      "cherry_status": {
+        "plus_count": 1,
+        "minus_count": 0
+      },
+      "merge_tree_head": {
+        "exit_code": 1,
+        "has_conflicts": true,
+        "conflict_count": 3,
+        "conflict_files": [
+          "Merge"
+        ]
+      },
+      "containment": {
+        "ancestor_of": [],
+        "descendant_of": [],
+        "commits_subset_of": [],
+        "patch_equivalent_in": []
+      },
+      "assessment": {
+        "feature_summary": "WIP archive of swos-device-synthesis-m1 external worktree (commit c587c93b).",
+        "quality": "Worktree backup.",
+        "superseded": true,
+        "superseded_by": "Current swypik-os device synthesis in integration branch",
+        "evidence": "Marked 'WIP archive: ... not ready-for-Main integration'.",
+        "risk": "Conflict with current kernel.",
+        "recommendation": "DROP-CANDIDATE",
+        "order": null,
+        "batch": null,
+        "suggested_method": "Drop (archival worktree snapshot).",
+        "tests_to_run": "None"
+      }
+    },
+    "agent/ceo-save-swos-ilaria-cognitive-m1": {
+      "name": "agent/ceo-save-swos-ilaria-cognitive-m1",
+      "tip_sha": "83672e4e48f2fbeb72cf64e58fe4ba2c8c8fc763",
+      "tip_date": "2026-10-02T23:38:31+03:00",
+      "unique_commit_count": 1,
+      "commits": [
+        {
+          "full_sha": "83672e4e48f2fbeb72cf64e58fe4ba2c8c8fc763",
+          "sha": "83672e4e",
+          "date": "2026-10-02T23:38:31+03:00",
+          "author": "office233",
+          "subject": "WIP archive: swos-ilaria-cognitive-m1 safe working source version"
+        }
+      ],
+      "merge_base": "a5a8175a5cd1ff9bb7f43d90ff9800856ea4f1fa",
+      "diff_stat_summary": " 4 files changed, 1270 insertions(+)",
+      "changed_files_count": 4,
+      "relocated_files_count": 1,
+      "products": [
+        "ramasite/docs",
+        "workspace"
+      ],
+      "cherry_status": {
+        "plus_count": 1,
+        "minus_count": 0
+      },
+      "merge_tree_head": {
+        "exit_code": 0,
+        "has_conflicts": false,
+        "conflict_count": 0,
+        "conflict_files": []
+      },
+      "containment": {
+        "ancestor_of": [],
+        "descendant_of": [],
+        "commits_subset_of": [],
+        "patch_equivalent_in": []
+      },
+      "assessment": {
+        "feature_summary": "WIP archive of swos-ilaria-cognitive-m1 external worktree (commit 83672e4e).",
+        "quality": "Worktree backup.",
+        "superseded": true,
+        "superseded_by": "Current ilaria/ and swypik-os bridge in integration branch",
+        "evidence": "Marked 'WIP archive: ... not ready-for-Main integration'.",
+        "risk": "Low.",
+        "recommendation": "DROP-CANDIDATE",
+        "order": null,
+        "batch": null,
+        "suggested_method": "Drop (archival worktree snapshot).",
+        "tests_to_run": "None"
+      }
+    },
+    "agent/ceo-save-swos-install-adapt-m1": {
+      "name": "agent/ceo-save-swos-install-adapt-m1",
+      "tip_sha": "d5e7c6914cfecf3bfa6ae3faf6eb55531a83a95e",
+      "tip_date": "2026-10-02T23:38:32+03:00",
+      "unique_commit_count": 1,
+      "commits": [
+        {
+          "full_sha": "d5e7c6914cfecf3bfa6ae3faf6eb55531a83a95e",
+          "sha": "d5e7c691",
+          "date": "2026-10-02T23:38:32+03:00",
+          "author": "office233",
+          "subject": "WIP archive: swos-install-adapt-m1 safe working source version"
+        }
+      ],
+      "merge_base": "a5a8175a5cd1ff9bb7f43d90ff9800856ea4f1fa",
+      "diff_stat_summary": " 5 files changed, 1785 insertions(+)",
+      "changed_files_count": 5,
+      "relocated_files_count": 0,
+      "products": [
+        "swypik-os"
+      ],
+      "cherry_status": {
+        "plus_count": 1,
+        "minus_count": 0
+      },
+      "merge_tree_head": {
+        "exit_code": 0,
+        "has_conflicts": false,
+        "conflict_count": 0,
+        "conflict_files": []
+      },
+      "containment": {
+        "ancestor_of": [],
+        "descendant_of": [],
+        "commits_subset_of": [],
+        "patch_equivalent_in": []
+      },
+      "assessment": {
+        "feature_summary": "WIP archive of swos-install-adapt-m1 external worktree (commit d5e7c691).",
+        "quality": "Worktree backup.",
+        "superseded": true,
+        "superseded_by": "Current installer in swypik-os",
+        "evidence": "Marked 'WIP archive: ... not ready-for-Main integration'.",
+        "risk": "Low.",
+        "recommendation": "DROP-CANDIDATE",
+        "order": null,
+        "batch": null,
+        "suggested_method": "Drop (archival worktree snapshot).",
+        "tests_to_run": "None"
+      }
+    },
+    "agent/ceo-save-swos-native-kernel-seed-m1": {
+      "name": "agent/ceo-save-swos-native-kernel-seed-m1",
+      "tip_sha": "69a317882a02a66c99f06c35df01ad2241d3eb95",
+      "tip_date": "2026-10-02T23:38:34+03:00",
+      "unique_commit_count": 1,
+      "commits": [
+        {
+          "full_sha": "69a317882a02a66c99f06c35df01ad2241d3eb95",
+          "sha": "69a31788",
+          "date": "2026-10-02T23:38:34+03:00",
+          "author": "office233",
+          "subject": "WIP archive: swos-native-kernel-seed-m1 safe working source version"
+        }
+      ],
+      "merge_base": "f0b244a1fc3e4325a6f3f2bdd3235d52ac4bb319",
+      "diff_stat_summary": " 25 files changed, 2210 insertions(+)",
+      "changed_files_count": 25,
+      "relocated_files_count": 0,
+      "products": [
+        "workspace"
+      ],
+      "cherry_status": {
+        "plus_count": 1,
+        "minus_count": 0
+      },
+      "merge_tree_head": {
+        "exit_code": 0,
+        "has_conflicts": false,
+        "conflict_count": 0,
+        "conflict_files": []
+      },
+      "containment": {
+        "ancestor_of": [],
+        "descendant_of": [],
+        "commits_subset_of": [],
+        "patch_equivalent_in": []
+      },
+      "assessment": {
+        "feature_summary": "WIP archive of swos-native-kernel-seed-m1 external worktree (commit 69a31788).",
+        "quality": "Worktree backup.",
+        "superseded": true,
+        "superseded_by": "swypik-os/kernel in integration branch",
+        "evidence": "Marked 'WIP archive: ... not ready-for-Main integration'. Succeeded by mature native kernel in integration/nexus-git-order-20261003.",
+        "risk": "Conflict with native kernel.",
+        "recommendation": "DROP-CANDIDATE",
+        "order": null,
+        "batch": null,
+        "suggested_method": "Drop (archival worktree snapshot).",
+        "tests_to_run": "None"
+      }
+    },
+    "agent/ceo-save-swos-os-platform-m1": {
+      "name": "agent/ceo-save-swos-os-platform-m1",
+      "tip_sha": "3559ad7e6bbb34b2b1a19ddf2f972b5815e347ab",
+      "tip_date": "2026-10-02T23:38:37+03:00",
+      "unique_commit_count": 1,
+      "commits": [
+        {
+          "full_sha": "3559ad7e6bbb34b2b1a19ddf2f972b5815e347ab",
+          "sha": "3559ad7e",
+          "date": "2026-10-02T23:38:37+03:00",
+          "author": "office233",
+          "subject": "WIP archive: swos-os-platform-m1 safe working source version"
+        }
+      ],
+      "merge_base": "f0b244a1fc3e4325a6f3f2bdd3235d52ac4bb319",
+      "diff_stat_summary": " 27 files changed, 1092 insertions(+), 99 deletions(-)",
+      "changed_files_count": 27,
+      "relocated_files_count": 3,
+      "products": [
+        "ramasite/docs",
+        "swypik-os"
+      ],
+      "cherry_status": {
+        "plus_count": 1,
+        "minus_count": 0
+      },
+      "merge_tree_head": {
+        "exit_code": 1,
+        "has_conflicts": true,
+        "conflict_count": 1,
+        "conflict_files": [
+          "Merge"
+        ]
+      },
+      "containment": {
+        "ancestor_of": [],
+        "descendant_of": [],
+        "commits_subset_of": [],
+        "patch_equivalent_in": []
+      },
+      "assessment": {
+        "feature_summary": "WIP archive of swos-os-platform-m1 external worktree (commit 3559ad7e).",
+        "quality": "Worktree backup.",
+        "superseded": true,
+        "superseded_by": "swypik-os platform in integration branch",
+        "evidence": "Marked 'WIP archive: ... not ready-for-Main integration'.",
+        "risk": "Conflict.",
+        "recommendation": "DROP-CANDIDATE",
+        "order": null,
+        "batch": null,
+        "suggested_method": "Drop (archival worktree snapshot).",
+        "tests_to_run": "None"
+      }
+    },
+    "agent/ceo-save-swos-security-p0": {
+      "name": "agent/ceo-save-swos-security-p0",
+      "tip_sha": "65c3242cd8bd8bc12501a3a03cc88d8f0b4062a2",
+      "tip_date": "2026-10-02T23:38:39+03:00",
+      "unique_commit_count": 1,
+      "commits": [
+        {
+          "full_sha": "65c3242cd8bd8bc12501a3a03cc88d8f0b4062a2",
+          "sha": "65c3242c",
+          "date": "2026-10-02T23:38:39+03:00",
+          "author": "office233",
+          "subject": "WIP archive: swos-security-p0 safe working source version"
+        }
+      ],
+      "merge_base": "cc688ddc90df6afc2d2ba42ed42f8f215727c550",
+      "diff_stat_summary": " 5 files changed, 187 insertions(+), 46 deletions(-)",
+      "changed_files_count": 5,
+      "relocated_files_count": 1,
+      "products": [
+        "ramasite/docs",
+        "swypik-os"
+      ],
+      "cherry_status": {
+        "plus_count": 1,
+        "minus_count": 0
+      },
+      "merge_tree_head": {
+        "exit_code": 1,
+        "has_conflicts": true,
+        "conflict_count": 1,
+        "conflict_files": [
+          "Merge"
+        ]
+      },
+      "containment": {
+        "ancestor_of": [],
+        "descendant_of": [],
+        "commits_subset_of": [],
+        "patch_equivalent_in": []
+      },
+      "assessment": {
+        "feature_summary": "WIP archive of swos-security-p0 external worktree (commit 65c3242c).",
+        "quality": "Worktree backup.",
+        "superseded": true,
+        "superseded_by": "swypik-os security guard in integration branch",
+        "evidence": "Marked 'WIP archive: ... not ready-for-Main integration'.",
+        "risk": "Conflict.",
+        "recommendation": "DROP-CANDIDATE",
+        "order": null,
+        "batch": null,
+        "suggested_method": "Drop (archival worktree snapshot).",
+        "tests_to_run": "None"
+      }
+    },
+    "agent/ceo-save-swos-swyp-effects-m1": {
+      "name": "agent/ceo-save-swos-swyp-effects-m1",
+      "tip_sha": "493077c16eebed3a05f7b3c573233ba015dc4963",
+      "tip_date": "2026-10-02T23:38:41+03:00",
+      "unique_commit_count": 1,
+      "commits": [
+        {
+          "full_sha": "493077c16eebed3a05f7b3c573233ba015dc4963",
+          "sha": "493077c1",
+          "date": "2026-10-02T23:38:41+03:00",
+          "author": "office233",
+          "subject": "WIP archive: swos-swyp-effects-m1 safe working source version"
+        }
+      ],
+      "merge_base": "cc688ddc90df6afc2d2ba42ed42f8f215727c550",
+      "diff_stat_summary": " 9 files changed, 764 insertions(+), 50 deletions(-)",
+      "changed_files_count": 9,
+      "relocated_files_count": 3,
+      "products": [
+        "ramasite/docs",
+        "swyp"
+      ],
+      "cherry_status": {
+        "plus_count": 1,
+        "minus_count": 0
+      },
+      "merge_tree_head": {
+        "exit_code": 1,
+        "has_conflicts": true,
+        "conflict_count": 4,
+        "conflict_files": [
+          "Merge"
+        ]
+      },
+      "containment": {
+        "ancestor_of": [],
+        "descendant_of": [],
+        "commits_subset_of": [],
+        "patch_equivalent_in": []
+      },
+      "assessment": {
+        "feature_summary": "WIP archive of swos-swyp-effects-m1 external worktree (commit 493077c1).",
+        "quality": "Worktree backup.",
+        "superseded": true,
+        "superseded_by": "swyp effects in integration branch",
+        "evidence": "Marked 'WIP archive: ... not ready-for-Main integration'.",
+        "risk": "Conflict.",
+        "recommendation": "DROP-CANDIDATE",
+        "order": null,
+        "batch": null,
+        "suggested_method": "Drop (archival worktree snapshot).",
+        "tests_to_run": "None"
+      }
+    },
+    "agent/ceo-save-swos-universal-adaptive-m2": {
+      "name": "agent/ceo-save-swos-universal-adaptive-m2",
+      "tip_sha": "6cfa176ba4066de3ba2d678f3a7feda4f43911d8",
+      "tip_date": "2026-10-02T23:39:03+03:00",
+      "unique_commit_count": 1,
+      "commits": [
+        {
+          "full_sha": "6cfa176ba4066de3ba2d678f3a7feda4f43911d8",
+          "sha": "6cfa176b",
+          "date": "2026-10-02T23:39:03+03:00",
+          "author": "office233",
+          "subject": "WIP archive: swos-universal-adaptive-m2 safe working source version"
+        }
+      ],
+      "merge_base": "a5a8175a5cd1ff9bb7f43d90ff9800856ea4f1fa",
+      "diff_stat_summary": " 253 files changed, 63097 insertions(+), 3075 deletions(-)",
+      "changed_files_count": 253,
+      "relocated_files_count": 10,
+      "products": [
+        "ramasite/benchmarks",
+        "ramasite/docs",
+        "swypik-os",
+        "workspace"
+      ],
+      "cherry_status": {
+        "plus_count": 1,
+        "minus_count": 0
+      },
+      "merge_tree_head": {
+        "exit_code": 1,
+        "has_conflicts": true,
+        "conflict_count": 25,
+        "conflict_files": [
+          "Merge",
+          "swypik-kernel/DRIVER_DOMAIN.md",
+          "swypik-kernel/KERNEL_SEED.md",
+          "swypik-kernel/build.ps1",
+          "swypik-kernel/include/swypik/uefi/uefi.h",
+          "swypik-kernel/src/boot/uefi_x86_64.c",
+          "swypik-kernel/src/core/contracts.c",
+          "swypik-kernel/src/core/ipc.c"
+        ]
+      },
+      "containment": {
+        "ancestor_of": [],
+        "descendant_of": [],
+        "commits_subset_of": [],
+        "patch_equivalent_in": []
+      },
+      "assessment": {
+        "feature_summary": "WIP archive of swos-universal-adaptive-m2 external worktree (commit 6cfa176b).",
+        "quality": "Worktree backup.",
+        "superseded": true,
+        "superseded_by": "Current universal runtime in integration branch",
+        "evidence": "Marked 'WIP archive: ... not ready-for-Main integration'. Substantial conflicts against reorg.",
+        "risk": "Conflict on 8 files.",
+        "recommendation": "DROP-CANDIDATE",
+        "order": null,
+        "batch": null,
+        "suggested_method": "Drop (archival worktree snapshot).",
+        "tests_to_run": "None"
+      }
+    },
+    "agent/ceo-save-swyp-hir-p3": {
+      "name": "agent/ceo-save-swyp-hir-p3",
+      "tip_sha": "5c95f02ff9080b4b5accd1f9845df5f5b963a522",
+      "tip_date": "2026-10-02T23:39:22+03:00",
+      "unique_commit_count": 1,
+      "commits": [
+        {
+          "full_sha": "5c95f02ff9080b4b5accd1f9845df5f5b963a522",
+          "sha": "5c95f02f",
+          "date": "2026-10-02T23:39:22+03:00",
+          "author": "office233",
+          "subject": "WIP archive: swyp-hir-p3-20260929 safe working source version"
+        }
+      ],
+      "merge_base": "06a5f39f805cf36897e05ffe306d05ed212a5a3a",
+      "diff_stat_summary": " 264 files changed, 48727 insertions(+)",
+      "changed_files_count": 264,
+      "relocated_files_count": 0,
+      "products": [
+        "ramasite/experiments"
+      ],
+      "cherry_status": {
+        "plus_count": 1,
+        "minus_count": 0
+      },
+      "merge_tree_head": {
+        "exit_code": 0,
+        "has_conflicts": false,
+        "conflict_count": 0,
+        "conflict_files": []
+      },
+      "containment": {
+        "ancestor_of": [],
+        "descendant_of": [],
+        "commits_subset_of": [],
+        "patch_equivalent_in": []
+      },
+      "assessment": {
+        "feature_summary": "WIP archive of swyp-hir-p3-20260929 (commit 5c95f02f). Dumps 264 files into ramasite/experiments/archive/ceo/swyp-hir-p3-20260929/.",
+        "quality": "Passive archive dump.",
+        "superseded": true,
+        "superseded_by": "Current swyp CoreIR/HIR in integration branch",
+        "evidence": "Passive archive dump; modern HIR implementation is in swyp/.",
+        "risk": "Repository bloat (48k lines).",
+        "recommendation": "DROP-CANDIDATE",
+        "order": null,
+        "batch": null,
+        "suggested_method": "Drop (passive archive dump).",
+        "tests_to_run": "None"
+      }
+    },
+    "agent/ceo-save-swypik-os-swyp-broker": {
+      "name": "agent/ceo-save-swypik-os-swyp-broker",
+      "tip_sha": "ca73ccc470891edb7c23079b1543884e5135652d",
+      "tip_date": "2026-10-02T23:40:04+03:00",
+      "unique_commit_count": 1,
+      "commits": [
+        {
+          "full_sha": "ca73ccc470891edb7c23079b1543884e5135652d",
+          "sha": "ca73ccc4",
+          "date": "2026-10-02T23:40:04+03:00",
+          "author": "office233",
+          "subject": "WIP archive: swypik-os-swyp-broker-20260929 safe working source version"
+        }
+      ],
+      "merge_base": "06a5f39f805cf36897e05ffe306d05ed212a5a3a",
+      "diff_stat_summary": " 264 files changed, 38043 insertions(+)",
+      "changed_files_count": 264,
+      "relocated_files_count": 0,
+      "products": [
+        "ramasite/experiments"
+      ],
+      "cherry_status": {
+        "plus_count": 1,
+        "minus_count": 0
+      },
+      "merge_tree_head": {
+        "exit_code": 0,
+        "has_conflicts": false,
+        "conflict_count": 0,
+        "conflict_files": []
+      },
+      "containment": {
+        "ancestor_of": [],
+        "descendant_of": [],
+        "commits_subset_of": [],
+        "patch_equivalent_in": []
+      },
+      "assessment": {
+        "feature_summary": "WIP archive of swypik-os-swyp-broker-20260929 (commit ca73ccc4). Dumps 264 files into ramasite/experiments/archive/ceo/swypik-os-swyp-broker-20260929/.",
+        "quality": "Passive archive dump.",
+        "superseded": true,
+        "superseded_by": "agent/swyp-broker-host-v1 (clean implementation)",
+        "evidence": "Clean implementation exists in agent/swyp-broker-host-v1 directly under swypik-os/core/swypbroker/.",
+        "risk": "Repository bloat (38k lines).",
+        "recommendation": "DROP-CANDIDATE",
+        "order": null,
+        "batch": null,
+        "suggested_method": "Drop in favor of agent/swyp-broker-host-v1.",
+        "tests_to_run": "None"
+      }
+    },
+    "agent/nexus-continue-transport-20261003": {
+      "name": "agent/nexus-continue-transport-20261003",
+      "tip_sha": "d4515a5c9cd02b62b92312afb07317e4c805c01f",
+      "tip_date": "2026-10-02T23:42:04+03:00",
+      "unique_commit_count": 11,
+      "commits": [
+        {
+          "full_sha": "d4515a5c9cd02b62b92312afb07317e4c805c01f",
+          "sha": "d4515a5c",
+          "date": "2026-10-02T23:42:04+03:00",
+          "author": "office233",
+          "subject": "feat(planapproval): add bounded verified-plan host approval coordinator"
+        },
+        {
+          "full_sha": "02533f379d7a78f1e963e34dd034100b4ad130e8",
+          "sha": "02533f37",
+          "date": "2026-10-02T23:42:02+03:00",
+          "author": "office233",
+          "subject": "feat(kernel): confine admitted init faults and resume healthy user stacks"
+        },
+        {
+          "full_sha": "0a181e983f494b67622c600505cd9a78b0525a96",
+          "sha": "0a181e98",
+          "date": "2026-10-02T23:42:02+03:00",
+          "author": "office233",
+          "subject": "Reject duplicate exclusive HIR call loans"
+        },
+        {
+          "full_sha": "b17b36c7df9b4c9f97320378d427c0ace5a5be8c",
+          "sha": "b17b36c7",
+          "date": "2026-10-02T23:42:01+03:00",
+          "author": "office233",
+          "subject": "fix(coreir): prune SSA phis by live incoming slots"
+        },
+        {
+          "full_sha": "aceef75cc03ba86b1853f684411ec8f0dce44aaf",
+          "sha": "aceef75c",
+          "date": "2026-10-02T23:42:00+03:00",
+          "author": "office233",
+          "subject": "feat(coreir): snapshot bounded u64 storage into immutable bytes"
+        },
+        {
+          "full_sha": "ae9c0cc350004c9c3423c4960015bde0ecba8db8",
+          "sha": "ae9c0cc3",
+          "date": "2026-10-02T23:41:59+03:00",
+          "author": "office233",
+          "subject": "Support canonical bool leaves in Swyp raw64 storage"
+        },
+        {
+          "full_sha": "99195e54e80cc6506ea295ee6e20cb66b2c07228",
+          "sha": "99195e54",
+          "date": "2026-10-02T22:45:19+03:00",
+          "author": "office233",
+          "subject": "fix(bench): wait for actual desktop font readiness before resource sampling"
+        },
+        {
+          "full_sha": "017a2a50ba7cb7340c40b01b746b021be5df57ac",
+          "sha": "017a2a50",
+          "date": "2026-10-02T22:39:16+03:00",
+          "author": "office233",
+          "subject": "fix(ci): keep QEMU runtime parity configuration compatible with checkout preflight"
+        },
+        {
+          "full_sha": "501e38e5a25b170224a4ec8c86f6cba0607d828f",
+          "sha": "501e38e5",
+          "date": "2026-10-02T22:30:54+03:00",
+          "author": "office233",
+          "subject": "feat(kernel): execute explicit init task in isolated ring 3 with bounded preemption"
+        },
+        {
+          "full_sha": "0ddda280b4edabb225faa5a16023f793144886f5",
+          "sha": "0ddda280",
+          "date": "2026-10-02T20:46:41+03:00",
+          "author": "office233",
+          "subject": "fix(kernel): native EFI kernel now boots under OVMF/QEMU to the runtime handoff"
+        },
+        {
+          "full_sha": "cfb5cdc9c64dd20514d285fce0980facb5f284b2",
+          "sha": "cfb5cdc9",
+          "date": "2026-10-02T20:31:54+03:00",
+          "author": "office233",
+          "subject": "wip: safety snapshot B of E:\\nexus working tree 2026-10-02 evening"
+        }
+      ],
+      "merge_base": "06a5f39f805cf36897e05ffe306d05ed212a5a3a",
+      "diff_stat_summary": " 759 files changed, 128080 insertions(+), 4522 deletions(-)",
+      "changed_files_count": 759,
+      "relocated_files_count": 168,
+      "products": [
+        "ilaria",
+        "ramasite/agent-md",
+        "ramasite/benchmarks",
+        "ramasite/docs",
+        "ramasite/scripts",
+        "swyp",
+        "swypik-os",
+        "workspace"
+      ],
+      "cherry_status": {
+        "plus_count": 11,
+        "minus_count": 0
+      },
+      "merge_tree_head": {
+        "exit_code": 0,
+        "has_conflicts": false,
+        "conflict_count": 0,
+        "conflict_files": []
+      },
+      "containment": {
+        "ancestor_of": [
+          "integration/nexus-git-order-20261003",
+          "office233-clean-product-integration"
+        ],
+        "descendant_of": [
+          "copilot/final-product-20261002",
+          "copilot/kernel-first-task-20261002",
+          "office233-bounded-process-execution",
+          "office233-clean-product-integration",
+          "office233-ilaria-training-and-p2p",
+          "office233-supervisor-transport-reliability",
+          "wip/snapshot-2026-10-02b"
+        ],
+        "commits_subset_of": [
+          "integration/nexus-git-order-20261003",
+          "office233-clean-product-integration"
+        ],
+        "patch_equivalent_in": []
+      },
+      "assessment": {
+        "feature_summary": "11-commit precursor to integration/nexus-git-order-20261003 (identical commit tip to office233-clean-product-integration).",
+        "quality": "High.",
+        "superseded": true,
+        "superseded_by": "integration/nexus-git-order-20261003",
+        "evidence": "Tip commit d4515a5c is a direct ancestor of integration/nexus-git-order-20261003 (which adds 3 hygiene commits 3edde601, 6360ab2f, 7dfbcf2a).",
+        "risk": "None if subsumed.",
+        "recommendation": "SUPERSEDED",
+        "order": null,
+        "batch": null,
+        "suggested_method": "None (subsumed by Order 1).",
+        "tests_to_run": "None"
+      }
+    },
+    "agent/swyp-broker-host-v1": {
+      "name": "agent/swyp-broker-host-v1",
+      "tip_sha": "22dd9504c8fc098116c4b4755c6ac9dfdb41cc74",
+      "tip_date": "2026-09-29T21:09:57+03:00",
+      "unique_commit_count": 3,
+      "commits": [
+        {
+          "full_sha": "22dd9504c8fc098116c4b4755c6ac9dfdb41cc74",
+          "sha": "22dd9504",
+          "date": "2026-09-29T21:09:57+03:00",
+          "author": "office233",
+          "subject": "feat(swos): bind Swyp broker to kernel authority"
+        },
+        {
+          "full_sha": "60810f3956a41cd6f889164874010f8d2816004b",
+          "sha": "60810f39",
+          "date": "2026-09-29T19:55:57+03:00",
+          "author": "office233",
+          "subject": "feat(swos): add scoped broker policy adapters"
+        },
+        {
+          "full_sha": "5402553a755afd2f52ad132f59b790a3ed862e08",
+          "sha": "5402553a",
+          "date": "2026-09-29T19:54:01+03:00",
+          "author": "office233",
+          "subject": "feat(swos): add Swyp broker host protocol"
+        }
+      ],
+      "merge_base": "a5a8175a5cd1ff9bb7f43d90ff9800856ea4f1fa",
+      "diff_stat_summary": " 17 files changed, 2515 insertions(+)",
+      "changed_files_count": 17,
+      "relocated_files_count": 1,
+      "products": [
+        "ramasite/docs",
+        "swypik-os"
+      ],
+      "cherry_status": {
+        "plus_count": 3,
+        "minus_count": 0
+      },
+      "merge_tree_head": {
+        "exit_code": 0,
+        "has_conflicts": false,
+        "conflict_count": 0,
+        "conflict_files": []
+      },
+      "containment": {
+        "ancestor_of": [],
+        "descendant_of": [],
+        "commits_subset_of": [],
+        "patch_equivalent_in": []
+      },
+      "assessment": {
+        "feature_summary": "Adds Swyp broker host protocol, scoped policy adapters, and kernel authority binding in swypik-os/core/swypbroker (commits 5402553a, 60810f39, 22dd9504). 17 files, 2,515 insertions.",
+        "quality": "High. Complete Go implementation with unit tests (broker_test.go, protocol_test.go, policy_test.go, kernel_test.go, chameleon_test.go).",
+        "superseded": false,
+        "superseded_by": null,
+        "evidence": "",
+        "risk": "Low-Medium. Code merges cleanly; doc swypik-os/docs/SWYP_BROKER_PROTOCOL.md needs path remapping to ramasite/docs/swypik-os/SWYP_BROKER_PROTOCOL.md.",
+        "recommendation": "INTEGRATE",
+        "order": 4,
+        "batch": 3,
+        "suggested_method": "Cherry-pick 5402553a, 60810f39, 22dd9504 with path remapping for SWYP_BROKER_PROTOCOL.md.",
+        "tests_to_run": "go test ./swypik-os/core/swypbroker/..."
+      }
+    },
+    "agent/ternary-pretrain": {
+      "name": "agent/ternary-pretrain",
+      "tip_sha": "0c2d75c5bc4c21870e99ba89f79dae58dc17a0ff",
+      "tip_date": "2026-09-29T13:31:58+03:00",
+      "unique_commit_count": 19,
+      "commits": [
+        {
+          "full_sha": "0c2d75c5bc4c21870e99ba89f79dae58dc17a0ff",
+          "sha": "0c2d75c5",
+          "date": "2026-09-29T13:31:58+03:00",
+          "author": "office233",
+          "subject": "docs(funding): ready answers for Scaleway and OVHcloud startup programs"
+        },
+        {
+          "full_sha": "090e6a216e38f174c978a00d54004feedfac8d1c",
+          "sha": "090e6a21",
+          "date": "2026-09-29T13:20:21+03:00",
+          "author": "office233",
+          "subject": "docs(funding): Development Access 367 submitted"
+        },
+        {
+          "full_sha": "920e500446513f6ca43a53872bae3479e0f467af",
+          "sha": "920e5004",
+          "date": "2026-09-29T12:30:14+03:00",
+          "author": "office233",
+          "subject": "docs(funding): EuroHPC VAT corrections resubmitted; Benchmark 138 submitted"
+        },
+        {
+          "full_sha": "fdff15458ce28710457c8c105397b9f1b41bdf68",
+          "sha": "fdff1545",
+          "date": "2026-09-29T11:53:53+03:00",
+          "author": "office233",
+          "subject": "docs(funding): status of all applications as of 2026-09-29"
+        },
+        {
+          "full_sha": "42ab8259399a6b399de0a5cd14ba25228edeed4e",
+          "sha": "42ab8259",
+          "date": "2026-09-29T11:40:12+03:00",
+          "author": "office233",
+          "subject": "docs(funding): correct company VAT to RO52367116 (ANAF) and registered address"
+        },
+        {
+          "full_sha": "dd6b325919a4c6ee2eeba58a8fc2e328634b840b",
+          "sha": "dd6b3259",
+          "date": "2026-09-29T11:13:02+03:00",
+          "author": "office233",
+          "subject": "docs(funding): Large Scale request 64,000 A100 GPU-h on Leonardo BOOSTER"
+        },
+        {
+          "full_sha": "d0e827dbab59441bb55350e05e93b1deedc98642",
+          "sha": "d0e827db",
+          "date": "2026-09-29T10:36:09+03:00",
+          "author": "office233",
+          "subject": "docs(funding): Fast Lane request 12,000 GPU-h (form minimum is above 10,000)"
+        },
+        {
+          "full_sha": "703782f5b22bbea02e23b8d4f99da21eb5da423c",
+          "sha": "703782f5",
+          "date": "2026-09-29T10:20:08+03:00",
+          "author": "office233",
+          "subject": "docs(funding): five EuroHPC proposals centred on Swypik, SwypikOS and Ilaria"
+        },
+        {
+          "full_sha": "be6004d7dda73c1e71e8628b77a70ec46157a652",
+          "sha": "be6004d7",
+          "date": "2026-09-29T10:09:42+03:00",
+          "author": "office233",
+          "subject": "docs(funding): EuroHPC AI Factory Fast Lane proposal for Ilaria IMC"
+        },
+        {
+          "full_sha": "5e01f5a7a0c39716c9e222c165f1cb9080626593",
+          "sha": "5e01f5a7",
+          "date": "2026-09-29T09:30:02+03:00",
+          "author": "office233",
+          "subject": "feat(colab): IMC data-extension launcher notebook (CPU runtime)"
+        },
+        {
+          "full_sha": "e77606de2ea7dfb544bfef1377c8bfef2e30ce03",
+          "sha": "e77606de",
+          "date": "2026-09-29T09:29:39+03:00",
+          "author": "office233",
+          "subject": "feat(forge): extend the IMC stream with the same tokenizer and no repeated documents"
+        },
+        {
+          "full_sha": "d9b7d2ddf2144c029273fd6323ce5e928634cde7",
+          "sha": "d9b7d2dd",
+          "date": "2026-09-29T09:24:28+03:00",
+          "author": "office233",
+          "subject": "feat(forge): chunked cross-entropy and multi-GPU (torchrun/DDP) IMC training"
+        },
+        {
+          "full_sha": "86458ef470996e2f486fd08f58e3d47d2649be47",
+          "sha": "86458ef4",
+          "date": "2026-09-29T07:34:18+03:00",
+          "author": "office233",
+          "subject": "fix(colab): IMC-250M micro-batch 32 x 8 after an out-of-memory at 64 x 4"
+        },
+        {
+          "full_sha": "9b3553208c4ffe6bfe984b41a314092ae48fe36c",
+          "sha": "9b355320",
+          "date": "2026-09-29T00:27:08+03:00",
+          "author": "office233",
+          "subject": "feat(colab): Ilaria IMC 24-hour launcher notebook"
+        },
+        {
+          "full_sha": "c0afe7d43ee3579e396afe867f5f703aec09b8d3",
+          "sha": "c0afe7d4",
+          "date": "2026-09-29T00:26:34+03:00",
+          "author": "office233",
+          "subject": "feat(forge): disk-streaming imc_data for 10B-token builds and a 24-hour IMC Colab run"
+        },
+        {
+          "full_sha": "d8e5b6458e24127eb1caf82804b6e431f2d631bf",
+          "sha": "d8e5b645",
+          "date": "2026-09-29T00:21:37+03:00",
+          "author": "office233",
+          "subject": "feat(forge): English token-stream builder for from-scratch IMC training"
+        },
+        {
+          "full_sha": "2d10447d880f998adc9bc9cb1ebf96b0ba6cb4de",
+          "sha": "2d10447d",
+          "date": "2026-09-28T23:49:39+03:00",
+          "author": "office233",
+          "subject": "feat(forge): IMC (Ilaria MicroCortex) architecture and --arch imc in the trainer"
+        },
+        {
+          "full_sha": "03c6831f5c7e99366f2b9fd85c8c5b7c5e352776",
+          "sha": "03c6831f",
+          "date": "2026-09-28T23:35:16+03:00",
+          "author": "office233",
+          "subject": "feat(forge): ternary (BitNet b1.58) training mode for the from-scratch trainer"
+        },
+        {
+          "full_sha": "672dee29fbdf9d35d2cdbefe6543d97a3c0227c7",
+          "sha": "672dee29",
+          "date": "2026-09-28T22:56:37+03:00",
+          "author": "office233",
+          "subject": "docs(research): best open data for a from-scratch English Ilaria model"
+        }
+      ],
+      "merge_base": "1af93f0488ceeb2c06b2e83ed795155629f1a845",
+      "diff_stat_summary": " 18 files changed, 1683 insertions(+), 55 deletions(-)",
+      "changed_files_count": 18,
+      "relocated_files_count": 5,
+      "products": [
+        "ramasite/docs",
+        "workspace"
+      ],
+      "cherry_status": {
+        "plus_count": 19,
+        "minus_count": 0
+      },
+      "merge_tree_head": {
+        "exit_code": 1,
+        "has_conflicts": true,
+        "conflict_count": 17,
+        "conflict_files": [
+          "Merge",
+          "docs/funding/investitori-si-programe.md",
+          "docs/plans/2026-09-29-ilaria-imc-roadmap.md",
+          "forge/colab/Ilaria_IMC_24h.ipynb",
+          "forge/colab/Ilaria_IMC_DataExtend.ipynb",
+          "forge/colab/imc_24h.sh",
+          "forge/colab/imc_data_extend.sh",
+          "forge/ilaria_model.py",
+          "forge/imc_data.py",
+          "forge/imc_model.py",
+          "forge/nxtf.py",
+          "forge/test_imc_data.py",
+          "forge/test_imc_model.py",
+          "forge/test_ternary.py",
+          "forge/train_ilaria.py"
+        ]
+      },
+      "containment": {
+        "ancestor_of": [],
+        "descendant_of": [],
+        "commits_subset_of": [],
+        "patch_equivalent_in": []
+      },
+      "assessment": {
+        "feature_summary": "Early IMC and BitNet b1.58 trainer implementation from Sep 29, plus 4 funding proposals (EuroHPC, Scaleway, OVHcloud).",
+        "quality": "Experimental / early prototype; code at old forge/ path was superseded during product split.",
+        "superseded": true,
+        "superseded_by": "Product split (c9ea8802) for code; funding docs need user decision.",
+        "evidence": "Code replaced by ilaria/forge/ in c9ea8802. Docs in docs/funding/ are not yet in ramasite/docs/workspace/funding/.",
+        "risk": "Low if only funding docs are retained.",
+        "recommendation": "DROP-CANDIDATE",
+        "order": null,
+        "batch": null,
+        "suggested_method": "Drop code; if funding docs are desired, cherry-pick commits be6004d7..0c2d75c5 remapped to ramasite/docs/workspace/funding/ (DECISION NEEDED).",
+        "tests_to_run": "None"
+      }
+    },
+    "archive/swypik-os-search-agent-hardening": {
+      "name": "archive/swypik-os-search-agent-hardening",
+      "tip_sha": "33bc844735ed8076b1676d623834438aa4ea2593",
+      "tip_date": "2026-09-28T12:31:09+03:00",
+      "unique_commit_count": 1,
+      "commits": [
+        {
+          "full_sha": "33bc844735ed8076b1676d623834438aa4ea2593",
+          "sha": "33bc8447",
+          "date": "2026-09-28T12:31:09+03:00",
+          "author": "office233",
+          "subject": "wip: search and agent hardening (uncommitted work from 2026-09-28 00:18)"
+        }
+      ],
+      "merge_base": "0e3871f86198d6a82a5221287309e5e3df86e603",
+      "diff_stat_summary": " 27 files changed, 3149 insertions(+), 266 deletions(-)",
+      "changed_files_count": 27,
+      "relocated_files_count": 0,
+      "products": [
+        "workspace"
+      ],
+      "cherry_status": {
+        "plus_count": 1,
+        "minus_count": 0
+      },
+      "merge_tree_head": {
+        "exit_code": 1,
+        "has_conflicts": true,
+        "conflict_count": 17,
+        "conflict_files": [
+          "core/agent/planner.go",
+          "core/agent/runtime.go",
+          "core/agent/runtime_test.go",
+          "core/agent/tools.go",
+          "core/search/crawl.go",
+          "core/search/search.go",
+          "core/search/search_test.go",
+          "core/service/hardening_test.go",
+          "core/service/service.go",
+          "core/session/client_linux_test.go",
+          "core/session/confirmation.go",
+          "core/session/confirmation_test.go",
+          "core/session/session_linux.go",
+          "core/swarm/swarm_test.go",
+          "go.mod",
+          "internal/safepath/open_test.go",
+          "internal/safepath/path.go"
+        ]
+      },
+      "containment": {
+        "ancestor_of": [],
+        "descendant_of": [],
+        "commits_subset_of": [],
+        "patch_equivalent_in": []
+      },
+      "assessment": {
+        "feature_summary": "Uncommitted work snapshot from Sep 28 modifying pre-split core/agent and core/search paths (commit 33bc8447).",
+        "quality": "WIP snapshot.",
+        "superseded": true,
+        "superseded_by": "swypik-os/ core reorg (c9ea8802)",
+        "evidence": "Pre-split paths; branch is explicitly in archive/ namespace.",
+        "risk": "High merge conflict (17 files).",
+        "recommendation": "DROP-CANDIDATE",
+        "order": null,
+        "batch": null,
+        "suggested_method": "Drop (archival WIP).",
+        "tests_to_run": "None"
+      }
+    },
+    "codex/imc125-training-gates": {
+      "name": "codex/imc125-training-gates",
+      "tip_sha": "757dd729baeca2abd81b65228d3571a4d8b0a4fa",
+      "tip_date": "2026-10-01T09:19:58+03:00",
+      "unique_commit_count": 6,
+      "commits": [
+        {
+          "full_sha": "757dd729baeca2abd81b65228d3571a4d8b0a4fa",
+          "sha": "757dd729",
+          "date": "2026-10-01T09:19:58+03:00",
+          "author": "office233",
+          "subject": "docs(ilaria): record verified step-1750 G4 restart"
+        },
+        {
+          "full_sha": "3a59091f447f0ebae8b2c3c74116852e0f067b61",
+          "sha": "3a59091f",
+          "date": "2026-09-30T23:53:28+03:00",
+          "author": "office233",
+          "subject": "docs(ilaria): record running seed7 and verified persistent resume"
+        },
+        {
+          "full_sha": "53115d0ef67cf4dd8f484c2bf60ca54fe4a22ab5",
+          "sha": "53115d0e",
+          "date": "2026-09-30T23:19:41+03:00",
+          "author": "office233",
+          "subject": "docs(ilaria): record verified dataset and allocated G4 launch state"
+        },
+        {
+          "full_sha": "b14418e7ad716a19cc9f0c6b246602494602e667",
+          "sha": "b14418e7",
+          "date": "2026-09-30T23:17:05+03:00",
+          "author": "office233",
+          "subject": "fix(ilaria): pin production resume to verified checkpoint generation"
+        },
+        {
+          "full_sha": "b95fc11243d541e0781c54892a95526ae152b4ef",
+          "sha": "b95fc112",
+          "date": "2026-09-30T22:19:06+03:00",
+          "author": "office233",
+          "subject": "fix(ilaria): enforce training lineage and persistent Colab launch gates"
+        },
+        {
+          "full_sha": "c5ceee23930041039e31876d4b4fb97a5b2c3f13",
+          "sha": "c5ceee23",
+          "date": "2026-09-30T21:12:23+03:00",
+          "author": "office233",
+          "subject": "chore(ilaria): snapshot live sources before training gate fixes"
+        }
+      ],
+      "merge_base": "c9ea880228f81b30118e431f8f14166842b32c10",
+      "diff_stat_summary": " 176 files changed, 382587 insertions(+), 820 deletions(-)",
+      "changed_files_count": 176,
+      "relocated_files_count": 61,
+      "products": [
+        "ilaria",
+        "ramasite/agent-md",
+        "ramasite/benchmarks",
+        "ramasite/docs",
+        "workspace"
+      ],
+      "cherry_status": {
+        "plus_count": 6,
+        "minus_count": 0
+      },
+      "merge_tree_head": {
+        "exit_code": 1,
+        "has_conflicts": true,
+        "conflict_count": 2,
+        "conflict_files": [
+          "Merge"
+        ]
+      },
+      "containment": {
+        "ancestor_of": [
+          "codex/imc1b-azure-a100"
+        ],
+        "descendant_of": [],
+        "commits_subset_of": [
+          "codex/imc1b-azure-a100"
+        ],
+        "patch_equivalent_in": []
+      },
+      "assessment": {
+        "feature_summary": "Enforces training lineage, persistent Colab launch gates, verified checkpoint generation resume (commits c5ceee23 through 757dd729).",
+        "quality": "High, but pre-reorg file paths and superseded by codex/imc1b-azure-a100.",
+        "superseded": true,
+        "superseded_by": "codex/imc1b-azure-a100",
+        "evidence": "Strict subset of codex/imc1b-azure-a100 (which adds commit 9fbd15c8 on top of 757dd729).",
+        "risk": "None if subsumed.",
+        "recommendation": "SUPERSEDED",
+        "order": null,
+        "batch": null,
+        "suggested_method": "None (subsumed by codex/imc1b-azure-a100).",
+        "tests_to_run": "None"
+      }
+    },
+    "codex/imc1b-azure-a100": {
+      "name": "codex/imc1b-azure-a100",
+      "tip_sha": "9fbd15c85ac8269e55e1c23865c4934e0627b190",
+      "tip_date": "2026-10-01T09:50:07+03:00",
+      "unique_commit_count": 7,
+      "commits": [
+        {
+          "full_sha": "9fbd15c85ac8269e55e1c23865c4934e0627b190",
+          "sha": "9fbd15c8",
+          "date": "2026-10-01T09:50:07+03:00",
+          "author": "office233",
+          "subject": "feat(ilaria): prepare IMC-1B studies for eight Azure A100 GPUs"
+        },
+        {
+          "full_sha": "757dd729baeca2abd81b65228d3571a4d8b0a4fa",
+          "sha": "757dd729",
+          "date": "2026-10-01T09:19:58+03:00",
+          "author": "office233",
+          "subject": "docs(ilaria): record verified step-1750 G4 restart"
+        },
+        {
+          "full_sha": "3a59091f447f0ebae8b2c3c74116852e0f067b61",
+          "sha": "3a59091f",
+          "date": "2026-09-30T23:53:28+03:00",
+          "author": "office233",
+          "subject": "docs(ilaria): record running seed7 and verified persistent resume"
+        },
+        {
+          "full_sha": "53115d0ef67cf4dd8f484c2bf60ca54fe4a22ab5",
+          "sha": "53115d0e",
+          "date": "2026-09-30T23:19:41+03:00",
+          "author": "office233",
+          "subject": "docs(ilaria): record verified dataset and allocated G4 launch state"
+        },
+        {
+          "full_sha": "b14418e7ad716a19cc9f0c6b246602494602e667",
+          "sha": "b14418e7",
+          "date": "2026-09-30T23:17:05+03:00",
+          "author": "office233",
+          "subject": "fix(ilaria): pin production resume to verified checkpoint generation"
+        },
+        {
+          "full_sha": "b95fc11243d541e0781c54892a95526ae152b4ef",
+          "sha": "b95fc112",
+          "date": "2026-09-30T22:19:06+03:00",
+          "author": "office233",
+          "subject": "fix(ilaria): enforce training lineage and persistent Colab launch gates"
+        },
+        {
+          "full_sha": "c5ceee23930041039e31876d4b4fb97a5b2c3f13",
+          "sha": "c5ceee23",
+          "date": "2026-09-30T21:12:23+03:00",
+          "author": "office233",
+          "subject": "chore(ilaria): snapshot live sources before training gate fixes"
+        }
+      ],
+      "merge_base": "c9ea880228f81b30118e431f8f14166842b32c10",
+      "diff_stat_summary": " 181 files changed, 383439 insertions(+), 820 deletions(-)",
+      "changed_files_count": 181,
+      "relocated_files_count": 63,
+      "products": [
+        "ilaria",
+        "ramasite/agent-md",
+        "ramasite/benchmarks",
+        "ramasite/docs",
+        "workspace"
+      ],
+      "cherry_status": {
+        "plus_count": 7,
+        "minus_count": 0
+      },
+      "merge_tree_head": {
+        "exit_code": 1,
+        "has_conflicts": true,
+        "conflict_count": 2,
+        "conflict_files": [
+          "Merge"
+        ]
+      },
+      "containment": {
+        "ancestor_of": [],
+        "descendant_of": [
+          "codex/imc125-training-gates"
+        ],
+        "commits_subset_of": [],
+        "patch_equivalent_in": []
+      },
+      "assessment": {
+        "feature_summary": "Adds IMC-1B Azure A100 GPU study plan, config, and tests (commit 9fbd15c8), building on earlier Colab training gate fixes (b95fc112, b14418e7).",
+        "quality": "High for 1B study plan (test_imc_1b_azure_plan.py). Training gate commits conflict with newer train_ilaria.py.",
+        "superseded": false,
+        "superseded_by": null,
+        "evidence": "",
+        "risk": "Medium. Commit 9fbd15c8 can be cleanly cherry-picked with doc remapping; training gates commits need user decision.",
+        "recommendation": "INTEGRATE",
+        "order": 5,
+        "batch": 4,
+        "suggested_method": "Cherry-pick commit 9fbd15c8 (remap ilaria/docs/runbooks/IMC_1B_AZURE_A100_TRAINING.md to ramasite/docs/ilaria/runbooks/). Evaluate b95fc112/b14418e7 separately (DECISION NEEDED).",
+        "tests_to_run": "pytest ilaria/forge/test_imc_1b_azure_plan.py"
+      }
+    },
+    "copilot/final-product-20261002": {
+      "name": "copilot/final-product-20261002",
+      "tip_sha": "0ddda280b4edabb225faa5a16023f793144886f5",
+      "tip_date": "2026-10-02T20:46:41+03:00",
+      "unique_commit_count": 2,
+      "commits": [
+        {
+          "full_sha": "0ddda280b4edabb225faa5a16023f793144886f5",
+          "sha": "0ddda280",
+          "date": "2026-10-02T20:46:41+03:00",
+          "author": "office233",
+          "subject": "fix(kernel): native EFI kernel now boots under OVMF/QEMU to the runtime handoff"
+        },
+        {
+          "full_sha": "cfb5cdc9c64dd20514d285fce0980facb5f284b2",
+          "sha": "cfb5cdc9",
+          "date": "2026-10-02T20:31:54+03:00",
+          "author": "office233",
+          "subject": "wip: safety snapshot B of E:\\nexus working tree 2026-10-02 evening"
+        }
+      ],
+      "merge_base": "06a5f39f805cf36897e05ffe306d05ed212a5a3a",
+      "diff_stat_summary": " 728 files changed, 120716 insertions(+), 4394 deletions(-)",
+      "changed_files_count": 728,
+      "relocated_files_count": 168,
+      "products": [
+        "ilaria",
+        "ramasite/agent-md",
+        "ramasite/benchmarks",
+        "ramasite/docs",
+        "ramasite/scripts",
+        "swyp",
+        "swypik-os",
+        "workspace"
+      ],
+      "cherry_status": {
+        "plus_count": 2,
+        "minus_count": 0
+      },
+      "merge_tree_head": {
+        "exit_code": 0,
+        "has_conflicts": false,
+        "conflict_count": 0,
+        "conflict_files": []
+      },
+      "containment": {
+        "ancestor_of": [
+          "agent/nexus-continue-transport-20261003",
+          "copilot/kernel-first-task-20261002",
+          "integration/nexus-git-order-20261003",
+          "office233-bounded-process-execution",
+          "office233-clean-product-integration",
+          "office233-ilaria-training-and-p2p",
+          "office233-kernel-task-fault-isolation",
+          "office233-supervisor-transport-reliability",
+          "office233-swyp-bool-storage",
+          "office233-swyp-native-byte-snapshots",
+          "office233-swyp-self-hosting",
+          "office233-verified-plan-approval"
+        ],
+        "descendant_of": [
+          "wip/snapshot-2026-10-02b"
+        ],
+        "commits_subset_of": [
+          "agent/nexus-continue-transport-20261003",
+          "copilot/kernel-first-task-20261002",
+          "integration/nexus-git-order-20261003",
+          "office233-bounded-process-execution",
+          "office233-clean-product-integration",
+          "office233-ilaria-training-and-p2p",
+          "office233-kernel-task-fault-isolation",
+          "office233-supervisor-transport-reliability",
+          "office233-swyp-bool-storage",
+          "office233-swyp-native-byte-snapshots",
+          "office233-swyp-self-hosting",
+          "office233-verified-plan-approval"
+        ],
+        "patch_equivalent_in": []
+      },
+      "assessment": {
+        "feature_summary": "Native EFI kernel OVMF/QEMU boot fix (commit 0ddda280) on top of snapshot B.",
+        "quality": "High.",
+        "superseded": true,
+        "superseded_by": "integration/nexus-git-order-20261003",
+        "evidence": "Commit 0ddda280 is commit #2 of 14 in integration/nexus-git-order-20261003.",
+        "risk": "None if subsumed.",
+        "recommendation": "SUPERSEDED",
+        "order": null,
+        "batch": null,
+        "suggested_method": "None (subsumed by Order 1).",
+        "tests_to_run": "None"
+      }
+    },
+    "copilot/kernel-first-task-20261002": {
+      "name": "copilot/kernel-first-task-20261002",
+      "tip_sha": "99195e54e80cc6506ea295ee6e20cb66b2c07228",
+      "tip_date": "2026-10-02T22:45:19+03:00",
+      "unique_commit_count": 5,
+      "commits": [
+        {
+          "full_sha": "99195e54e80cc6506ea295ee6e20cb66b2c07228",
+          "sha": "99195e54",
+          "date": "2026-10-02T22:45:19+03:00",
+          "author": "office233",
+          "subject": "fix(bench): wait for actual desktop font readiness before resource sampling"
+        },
+        {
+          "full_sha": "017a2a50ba7cb7340c40b01b746b021be5df57ac",
+          "sha": "017a2a50",
+          "date": "2026-10-02T22:39:16+03:00",
+          "author": "office233",
+          "subject": "fix(ci): keep QEMU runtime parity configuration compatible with checkout preflight"
+        },
+        {
+          "full_sha": "501e38e5a25b170224a4ec8c86f6cba0607d828f",
+          "sha": "501e38e5",
+          "date": "2026-10-02T22:30:54+03:00",
+          "author": "office233",
+          "subject": "feat(kernel): execute explicit init task in isolated ring 3 with bounded preemption"
+        },
+        {
+          "full_sha": "0ddda280b4edabb225faa5a16023f793144886f5",
+          "sha": "0ddda280",
+          "date": "2026-10-02T20:46:41+03:00",
+          "author": "office233",
+          "subject": "fix(kernel): native EFI kernel now boots under OVMF/QEMU to the runtime handoff"
+        },
+        {
+          "full_sha": "cfb5cdc9c64dd20514d285fce0980facb5f284b2",
+          "sha": "cfb5cdc9",
+          "date": "2026-10-02T20:31:54+03:00",
+          "author": "office233",
+          "subject": "wip: safety snapshot B of E:\\nexus working tree 2026-10-02 evening"
+        }
+      ],
+      "merge_base": "06a5f39f805cf36897e05ffe306d05ed212a5a3a",
+      "diff_stat_summary": " 738 files changed, 121653 insertions(+), 4398 deletions(-)",
+      "changed_files_count": 738,
+      "relocated_files_count": 168,
+      "products": [
+        "ilaria",
+        "ramasite/agent-md",
+        "ramasite/benchmarks",
+        "ramasite/docs",
+        "ramasite/scripts",
+        "swyp",
+        "swypik-os",
+        "workspace"
+      ],
+      "cherry_status": {
+        "plus_count": 5,
+        "minus_count": 0
+      },
+      "merge_tree_head": {
+        "exit_code": 0,
+        "has_conflicts": false,
+        "conflict_count": 0,
+        "conflict_files": []
+      },
+      "containment": {
+        "ancestor_of": [
+          "agent/nexus-continue-transport-20261003",
+          "integration/nexus-git-order-20261003",
+          "office233-bounded-process-execution",
+          "office233-clean-product-integration",
+          "office233-ilaria-training-and-p2p",
+          "office233-supervisor-transport-reliability",
+          "office233-swyp-native-byte-snapshots",
+          "office233-swyp-self-hosting"
+        ],
+        "descendant_of": [
+          "copilot/final-product-20261002",
+          "office233-bounded-process-execution",
+          "office233-ilaria-training-and-p2p",
+          "office233-supervisor-transport-reliability",
+          "wip/snapshot-2026-10-02b"
+        ],
+        "commits_subset_of": [
+          "agent/nexus-continue-transport-20261003",
+          "integration/nexus-git-order-20261003",
+          "office233-bounded-process-execution",
+          "office233-clean-product-integration",
+          "office233-ilaria-training-and-p2p",
+          "office233-supervisor-transport-reliability",
+          "office233-swyp-native-byte-snapshots",
+          "office233-swyp-self-hosting"
+        ],
+        "patch_equivalent_in": []
+      },
+      "assessment": {
+        "feature_summary": "Isolated ring 3 init task execution, QEMU CI runtime parity, and desktop font readiness (commits 501e38e5, 017a2a50, 99195e54).",
+        "quality": "High.",
+        "superseded": true,
+        "superseded_by": "integration/nexus-git-order-20261003",
+        "evidence": "Commits 501e38e5, 017a2a50, 99195e54 are commits #3, #4, #5 in integration/nexus-git-order-20261003.",
+        "risk": "None if subsumed.",
+        "recommendation": "SUPERSEDED",
+        "order": null,
+        "batch": null,
+        "suggested_method": "None (subsumed by Order 1).",
+        "tests_to_run": "None"
+      }
+    },
+    "copilot/swyp-runtime-20261002": {
+      "name": "copilot/swyp-runtime-20261002",
+      "tip_sha": "7e869b979f8ec85603d0ed6478c6bd310214e3fe",
+      "tip_date": "2026-10-02T17:34:42+03:00",
+      "unique_commit_count": 4,
+      "commits": [
+        {
+          "full_sha": "7e869b979f8ec85603d0ed6478c6bd310214e3fe",
+          "sha": "7e869b97",
+          "date": "2026-10-02T17:34:42+03:00",
+          "author": "office233",
+          "subject": "docs(swyp): document gcc-dependent tests and native runtime parity targets"
+        },
+        {
+          "full_sha": "aa2db14d3f216abbc075ab6465b716873e8bc8ae",
+          "sha": "aa2db14d",
+          "date": "2026-10-02T17:31:48+03:00",
+          "author": "office233",
+          "subject": "test(swyp): revive DLL relocation test and make the XMM6 harness compiler-independent"
+        },
+        {
+          "full_sha": "9a79a12af0fe3e4ffba302f362caba5740963016",
+          "sha": "9a79a12a",
+          "date": "2026-10-02T17:23:16+03:00",
+          "author": "office233",
+          "subject": "fix(swyp): native runtime parity across x64/ARM64 and the backend bugs it found"
+        },
+        {
+          "full_sha": "a62c3e00495113c3ccad115779cec923bfadac14",
+          "sha": "a62c3e00",
+          "date": "2026-10-02T16:19:24+03:00",
+          "author": "office233",
+          "subject": "wip: safety snapshot of E:\\nexus working tree 2026-10-02"
+        }
+      ],
+      "merge_base": "06a5f39f805cf36897e05ffe306d05ed212a5a3a",
+      "diff_stat_summary": " 727 files changed, 120266 insertions(+), 4391 deletions(-)",
+      "changed_files_count": 727,
+      "relocated_files_count": 168,
+      "products": [
+        "ilaria",
+        "ramasite/agent-md",
+        "ramasite/benchmarks",
+        "ramasite/docs",
+        "ramasite/scripts",
+        "swyp",
+        "swypik-os",
+        "workspace"
+      ],
+      "cherry_status": {
+        "plus_count": 4,
+        "minus_count": 0
+      },
+      "merge_tree_head": {
+        "exit_code": 0,
+        "has_conflicts": false,
+        "conflict_count": 0,
+        "conflict_files": []
+      },
+      "containment": {
+        "ancestor_of": [],
+        "descendant_of": [
+          "wip/snapshot-2026-10-02"
+        ],
+        "commits_subset_of": [],
+        "patch_equivalent_in": []
+      },
+      "assessment": {
+        "feature_summary": "Swyp native runtime parity across x64/ARM64, DLL relocation test revive, and doc notes (commits 9a79a12a, aa2db14d, 7e869b97).",
+        "quality": "High.",
+        "superseded": true,
+        "superseded_by": "wip/snapshot-2026-10-02b (and integration/nexus-git-order-20261003)",
+        "evidence": "All coreir runtime parity code and test additions in swyp/ were absorbed into evening snapshot B (cfb5cdc9) at 20:31; docs were relocated under ramasite/docs/swyp/.",
+        "risk": "None if confirmed superseded.",
+        "recommendation": "SUPERSEDED",
+        "order": null,
+        "batch": null,
+        "suggested_method": "None (code absorbed into snapshot B).",
+        "tests_to_run": "None"
+      }
+    },
+    "integration/nexus-git-order-20261003": {
+      "name": "integration/nexus-git-order-20261003",
+      "tip_sha": "7dfbcf2a7ef76aae9323d05389866ad0d4590b86",
+      "tip_date": "2026-10-03T10:02:09+03:00",
+      "unique_commit_count": 14,
+      "commits": [
+        {
+          "full_sha": "7dfbcf2a7ef76aae9323d05389866ad0d4590b86",
+          "sha": "7dfbcf2a",
+          "date": "2026-10-03T10:02:09+03:00",
+          "author": "office233",
+          "subject": "chore(nexus): clean inherited whitespace without rewriting historical console evidence"
+        },
+        {
+          "full_sha": "6360ab2f17d6adce1988ad59e91a0771f16ed96f",
+          "sha": "6360ab2f",
+          "date": "2026-10-03T09:57:20+03:00",
+          "author": "office233",
+          "subject": "docs(nexus): record final passing Python validation for integration"
+        },
+        {
+          "full_sha": "3edde6017b67e3342519e9d0f4ce14336c27c725",
+          "sha": "3edde601",
+          "date": "2026-10-03T09:56:24+03:00",
+          "author": "office233",
+          "subject": "chore(nexus): organize tracked support paths and restore reproducible checkout gates"
+        },
+        {
+          "full_sha": "d4515a5c9cd02b62b92312afb07317e4c805c01f",
+          "sha": "d4515a5c",
+          "date": "2026-10-02T23:42:04+03:00",
+          "author": "office233",
+          "subject": "feat(planapproval): add bounded verified-plan host approval coordinator"
+        },
+        {
+          "full_sha": "02533f379d7a78f1e963e34dd034100b4ad130e8",
+          "sha": "02533f37",
+          "date": "2026-10-02T23:42:02+03:00",
+          "author": "office233",
+          "subject": "feat(kernel): confine admitted init faults and resume healthy user stacks"
+        },
+        {
+          "full_sha": "0a181e983f494b67622c600505cd9a78b0525a96",
+          "sha": "0a181e98",
+          "date": "2026-10-02T23:42:02+03:00",
+          "author": "office233",
+          "subject": "Reject duplicate exclusive HIR call loans"
+        },
+        {
+          "full_sha": "b17b36c7df9b4c9f97320378d427c0ace5a5be8c",
+          "sha": "b17b36c7",
+          "date": "2026-10-02T23:42:01+03:00",
+          "author": "office233",
+          "subject": "fix(coreir): prune SSA phis by live incoming slots"
+        },
+        {
+          "full_sha": "aceef75cc03ba86b1853f684411ec8f0dce44aaf",
+          "sha": "aceef75c",
+          "date": "2026-10-02T23:42:00+03:00",
+          "author": "office233",
+          "subject": "feat(coreir): snapshot bounded u64 storage into immutable bytes"
+        },
+        {
+          "full_sha": "ae9c0cc350004c9c3423c4960015bde0ecba8db8",
+          "sha": "ae9c0cc3",
+          "date": "2026-10-02T23:41:59+03:00",
+          "author": "office233",
+          "subject": "Support canonical bool leaves in Swyp raw64 storage"
+        },
+        {
+          "full_sha": "99195e54e80cc6506ea295ee6e20cb66b2c07228",
+          "sha": "99195e54",
+          "date": "2026-10-02T22:45:19+03:00",
+          "author": "office233",
+          "subject": "fix(bench): wait for actual desktop font readiness before resource sampling"
+        },
+        {
+          "full_sha": "017a2a50ba7cb7340c40b01b746b021be5df57ac",
+          "sha": "017a2a50",
+          "date": "2026-10-02T22:39:16+03:00",
+          "author": "office233",
+          "subject": "fix(ci): keep QEMU runtime parity configuration compatible with checkout preflight"
+        },
+        {
+          "full_sha": "501e38e5a25b170224a4ec8c86f6cba0607d828f",
+          "sha": "501e38e5",
+          "date": "2026-10-02T22:30:54+03:00",
+          "author": "office233",
+          "subject": "feat(kernel): execute explicit init task in isolated ring 3 with bounded preemption"
+        },
+        {
+          "full_sha": "0ddda280b4edabb225faa5a16023f793144886f5",
+          "sha": "0ddda280",
+          "date": "2026-10-02T20:46:41+03:00",
+          "author": "office233",
+          "subject": "fix(kernel): native EFI kernel now boots under OVMF/QEMU to the runtime handoff"
+        },
+        {
+          "full_sha": "cfb5cdc9c64dd20514d285fce0980facb5f284b2",
+          "sha": "cfb5cdc9",
+          "date": "2026-10-02T20:31:54+03:00",
+          "author": "office233",
+          "subject": "wip: safety snapshot B of E:\\nexus working tree 2026-10-02 evening"
+        }
+      ],
+      "merge_base": "06a5f39f805cf36897e05ffe306d05ed212a5a3a",
+      "diff_stat_summary": " 1026 files changed, 131089 insertions(+), 6073 deletions(-)",
+      "changed_files_count": 1026,
+      "relocated_files_count": 22,
+      "products": [
+        "ilaria",
+        "ramasite/README.md",
+        "ramasite/RELOCATIONS.json",
+        "ramasite/agent-md",
+        "ramasite/benchmarks",
+        "ramasite/docs",
+        "ramasite/scripts",
+        "swyp",
+        "swypik-os",
+        "workspace"
+      ],
+      "cherry_status": {
+        "plus_count": 14,
+        "minus_count": 0
+      },
+      "merge_tree_head": {
+        "exit_code": 0,
+        "has_conflicts": false,
+        "conflict_count": 0,
+        "conflict_files": []
+      },
+      "containment": {
+        "ancestor_of": [],
+        "descendant_of": [
+          "agent/nexus-continue-transport-20261003",
+          "copilot/final-product-20261002",
+          "copilot/kernel-first-task-20261002",
+          "office233-bounded-process-execution",
+          "office233-clean-product-integration",
+          "office233-ilaria-training-and-p2p",
+          "office233-supervisor-transport-reliability",
+          "wip/snapshot-2026-10-02b"
+        ],
+        "commits_subset_of": [],
+        "patch_equivalent_in": []
+      },
+      "assessment": {
+        "feature_summary": "Unified integration master branch containing 14 commits: workspace layout reorg (ramasite/), QEMU runtime parity, EFI boot under OVMF/QEMU, isolated ring-3 init task, desktop font readiness, Swyp raw64 bool storage, immutable u64 byte snapshots, live SSA phi pruning, HIR duplicate call loan rejection, kernel fault confinement, verified-plan host approval, and clean checkout gates/whitespace hygiene.",
+        "quality": "High. Fully self-consistent, comprehensive Go/C unit tests and verification scripts included.",
+        "superseded": false,
+        "superseded_by": null,
+        "evidence": "",
+        "risk": "Low. Sits linearly on top of current HEAD (06a5f39), fast-forward compatible.",
+        "recommendation": "INTEGRATE",
+        "order": 1,
+        "batch": 1,
+        "suggested_method": "Fast-forward merge or linear git merge of integration/nexus-git-order-20261003 into HEAD.",
+        "tests_to_run": "powershell -File ramasite/scripts/verify-supervisor-v3.ps1; powershell -File ramasite/scripts/verify-contracts.ps1; python ramasite/scripts/run-python-tests.py"
+      }
+    },
+    "office233-bounded-process-execution": {
+      "name": "office233-bounded-process-execution",
+      "tip_sha": "99195e54e80cc6506ea295ee6e20cb66b2c07228",
+      "tip_date": "2026-10-02T22:45:19+03:00",
+      "unique_commit_count": 5,
+      "commits": [
+        {
+          "full_sha": "99195e54e80cc6506ea295ee6e20cb66b2c07228",
+          "sha": "99195e54",
+          "date": "2026-10-02T22:45:19+03:00",
+          "author": "office233",
+          "subject": "fix(bench): wait for actual desktop font readiness before resource sampling"
+        },
+        {
+          "full_sha": "017a2a50ba7cb7340c40b01b746b021be5df57ac",
+          "sha": "017a2a50",
+          "date": "2026-10-02T22:39:16+03:00",
+          "author": "office233",
+          "subject": "fix(ci): keep QEMU runtime parity configuration compatible with checkout preflight"
+        },
+        {
+          "full_sha": "501e38e5a25b170224a4ec8c86f6cba0607d828f",
+          "sha": "501e38e5",
+          "date": "2026-10-02T22:30:54+03:00",
+          "author": "office233",
+          "subject": "feat(kernel): execute explicit init task in isolated ring 3 with bounded preemption"
+        },
+        {
+          "full_sha": "0ddda280b4edabb225faa5a16023f793144886f5",
+          "sha": "0ddda280",
+          "date": "2026-10-02T20:46:41+03:00",
+          "author": "office233",
+          "subject": "fix(kernel): native EFI kernel now boots under OVMF/QEMU to the runtime handoff"
+        },
+        {
+          "full_sha": "cfb5cdc9c64dd20514d285fce0980facb5f284b2",
+          "sha": "cfb5cdc9",
+          "date": "2026-10-02T20:31:54+03:00",
+          "author": "office233",
+          "subject": "wip: safety snapshot B of E:\\nexus working tree 2026-10-02 evening"
+        }
+      ],
+      "merge_base": "06a5f39f805cf36897e05ffe306d05ed212a5a3a",
+      "diff_stat_summary": " 738 files changed, 121653 insertions(+), 4398 deletions(-)",
+      "changed_files_count": 738,
+      "relocated_files_count": 168,
+      "products": [
+        "ilaria",
+        "ramasite/agent-md",
+        "ramasite/benchmarks",
+        "ramasite/docs",
+        "ramasite/scripts",
+        "swyp",
+        "swypik-os",
+        "workspace"
+      ],
+      "cherry_status": {
+        "plus_count": 5,
+        "minus_count": 0
+      },
+      "merge_tree_head": {
+        "exit_code": 0,
+        "has_conflicts": false,
+        "conflict_count": 0,
+        "conflict_files": []
+      },
+      "containment": {
+        "ancestor_of": [
+          "agent/nexus-continue-transport-20261003",
+          "copilot/kernel-first-task-20261002",
+          "integration/nexus-git-order-20261003",
+          "office233-clean-product-integration",
+          "office233-ilaria-training-and-p2p",
+          "office233-supervisor-transport-reliability",
+          "office233-swyp-native-byte-snapshots",
+          "office233-swyp-self-hosting"
+        ],
+        "descendant_of": [
+          "copilot/final-product-20261002",
+          "copilot/kernel-first-task-20261002",
+          "office233-ilaria-training-and-p2p",
+          "office233-supervisor-transport-reliability",
+          "wip/snapshot-2026-10-02b"
+        ],
+        "commits_subset_of": [
+          "agent/nexus-continue-transport-20261003",
+          "copilot/kernel-first-task-20261002",
+          "integration/nexus-git-order-20261003",
+          "office233-clean-product-integration",
+          "office233-ilaria-training-and-p2p",
+          "office233-supervisor-transport-reliability",
+          "office233-swyp-native-byte-snapshots",
+          "office233-swyp-self-hosting"
+        ],
+        "patch_equivalent_in": []
+      },
+      "assessment": {
+        "feature_summary": "Identical commit chain to copilot/kernel-first-task-20261002 (tip 99195e54).",
+        "quality": "High.",
+        "superseded": true,
+        "superseded_by": "integration/nexus-git-order-20261003",
+        "evidence": "Tip commit 99195e54 is commit #5 in integration/nexus-git-order-20261003.",
+        "risk": "None if subsumed.",
+        "recommendation": "SUPERSEDED",
+        "order": null,
+        "batch": null,
+        "suggested_method": "None (subsumed by Order 1).",
+        "tests_to_run": "None"
+      }
+    },
+    "office233-clean-product-integration": {
+      "name": "office233-clean-product-integration",
+      "tip_sha": "d4515a5c9cd02b62b92312afb07317e4c805c01f",
+      "tip_date": "2026-10-02T23:42:04+03:00",
+      "unique_commit_count": 11,
+      "commits": [
+        {
+          "full_sha": "d4515a5c9cd02b62b92312afb07317e4c805c01f",
+          "sha": "d4515a5c",
+          "date": "2026-10-02T23:42:04+03:00",
+          "author": "office233",
+          "subject": "feat(planapproval): add bounded verified-plan host approval coordinator"
+        },
+        {
+          "full_sha": "02533f379d7a78f1e963e34dd034100b4ad130e8",
+          "sha": "02533f37",
+          "date": "2026-10-02T23:42:02+03:00",
+          "author": "office233",
+          "subject": "feat(kernel): confine admitted init faults and resume healthy user stacks"
+        },
+        {
+          "full_sha": "0a181e983f494b67622c600505cd9a78b0525a96",
+          "sha": "0a181e98",
+          "date": "2026-10-02T23:42:02+03:00",
+          "author": "office233",
+          "subject": "Reject duplicate exclusive HIR call loans"
+        },
+        {
+          "full_sha": "b17b36c7df9b4c9f97320378d427c0ace5a5be8c",
+          "sha": "b17b36c7",
+          "date": "2026-10-02T23:42:01+03:00",
+          "author": "office233",
+          "subject": "fix(coreir): prune SSA phis by live incoming slots"
+        },
+        {
+          "full_sha": "aceef75cc03ba86b1853f684411ec8f0dce44aaf",
+          "sha": "aceef75c",
+          "date": "2026-10-02T23:42:00+03:00",
+          "author": "office233",
+          "subject": "feat(coreir): snapshot bounded u64 storage into immutable bytes"
+        },
+        {
+          "full_sha": "ae9c0cc350004c9c3423c4960015bde0ecba8db8",
+          "sha": "ae9c0cc3",
+          "date": "2026-10-02T23:41:59+03:00",
+          "author": "office233",
+          "subject": "Support canonical bool leaves in Swyp raw64 storage"
+        },
+        {
+          "full_sha": "99195e54e80cc6506ea295ee6e20cb66b2c07228",
+          "sha": "99195e54",
+          "date": "2026-10-02T22:45:19+03:00",
+          "author": "office233",
+          "subject": "fix(bench): wait for actual desktop font readiness before resource sampling"
+        },
+        {
+          "full_sha": "017a2a50ba7cb7340c40b01b746b021be5df57ac",
+          "sha": "017a2a50",
+          "date": "2026-10-02T22:39:16+03:00",
+          "author": "office233",
+          "subject": "fix(ci): keep QEMU runtime parity configuration compatible with checkout preflight"
+        },
+        {
+          "full_sha": "501e38e5a25b170224a4ec8c86f6cba0607d828f",
+          "sha": "501e38e5",
+          "date": "2026-10-02T22:30:54+03:00",
+          "author": "office233",
+          "subject": "feat(kernel): execute explicit init task in isolated ring 3 with bounded preemption"
+        },
+        {
+          "full_sha": "0ddda280b4edabb225faa5a16023f793144886f5",
+          "sha": "0ddda280",
+          "date": "2026-10-02T20:46:41+03:00",
+          "author": "office233",
+          "subject": "fix(kernel): native EFI kernel now boots under OVMF/QEMU to the runtime handoff"
+        },
+        {
+          "full_sha": "cfb5cdc9c64dd20514d285fce0980facb5f284b2",
+          "sha": "cfb5cdc9",
+          "date": "2026-10-02T20:31:54+03:00",
+          "author": "office233",
+          "subject": "wip: safety snapshot B of E:\\nexus working tree 2026-10-02 evening"
+        }
+      ],
+      "merge_base": "06a5f39f805cf36897e05ffe306d05ed212a5a3a",
+      "diff_stat_summary": " 759 files changed, 128080 insertions(+), 4522 deletions(-)",
+      "changed_files_count": 759,
+      "relocated_files_count": 168,
+      "products": [
+        "ilaria",
+        "ramasite/agent-md",
+        "ramasite/benchmarks",
+        "ramasite/docs",
+        "ramasite/scripts",
+        "swyp",
+        "swypik-os",
+        "workspace"
+      ],
+      "cherry_status": {
+        "plus_count": 11,
+        "minus_count": 0
+      },
+      "merge_tree_head": {
+        "exit_code": 0,
+        "has_conflicts": false,
+        "conflict_count": 0,
+        "conflict_files": []
+      },
+      "containment": {
+        "ancestor_of": [
+          "agent/nexus-continue-transport-20261003",
+          "integration/nexus-git-order-20261003"
+        ],
+        "descendant_of": [
+          "agent/nexus-continue-transport-20261003",
+          "copilot/final-product-20261002",
+          "copilot/kernel-first-task-20261002",
+          "office233-bounded-process-execution",
+          "office233-ilaria-training-and-p2p",
+          "office233-supervisor-transport-reliability",
+          "wip/snapshot-2026-10-02b"
+        ],
+        "commits_subset_of": [
+          "agent/nexus-continue-transport-20261003",
+          "integration/nexus-git-order-20261003"
+        ],
+        "patch_equivalent_in": []
+      },
+      "assessment": {
+        "feature_summary": "11-commit unified product integration branch (identical tip d4515a5c to agent/nexus-continue-transport-20261003).",
+        "quality": "High.",
+        "superseded": true,
+        "superseded_by": "integration/nexus-git-order-20261003",
+        "evidence": "Identical tip commit d4515a5c, direct ancestor of integration/nexus-git-order-20261003.",
+        "risk": "None if subsumed.",
+        "recommendation": "SUPERSEDED",
+        "order": null,
+        "batch": null,
+        "suggested_method": "None (subsumed by Order 1).",
+        "tests_to_run": "None"
+      }
+    },
+    "office233-ilaria-training-and-p2p": {
+      "name": "office233-ilaria-training-and-p2p",
+      "tip_sha": "99195e54e80cc6506ea295ee6e20cb66b2c07228",
+      "tip_date": "2026-10-02T22:45:19+03:00",
+      "unique_commit_count": 5,
+      "commits": [
+        {
+          "full_sha": "99195e54e80cc6506ea295ee6e20cb66b2c07228",
+          "sha": "99195e54",
+          "date": "2026-10-02T22:45:19+03:00",
+          "author": "office233",
+          "subject": "fix(bench): wait for actual desktop font readiness before resource sampling"
+        },
+        {
+          "full_sha": "017a2a50ba7cb7340c40b01b746b021be5df57ac",
+          "sha": "017a2a50",
+          "date": "2026-10-02T22:39:16+03:00",
+          "author": "office233",
+          "subject": "fix(ci): keep QEMU runtime parity configuration compatible with checkout preflight"
+        },
+        {
+          "full_sha": "501e38e5a25b170224a4ec8c86f6cba0607d828f",
+          "sha": "501e38e5",
+          "date": "2026-10-02T22:30:54+03:00",
+          "author": "office233",
+          "subject": "feat(kernel): execute explicit init task in isolated ring 3 with bounded preemption"
+        },
+        {
+          "full_sha": "0ddda280b4edabb225faa5a16023f793144886f5",
+          "sha": "0ddda280",
+          "date": "2026-10-02T20:46:41+03:00",
+          "author": "office233",
+          "subject": "fix(kernel): native EFI kernel now boots under OVMF/QEMU to the runtime handoff"
+        },
+        {
+          "full_sha": "cfb5cdc9c64dd20514d285fce0980facb5f284b2",
+          "sha": "cfb5cdc9",
+          "date": "2026-10-02T20:31:54+03:00",
+          "author": "office233",
+          "subject": "wip: safety snapshot B of E:\\nexus working tree 2026-10-02 evening"
+        }
+      ],
+      "merge_base": "06a5f39f805cf36897e05ffe306d05ed212a5a3a",
+      "diff_stat_summary": " 738 files changed, 121653 insertions(+), 4398 deletions(-)",
+      "changed_files_count": 738,
+      "relocated_files_count": 168,
+      "products": [
+        "ilaria",
+        "ramasite/agent-md",
+        "ramasite/benchmarks",
+        "ramasite/docs",
+        "ramasite/scripts",
+        "swyp",
+        "swypik-os",
+        "workspace"
+      ],
+      "cherry_status": {
+        "plus_count": 5,
+        "minus_count": 0
+      },
+      "merge_tree_head": {
+        "exit_code": 0,
+        "has_conflicts": false,
+        "conflict_count": 0,
+        "conflict_files": []
+      },
+      "containment": {
+        "ancestor_of": [
+          "agent/nexus-continue-transport-20261003",
+          "copilot/kernel-first-task-20261002",
+          "integration/nexus-git-order-20261003",
+          "office233-bounded-process-execution",
+          "office233-clean-product-integration",
+          "office233-supervisor-transport-reliability",
+          "office233-swyp-native-byte-snapshots",
+          "office233-swyp-self-hosting"
+        ],
+        "descendant_of": [
+          "copilot/final-product-20261002",
+          "copilot/kernel-first-task-20261002",
+          "office233-bounded-process-execution",
+          "office233-supervisor-transport-reliability",
+          "wip/snapshot-2026-10-02b"
+        ],
+        "commits_subset_of": [
+          "agent/nexus-continue-transport-20261003",
+          "copilot/kernel-first-task-20261002",
+          "integration/nexus-git-order-20261003",
+          "office233-bounded-process-execution",
+          "office233-clean-product-integration",
+          "office233-supervisor-transport-reliability",
+          "office233-swyp-native-byte-snapshots",
+          "office233-swyp-self-hosting"
+        ],
+        "patch_equivalent_in": []
+      },
+      "assessment": {
+        "feature_summary": "Identical commit chain to copilot/kernel-first-task-20261002 (tip 99195e54).",
+        "quality": "High.",
+        "superseded": true,
+        "superseded_by": "integration/nexus-git-order-20261003",
+        "evidence": "Tip commit 99195e54 is commit #5 in integration/nexus-git-order-20261003.",
+        "risk": "None if subsumed.",
+        "recommendation": "SUPERSEDED",
+        "order": null,
+        "batch": null,
+        "suggested_method": "None (subsumed by Order 1).",
+        "tests_to_run": "None"
+      }
+    },
+    "office233-kernel-task-fault-isolation": {
+      "name": "office233-kernel-task-fault-isolation",
+      "tip_sha": "eba64e94ce97a441626502d8c332a6fc5acba8e4",
+      "tip_date": "2026-10-02T23:29:16+03:00",
+      "unique_commit_count": 5,
+      "commits": [
+        {
+          "full_sha": "eba64e94ce97a441626502d8c332a6fc5acba8e4",
+          "sha": "eba64e94",
+          "date": "2026-10-02T23:29:16+03:00",
+          "author": "office233",
+          "subject": "feat(kernel): confine admitted init faults and resume healthy user stacks"
+        },
+        {
+          "full_sha": "017a2a50ba7cb7340c40b01b746b021be5df57ac",
+          "sha": "017a2a50",
+          "date": "2026-10-02T22:39:16+03:00",
+          "author": "office233",
+          "subject": "fix(ci): keep QEMU runtime parity configuration compatible with checkout preflight"
+        },
+        {
+          "full_sha": "501e38e5a25b170224a4ec8c86f6cba0607d828f",
+          "sha": "501e38e5",
+          "date": "2026-10-02T22:30:54+03:00",
+          "author": "office233",
+          "subject": "feat(kernel): execute explicit init task in isolated ring 3 with bounded preemption"
+        },
+        {
+          "full_sha": "0ddda280b4edabb225faa5a16023f793144886f5",
+          "sha": "0ddda280",
+          "date": "2026-10-02T20:46:41+03:00",
+          "author": "office233",
+          "subject": "fix(kernel): native EFI kernel now boots under OVMF/QEMU to the runtime handoff"
+        },
+        {
+          "full_sha": "cfb5cdc9c64dd20514d285fce0980facb5f284b2",
+          "sha": "cfb5cdc9",
+          "date": "2026-10-02T20:31:54+03:00",
+          "author": "office233",
+          "subject": "wip: safety snapshot B of E:\\nexus working tree 2026-10-02 evening"
+        }
+      ],
+      "merge_base": "06a5f39f805cf36897e05ffe306d05ed212a5a3a",
+      "diff_stat_summary": " 738 files changed, 122638 insertions(+), 4394 deletions(-)",
+      "changed_files_count": 738,
+      "relocated_files_count": 168,
+      "products": [
+        "ilaria",
+        "ramasite/agent-md",
+        "ramasite/benchmarks",
+        "ramasite/docs",
+        "ramasite/scripts",
+        "swyp",
+        "swypik-os",
+        "workspace"
+      ],
+      "cherry_status": {
+        "plus_count": 5,
+        "minus_count": 0
+      },
+      "merge_tree_head": {
+        "exit_code": 0,
+        "has_conflicts": false,
+        "conflict_count": 0,
+        "conflict_files": []
+      },
+      "containment": {
+        "ancestor_of": [],
+        "descendant_of": [
+          "copilot/final-product-20261002",
+          "wip/snapshot-2026-10-02b"
+        ],
+        "commits_subset_of": [],
+        "patch_equivalent_in": [
+          "agent/nexus-continue-transport-20261003",
+          "integration/nexus-git-order-20261003",
+          "office233-clean-product-integration"
+        ]
+      },
+      "assessment": {
+        "feature_summary": "Confine admitted init faults and resume healthy user stacks (commit eba64e94).",
+        "quality": "High.",
+        "superseded": true,
+        "superseded_by": "integration/nexus-git-order-20261003",
+        "evidence": "Commit eba64e94 is patch-equivalent to commit 02533f37 (commit #10 in integration/nexus-git-order-20261003).",
+        "risk": "None if subsumed.",
+        "recommendation": "SUPERSEDED",
+        "order": null,
+        "batch": null,
+        "suggested_method": "None (subsumed by Order 1).",
+        "tests_to_run": "None"
+      }
+    },
+    "office233-supervisor-transport-reliability": {
+      "name": "office233-supervisor-transport-reliability",
+      "tip_sha": "99195e54e80cc6506ea295ee6e20cb66b2c07228",
+      "tip_date": "2026-10-02T22:45:19+03:00",
+      "unique_commit_count": 5,
+      "commits": [
+        {
+          "full_sha": "99195e54e80cc6506ea295ee6e20cb66b2c07228",
+          "sha": "99195e54",
+          "date": "2026-10-02T22:45:19+03:00",
+          "author": "office233",
+          "subject": "fix(bench): wait for actual desktop font readiness before resource sampling"
+        },
+        {
+          "full_sha": "017a2a50ba7cb7340c40b01b746b021be5df57ac",
+          "sha": "017a2a50",
+          "date": "2026-10-02T22:39:16+03:00",
+          "author": "office233",
+          "subject": "fix(ci): keep QEMU runtime parity configuration compatible with checkout preflight"
+        },
+        {
+          "full_sha": "501e38e5a25b170224a4ec8c86f6cba0607d828f",
+          "sha": "501e38e5",
+          "date": "2026-10-02T22:30:54+03:00",
+          "author": "office233",
+          "subject": "feat(kernel): execute explicit init task in isolated ring 3 with bounded preemption"
+        },
+        {
+          "full_sha": "0ddda280b4edabb225faa5a16023f793144886f5",
+          "sha": "0ddda280",
+          "date": "2026-10-02T20:46:41+03:00",
+          "author": "office233",
+          "subject": "fix(kernel): native EFI kernel now boots under OVMF/QEMU to the runtime handoff"
+        },
+        {
+          "full_sha": "cfb5cdc9c64dd20514d285fce0980facb5f284b2",
+          "sha": "cfb5cdc9",
+          "date": "2026-10-02T20:31:54+03:00",
+          "author": "office233",
+          "subject": "wip: safety snapshot B of E:\\nexus working tree 2026-10-02 evening"
+        }
+      ],
+      "merge_base": "06a5f39f805cf36897e05ffe306d05ed212a5a3a",
+      "diff_stat_summary": " 738 files changed, 121653 insertions(+), 4398 deletions(-)",
+      "changed_files_count": 738,
+      "relocated_files_count": 168,
+      "products": [
+        "ilaria",
+        "ramasite/agent-md",
+        "ramasite/benchmarks",
+        "ramasite/docs",
+        "ramasite/scripts",
+        "swyp",
+        "swypik-os",
+        "workspace"
+      ],
+      "cherry_status": {
+        "plus_count": 5,
+        "minus_count": 0
+      },
+      "merge_tree_head": {
+        "exit_code": 0,
+        "has_conflicts": false,
+        "conflict_count": 0,
+        "conflict_files": []
+      },
+      "containment": {
+        "ancestor_of": [
+          "agent/nexus-continue-transport-20261003",
+          "copilot/kernel-first-task-20261002",
+          "integration/nexus-git-order-20261003",
+          "office233-bounded-process-execution",
+          "office233-clean-product-integration",
+          "office233-ilaria-training-and-p2p",
+          "office233-swyp-native-byte-snapshots",
+          "office233-swyp-self-hosting"
+        ],
+        "descendant_of": [
+          "copilot/final-product-20261002",
+          "copilot/kernel-first-task-20261002",
+          "office233-bounded-process-execution",
+          "office233-ilaria-training-and-p2p",
+          "wip/snapshot-2026-10-02b"
+        ],
+        "commits_subset_of": [
+          "agent/nexus-continue-transport-20261003",
+          "copilot/kernel-first-task-20261002",
+          "integration/nexus-git-order-20261003",
+          "office233-bounded-process-execution",
+          "office233-clean-product-integration",
+          "office233-ilaria-training-and-p2p",
+          "office233-swyp-native-byte-snapshots",
+          "office233-swyp-self-hosting"
+        ],
+        "patch_equivalent_in": []
+      },
+      "assessment": {
+        "feature_summary": "Identical commit chain to copilot/kernel-first-task-20261002 (tip 99195e54).",
+        "quality": "High.",
+        "superseded": true,
+        "superseded_by": "integration/nexus-git-order-20261003",
+        "evidence": "Tip commit 99195e54 is commit #5 in integration/nexus-git-order-20261003.",
+        "risk": "None if subsumed.",
+        "recommendation": "SUPERSEDED",
+        "order": null,
+        "batch": null,
+        "suggested_method": "None (subsumed by Order 1).",
+        "tests_to_run": "None"
+      }
+    },
+    "office233-swyp-bool-storage": {
+      "name": "office233-swyp-bool-storage",
+      "tip_sha": "ba2f932e33642ebc3b17478085d602b6ae96cd0e",
+      "tip_date": "2026-10-02T23:04:05+03:00",
+      "unique_commit_count": 5,
+      "commits": [
+        {
+          "full_sha": "ba2f932e33642ebc3b17478085d602b6ae96cd0e",
+          "sha": "ba2f932e",
+          "date": "2026-10-02T23:04:05+03:00",
+          "author": "office233",
+          "subject": "Support canonical bool leaves in Swyp raw64 storage"
+        },
+        {
+          "full_sha": "017a2a50ba7cb7340c40b01b746b021be5df57ac",
+          "sha": "017a2a50",
+          "date": "2026-10-02T22:39:16+03:00",
+          "author": "office233",
+          "subject": "fix(ci): keep QEMU runtime parity configuration compatible with checkout preflight"
+        },
+        {
+          "full_sha": "501e38e5a25b170224a4ec8c86f6cba0607d828f",
+          "sha": "501e38e5",
+          "date": "2026-10-02T22:30:54+03:00",
+          "author": "office233",
+          "subject": "feat(kernel): execute explicit init task in isolated ring 3 with bounded preemption"
+        },
+        {
+          "full_sha": "0ddda280b4edabb225faa5a16023f793144886f5",
+          "sha": "0ddda280",
+          "date": "2026-10-02T20:46:41+03:00",
+          "author": "office233",
+          "subject": "fix(kernel): native EFI kernel now boots under OVMF/QEMU to the runtime handoff"
+        },
+        {
+          "full_sha": "cfb5cdc9c64dd20514d285fce0980facb5f284b2",
+          "sha": "cfb5cdc9",
+          "date": "2026-10-02T20:31:54+03:00",
+          "author": "office233",
+          "subject": "wip: safety snapshot B of E:\\nexus working tree 2026-10-02 evening"
+        }
+      ],
+      "merge_base": "06a5f39f805cf36897e05ffe306d05ed212a5a3a",
+      "diff_stat_summary": " 738 files changed, 122330 insertions(+), 4393 deletions(-)",
+      "changed_files_count": 738,
+      "relocated_files_count": 168,
+      "products": [
+        "ilaria",
+        "ramasite/agent-md",
+        "ramasite/benchmarks",
+        "ramasite/docs",
+        "ramasite/scripts",
+        "swyp",
+        "swypik-os",
+        "workspace"
+      ],
+      "cherry_status": {
+        "plus_count": 5,
+        "minus_count": 0
+      },
+      "merge_tree_head": {
+        "exit_code": 0,
+        "has_conflicts": false,
+        "conflict_count": 0,
+        "conflict_files": []
+      },
+      "containment": {
+        "ancestor_of": [],
+        "descendant_of": [
+          "copilot/final-product-20261002",
+          "wip/snapshot-2026-10-02b"
+        ],
+        "commits_subset_of": [],
+        "patch_equivalent_in": [
+          "agent/nexus-continue-transport-20261003",
+          "integration/nexus-git-order-20261003",
+          "office233-clean-product-integration",
+          "office233-swyp-self-hosting"
+        ]
+      },
+      "assessment": {
+        "feature_summary": "Support canonical bool leaves in Swyp raw64 storage (commit ba2f932e).",
+        "quality": "High.",
+        "superseded": true,
+        "superseded_by": "integration/nexus-git-order-20261003",
+        "evidence": "Commit ba2f932e is patch-equivalent to commit ae9c0cc3 (commit #6 in integration/nexus-git-order-20261003).",
+        "risk": "None if subsumed.",
+        "recommendation": "SUPERSEDED",
+        "order": null,
+        "batch": null,
+        "suggested_method": "None (subsumed by Order 1).",
+        "tests_to_run": "None"
+      }
+    },
+    "office233-swyp-native-byte-snapshots": {
+      "name": "office233-swyp-native-byte-snapshots",
+      "tip_sha": "b1785c07fa1d4f5c41c0068d85dfd515583c7675",
+      "tip_date": "2026-10-02T23:38:48+03:00",
+      "unique_commit_count": 7,
+      "commits": [
+        {
+          "full_sha": "b1785c07fa1d4f5c41c0068d85dfd515583c7675",
+          "sha": "b1785c07",
+          "date": "2026-10-02T23:38:48+03:00",
+          "author": "office233",
+          "subject": "fix(coreir): prune SSA phis by live incoming slots"
+        },
+        {
+          "full_sha": "8b0f0204ffcd95d50629f18ad0366f2dba708e21",
+          "sha": "8b0f0204",
+          "date": "2026-10-02T23:19:14+03:00",
+          "author": "office233",
+          "subject": "feat(coreir): snapshot bounded u64 storage into immutable bytes"
+        },
+        {
+          "full_sha": "99195e54e80cc6506ea295ee6e20cb66b2c07228",
+          "sha": "99195e54",
+          "date": "2026-10-02T22:45:19+03:00",
+          "author": "office233",
+          "subject": "fix(bench): wait for actual desktop font readiness before resource sampling"
+        },
+        {
+          "full_sha": "017a2a50ba7cb7340c40b01b746b021be5df57ac",
+          "sha": "017a2a50",
+          "date": "2026-10-02T22:39:16+03:00",
+          "author": "office233",
+          "subject": "fix(ci): keep QEMU runtime parity configuration compatible with checkout preflight"
+        },
+        {
+          "full_sha": "501e38e5a25b170224a4ec8c86f6cba0607d828f",
+          "sha": "501e38e5",
+          "date": "2026-10-02T22:30:54+03:00",
+          "author": "office233",
+          "subject": "feat(kernel): execute explicit init task in isolated ring 3 with bounded preemption"
+        },
+        {
+          "full_sha": "0ddda280b4edabb225faa5a16023f793144886f5",
+          "sha": "0ddda280",
+          "date": "2026-10-02T20:46:41+03:00",
+          "author": "office233",
+          "subject": "fix(kernel): native EFI kernel now boots under OVMF/QEMU to the runtime handoff"
+        },
+        {
+          "full_sha": "cfb5cdc9c64dd20514d285fce0980facb5f284b2",
+          "sha": "cfb5cdc9",
+          "date": "2026-10-02T20:31:54+03:00",
+          "author": "office233",
+          "subject": "wip: safety snapshot B of E:\\nexus working tree 2026-10-02 evening"
+        }
+      ],
+      "merge_base": "06a5f39f805cf36897e05ffe306d05ed212a5a3a",
+      "diff_stat_summary": " 744 files changed, 123475 insertions(+), 4521 deletions(-)",
+      "changed_files_count": 744,
+      "relocated_files_count": 168,
+      "products": [
+        "ilaria",
+        "ramasite/agent-md",
+        "ramasite/benchmarks",
+        "ramasite/docs",
+        "ramasite/scripts",
+        "swyp",
+        "swypik-os",
+        "workspace"
+      ],
+      "cherry_status": {
+        "plus_count": 7,
+        "minus_count": 0
+      },
+      "merge_tree_head": {
+        "exit_code": 0,
+        "has_conflicts": false,
+        "conflict_count": 0,
+        "conflict_files": []
+      },
+      "containment": {
+        "ancestor_of": [],
+        "descendant_of": [
+          "copilot/final-product-20261002",
+          "copilot/kernel-first-task-20261002",
+          "office233-bounded-process-execution",
+          "office233-ilaria-training-and-p2p",
+          "office233-supervisor-transport-reliability",
+          "wip/snapshot-2026-10-02b"
+        ],
+        "commits_subset_of": [],
+        "patch_equivalent_in": [
+          "agent/nexus-continue-transport-20261003",
+          "integration/nexus-git-order-20261003",
+          "office233-clean-product-integration",
+          "office233-swyp-self-hosting"
+        ]
+      },
+      "assessment": {
+        "feature_summary": "CoreIR u64 storage snapshot into immutable bytes & SSA phi pruning (commits 8b0f0204, b1785c07).",
+        "quality": "High.",
+        "superseded": true,
+        "superseded_by": "integration/nexus-git-order-20261003",
+        "evidence": "Commits 8b0f0204, b1785c07 are patch-equivalent to commits aceef75c, b17b36c7 (commits #7, #8 in integration/nexus-git-order-20261003).",
+        "risk": "None if subsumed.",
+        "recommendation": "SUPERSEDED",
+        "order": null,
+        "batch": null,
+        "suggested_method": "None (subsumed by Order 1).",
+        "tests_to_run": "None"
+      }
+    },
+    "office233-swyp-self-hosting": {
+      "name": "office233-swyp-self-hosting",
+      "tip_sha": "acdb0fad4704b38852df97a0d36702733253763c",
+      "tip_date": "2026-10-02T23:44:51+03:00",
+      "unique_commit_count": 9,
+      "commits": [
+        {
+          "full_sha": "acdb0fad4704b38852df97a0d36702733253763c",
+          "sha": "acdb0fad",
+          "date": "2026-10-02T23:44:51+03:00",
+          "author": "office233",
+          "subject": "fix(coreir): prune SSA phis by live incoming slots"
+        },
+        {
+          "full_sha": "e66f24d1d4e0f8e008f43a4f56150d3b7823844f",
+          "sha": "e66f24d1",
+          "date": "2026-10-02T23:21:06+03:00",
+          "author": "office233",
+          "subject": "feat(coreir): snapshot bounded u64 storage into immutable bytes"
+        },
+        {
+          "full_sha": "e1fb9b1033b51c68a7e5d43e882006b723e733a7",
+          "sha": "e1fb9b10",
+          "date": "2026-10-02T23:13:22+03:00",
+          "author": "office233",
+          "subject": "Reject duplicate exclusive HIR call loans"
+        },
+        {
+          "full_sha": "537099ff1f1d7bf022f2baa8ecb759a41f5676e3",
+          "sha": "537099ff",
+          "date": "2026-10-02T23:05:32+03:00",
+          "author": "office233",
+          "subject": "Support canonical bool leaves in Swyp raw64 storage"
+        },
+        {
+          "full_sha": "99195e54e80cc6506ea295ee6e20cb66b2c07228",
+          "sha": "99195e54",
+          "date": "2026-10-02T22:45:19+03:00",
+          "author": "office233",
+          "subject": "fix(bench): wait for actual desktop font readiness before resource sampling"
+        },
+        {
+          "full_sha": "017a2a50ba7cb7340c40b01b746b021be5df57ac",
+          "sha": "017a2a50",
+          "date": "2026-10-02T22:39:16+03:00",
+          "author": "office233",
+          "subject": "fix(ci): keep QEMU runtime parity configuration compatible with checkout preflight"
+        },
+        {
+          "full_sha": "501e38e5a25b170224a4ec8c86f6cba0607d828f",
+          "sha": "501e38e5",
+          "date": "2026-10-02T22:30:54+03:00",
+          "author": "office233",
+          "subject": "feat(kernel): execute explicit init task in isolated ring 3 with bounded preemption"
+        },
+        {
+          "full_sha": "0ddda280b4edabb225faa5a16023f793144886f5",
+          "sha": "0ddda280",
+          "date": "2026-10-02T20:46:41+03:00",
+          "author": "office233",
+          "subject": "fix(kernel): native EFI kernel now boots under OVMF/QEMU to the runtime handoff"
+        },
+        {
+          "full_sha": "cfb5cdc9c64dd20514d285fce0980facb5f284b2",
+          "sha": "cfb5cdc9",
+          "date": "2026-10-02T20:31:54+03:00",
+          "author": "office233",
+          "subject": "wip: safety snapshot B of E:\\nexus working tree 2026-10-02 evening"
+        }
+      ],
+      "merge_base": "06a5f39f805cf36897e05ffe306d05ed212a5a3a",
+      "diff_stat_summary": " 749 files changed, 124364 insertions(+), 4521 deletions(-)",
+      "changed_files_count": 749,
+      "relocated_files_count": 168,
+      "products": [
+        "ilaria",
+        "ramasite/agent-md",
+        "ramasite/benchmarks",
+        "ramasite/docs",
+        "ramasite/scripts",
+        "swyp",
+        "swypik-os",
+        "workspace"
+      ],
+      "cherry_status": {
+        "plus_count": 9,
+        "minus_count": 0
+      },
+      "merge_tree_head": {
+        "exit_code": 0,
+        "has_conflicts": false,
+        "conflict_count": 0,
+        "conflict_files": []
+      },
+      "containment": {
+        "ancestor_of": [],
+        "descendant_of": [
+          "copilot/final-product-20261002",
+          "copilot/kernel-first-task-20261002",
+          "office233-bounded-process-execution",
+          "office233-ilaria-training-and-p2p",
+          "office233-supervisor-transport-reliability",
+          "wip/snapshot-2026-10-02b"
+        ],
+        "commits_subset_of": [],
+        "patch_equivalent_in": [
+          "agent/nexus-continue-transport-20261003",
+          "integration/nexus-git-order-20261003",
+          "office233-clean-product-integration"
+        ]
+      },
+      "assessment": {
+        "feature_summary": "HIR loan rejection, bool storage, byte snapshots, SSA phi pruning (commits 537099ff, e1fb9b10, e66f24d1, acdb0fad).",
+        "quality": "High.",
+        "superseded": true,
+        "superseded_by": "integration/nexus-git-order-20261003",
+        "evidence": "All unique commits are patch-equivalent to commits ae9c0cc3, aceef75c, b17b36c7, 0a181e98 in integration/nexus-git-order-20261003.",
+        "risk": "None if subsumed.",
+        "recommendation": "SUPERSEDED",
+        "order": null,
+        "batch": null,
+        "suggested_method": "None (subsumed by Order 1).",
+        "tests_to_run": "None"
+      }
+    },
+    "office233-swypik-mobile-delivery": {
+      "name": "office233-swypik-mobile-delivery",
+      "tip_sha": "fbbae0d41535cec518eae91f8a38a8f536231d80",
+      "tip_date": "2026-10-02T23:35:14+03:00",
+      "unique_commit_count": 2,
+      "commits": [
+        {
+          "full_sha": "fbbae0d41535cec518eae91f8a38a8f536231d80",
+          "sha": "fbbae0d4",
+          "date": "2026-10-02T23:35:14+03:00",
+          "author": "office233",
+          "subject": "chore(mobile): provision provenance-backed migrated source baseline"
+        },
+        {
+          "full_sha": "cfb5cdc9c64dd20514d285fce0980facb5f284b2",
+          "sha": "cfb5cdc9",
+          "date": "2026-10-02T20:31:54+03:00",
+          "author": "office233",
+          "subject": "wip: safety snapshot B of E:\\nexus working tree 2026-10-02 evening"
+        }
+      ],
+      "merge_base": "06a5f39f805cf36897e05ffe306d05ed212a5a3a",
+      "diff_stat_summary": " 774 files changed, 134422 insertions(+), 4394 deletions(-)",
+      "changed_files_count": 774,
+      "relocated_files_count": 168,
+      "products": [
+        "ilaria",
+        "ramasite/agent-md",
+        "ramasite/benchmarks",
+        "ramasite/docs",
+        "ramasite/scripts",
+        "swyp",
+        "swypik-os",
+        "swypik/mobile",
+        "workspace"
+      ],
+      "cherry_status": {
+        "plus_count": 2,
+        "minus_count": 0
+      },
+      "merge_tree_head": {
+        "exit_code": 0,
+        "has_conflicts": false,
+        "conflict_count": 0,
+        "conflict_files": []
+      },
+      "containment": {
+        "ancestor_of": [],
+        "descendant_of": [
+          "wip/snapshot-2026-10-02b"
+        ],
+        "commits_subset_of": [],
+        "patch_equivalent_in": []
+      },
+      "assessment": {
+        "feature_summary": "Provisions provenance-backed migrated source baseline for swypik/mobile (commit fbbae0d4). 47 files, React Native / Expo application, AuthProvider, IlariaScreen, contribution panels, and comprehensive test suite.",
+        "quality": "Production-ready baseline with source provenance hashes and tests (auth.test.ts, api.test.ts, ilaria-lifecycle.test.ts).",
+        "superseded": false,
+        "superseded_by": null,
+        "evidence": "",
+        "risk": "Low. Touches only swypik/mobile/ which is currently absent in HEAD and integration branch.",
+        "recommendation": "INTEGRATE",
+        "order": 2,
+        "batch": 2,
+        "suggested_method": "Cherry-pick commit fbbae0d4 (or merge). Merges with zero conflicts onto integration/nexus-git-order-20261003.",
+        "tests_to_run": "npm --prefix swypik/mobile test; powershell -File ramasite/scripts/verify-contracts.ps1"
+      }
+    },
+    "office233-verified-plan-approval": {
+      "name": "office233-verified-plan-approval",
+      "tip_sha": "4d683362f2b1bb872cb9221b63f7fd60e5ac528c",
+      "tip_date": "2026-10-02T23:10:01+03:00",
+      "unique_commit_count": 5,
+      "commits": [
+        {
+          "full_sha": "4d683362f2b1bb872cb9221b63f7fd60e5ac528c",
+          "sha": "4d683362",
+          "date": "2026-10-02T23:10:01+03:00",
+          "author": "office233",
+          "subject": "feat(planapproval): add bounded verified-plan host approval coordinator"
+        },
+        {
+          "full_sha": "017a2a50ba7cb7340c40b01b746b021be5df57ac",
+          "sha": "017a2a50",
+          "date": "2026-10-02T22:39:16+03:00",
+          "author": "office233",
+          "subject": "fix(ci): keep QEMU runtime parity configuration compatible with checkout preflight"
+        },
+        {
+          "full_sha": "501e38e5a25b170224a4ec8c86f6cba0607d828f",
+          "sha": "501e38e5",
+          "date": "2026-10-02T22:30:54+03:00",
+          "author": "office233",
+          "subject": "feat(kernel): execute explicit init task in isolated ring 3 with bounded preemption"
+        },
+        {
+          "full_sha": "0ddda280b4edabb225faa5a16023f793144886f5",
+          "sha": "0ddda280",
+          "date": "2026-10-02T20:46:41+03:00",
+          "author": "office233",
+          "subject": "fix(kernel): native EFI kernel now boots under OVMF/QEMU to the runtime handoff"
+        },
+        {
+          "full_sha": "cfb5cdc9c64dd20514d285fce0980facb5f284b2",
+          "sha": "cfb5cdc9",
+          "date": "2026-10-02T20:31:54+03:00",
+          "author": "office233",
+          "subject": "wip: safety snapshot B of E:\\nexus working tree 2026-10-02 evening"
+        }
+      ],
+      "merge_base": "06a5f39f805cf36897e05ffe306d05ed212a5a3a",
+      "diff_stat_summary": " 744 files changed, 124218 insertions(+), 4393 deletions(-)",
+      "changed_files_count": 744,
+      "relocated_files_count": 168,
+      "products": [
+        "ilaria",
+        "ramasite/agent-md",
+        "ramasite/benchmarks",
+        "ramasite/docs",
+        "ramasite/scripts",
+        "swyp",
+        "swypik-os",
+        "workspace"
+      ],
+      "cherry_status": {
+        "plus_count": 5,
+        "minus_count": 0
+      },
+      "merge_tree_head": {
+        "exit_code": 0,
+        "has_conflicts": false,
+        "conflict_count": 0,
+        "conflict_files": []
+      },
+      "containment": {
+        "ancestor_of": [],
+        "descendant_of": [
+          "copilot/final-product-20261002",
+          "wip/snapshot-2026-10-02b"
+        ],
+        "commits_subset_of": [],
+        "patch_equivalent_in": [
+          "agent/nexus-continue-transport-20261003",
+          "integration/nexus-git-order-20261003",
+          "office233-clean-product-integration"
+        ]
+      },
+      "assessment": {
+        "feature_summary": "Bounded verified-plan host approval coordinator (commit 4d683362).",
+        "quality": "High.",
+        "superseded": true,
+        "superseded_by": "integration/nexus-git-order-20261003",
+        "evidence": "Commit 4d683362 is patch-equivalent to commit d4515a5c (commit #11 in integration/nexus-git-order-20261003).",
+        "risk": "None if subsumed.",
+        "recommendation": "SUPERSEDED",
+        "order": null,
+        "batch": null,
+        "suggested_method": "None (subsumed by Order 1).",
+        "tests_to_run": "None"
+      }
+    },
+    "wip/snapshot-2026-10-02": {
+      "name": "wip/snapshot-2026-10-02",
+      "tip_sha": "a62c3e00495113c3ccad115779cec923bfadac14",
+      "tip_date": "2026-10-02T16:19:24+03:00",
+      "unique_commit_count": 1,
+      "commits": [
+        {
+          "full_sha": "a62c3e00495113c3ccad115779cec923bfadac14",
+          "sha": "a62c3e00",
+          "date": "2026-10-02T16:19:24+03:00",
+          "author": "office233",
+          "subject": "wip: safety snapshot of E:\\nexus working tree 2026-10-02"
+        }
+      ],
+      "merge_base": "06a5f39f805cf36897e05ffe306d05ed212a5a3a",
+      "diff_stat_summary": " 720 files changed, 118499 insertions(+), 4324 deletions(-)",
+      "changed_files_count": 720,
+      "relocated_files_count": 167,
+      "products": [
+        "ilaria",
+        "ramasite/agent-md",
+        "ramasite/benchmarks",
+        "ramasite/docs",
+        "ramasite/scripts",
+        "swyp",
+        "swypik-os",
+        "workspace"
+      ],
+      "cherry_status": {
+        "plus_count": 1,
+        "minus_count": 0
+      },
+      "merge_tree_head": {
+        "exit_code": 0,
+        "has_conflicts": false,
+        "conflict_count": 0,
+        "conflict_files": []
+      },
+      "containment": {
+        "ancestor_of": [
+          "copilot/swyp-runtime-20261002"
+        ],
+        "descendant_of": [],
+        "commits_subset_of": [
+          "copilot/swyp-runtime-20261002"
+        ],
+        "patch_equivalent_in": []
+      },
+      "assessment": {
+        "feature_summary": "Earlier safety snapshot A of working tree from 2026-10-02 16:19 (commit a62c3e00).",
+        "quality": "Worktree snapshot.",
+        "superseded": true,
+        "superseded_by": "wip/snapshot-2026-10-02b (and integration/nexus-git-order-20261003)",
+        "evidence": "Commit a62c3e00 was superseded by evening snapshot B cfb5cdc9 which contains all changes and newer work.",
+        "risk": "None if dropped.",
+        "recommendation": "DROP-CANDIDATE",
+        "order": null,
+        "batch": null,
+        "suggested_method": "Drop (historical snapshot).",
+        "tests_to_run": "None"
+      }
+    },
+    "wip/snapshot-2026-10-02b": {
+      "name": "wip/snapshot-2026-10-02b",
+      "tip_sha": "cfb5cdc9c64dd20514d285fce0980facb5f284b2",
+      "tip_date": "2026-10-02T20:31:54+03:00",
+      "unique_commit_count": 1,
+      "commits": [
+        {
+          "full_sha": "cfb5cdc9c64dd20514d285fce0980facb5f284b2",
+          "sha": "cfb5cdc9",
+          "date": "2026-10-02T20:31:54+03:00",
+          "author": "office233",
+          "subject": "wip: safety snapshot B of E:\\nexus working tree 2026-10-02 evening"
+        }
+      ],
+      "merge_base": "06a5f39f805cf36897e05ffe306d05ed212a5a3a",
+      "diff_stat_summary": " 727 files changed, 120335 insertions(+), 4394 deletions(-)",
+      "changed_files_count": 727,
+      "relocated_files_count": 168,
+      "products": [
+        "ilaria",
+        "ramasite/agent-md",
+        "ramasite/benchmarks",
+        "ramasite/docs",
+        "ramasite/scripts",
+        "swyp",
+        "swypik-os",
+        "workspace"
+      ],
+      "cherry_status": {
+        "plus_count": 1,
+        "minus_count": 0
+      },
+      "merge_tree_head": {
+        "exit_code": 0,
+        "has_conflicts": false,
+        "conflict_count": 0,
+        "conflict_files": []
+      },
+      "containment": {
+        "ancestor_of": [
+          "agent/nexus-continue-transport-20261003",
+          "copilot/final-product-20261002",
+          "copilot/kernel-first-task-20261002",
+          "integration/nexus-git-order-20261003",
+          "office233-bounded-process-execution",
+          "office233-clean-product-integration",
+          "office233-ilaria-training-and-p2p",
+          "office233-kernel-task-fault-isolation",
+          "office233-supervisor-transport-reliability",
+          "office233-swyp-bool-storage",
+          "office233-swyp-native-byte-snapshots",
+          "office233-swyp-self-hosting",
+          "office233-swypik-mobile-delivery",
+          "office233-verified-plan-approval"
+        ],
+        "descendant_of": [],
+        "commits_subset_of": [
+          "agent/nexus-continue-transport-20261003",
+          "copilot/final-product-20261002",
+          "copilot/kernel-first-task-20261002",
+          "integration/nexus-git-order-20261003",
+          "office233-bounded-process-execution",
+          "office233-clean-product-integration",
+          "office233-ilaria-training-and-p2p",
+          "office233-kernel-task-fault-isolation",
+          "office233-supervisor-transport-reliability",
+          "office233-swyp-bool-storage",
+          "office233-swyp-native-byte-snapshots",
+          "office233-swyp-self-hosting",
+          "office233-swypik-mobile-delivery",
+          "office233-verified-plan-approval"
+        ],
+        "patch_equivalent_in": []
+      },
+      "assessment": {
+        "feature_summary": "Worktree safety snapshot B from Oct 2 evening introducing the reorganized ramasite/ tree and core kernel/Swyp changes (commit cfb5cdc9).",
+        "quality": "Snapshot checkpoint.",
+        "superseded": true,
+        "superseded_by": "integration/nexus-git-order-20261003",
+        "evidence": "Commit cfb5cdc9 is commit #1 of 14 in integration/nexus-git-order-20261003.",
+        "risk": "None if subsumed.",
+        "recommendation": "SUPERSEDED",
+        "order": null,
+        "batch": null,
+        "suggested_method": "None (subsumed by Order 1).",
+        "tests_to_run": "None"
+      }
+    }
+  }
+}

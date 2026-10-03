@@ -5,7 +5,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
-$root = Split-Path -Parent $PSScriptRoot
+$root = (Split-Path -Parent (Split-Path -Parent $PSScriptRoot))
 $temporaryBase = [IO.Path]::GetFullPath([IO.Path]::GetTempPath())
 $temporary = Join-Path $temporaryBase ('nexus-contracts-' + [Guid]::NewGuid().ToString('N'))
 $previousWork = $env:GOWORK

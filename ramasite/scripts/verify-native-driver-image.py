@@ -34,10 +34,10 @@ PROBE_TIMEOUT = 5.0
 BUILD_TIMEOUT = 60.0
 SEED = 0x5A17
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 SWYPIK = ROOT / "swypik-os"
-GO_PROBE_SOURCE = ROOT / "scripts" / "native-driver-image" / "go_probe" / "main.go"
-C_PROBE_SOURCE = ROOT / "scripts" / "native-driver-image" / "c_probe.c"
+GO_PROBE_SOURCE = ROOT / "ramasite" / "scripts" / "native-driver-image" / "go_probe" / "main.go"
+C_PROBE_SOURCE = ROOT / "ramasite" / "scripts" / "native-driver-image" / "c_probe.c"
 C_PARSER_SOURCE = SWYPIK / "kernel" / "src" / "arch" / "x86_64" / "driver_image.c"
 C_INCLUDE = SWYPIK / "kernel" / "include"
 
@@ -98,7 +98,7 @@ def build_image(
     resolved: list[dict[str, int]] = []
     cursor = metadata_end
     final_size = metadata_end
-    for index, segment in enumerate(segs):
+    for segment in segs:
         file_offset = segment.file_offset
         if file_offset is None:
             file_offset = cursor if segment.file_size else 0
@@ -462,7 +462,7 @@ def run_bounded(
             stream.close()
 
     readers = [threading.Thread(target=capture, args=(stream, buffer), daemon=True)
-               for stream, buffer in zip((process.stdout, process.stderr), buffers)]
+               for stream, buffer in zip((process.stdout, process.stderr), buffers, strict=True)]
     deadline = time.monotonic() + timeout
     reason = None
     try:

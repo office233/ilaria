@@ -1,0 +1,810 @@
+{
+  "schema_version": 1,
+  "purpose": "Owner-approved source, benchmark and agent-document separation; nothing deleted.",
+  "movements": [
+    {
+      "from": "docs",
+      "to": "ramasite/docs/workspace",
+      "directory": true
+    },
+    {
+      "from": "ilaria/docs",
+      "to": "ramasite/docs/ilaria",
+      "directory": true
+    },
+    {
+      "from": "swyp/docs",
+      "to": "ramasite/docs/swyp",
+      "directory": true
+    },
+    {
+      "from": "swypik-os/docs",
+      "to": "ramasite/docs/swypik-os",
+      "directory": true
+    },
+    {
+      "from": "swypik/commerce/docs",
+      "to": "ramasite/docs/swypik-commerce",
+      "directory": true
+    },
+    {
+      "from": "swypik/mobile/docs",
+      "to": "ramasite/docs/swypik-mobile",
+      "directory": true
+    },
+    {
+      "from": "site/docs",
+      "to": "ramasite/docs/site",
+      "directory": true
+    },
+    {
+      "from": "docs/coordination",
+      "to": "ramasite/agent-md/workspace/coordination",
+      "directory": true
+    },
+    {
+      "from": "docs/audit",
+      "to": "ramasite/agent-md/workspace/audit",
+      "directory": true
+    },
+    {
+      "from": "ilaria/docs/plans",
+      "to": "ramasite/agent-md/ilaria/plans",
+      "directory": true
+    },
+    {
+      "from": "ilaria/docs/handoff",
+      "to": "ramasite/agent-md/ilaria/handoff",
+      "directory": true
+    },
+    {
+      "from": "ilaria/docs/audit",
+      "to": "ramasite/agent-md/ilaria/audit",
+      "directory": true
+    },
+    {
+      "from": "swyp/docs/history",
+      "to": "ramasite/agent-md/swyp/history",
+      "directory": true
+    },
+    {
+      "from": "swyp/docs/audit",
+      "to": "ramasite/agent-md/swyp/audit",
+      "directory": true
+    },
+    {
+      "from": "swypik-os/docs/audit",
+      "to": "ramasite/agent-md/swypik-os/audit",
+      "directory": true
+    },
+    {
+      "from": "scripts",
+      "to": "ramasite/scripts",
+      "directory": true
+    },
+    {
+      "from": "scripts/benchmark-supervisor.ps1",
+      "to": "ramasite/benchmarks/workspace/benchmark-supervisor.ps1",
+      "directory": false
+    },
+    {
+      "from": "scripts/benchmark-supervisor.py",
+      "to": "ramasite/benchmarks/workspace/benchmark-supervisor.py",
+      "directory": false
+    },
+    {
+      "from": "scripts/benchmark-supervisor.sh",
+      "to": "ramasite/benchmarks/workspace/benchmark-supervisor.sh",
+      "directory": false
+    },
+    {
+      "from": "ilaria/bench",
+      "to": "ramasite/benchmarks/ilaria",
+      "directory": true
+    },
+    {
+      "from": "swyp/benchmarks",
+      "to": "ramasite/benchmarks/swyp",
+      "directory": true
+    },
+    {
+      "from": "swypik-os/kernel/bench",
+      "to": "ramasite/benchmarks/swypik-os/kernel",
+      "directory": true
+    },
+    {
+      "from": ".tools",
+      "to": "ramasite/local/tools",
+      "directory": true
+    },
+    {
+      "from": ".claude",
+      "to": "ramasite/local/agents/claude",
+      "directory": true
+    },
+    {
+      "from": ".superpowers",
+      "to": "ramasite/local/agents/superpowers",
+      "directory": true
+    },
+    {
+      "from": ".pytest_cache",
+      "to": "ramasite/local/caches/workspace/pytest",
+      "directory": true
+    },
+    {
+      "from": "_conversatii-claude",
+      "to": "ramasite/local/conversatii-claude",
+      "directory": true
+    },
+    {
+      "from": "ilaria/.colab-cli-venv",
+      "to": "ramasite/local/environments/ilaria/colab-cli",
+      "directory": true
+    },
+    {
+      "from": "AGENT_HANDOFF_2026-09-29.md",
+      "to": "ramasite/agent-md/workspace/AGENT_HANDOFF_2026-09-29.md",
+      "directory": false
+    },
+    {
+      "from": "ilaria/bench/imc_nccl_bootstrap/supervision-handoff.md",
+      "to": "ramasite/agent-md/ilaria/bench/imc_nccl_bootstrap/supervision-handoff.md",
+      "directory": false
+    },
+    {
+      "from": "ilaria/bench/licensed_code_pilot_package/HANDOFF.md",
+      "to": "ramasite/agent-md/ilaria/bench/licensed_code_pilot_package/HANDOFF.md",
+      "directory": false
+    },
+    {
+      "from": "swyp/HANDOFF_2026-09-30_SWYP_NATIVE.md",
+      "to": "ramasite/agent-md/swyp/HANDOFF_2026-09-30_SWYP_NATIVE.md",
+      "directory": false
+    },
+    {
+      "from": "swyp/docs/HANDOFF_SWYP_2026-09-29.md",
+      "to": "ramasite/agent-md/swyp/docs/HANDOFF_SWYP_2026-09-29.md",
+      "directory": false
+    },
+    {
+      "from": "swyp/docs/ROADMAP.md",
+      "to": "ramasite/agent-md/swyp/docs/ROADMAP.md",
+      "directory": false
+    },
+    {
+      "from": "swyp/docs/SWYP_1_0_MASTER_PLAN.md",
+      "to": "ramasite/agent-md/swyp/docs/SWYP_1_0_MASTER_PLAN.md",
+      "directory": false
+    },
+    {
+      "from": "swypik/commerce/docs/ai-roadmap.md",
+      "to": "ramasite/agent-md/swypik-commerce/docs/ai-roadmap.md",
+      "directory": false
+    },
+    {
+      "from": "swypik/commerce/docs/BACKLOG.md",
+      "to": "ramasite/agent-md/swypik-commerce/docs/BACKLOG.md",
+      "directory": false
+    },
+    {
+      "from": "swypik/commerce/docs/MASTER_PLAN.md",
+      "to": "ramasite/agent-md/swypik-commerce/docs/MASTER_PLAN.md",
+      "directory": false
+    },
+    {
+      "from": "swypik/commerce/docs/VIDEO_COMMERCE_ROADMAP.md",
+      "to": "ramasite/agent-md/swypik-commerce/docs/VIDEO_COMMERCE_ROADMAP.md",
+      "directory": false
+    },
+    {
+      "from": "swypik/commerce/docs/audits/2026-09-27-mobile-domain-migration-plan.md",
+      "to": "ramasite/agent-md/swypik-commerce/docs/audits/2026-09-27-mobile-domain-migration-plan.md",
+      "directory": false
+    },
+    {
+      "from": "swypik/commerce/docs/audits/2026-09-28-antigravity-mobile-handoff.md",
+      "to": "ramasite/agent-md/swypik-commerce/docs/audits/2026-09-28-antigravity-mobile-handoff.md",
+      "directory": false
+    },
+    {
+      "from": "swypik/commerce/docs/_arhiva/TODO-2026-07.md",
+      "to": "ramasite/agent-md/swypik-commerce/docs/_arhiva/TODO-2026-07.md",
+      "directory": false
+    },
+    {
+      "from": "swypik/mobile/docs/ILARIA-RECONCILIATION-HANDOFF-2026-10-02.md",
+      "to": "ramasite/agent-md/swypik-mobile/docs/ILARIA-RECONCILIATION-HANDOFF-2026-10-02.md",
+      "directory": false
+    },
+    {
+      "from": "swypik-os/docs/AZURE_PLAN.md",
+      "to": "ramasite/agent-md/swypik-os/docs/AZURE_PLAN.md",
+      "directory": false
+    },
+    {
+      "from": "swypik-os/docs/OS_PLAN.md",
+      "to": "ramasite/agent-md/swypik-os/docs/OS_PLAN.md",
+      "directory": false
+    },
+    {
+      "from": "swypik-os/scripts/benchmark-resources.ps1",
+      "to": "ramasite/benchmarks/swypik-os/scripts/benchmark-resources.ps1",
+      "directory": false,
+      "changes": "Preserved source; rooted product builds explicitly and moved default results outside product sources."
+    },
+    {
+      "from": "ilaria/forge/__pycache__",
+      "to": "ramasite/local/caches/python/ilaria/forge/__pycache__",
+      "directory": true,
+      "changes": "Generated Python cache moved without reading its contents."
+    },
+    {
+      "from": "ilaria/forge/swypforge/__pycache__",
+      "to": "ramasite/local/caches/python/ilaria/forge/swypforge/__pycache__",
+      "directory": true,
+      "changes": "Generated Python cache moved without reading its contents."
+    },
+    {
+      "from": "ilaria/runtime/isxprobe/__pycache__",
+      "to": "ramasite/local/caches/python/ilaria/runtime/isxprobe/__pycache__",
+      "directory": true,
+      "changes": "Generated Python cache moved without reading its contents."
+    },
+    {
+      "from": "ilaria/runtime/mobileprovider/__pycache__",
+      "to": "ramasite/local/caches/python/ilaria/runtime/mobileprovider/__pycache__",
+      "directory": true,
+      "changes": "Generated Python cache moved without reading its contents."
+    },
+    {
+      "from": "ramasite/benchmarks/ilaria/__pycache__",
+      "to": "ramasite/local/caches/python/ramasite/benchmarks/ilaria/__pycache__",
+      "directory": true,
+      "changes": "Generated Python cache moved without reading its contents."
+    },
+    {
+      "from": "ramasite/benchmarks/ilaria/brev_billing_terms/__pycache__",
+      "to": "ramasite/local/caches/python/ramasite/benchmarks/ilaria/brev_billing_terms/__pycache__",
+      "directory": true,
+      "changes": "Generated Python cache moved without reading its contents."
+    },
+    {
+      "from": "ramasite/benchmarks/ilaria/brev_budget_policy/__pycache__",
+      "to": "ramasite/local/caches/python/ramasite/benchmarks/ilaria/brev_budget_policy/__pycache__",
+      "directory": true,
+      "changes": "Generated Python cache moved without reading its contents."
+    },
+    {
+      "from": "ramasite/benchmarks/ilaria/brev_lifecycle_guard/__pycache__",
+      "to": "ramasite/local/caches/python/ramasite/benchmarks/ilaria/brev_lifecycle_guard/__pycache__",
+      "directory": true,
+      "changes": "Generated Python cache moved without reading its contents."
+    },
+    {
+      "from": "ramasite/benchmarks/ilaria/brev_offer_selector/__pycache__",
+      "to": "ramasite/local/caches/python/ramasite/benchmarks/ilaria/brev_offer_selector/__pycache__",
+      "directory": true,
+      "changes": "Generated Python cache moved without reading its contents."
+    },
+    {
+      "from": "ramasite/benchmarks/ilaria/common_corpus_acquisition/__pycache__",
+      "to": "ramasite/local/caches/python/ramasite/benchmarks/ilaria/common_corpus_acquisition/__pycache__",
+      "directory": true,
+      "changes": "Generated Python cache moved without reading its contents."
+    },
+    {
+      "from": "ramasite/benchmarks/ilaria/imc_125m_g4_probe/__pycache__",
+      "to": "ramasite/local/caches/python/ramasite/benchmarks/ilaria/imc_125m_g4_probe/__pycache__",
+      "directory": true,
+      "changes": "Generated Python cache moved without reading its contents."
+    },
+    {
+      "from": "ramasite/benchmarks/ilaria/imc_nccl_bootstrap/__pycache__",
+      "to": "ramasite/local/caches/python/ramasite/benchmarks/ilaria/imc_nccl_bootstrap/__pycache__",
+      "directory": true,
+      "changes": "Generated Python cache moved without reading its contents."
+    },
+    {
+      "from": "ramasite/benchmarks/ilaria/imc_nccl_hardware_gate/__pycache__",
+      "to": "ramasite/local/caches/python/ramasite/benchmarks/ilaria/imc_nccl_hardware_gate/__pycache__",
+      "directory": true,
+      "changes": "Generated Python cache moved without reading its contents."
+    },
+    {
+      "from": "ramasite/benchmarks/ilaria/licensed_code_pilot_package/__pycache__",
+      "to": "ramasite/local/caches/python/ramasite/benchmarks/ilaria/licensed_code_pilot_package/__pycache__",
+      "directory": true,
+      "changes": "Generated Python cache moved without reading its contents."
+    },
+    {
+      "from": "ramasite/benchmarks/ilaria/licensed_os_code_acquisition/__pycache__",
+      "to": "ramasite/local/caches/python/ramasite/benchmarks/ilaria/licensed_os_code_acquisition/__pycache__",
+      "directory": true,
+      "changes": "Generated Python cache moved without reading its contents."
+    },
+    {
+      "from": "ramasite/benchmarks/ilaria/openmath_acquisition/__pycache__",
+      "to": "ramasite/local/caches/python/ramasite/benchmarks/ilaria/openmath_acquisition/__pycache__",
+      "directory": true,
+      "changes": "Generated Python cache moved without reading its contents."
+    },
+    {
+      "from": "ramasite/benchmarks/ilaria/p2p_quality_adversarial/__pycache__",
+      "to": "ramasite/local/caches/python/ramasite/benchmarks/ilaria/p2p_quality_adversarial/__pycache__",
+      "directory": true,
+      "changes": "Generated Python cache moved without reading its contents."
+    },
+    {
+      "from": "ramasite/benchmarks/ilaria/production_contamination_clearance/__pycache__",
+      "to": "ramasite/local/caches/python/ramasite/benchmarks/ilaria/production_contamination_clearance/__pycache__",
+      "directory": true,
+      "changes": "Generated Python cache moved without reading its contents."
+    },
+    {
+      "from": "ramasite/benchmarks/ilaria/voxpopuli_ro_acquisition/__pycache__",
+      "to": "ramasite/local/caches/python/ramasite/benchmarks/ilaria/voxpopuli_ro_acquisition/__pycache__",
+      "directory": true,
+      "changes": "Generated Python cache moved without reading its contents."
+    },
+    {
+      "from": "ramasite/scripts/__pycache__",
+      "to": "ramasite/local/caches/python/ramasite/scripts/__pycache__",
+      "directory": true,
+      "changes": "Generated Python cache moved without reading its contents."
+    }
+  ],
+  "path_updates": [
+    {
+      "from": ".gitignore",
+      "to": ".gitignore",
+      "before_sha256": "367754735a4f47528cde5c3a6e672ac7268be0e9a136afa7dedb5107ab030e86",
+      "after_sha256": "fe88306eb064cc6257c307f565a58bc9a1a23707f3aa452b69450af4f24db69a"
+    },
+    {
+      "from": "README.md",
+      "to": "README.md",
+      "before_sha256": "68f4ae5303b6412275fc7711798389bc72ce5ba3e7cfd8a7c71af74198e16ffb",
+      "after_sha256": "61a09e1ed7bffb3b31a91e443956731d06f7941dc06c5fad3547444994af8692"
+    },
+    {
+      "from": ".github/workflows/ci.yml",
+      "to": ".github/workflows/ci.yml",
+      "before_sha256": "7ddb3a70a612d5c67bf198d4fa91cacbf53b0bd3aadc8e36d5533baf1ad03a1a",
+      "after_sha256": "153855a7c797a16afdd967048600681d076294711609a6e65e359e7396e9324e"
+    },
+    {
+      "from": "docs/audit/2026-09-30.md",
+      "to": "ramasite/agent-md/workspace/audit/2026-09-30.md",
+      "before_sha256": "7a2ba7af3107ae7a54e53997502f8fdf85ffab36e8ffb1974347ccea9616ce7e",
+      "after_sha256": "b730c053e2f79a2d7fe1f627d867715033ccc9c3ea5e2d59bfb86d6b5080ca6f"
+    },
+    {
+      "from": "docs/coordination/chrome-2026-10-01/strategic-audit-fact-check.md",
+      "to": "ramasite/agent-md/workspace/coordination/chrome-2026-10-01/strategic-audit-fact-check.md",
+      "before_sha256": "84400975e4b88528c3ea3ede39485d9e14466ad72a577b134cf0092ca2d65ed2",
+      "after_sha256": "020e9201acb6c9e0dab6638d6f38bee309a34c3bf53a211ce5af500e699ea675"
+    },
+    {
+      "from": "docs/milestones/effects-v1.md",
+      "to": "ramasite/docs/workspace/milestones/effects-v1.md",
+      "before_sha256": "0623a2e22e8276c542dda3c7b55a5cb3af05d02e7747d29a567e7681edfac2e4",
+      "after_sha256": "272027b463e95f2c5099819ab64569c1d56f868fef94b72de58c423a5e36953f"
+    },
+    {
+      "from": "ilaria/AGENTS.md",
+      "to": "ilaria/AGENTS.md",
+      "before_sha256": "e5ef7269b9b201ff4717b2be5214c8e121f4d86a9867e53a45d3f64d6bf0ff41",
+      "after_sha256": "3ec644791f3066ed2d32443cf24ec4e9a1fd9cb264181fec682c36d9efd4a247"
+    },
+    {
+      "from": "ilaria/README.md",
+      "to": "ilaria/README.md",
+      "before_sha256": "bf347f50baecaa51cb25139c826e64b3ab9e4cd7015211a9c3b74482c73a3ba5",
+      "after_sha256": "e4cee19804366604be2ca62c5b10f2848acb4060aea5f92038c6234ca3938f28"
+    },
+    {
+      "from": "ilaria/bench/imc_incremental_inference.py",
+      "to": "ramasite/benchmarks/ilaria/imc_incremental_inference.py",
+      "before_sha256": "38a2afcfd78e3dbb24ae5ee5070abcdc68390ea5b747d8d264860391c9b455e8",
+      "after_sha256": "9e5edf5a1744bb378b861ca16c046979f5c25eb2634358465bd089530fcc7a41"
+    },
+    {
+      "from": "ilaria/bench/common_corpus_acquisition/extract_pd_books.py",
+      "to": "ramasite/benchmarks/ilaria/common_corpus_acquisition/extract_pd_books.py",
+      "before_sha256": "fc6afa3730546309b5a58b25753993d9e2563dfebd57b2e7ebae706e20e7d6fc",
+      "after_sha256": "e357c2710b43dd202e3407eda4034a5d85a27bc7037e7a38a3698e914d4853e5"
+    },
+    {
+      "from": "ilaria/bench/common_corpus_acquisition/test_extract.py",
+      "to": "ramasite/benchmarks/ilaria/common_corpus_acquisition/test_extract.py",
+      "before_sha256": "a5defe750bac0e5efb97c54871c1743b832fd79dcc9a3797b2cb22a96adfee18",
+      "after_sha256": "b5e2441e189bc24e944912970e17a202463cdf7cf6ad231d6ab19b6e40dc3661"
+    },
+    {
+      "from": "ilaria/bench/imc_125m_g4_probe/colab_g4_full_step_runner.py",
+      "to": "ramasite/benchmarks/ilaria/imc_125m_g4_probe/colab_g4_full_step_runner.py",
+      "before_sha256": "eaaa0b961c7b6cc594b7b7256061d68aeee25de939b1e89cc6ef4502555e8f68",
+      "after_sha256": "d54e910018234d2a103cd05595e1b9e406a14c664e94b8f6cff61f7846d8b992"
+    },
+    {
+      "from": "ilaria/bench/imc_125m_g4_probe/colab_g4_probe_runner.py",
+      "to": "ramasite/benchmarks/ilaria/imc_125m_g4_probe/colab_g4_probe_runner.py",
+      "before_sha256": "1d1ab37d049326e72acc81a7ba955d3cc605d4e25fdf0d10b504d10a0186b0cf",
+      "after_sha256": "58c1cab9cb785f462dec0600fc78cde03588312d003ec6a4bbec125c3bbd6071"
+    },
+    {
+      "from": "ilaria/bench/imc_125m_g4_probe/g4_batch_probe.py",
+      "to": "ramasite/benchmarks/ilaria/imc_125m_g4_probe/g4_batch_probe.py",
+      "before_sha256": "64d100e9adf3e032dcf2227bbce5632bf08e1b539f34be9fc0adf5d370d58a57",
+      "after_sha256": "6b86f1ea8c7b1a6efcb447c42628c38587a1022af2030bff3cfca751d3778fc3"
+    },
+    {
+      "from": "ilaria/bench/imc_125m_g4_probe/g4_full_step_benchmark.py",
+      "to": "ramasite/benchmarks/ilaria/imc_125m_g4_probe/g4_full_step_benchmark.py",
+      "before_sha256": "585ef296075aa232cb2a2b4f96e552f217d9745c2464044dca5b3fc2bade06c9",
+      "after_sha256": "ecc33d58871cf1b59bfb1373e964edbde241b6fd58428b8749d6f47a06df056f"
+    },
+    {
+      "from": "ilaria/bench/imc_125m_g4_probe/g4_rmsnorm_ab.py",
+      "to": "ramasite/benchmarks/ilaria/imc_125m_g4_probe/g4_rmsnorm_ab.py",
+      "before_sha256": "27425393490684cbf38aedf5f91b49afe92bdbce1af9405ff62984c75b18d040",
+      "after_sha256": "03e08ff1a6c87ffe96b724f81d2ecef927925c0bcd299ebdb62c8283d9a56f8f"
+    },
+    {
+      "from": "ilaria/bench/imc_125m_gpu_smoke/colab_smoke.py",
+      "to": "ramasite/benchmarks/ilaria/imc_125m_gpu_smoke/colab_smoke.py",
+      "before_sha256": "e1706872156e2549c069675f632378a83abb49102016742837a02381b7a054e2",
+      "after_sha256": "c67a82f2e7ea6c1622025bf21693acb15da0b7ab686f25f3599cc569d3e5620e"
+    },
+    {
+      "from": "ilaria/bench/imc_125m_gpu_smoke/colab_trainer_smoke_runner.py",
+      "to": "ramasite/benchmarks/ilaria/imc_125m_gpu_smoke/colab_trainer_smoke_runner.py",
+      "before_sha256": "f21320e335377ce588e88703f30ddbe85c48fd47318c3bc2e60c4a5d1418b5cd",
+      "after_sha256": "6dce9ae0fe6efbdf4e6dd0f0ff3010f7022a663d481fba450ffcb7691abaab24"
+    },
+    {
+      "from": "ilaria/bench/imc_125m_production_review/apply_owner_confirmation.py",
+      "to": "ramasite/benchmarks/ilaria/imc_125m_production_review/apply_owner_confirmation.py",
+      "before_sha256": "dbb926497818898716d09956ce76e2c52f6a1c9a35be605d12570fc3944cee7b",
+      "after_sha256": "3408242826ec7edbca5cde5cb3680c0c8a68d6410b657b9defc68ecd46fa1603"
+    },
+    {
+      "from": "ilaria/bench/licensed_code_pilot_package/package.py",
+      "to": "ramasite/benchmarks/ilaria/licensed_code_pilot_package/package.py",
+      "before_sha256": "c422ed41f8e13b12c768002c01766da6992362a473beadaa4f7f8a76854ab51b",
+      "after_sha256": "a3c44cd9549a54f892c9610b262924b55425ff2f7779a5cfbb242021ca5559d7"
+    },
+    {
+      "from": "ilaria/bench/licensed_os_code_acquisition/acquire.py",
+      "to": "ramasite/benchmarks/ilaria/licensed_os_code_acquisition/acquire.py",
+      "before_sha256": "212bced83c153f28a6e971cf8c36da884bd108eb6aafc1570c4f805779fc5ef2",
+      "after_sha256": "a271e79580e0b3e521c0d46222a7048c384d30cc43519787e43f35466b43e1f4"
+    },
+    {
+      "from": "ilaria/bench/licensed_os_code_acquisition/dedup_candidate.py",
+      "to": "ramasite/benchmarks/ilaria/licensed_os_code_acquisition/dedup_candidate.py",
+      "before_sha256": "86c850123c99e445ec392686af39f6d034833ccd6d1ed95a05d35bf5e5646c21",
+      "after_sha256": "67376d35a9c750fc64f88df0551c261bad0601f7ba69385a6aa558f6cd6fe740"
+    },
+    {
+      "from": "ilaria/bench/openmath_acquisition/acquire_cot_shard.py",
+      "to": "ramasite/benchmarks/ilaria/openmath_acquisition/acquire_cot_shard.py",
+      "before_sha256": "ce547d06f2ce350cff632b853da92aefe64aa6b163d30d645d0da121cd774854",
+      "after_sha256": "0489fdeb15d15b5132f309daf39127fa26ba2ca89f73ec2deae7436d50489c67"
+    },
+    {
+      "from": "ilaria/bench/production_contamination_clearance/scan.py",
+      "to": "ramasite/benchmarks/ilaria/production_contamination_clearance/scan.py",
+      "before_sha256": "5295135668f372bc2ebdac404af2a0852efedbb0f62056edfffe56ca3c40275a",
+      "after_sha256": "8abc3bebec41d1e31721c75aac24a8a427f5978d1f9984679eaab3774381fa72"
+    },
+    {
+      "from": "ilaria/bench/production_contamination_clearance/test_clearance.py",
+      "to": "ramasite/benchmarks/ilaria/production_contamination_clearance/test_clearance.py",
+      "before_sha256": "1e266216ee86c3532c78ac74d0bc5b40c10671cae38ebac1dda14dc174d282f3",
+      "after_sha256": "d974dc7699e679cef6060ac6917d44165fea4712ad181431ed6cc7773ef95d04"
+    },
+    {
+      "from": "ilaria/bench/production_contamination_clearance/verify.py",
+      "to": "ramasite/benchmarks/ilaria/production_contamination_clearance/verify.py",
+      "before_sha256": "bde5ad8419c3f981c106dbc4c2ba5bf6120cdb3b3230b513d2af6042ddb69fdd",
+      "after_sha256": "8c88a83613303dd179d65613e2b3a5846c97ca8900a10428c731477105588b3e"
+    },
+    {
+      "from": "ilaria/bench/voxpopuli_ro_acquisition/acquire_voxpopuli_ro.py",
+      "to": "ramasite/benchmarks/ilaria/voxpopuli_ro_acquisition/acquire_voxpopuli_ro.py",
+      "before_sha256": "d4d84561f61b485130146532cd50040302db2f4d723ffbe223251d04942038d2",
+      "after_sha256": "00a717ef3e0740d4dd4453e2183b439cda09b77bc91088ea0885855b44fbeec9"
+    },
+    {
+      "from": "ilaria/runtime/evidence/README.md",
+      "to": "ilaria/runtime/evidence/README.md",
+      "before_sha256": "2dae4e5b466f1db5cf2a6d60805f1c14ac29ecea9a7abe75c21968441cd6554b",
+      "after_sha256": "1dd044ec2e390881a41f5f8656a5af30857216b28495c80d5feef39528a2cb34"
+    },
+    {
+      "from": "ilaria/runtime/tritpack20/README.md",
+      "to": "ilaria/runtime/tritpack20/README.md",
+      "before_sha256": "5504ef6ea16a6fb4202c5b8cd0b313e1a4627286c20e6a383518d8ad69a93d1f",
+      "after_sha256": "1607ab1e7a462e81b9921c43b59d7bf4111a8d67471d9cade2115b57e4c8b694"
+    },
+    {
+      "from": "scripts/benchmark-supervisor.ps1",
+      "to": "ramasite/benchmarks/workspace/benchmark-supervisor.ps1",
+      "before_sha256": "e26208339f9f8f4974411af5cdf032d4065ce498bdf015c106a0eabf84fea65b",
+      "after_sha256": "bcd87875472bc99df5dffa46f934a60d2fd7876921939ed41829e8c15dfb549d"
+    },
+    {
+      "from": "scripts/benchmark-supervisor.py",
+      "to": "ramasite/benchmarks/workspace/benchmark-supervisor.py",
+      "before_sha256": "f27b477e99c14d557501c6893114e3ff7f768c4d9eb1fe7c6eb8f60eeb13cbf7",
+      "after_sha256": "aea08c52265d1f4db8de4646d57ca060c5a5b2ad70fda576334aab1b1aaec1ad"
+    },
+    {
+      "from": "scripts/benchmark-supervisor.sh",
+      "to": "ramasite/benchmarks/workspace/benchmark-supervisor.sh",
+      "before_sha256": "cc23898f94a8553efb7f5a1f6e327e786f680aad68fb55e9d912c49a5230eb05",
+      "after_sha256": "85b9958995bb5e3d09d486a2bd5d8226960321acefaec02c7609b750e8c6d76a"
+    },
+    {
+      "from": "scripts/public-checkout.inputs.json",
+      "to": "ramasite/scripts/public-checkout.inputs.json",
+      "before_sha256": "32b1cca8458605a84590903a66bf45c594793eb57a8655bf51caee3828f5e030",
+      "after_sha256": "1fcd6dbe49999a6a8afd501ecfd2882b0943249f287ccf8f1ee8bf4973b55a09"
+    },
+    {
+      "from": "scripts/run-python-tests.py",
+      "to": "ramasite/scripts/run-python-tests.py",
+      "before_sha256": "6445816c80a425c5ead036299ff86a293ede26a7196a36c937f838df44534c40",
+      "after_sha256": "4c7fd63b14ea3f9b35c03dd0eb96d6f26df3dd379ad83d02dae4febaa0898ed4"
+    },
+    {
+      "from": "scripts/test_verify_imc_consent_revocation.py",
+      "to": "ramasite/scripts/test_verify_imc_consent_revocation.py",
+      "before_sha256": "291922d726c4aa7ba6c17ed85e176628943010a9aadef4188c366b8c54d5f1ea",
+      "after_sha256": "6bdfcf8ecdb969d8352029bcde3a3e88c6a53d74fd656a86c10d85614909f725"
+    },
+    {
+      "from": "scripts/verify-contracts.ps1",
+      "to": "ramasite/scripts/verify-contracts.ps1",
+      "before_sha256": "53844e39d20bdfe8c2623159197ae785409aa7fd4e0b2ec800836878dce8e1ce",
+      "after_sha256": "63af4fff549d609745e7408e71b0625cf80184ab50fb8829039884612bd70ba1"
+    },
+    {
+      "from": "scripts/verify-effects.ps1",
+      "to": "ramasite/scripts/verify-effects.ps1",
+      "before_sha256": "86ae23511159846b334ab306030371e6b0f000946e2d7958fe84e747894d8705",
+      "after_sha256": "28f5e36299f5457e6d00a44860a2b1c6e8002b4f3d287a0c91d94c1ec04ac723"
+    },
+    {
+      "from": "scripts/verify-imc-consent-revocation.py",
+      "to": "ramasite/scripts/verify-imc-consent-revocation.py",
+      "before_sha256": "dd10c14e238b4bb3dfbc992b99f5fbf777ec0b5405189d7a966c7f87cec95b48",
+      "after_sha256": "9ef93c8fa75cd730c45ad2650004c9512c6378b471ce91dfc9ae8b39e8ba9d01"
+    },
+    {
+      "from": "scripts/verify-imc-network.py",
+      "to": "ramasite/scripts/verify-imc-network.py",
+      "before_sha256": "a81f0a432a238c6a0dfa6b009d60f6ec3fd1f7fcde2c2b2bc8a4e9ba8e450ba1",
+      "after_sha256": "1e286f822b4444944e5ec372afbe090722f7432c2f04faa4c20e2fc1987acf91"
+    },
+    {
+      "from": "scripts/verify-native-cleanup.py",
+      "to": "ramasite/scripts/verify-native-cleanup.py",
+      "before_sha256": "816e836c0e1a7c3153b291e69e259b5ab1ac59eca24ff3107fbaf35b78adbce1",
+      "after_sha256": "7a759c4a5f8c53afc0876e90f6891e996ba1d9f7aab6dc25c9d2b74b9aa453fd"
+    },
+    {
+      "from": "scripts/verify-native-driver-image.py",
+      "to": "ramasite/scripts/verify-native-driver-image.py",
+      "before_sha256": "7f4ea6acbb3ddd61bc110491f21232b8c578e99dfeacddbbc92b1867cfabfb43",
+      "after_sha256": "e948b7ea9b472b7af624f0ba5eaeb8364ca7fe1d441dff8d06aeec9f2b70a942"
+    },
+    {
+      "from": "scripts/verify-nativegraph-wire.py",
+      "to": "ramasite/scripts/verify-nativegraph-wire.py",
+      "before_sha256": "c21f7df1c863a0a59885eceb1dc0cc000dabdeca6ff314cae28662da3c2b3bec",
+      "after_sha256": "4768a39a431f06107768a70533424faa4fb7c14ae4be83a510c2f99ada1f5410"
+    },
+    {
+      "from": "scripts/verify-public-checkout.ps1",
+      "to": "ramasite/scripts/verify-public-checkout.ps1",
+      "before_sha256": "e82da9af42831064c5ec8191cd14eb4a971c27fa72cf51e6243013b70525fc14",
+      "after_sha256": "e818c78c859bd7c2574090ed1c74fc07bd5d3ce133982c8ca413c8bdeb38b099"
+    },
+    {
+      "from": "scripts/verify-supervisor-v3.ps1",
+      "to": "ramasite/scripts/verify-supervisor-v3.ps1",
+      "before_sha256": "fe8ee4e656c082401b3fadc7032bb3516f85f962325334014a776800a647dd9f",
+      "after_sha256": "b4745ee9eaaf7b9bc87ca43e2766e65b7c8e0254d5aa711b1977543576b92f80"
+    },
+    {
+      "from": "scripts/verify-supervisor-v3.sh",
+      "to": "ramasite/scripts/verify-supervisor-v3.sh",
+      "before_sha256": "48cff77b1fc2dd3eb8afd790c6f6740d9ec5045980ce555a3aaf867eb8cf0749",
+      "after_sha256": "22c1e84f80abd7c7d84b897158a6081f2f748a346084d83bd32ab45486374a72"
+    },
+    {
+      "from": "scripts/verify-supervisor.ps1",
+      "to": "ramasite/scripts/verify-supervisor.ps1",
+      "before_sha256": "c67a83713b8e5a34c0f4c4514d2219819a3fc29664ea3e886c5aa375abd4f88e",
+      "after_sha256": "78d8accaca9c6d52399c143408debf8194ba6bc07e6e35eed9ba1d16483daba3"
+    },
+    {
+      "from": "scripts/verify-supervisor.sh",
+      "to": "ramasite/scripts/verify-supervisor.sh",
+      "before_sha256": "3ad7bd9c4b47366c1eeb9b15ba2d3ed3c13ec040eb788ae35ab3e5b3f3baf016",
+      "after_sha256": "a00b1c0963b5986dc5956f0433f4fcbb93d575c083332afc7fc6132825a71242"
+    },
+    {
+      "from": "scripts/verify-workspace.ps1",
+      "to": "ramasite/scripts/verify-workspace.ps1",
+      "before_sha256": "ae73a7f4c9f293aa4739ec1240944d655c22cebef9b75a7be9bfaa64fb77b0eb",
+      "after_sha256": "695a3378407e00c0b2a8d97338ce4ddd139b39df42c116f3955071c57b1f0f8e"
+    },
+    {
+      "from": "swyp/README.md",
+      "to": "swyp/README.md",
+      "before_sha256": "a37c9290ecfa86e776da4259f03508b47ef004c5275db64bbb8f6aeaee196f05",
+      "after_sha256": "fc0ec21d221d48bcea51576e55efe3d7e2fde5d8c6351b03212147ef2dd3cab9"
+    },
+    {
+      "from": "swyp/benchmarks/swyp/core_aot_bench.py",
+      "to": "ramasite/benchmarks/swyp/swyp/core_aot_bench.py",
+      "before_sha256": "ee3b65f7b24085cc7c8b50b12c7c7ff5437e8bb08337c051bf6ff22d8f4573c1",
+      "after_sha256": "3a593813d9fe85c637d40ba8bde9d6f4f62290aaaffd822ddcc5c73102928144"
+    },
+    {
+      "from": "swyp/benchmarks/swyp/refinement_eval.py",
+      "to": "ramasite/benchmarks/swyp/swyp/refinement_eval.py",
+      "before_sha256": "51c0c5a0d543c405ee804c4b03f3819a10cd09cac405301611a1ff2807284d0a",
+      "after_sha256": "19670f32f2140a6e67592b0a848e3e7afa6f07b0a878c8b350fe2762a4d93f7d"
+    },
+    {
+      "from": "swyp/benchmarks/swyp/research_campaign.py",
+      "to": "ramasite/benchmarks/swyp/swyp/research_campaign.py",
+      "before_sha256": "7fad4b43060748511247699e3fe7effb1c85fbef2fec441a5b919c6fe43ae6e3",
+      "after_sha256": "8cfa4171407609cab17ed05699d57634054c0e558ea43305b21eacfc1d92b539"
+    },
+    {
+      "from": "swyp/benchmarks/swyp/run.py",
+      "to": "ramasite/benchmarks/swyp/swyp/run.py",
+      "before_sha256": "310cda0bdaddd950ef77b3fd6a4fc0582b3cc3544502cad292730db2eafd7b0f",
+      "after_sha256": "841faa06295aa0e81a787b7e3b81cf05456a1574fff74db3a1b5a790b2e0558a"
+    },
+    {
+      "from": "swyp/benchmarks/swyp/synthesis_eval.py",
+      "to": "ramasite/benchmarks/swyp/swyp/synthesis_eval.py",
+      "before_sha256": "d4794ed761301e55bb74ceb10f94da1f8a55320791e62f43686fa0b5a1f219b7",
+      "after_sha256": "68d987a1da476d9b1d78295c6fb6edd537c471a5ae8d74068277a3d2721e4a82"
+    },
+    {
+      "from": "swyp/benchmarks/swyp/synthesis_matrix.py",
+      "to": "ramasite/benchmarks/swyp/swyp/synthesis_matrix.py",
+      "before_sha256": "8e63102bd5e9f365ce131ac38c4c3d0c7c908be20e7b675ba06fb99a716b3d9c",
+      "after_sha256": "074df25c1b1d72c3cb9189817020df48f85d3bfa0ae38caf02d72be7f13685fb"
+    },
+    {
+      "from": "swyp/docs/ARCHITECTURE.md",
+      "to": "ramasite/docs/swyp/ARCHITECTURE.md",
+      "before_sha256": "bb215f13f5c47211651e3bace3691ad9739265e23df5a2f5fe59e3a2e734f84a",
+      "after_sha256": "7e6476bb7b0fce070cf6eac0e58025ecaced8540722c63a9edabbff9119a9dde"
+    },
+    {
+      "from": "swyp/docs/DEVELOPMENT.md",
+      "to": "ramasite/docs/swyp/DEVELOPMENT.md",
+      "before_sha256": "6a1d6cd60d68e2e80e72d2918dea44d359b392277e0f5ec1cb557f08a0d0b3d1",
+      "after_sha256": "42c2f3ec839a553b83186c69ed6630b2678c2d5594fe88e97838492d4eb04b80"
+    },
+    {
+      "from": "swyp/docs/ROADMAP.md",
+      "to": "ramasite/agent-md/swyp/docs/ROADMAP.md",
+      "before_sha256": "30501b24039c6a876f82f8227568e6ae563d2f25dd29370ce66baa5b37be634d",
+      "after_sha256": "7541ee00e7f46cacf9138be61753242e8ac9d0675b1dd59f4fcee4c85db076e1"
+    },
+    {
+      "from": "swyp/docs/SWYPB_FORMAT.md",
+      "to": "ramasite/docs/swyp/SWYPB_FORMAT.md",
+      "before_sha256": "8a39c5f3c3fe8b115c084588a767d8062dd1dbd37c5241a65d3f40acbc184697",
+      "after_sha256": "ef5f8e84c99f547f91753c6bc0827a7538c2f561edb1d3bcb63974deae8cd468"
+    },
+    {
+      "from": "swyp/docs/SWYP_LANG.md",
+      "to": "ramasite/docs/swyp/SWYP_LANG.md",
+      "before_sha256": "0e29256c365b46a07cc51fa6a70c1271fec72967915e6ff71438a653d4056d25",
+      "after_sha256": "29edbeea5122fa91f3e36268d3ded8dcd8e8cf559361c854b53fadfde1c9ff75"
+    },
+    {
+      "from": "swyp/docs/history/CAMPAIGN_100_AGENTS.md",
+      "to": "ramasite/agent-md/swyp/history/CAMPAIGN_100_AGENTS.md",
+      "before_sha256": "bee0e934eecc3b24349745f08fd9944b51c6b3b0dbec2f5e52650fb740d88c59",
+      "after_sha256": "b08da8745acb4185121ff06e26b8bec91bd3a7fe180f70e0979bce7f5c99b61c"
+    },
+    {
+      "from": "swyp/docs/history/EXPERIMENT_PERFORMANCE.md",
+      "to": "ramasite/agent-md/swyp/history/EXPERIMENT_PERFORMANCE.md",
+      "before_sha256": "48568423e134205421793a29cf902518404eca69d51ce7aec902029b9af578af",
+      "after_sha256": "91be8fdc991d3eb00433cbb7468db6ebfc50852a54814588456d04398853a1b3"
+    },
+    {
+      "from": "swyp/docs/history/OPERATION_GRAPH_AND_NEXUS.md",
+      "to": "ramasite/agent-md/swyp/history/OPERATION_GRAPH_AND_NEXUS.md",
+      "before_sha256": "4fb732104c9c03784ec7c49c93bda81d9595e0942bc28d2f4f913b33f3ef0d1c",
+      "after_sha256": "49f605e2d21824bc287e16d864684b25a2c6dbe6bc6a92c27cdb0997dcd89646"
+    },
+    {
+      "from": "swyp/docs/history/SWYP_MIGRATION_ASSESSMENT.md",
+      "to": "ramasite/agent-md/swyp/history/SWYP_MIGRATION_ASSESSMENT.md",
+      "before_sha256": "678a02506a8df9f455dc248b57cd95ad4af858488cb5c253bf981d3a4703d921",
+      "after_sha256": "6b62f905e4d9d5b71a8f98dbb461b9eb53cbe3ddc3f11510f070e495159f7b04"
+    },
+    {
+      "from": "swyp/docs/history/SWYP_NATIVE_ASSESSMENT.md",
+      "to": "ramasite/agent-md/swyp/history/SWYP_NATIVE_ASSESSMENT.md",
+      "before_sha256": "27e90af7d49eb7d53312c8bfd19f8a251e03425893c917cf7511596f8cddb0bb",
+      "after_sha256": "c18712b88c32ef8021a6153f98a12129a8ddd6b178faa63742774baa3bc2c1c5"
+    },
+    {
+      "from": "swypik/commerce/README.md",
+      "to": "swypik/commerce/README.md",
+      "before_sha256": "fa0f52738e06d80c17c0d3b9d4a5604f01bdc7ca4cbb975b29536c58f7e55ca4",
+      "after_sha256": "acfa3c6bcadcf7973cba7140ed8377afb4bcfd8df35cd476691cb7780a0e5d88"
+    },
+    {
+      "from": "swypik/commerce/docs/infra/edge-cache.md",
+      "to": "ramasite/docs/swypik-commerce/infra/edge-cache.md",
+      "before_sha256": "bf17947e6db49bc4e551c2585bd919b850bf4ff948de34cad601b3109d5b412e",
+      "after_sha256": "f653e26c5cda79a6644cf095e81e87c026ff6aba2e818c65c3b78263eeea01e4"
+    },
+    {
+      "from": "swypik/commerce/infra/README.md",
+      "to": "swypik/commerce/infra/README.md",
+      "before_sha256": "33b5083c4540f80133adc1810b815a5f1351f2079aceecdee6883fcf989b7996",
+      "after_sha256": "873e274b6c0a9cc47944cd111ae51ab38b1b11d717de1a1ae263579d088bbc3f"
+    },
+    {
+      "from": "swypik-os/README.md",
+      "to": "swypik-os/README.md",
+      "before_sha256": "796bd60ca7ed358dbf9552779f9b0ea382b9324e6b05f714103d9a29dd99a46c",
+      "after_sha256": "62029cdd7ff5ea22338a724e17f0dd73f7fdaa9e25b5346c201a5fb8b05036f1"
+    },
+    {
+      "from": "swypik-os/kernel/build-portable.ps1",
+      "to": "swypik-os/kernel/build-portable.ps1",
+      "before_sha256": "9dd420eb01f0a7473590e18d1e3072845c5c9df1935dd7b7fab4569c4a2b0129",
+      "after_sha256": "039e38cd96271fa5c48abe6c8f63726a40da076c188c8a66c398c9ddd2901b33"
+    },
+    {
+      "from": "swypik-os/kernel/build.ps1",
+      "to": "swypik-os/kernel/build.ps1",
+      "before_sha256": "ffa8d03cde133d984197dfcd6463920288e98cab53394bfceafbd7871451f175",
+      "after_sha256": "6516e64323eea55941a5cfecba07d6d7b13ead8fcee4f36fb0acae683576cf1f"
+    }
+  ],
+  "layout_verified_at": "2026-10-02T19:54:14.816441+00:00",
+  "visible_product_and_organization_directories": [
+    "ilaria",
+    "ramasite",
+    "site",
+    "swyp",
+    "swypik",
+    "swypik-os"
+  ],
+  "post_migration_source_updates": {
+    "description": "Path helpers, isolated benchmark modules, portable Colab bundling, documentation and pinned helper hashes were updated and validated after directory migration.",
+    "files": [
+      "go.work",
+      "AGENTS.md",
+      "README.md",
+      "ilaria/forge/build_colab_bundle.py",
+      "ilaria/forge/test_build_colab_bundle.py",
+      "ramasite/benchmarks/ilaria/nexus_ilaria_benchmark_paths.py",
+      "ramasite/benchmarks/swyp/nexus_swyp_benchmark_paths.py",
+      "ramasite/benchmarks/ilaria/go.mod",
+      "ramasite/benchmarks/swyp/go.mod",
+      "ramasite/scripts/run-python-tests.py",
+      "ramasite/scripts/verify-imc-consent-revocation.py"
+    ]
+  }
+}

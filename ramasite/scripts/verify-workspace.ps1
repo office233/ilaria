@@ -14,7 +14,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
-$root = Split-Path -Parent $PSScriptRoot
+$root = (Split-Path -Parent (Split-Path -Parent $PSScriptRoot))
 $previousWork = $env:GOWORK
 $previousOS = $env:GOOS
 $previousArch = $env:GOARCH
@@ -45,6 +45,15 @@ try {
                 Invoke-Check $PythonCommand @('-m', 'py_compile', 'forge/imc_model.py', 'forge/train_ilaria.py', 'forge/training_state.py')
                 Invoke-Check $PythonCommand @('-m', 'pytest', '-q', 'forge')
             }
+        } finally {
+            Pop-Location
+        }
+    }
+    if ($Products -contains 'ilaria') {
+        Push-Location -LiteralPath (Join-Path $root 'ramasite/benchmarks/ilaria')
+        try {
+            Invoke-Check $GoCommand @('vet', './...')
+            Invoke-Check $GoCommand @('test', '-count=1', "-timeout=$TestTimeout", './...')
         } finally {
             Pop-Location
         }

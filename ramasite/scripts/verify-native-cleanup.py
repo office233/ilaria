@@ -5,11 +5,10 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
-import sys
 import tempfile
 import threading
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 SOURCES = ["src/core/device_broker.c", "src/core/device_platform.c",
            "src/core/driver_domain.c", "src/core/capability.c", "src/core/device_graph.c",
            "tests/native_cleanup_fault_test.c"]
@@ -67,7 +66,7 @@ def compiler_path(requested):
         found = shutil.which(name)
         if found:
             return found
-    for candidate in sorted((ROOT / ".tools").glob("zig-*/zig.exe"), reverse=True):
+    for candidate in sorted((ROOT / "ramasite/local/tools").glob("zig-*/zig.exe"), reverse=True):
         if candidate.is_file():
             return str(candidate)
     return None
@@ -97,11 +96,9 @@ def main():
     parser.add_argument("--native-only", action="store_true", help="disable Windows-to-WSL fallback")
     args = parser.parse_args()
     compiler = compiler_path(args.compiler)
+    # The caller can select an approved output root. Otherwise tempfile uses
+    # the host's TEMP/TMP configuration, never a developer-specific home path.
     temp_root = args.temp_root
-    if temp_root is None and os.name == "nt":
-        approved = Path(r"C:\Users\abel\AppData\Local\Temp\2\opencode")
-        if approved.is_dir():
-            temp_root = approved
     if temp_root is not None and not temp_root.is_dir():
         parser.error("--temp-root must already exist")
     if compiler is None:
@@ -137,7 +134,7 @@ def main():
             return result if result > 0 else 1
         result = invoke([str(executable)] + ([args.case] if args.case else []), out, args.run_timeout, env)
         print("PASS: native cleanup matrix" if result == 0 else
-              "FAIL: native cleanup matrix; repro: python scripts/verify-native-cleanup.py --case <case from FAIL>")
+              "FAIL: native cleanup matrix; repro: python ramasite/scripts/verify-native-cleanup.py --case <case from FAIL>")
         return result if result >= 0 else 1
 
 

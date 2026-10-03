@@ -9,12 +9,11 @@ from pathlib import Path
 import shlex
 import shutil
 import subprocess
-import sys
 import tempfile
 from typing import Sequence
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 OS_ROOT = ROOT / "swypik-os"
 INCLUDE = OS_ROOT / "kernel" / "include"
 PROBE = OS_ROOT / "kernel" / "tests" / "nativegraph_wire_probe.c"
@@ -46,7 +45,7 @@ def require_ok(proc: subprocess.CompletedProcess[str], step: str) -> None:
 
 
 def workspace_zig() -> Path | None:
-    tools = ROOT / ".tools"
+    tools = ROOT / "ramasite/local/tools"
     if not tools.is_dir():
         return None
     pattern = "zig-*/zig.exe" if os.name == "nt" else "zig-*/zig"

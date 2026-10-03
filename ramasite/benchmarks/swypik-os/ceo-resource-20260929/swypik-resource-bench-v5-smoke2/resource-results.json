@@ -1,0 +1,52 @@
+﻿{
+    "schema_version":  1,
+    "measured_utc":  "2026-09-30T07:26:24.0410318Z",
+    "executable":  "E:\\CEO\\swypik-resource-bench-v5-smoke2\\SwypikOS-resource.exe",
+    "executable_sha256":  "754214C0B1F9F16FB61F4BA05F77C5C21F066A212F4BECEF5A5809BA3606F81B",
+    "built_for_benchmark":  true,
+    "git_revision":  "a5a8175",
+    "git_dirty":  true,
+    "logical_processors":  8,
+    "startup_seconds":  1,
+    "idle_seconds":  1,
+    "sample_interval_ms":  100,
+    "profiles":  [
+                     "phone"
+                 ],
+    "runs_per_profile":  1,
+    "summary":  [
+                    {
+                        "profile":  "phone",
+                        "runs":  1,
+                        "median_startup_peak_working_set_mb":  23.109,
+                        "max_startup_peak_working_set_mb":  23.109,
+                        "median_startup_peak_private_mb":  48.594,
+                        "median_window_ready_ms":  544,
+                        "median_steady_working_set_mb":  30.687,
+                        "median_steady_private_mb":  51.52,
+                        "median_idle_cpu_percent":  1.4327,
+                        "median_threads":  10,
+                        "median_handles":  184
+                    }
+                ],
+    "runs":  [
+                 {
+                     "run":  1,
+                     "sequence":  1,
+                     "profile":  "phone",
+                     "window_ready_ms":  544,
+                     "startup_peak_working_set_mb":  23.109,
+                     "startup_peak_private_mb":  48.594,
+                     "startup_peak_threads":  10,
+                     "startup_peak_handles":  184,
+                     "steady_avg_working_set_mb":  30.687,
+                     "steady_peak_working_set_mb":  41.508,
+                     "steady_avg_private_mb":  51.52,
+                     "steady_peak_private_mb":  56.574,
+                     "steady_idle_cpu_percent":  1.4327,
+                     "steady_avg_threads":  10,
+                     "steady_avg_handles":  184,
+                     "samples":  "E:\\CEO\\swypik-resource-bench-v5-smoke2\\run-01-phone\\samples.json"
+                 }
+             ]
+}

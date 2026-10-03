@@ -1,0 +1,25 @@
+{
+  "format": "ilaria-licensed-code-pilot-policy-v1",
+  "sources": [
+    "freertos_kernel",
+    "zephyr"
+  ],
+  "split_policy": "sha256-connected-module-family-buckets-v1",
+  "split_bucket_boundaries": {
+    "train_end": 80,
+    "validation_end": 90
+  },
+  "minimum_tokens": {
+    "train": 10000000,
+    "validation": 1000000,
+    "sealed": 1000000
+  },
+  "benchmark_shingle_width": 12,
+  "resource_caps": {
+    "output_bytes": 1073741824,
+    "rss_bytes": 1073741824,
+    "wall_seconds": 900,
+    "threads": 2
+  },
+  "purpose": "code-only scale-validation; non-promotable and not a full production mixture"
+}

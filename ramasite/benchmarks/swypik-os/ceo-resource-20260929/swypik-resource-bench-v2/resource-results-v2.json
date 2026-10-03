@@ -1,0 +1,76 @@
+﻿{
+    "Summary":  [
+                    {
+                        "Profile":  "balanced",
+                        "MedianWorkingSetMB":  20.71,
+                        "MedianPrivateMB":  50.42,
+                        "MedianIdleCPUPercent":  0,
+                        "MedianThreads":  14,
+                        "MedianHandles":  213
+                    },
+                    {
+                        "Profile":  "phone",
+                        "MedianWorkingSetMB":  20.66,
+                        "MedianPrivateMB":  49.79,
+                        "MedianIdleCPUPercent":  0,
+                        "MedianThreads":  13,
+                        "MedianHandles":  207
+                    }
+                ],
+    "Runs":  [
+                 {
+                     "Run":  1,
+                     "Profile":  "balanced",
+                     "WorkingSetMB":  57.74,
+                     "PrivateMB":  50.42,
+                     "IdleCPUPercent":  0,
+                     "Threads":  13,
+                     "Handles":  207
+                 },
+                 {
+                     "Run":  2,
+                     "Profile":  "phone",
+                     "WorkingSetMB":  20.05,
+                     "PrivateMB":  48.99,
+                     "IdleCPUPercent":  0,
+                     "Threads":  13,
+                     "Handles":  207
+                 },
+                 {
+                     "Run":  3,
+                     "Profile":  "balanced",
+                     "WorkingSetMB":  20.71,
+                     "PrivateMB":  50.6,
+                     "IdleCPUPercent":  0,
+                     "Threads":  15,
+                     "Handles":  221
+                 },
+                 {
+                     "Run":  4,
+                     "Profile":  "phone",
+                     "WorkingSetMB":  20.66,
+                     "PrivateMB":  50.46,
+                     "IdleCPUPercent":  0,
+                     "Threads":  13,
+                     "Handles":  207
+                 },
+                 {
+                     "Run":  5,
+                     "Profile":  "balanced",
+                     "WorkingSetMB":  20.64,
+                     "PrivateMB":  50.19,
+                     "IdleCPUPercent":  0,
+                     "Threads":  14,
+                     "Handles":  213
+                 },
+                 {
+                     "Run":  6,
+                     "Profile":  "phone",
+                     "WorkingSetMB":  20.66,
+                     "PrivateMB":  49.79,
+                     "IdleCPUPercent":  0,
+                     "Threads":  14,
+                     "Handles":  213
+                 }
+             ]
+}

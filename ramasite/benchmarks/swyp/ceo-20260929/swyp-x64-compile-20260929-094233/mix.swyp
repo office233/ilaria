@@ -1,0 +1,6 @@
+fn mix(a:i64,b:i64)->i64 {
+  let x:i64=a+b;
+  let y:i64=x*3;
+  return y-7;
+}
+fn main(){}

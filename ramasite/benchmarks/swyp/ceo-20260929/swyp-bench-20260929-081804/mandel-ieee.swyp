@@ -1,0 +1,27 @@
+
+fn mandelbrot(width:ieee64)->ieee64 {
+  let height:ieee64=width/2;
+  let py:ieee64=0;
+  let checksum:ieee64=0;
+  while py<height {
+    let px:ieee64=0;
+    while px<width {
+      let cr:ieee64=px*3.5/width-2.5;
+      let ci:ieee64=py*2/height-1;
+      let zr:ieee64=0;
+      let zi:ieee64=0;
+      let count:ieee64=0;
+      while count<80 && zr*zr+zi*zi<=4 {
+        let next:ieee64=zr*zr-zi*zi+cr;
+        zi=2*zr*zi+ci;
+        zr=next;
+        count=count+1;
+      }
+      checksum=checksum+count;
+      px=px+1;
+    }
+    py=py+1;
+  }
+  return checksum;
+}
+fn main(){}

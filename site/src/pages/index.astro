@@ -1,0 +1,1286 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Brand from "../components/Brand.astro";
+
+const title = "Swypik — One ecosystem for discovery, commerce and local AI";
+const description = "Swypik brings video-native commerce, Ilaria local AI and a native agentic desktop shell into one connected ecosystem.";
+
+const apps = [
+  { name: "Search", label: "Find across your world", icon: "⌕" },
+  { name: "Studio", label: "Create with AI beside you", icon: "✦" },
+  { name: "Tasks", label: "Turn intent into action", icon: "✓" },
+  { name: "Connect", label: "Devices and people", icon: "◌" },
+  { name: "Shield", label: "Privacy and control", icon: "◆" },
+  { name: "Wallet", label: "Commerce at system level", icon: "◇" },
+];
+
+const faq = [
+  ["Is Swypik available now?", "The Swypik web product is already running. The mobile app and the broader ecosystem are still in active development, so the public launch experience is being rolled out in stages."],
+  ["What is Ilaria?", "Ilaria is Swypik’s local-first AI research stack: a Romanian-first, English-capable language system with its own Go inference engine, tool-use work and one-shot memory research. It is not presented as a replacement for frontier cloud models."],
+  ["Is SwypikOS a full operating system today?", "Not yet. The current verified implementation is a native Windows desktop shell connected to Ilaria. The long-term direction is a broader agentic computing layer, but the site deliberately separates what exists today from the roadmap."],
+  ["Do you sell my data?", "The early-access form is designed to collect only what is needed to contact you about Swypik. The final production deployment should be reviewed against the privacy policy and configured with the correct legal entity and retention details before launch."],
+];
+---
+
+<BaseLayout title={title} description={description}>
+  <Fragment slot="head">
+    <script type="application/ld+json" is:inline set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      name: "Swypik",
+      url: "https://swypik.com",
+      logo: "https://swypik.com/favicon.svg",
+      description,
+    })} />
+  </Fragment>
+
+  <header class="site-header">
+    <div class="shell nav">
+      <Brand />
+      <nav aria-label="Primary navigation">
+        <a href="#swypik">Swypik</a>
+        <a href="#ilaria">Ilaria</a>
+        <a href="#os">OS</a>
+        <a href="#ecosystem">Ecosystem</a>
+      </nav>
+      <a class="nav-cta" href="#early-access">Get early access <span aria-hidden="true">↗</span></a>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <section class="hero">
+      <div class="hero-glow" aria-hidden="true"></div>
+      <div class="shell hero-grid">
+        <div class="hero-copy reveal is-visible">
+          <span class="eyebrow">Swypik ecosystem · early access</span>
+          <h1>The internet.<br /><span class="gradient-text">Rebuilt around you.</span></h1>
+          <p>
+            Watch, discover, buy, create and work with an AI that can stay close to your data.
+            Swypik connects social commerce, Ilaria and a native agentic shell into one system.
+          </p>
+          <div class="hero-actions">
+            <a class="button button-primary" href="#early-access">Join early access <span>→</span></a>
+            <a class="button button-ghost" href="#ecosystem">See how it connects</a>
+          </div>
+          <div class="trust-row" aria-label="Product principles">
+            <span>Local-first AI</span>
+            <span>Native software</span>
+            <span>Built for Europe</span>
+          </div>
+        </div>
+
+        <div class="ecosystem-stage reveal is-visible" aria-label="Swypik ecosystem preview">
+          <div class="orb orb-one" aria-hidden="true"></div>
+          <div class="orb orb-two" aria-hidden="true"></div>
+
+          <div class="signal-card signal-ai glass">
+            <div class="signal-head"><span class="signal-dot"></span>Ilaria memory</div>
+            <p>“Remember: my delivery preference is evening.”</p>
+            <div class="memory-chip">Stored locally · one-shot memory</div>
+          </div>
+
+          <div class="phone-shell">
+            <div class="phone-screen">
+              <div class="phone-top"><span>swypik</span><span>⌕</span></div>
+              <div class="video-scene">
+                <div class="scene-copy">
+                  <span class="scene-tag">For you</span>
+                  <h3>Discover what moves you.</h3>
+                  <p>Video → product → checkout, without leaving the flow.</p>
+                </div>
+                <div class="product-float">
+                  <div class="product-thumb"></div>
+                  <div><strong>Studio Lamp</strong><span>€79 · 4.9 ★</span></div>
+                  <button aria-label="Add Studio Lamp">+</button>
+                </div>
+              </div>
+              <div class="phone-nav"><span>⌂</span><span>⌕</span><span class="create">+</span><span>□</span><span>○</span></div>
+            </div>
+          </div>
+
+          <div class="signal-card signal-os glass">
+            <div class="os-mini-head"><span></span><span></span><span></span></div>
+            <div class="os-mini-body">
+              <div class="os-mini-command"><b>Ask Ilaria</b><span>Open my project and find the failing test.</span></div>
+              <div class="os-mini-result">Ready to inspect locally.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="hero-proof shell reveal">
+        <div><strong>01</strong><span>One identity</span></div>
+        <div><strong>02</strong><span>One intelligence layer</span></div>
+        <div><strong>03</strong><span>Three connected surfaces</span></div>
+      </div>
+    </section>
+
+    <section class="section product-section" id="swypik">
+      <div class="shell">
+        <p class="section-kicker reveal">01 · Swypik</p>
+        <h2 class="section-title reveal">Video that doesn’t end at <span class="gradient-text">“like.”</span></h2>
+        <p class="section-copy reveal">
+          Swypik is social discovery built around action: watch a clip, understand the product,
+          move to checkout and keep going. The web product is already live; native mobile is being
+          prepared as a separate launch track.
+        </p>
+
+        <div class="feature-grid">
+          <article class="feature feature-large glass reveal">
+            <div class="feature-topline"><span>Discovery engine</span><span class="status-dot">Live web</span></div>
+            <div class="feed-mock">
+              <div class="feed-card feed-purple"><span>01</span><strong>Watch</strong></div>
+              <div class="feed-card feed-black"><span>02</span><strong>Understand</strong></div>
+              <div class="feed-card feed-white"><span>03</span><strong>Buy</strong></div>
+            </div>
+            <h3>Commerce stays inside the story.</h3>
+            <p>Products, creators and checkout are designed as one continuous discovery loop.</p>
+          </article>
+
+          <article class="feature glass reveal">
+            <div class="icon-box">↗</div>
+            <h3>Creator-native</h3>
+            <p>Discovery and selling meet in the same interface instead of living in separate funnels.</p>
+          </article>
+
+          <article class="feature glass reveal">
+            <div class="icon-box">◎</div>
+            <h3>AI-ready by design</h3>
+            <p>Ranking, moderation and assistance can connect to the same event and commerce layer.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section ilaria-section" id="ilaria">
+      <div class="shell split">
+        <div>
+          <p class="section-kicker reveal">02 · Ilaria</p>
+          <h2 class="section-title reveal">An AI that can remember what your world <span class="gradient-text">just changed.</span></h2>
+          <p class="section-copy reveal">
+            Ilaria is a local-first AI research stack with a Go inference engine, Romanian-first language
+            work, English capability, tool use and one-shot memory research. It is designed to become the
+            intelligence layer inside Swypik — without pretending to be a frontier cloud model.
+          </p>
+          <div class="pill-row reveal">
+            <span class="pill">Go inference engine</span>
+            <span class="pill">Romanian + English</span>
+            <span class="pill">One-shot memory</span>
+            <span class="pill">Local-first</span>
+          </div>
+        </div>
+
+        <div class="terminal glass reveal" aria-label="Ilaria product demo">
+          <div class="terminal-bar">
+            <div><span></span><span></span><span></span></div>
+            <strong>Ilaria · local</strong>
+            <small>● ready</small>
+          </div>
+          <div class="conversation">
+            <div class="turn user"><span>You</span><p>Remember that my default delivery window is 18:00–21:00.</p></div>
+            <div class="turn ai"><span>Ilaria</span><p>I’ll keep that as your delivery preference.</p><em>memory.write → 1 fact</em></div>
+            <div class="terminal-divider"></div>
+            <div class="turn user"><span>You · later</span><p>When should the next order arrive?</p></div>
+            <div class="turn ai"><span>Ilaria</span><p>Your saved preference is evening, between 18:00 and 21:00.</p><em>memory.read → matched preference</em></div>
+          </div>
+          <div class="terminal-foot"><span>Runs can stay on your machine</span><span>⌁</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section os-section" id="os">
+      <div class="shell">
+        <div class="os-heading">
+          <div>
+            <p class="section-kicker reveal">03 · SwypikOS</p>
+            <h2 class="section-title reveal">AI with a desktop to <span class="gradient-text">act on.</span></h2>
+          </div>
+          <p class="section-copy reveal">
+            The current verified implementation is a native Windows desktop shell connected to Ilaria.
+            The ambition is broader: a computing layer where the assistant can understand context,
+            use tools and help complete work instead of living in a browser tab.
+          </p>
+        </div>
+
+        <div class="desktop glass reveal">
+          <div class="desktop-top">
+            <div class="desktop-brand"><img src="/favicon.svg" alt="" /><strong>SwypikOS</strong></div>
+            <div class="desktop-state"><span>Local AI</span><b>13:01</b></div>
+          </div>
+          <div class="desktop-body">
+            <aside>
+              <div class="avatar">IL</div>
+              <span>Ilaria</span>
+              <small>Local intelligence</small>
+              <div class="side-line"></div>
+              <p>“What do you want to get done?”</p>
+            </aside>
+            <div class="app-grid">
+              {apps.map((app) => (
+                <div class="app-card">
+                  <div class="app-icon">{app.icon}</div>
+                  <strong>{app.name}</strong>
+                  <span>{app.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div class="desktop-caption">
+            <span class="status-dot">Current: Windows-native shell</span>
+            <span>Roadmap: broader agentic computing platform</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section ecosystem-section" id="ecosystem">
+      <div class="shell">
+        <p class="section-kicker reveal">One ecosystem</p>
+        <h2 class="section-title reveal">Discovery becomes context.<br />Context becomes <span class="gradient-text">action.</span></h2>
+        <div class="loop-grid reveal">
+          <div class="loop-step">
+            <span class="loop-index">01</span>
+            <h3>Discover</h3>
+            <p>Swypik learns from what people watch, search and buy.</p>
+          </div>
+          <div class="loop-arrow">→</div>
+          <div class="loop-step">
+            <span class="loop-index">02</span>
+            <h3>Remember</h3>
+            <p>Ilaria can keep useful local context and preferences close.</p>
+          </div>
+          <div class="loop-arrow">→</div>
+          <div class="loop-step">
+            <span class="loop-index">03</span>
+            <h3>Act</h3>
+            <p>The agentic shell becomes a surface where intent can turn into work.</p>
+          </div>
+        </div>
+
+        <div class="manifesto glass reveal">
+          <span class="manifesto-mark">S</span>
+          <p>One account. One intelligence layer. Multiple surfaces — designed to feel like one product.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section early-section" id="early-access">
+      <div class="shell early-card glass reveal">
+        <div>
+          <span class="eyebrow">Private early access</span>
+          <h2>Be there before the ecosystem opens up.</h2>
+          <p>Join the launch list for Swypik, Ilaria and the next SwypikOS previews. No fake countdowns. No daily spam.</p>
+        </div>
+        <form id="waitlist-form" class="waitlist" action="/api/waitlist" method="post">
+          <label for="email">Email address</label>
+          <div class="field-row">
+            <input id="email" name="email" type="email" inputmode="email" autocomplete="email" maxlength="254" placeholder="you@example.com" required />
+            <button type="submit">Join early access <span>→</span></button>
+          </div>
+          <div class="trap" aria-hidden="true">
+            <label for="company">Company</label>
+            <input id="company" name="company" type="text" tabindex="-1" autocomplete="off" />
+          </div>
+          <label class="consent">
+            <input name="consent" type="checkbox" value="yes" required />
+            <span>I want launch and product updates from Swypik. I can unsubscribe at any time.</span>
+          </label>
+          <p class="form-note">By joining, you agree to the <a href="/privacy/">Privacy Policy</a>.</p>
+          <p id="form-status" class="form-status" role="status" aria-live="polite"></p>
+        </form>
+      </div>
+    </section>
+
+    <section class="section faq-section">
+      <div class="shell faq-grid">
+        <div>
+          <p class="section-kicker reveal">FAQ</p>
+          <h2 class="section-title reveal">Straight answers.<br /><span class="gradient-text">No vaporware copy.</span></h2>
+        </div>
+        <div class="faq-list">
+          {faq.map(([question, answer]) => (
+            <details class="reveal">
+              <summary>{question}<span aria-hidden="true">+</span></summary>
+              <p>{answer}</p>
+            </details>
+          ))}
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="shell footer-grid">
+      <div>
+        <Brand />
+        <p>Video-native commerce. Local-first intelligence. Agentic computing.</p>
+      </div>
+      <div class="footer-links">
+        <a href="/privacy/">Privacy</a>
+        <a href="/terms/">Terms</a>
+        <a href="/contact/">Contact</a>
+        <a href="#early-access">Early access</a>
+      </div>
+      <div class="footer-meta">© {new Date().getFullYear()} Swypik. Product roadmap subject to change.</div>
+    </div>
+  </footer>
+
+  <script>
+    type WaitlistResponse = {
+      error?: string;
+      existing?: boolean;
+    };
+
+    const form = document.querySelector<HTMLFormElement>("#waitlist-form");
+    const status = document.querySelector<HTMLElement>("#form-status");
+
+    form?.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (!status) return;
+
+      const submit = form.querySelector<HTMLButtonElement>("button[type='submit']");
+      const formData = new FormData(form);
+      const payload = {
+        email: String(formData.get("email") ?? ""),
+        company: String(formData.get("company") ?? ""),
+        consent: formData.get("consent") === "yes",
+        source: "homepage",
+      };
+
+      status.textContent = "Joining…";
+      submit?.setAttribute("disabled", "true");
+
+      try {
+        const response = await fetch(form.action, {
+          method: "POST",
+          headers: { "content-type": "application/json", "accept": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const rawResult: unknown = await response.json().catch(() => ({}));
+        const result: WaitlistResponse =
+          typeof rawResult === "object" && rawResult !== null
+            ? (rawResult as WaitlistResponse)
+            : {};
+
+        if (!response.ok) {
+          throw new Error(result?.error || "Could not join right now.");
+        }
+
+        status.textContent = result?.existing
+          ? "You’re already on the list."
+          : "You’re in. We’ll only email when there’s something worth seeing.";
+        form.reset();
+      } catch (error) {
+        status.textContent = error instanceof Error ? error.message : "Could not join right now.";
+      } finally {
+        submit?.removeAttribute("disabled");
+      }
+    });
+  </script>
+</BaseLayout>
+
+<style>
+  .site-header {
+    position: fixed;
+    top: 0;
+    right: 0;
+    left: 0;
+    z-index: 50;
+    padding: .9rem 0;
+    background: linear-gradient(to bottom, rgba(5,5,7,.82), rgba(5,5,7,.36), transparent);
+    backdrop-filter: blur(16px);
+  }
+
+  .nav {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    min-height: 52px;
+  }
+
+  nav {
+    display: flex;
+    gap: 1.7rem;
+    color: #a9a3b5;
+    font-size: .86rem;
+    font-weight: 650;
+  }
+
+  nav a, .footer-links a {
+    transition: color .2s ease;
+  }
+
+  nav a:hover, .footer-links a:hover {
+    color: white;
+  }
+
+  .nav-cta {
+    justify-self: end;
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    padding: .72rem 1rem;
+    border: 1px solid rgba(255,255,255,.13);
+    border-radius: 999px;
+    background: rgba(255,255,255,.07);
+    font-size: .84rem;
+    font-weight: 750;
+    backdrop-filter: blur(18px);
+  }
+
+  .hero {
+    position: relative;
+    min-height: 100svh;
+    padding: clamp(8.5rem, 14vw, 11rem) 0 5rem;
+    overflow: hidden;
+  }
+
+  .hero::after {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: 1px;
+    content: "";
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.16), transparent);
+  }
+
+  .hero-glow {
+    position: absolute;
+    top: -30%;
+    left: 45%;
+    width: 70vw;
+    height: 70vw;
+    border-radius: 999px;
+    background: radial-gradient(circle, rgba(124,58,237,.18), rgba(124,58,237,.03) 45%, transparent 68%);
+    filter: blur(12px);
+    pointer-events: none;
+  }
+
+  .hero-grid {
+    display: grid;
+    grid-template-columns: minmax(0, .95fr) minmax(470px, .9fr);
+    gap: clamp(3rem, 7vw, 7rem);
+    align-items: center;
+  }
+
+  .hero-copy h1 {
+    max-width: 820px;
+    margin: 1.45rem 0 1.4rem;
+    font-size: clamp(4rem, 8.5vw, 8rem);
+    line-height: .87;
+    letter-spacing: -.075em;
+  }
+
+  .hero-copy > p {
+    max-width: 660px;
+    margin: 0;
+    color: #afa9bb;
+    font-size: clamp(1.05rem, 1.7vw, 1.24rem);
+    line-height: 1.65;
+  }
+
+  .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .75rem;
+    margin-top: 2rem;
+  }
+
+  .button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .6rem;
+    min-height: 50px;
+    padding: 0 1.2rem;
+    border-radius: 999px;
+    font-size: .9rem;
+    font-weight: 760;
+    transition: transform .2s ease, background .2s ease, border-color .2s ease;
+  }
+
+  .button:hover { transform: translateY(-2px); }
+
+  .button-primary {
+    background: linear-gradient(135deg, #f7f4ff 0%, #c9b6ff 50%, #a278ff 100%);
+    color: #120c1e;
+    box-shadow: 0 14px 36px rgba(124,58,237,.28);
+  }
+
+  .button-ghost {
+    border: 1px solid rgba(255,255,255,.13);
+    background: rgba(255,255,255,.045);
+  }
+
+  .trust-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.15rem;
+    margin-top: 2rem;
+    color: #777080;
+    font-size: .77rem;
+    font-weight: 650;
+  }
+
+  .trust-row span::before {
+    margin-right: .45rem;
+    content: "·";
+    color: #9e7cff;
+  }
+
+  .ecosystem-stage {
+    position: relative;
+    min-height: 660px;
+    perspective: 1200px;
+  }
+
+  .phone-shell {
+    position: absolute;
+    top: 3%;
+    left: 50%;
+    z-index: 3;
+    width: min(320px, 65%);
+    aspect-ratio: .505;
+    padding: 8px;
+    border: 1px solid rgba(255,255,255,.25);
+    border-radius: 3.1rem;
+    background: linear-gradient(145deg, #2f2b38, #08080b 18%, #15121c 80%, #4c4357);
+    box-shadow: 0 55px 100px rgba(0,0,0,.54), 0 0 90px rgba(124,58,237,.14);
+    transform: translateX(-50%) rotateY(-8deg) rotateX(3deg);
+  }
+
+  .phone-screen {
+    position: relative;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    height: 100%;
+    overflow: hidden;
+    border-radius: 2.7rem;
+    background: #09090d;
+  }
+
+  .phone-screen::before {
+    position: absolute;
+    top: .55rem;
+    left: 50%;
+    z-index: 4;
+    width: 31%;
+    height: 1.15rem;
+    border-radius: 999px;
+    content: "";
+    background: #020204;
+    transform: translateX(-50%);
+  }
+
+  .phone-top {
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 2.35rem 1.2rem .8rem;
+    font-size: .78rem;
+    font-weight: 800;
+  }
+
+  .video-scene {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    overflow: hidden;
+    padding: 1.1rem;
+    background:
+      radial-gradient(circle at 75% 25%, rgba(209,178,255,.8), transparent 25%),
+      radial-gradient(circle at 32% 55%, rgba(74,56,166,.9), transparent 32%),
+      linear-gradient(155deg, #191425 0%, #3a2763 48%, #130f1f 100%);
+  }
+
+  .video-scene::before {
+    position: absolute;
+    inset: 13% 18% 32%;
+    border-radius: 45% 55% 48% 52%;
+    content: "";
+    background: linear-gradient(145deg, rgba(255,255,255,.45), rgba(174,111,255,.06));
+    filter: blur(1px);
+    box-shadow: 0 25px 60px rgba(0,0,0,.3);
+    transform: rotate(-18deg);
+  }
+
+  .scene-copy {
+    position: relative;
+    z-index: 2;
+    margin-bottom: 1rem;
+  }
+
+  .scene-tag {
+    display: inline-block;
+    margin-bottom: .55rem;
+    padding: .35rem .55rem;
+    border-radius: 999px;
+    background: rgba(255,255,255,.13);
+    font-size: .58rem;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+
+  .scene-copy h3 {
+    max-width: 12ch;
+    margin: 0;
+    font-size: 1.85rem;
+    line-height: 1;
+    letter-spacing: -.055em;
+  }
+
+  .scene-copy p {
+    max-width: 25ch;
+    margin: .6rem 0 0;
+    color: rgba(255,255,255,.68);
+    font-size: .66rem;
+    line-height: 1.45;
+  }
+
+  .product-float {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    grid-template-columns: 42px 1fr auto;
+    gap: .7rem;
+    align-items: center;
+    padding: .7rem;
+    border: 1px solid rgba(255,255,255,.14);
+    border-radius: 1rem;
+    background: rgba(7,7,10,.64);
+    backdrop-filter: blur(16px);
+  }
+
+  .product-thumb {
+    aspect-ratio: 1;
+    border-radius: .65rem;
+    background: linear-gradient(145deg, #f8d2a1, #7c4f31);
+  }
+
+  .product-float strong, .product-float span {
+    display: block;
+    font-size: .64rem;
+  }
+
+  .product-float span {
+    margin-top: .14rem;
+    color: #a59fab;
+  }
+
+  .product-float button {
+    width: 30px;
+    height: 30px;
+    border: 0;
+    border-radius: 999px;
+    background: white;
+    color: #17121f;
+    font-weight: 900;
+  }
+
+  .phone-nav {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    align-items: center;
+    padding: .8rem .75rem 1.2rem;
+    color: #827c8a;
+    font-size: .78rem;
+    text-align: center;
+  }
+
+  .phone-nav .create {
+    display: inline-grid;
+    width: 2.1rem;
+    height: 1.6rem;
+    place-items: center;
+    margin: auto;
+    border-radius: .45rem;
+    background: white;
+    color: #15121b;
+    font-weight: 900;
+  }
+
+  .signal-card {
+    position: absolute;
+    z-index: 5;
+    width: min(295px, 58%);
+    border-radius: 1.3rem;
+    padding: 1rem;
+  }
+
+  .signal-ai {
+    top: 11%;
+    left: -4%;
+    transform: rotateY(10deg) rotateZ(-3deg);
+  }
+
+  .signal-head {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    color: #d8d2e2;
+    font-size: .65rem;
+    font-weight: 800;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+  }
+
+  .signal-dot {
+    width: .45rem;
+    height: .45rem;
+    border-radius: 999px;
+    background: var(--green);
+    box-shadow: 0 0 16px rgba(94,240,172,.6);
+  }
+
+  .signal-card p {
+    margin: .75rem 0;
+    color: white;
+    font-size: .85rem;
+    line-height: 1.45;
+  }
+
+  .memory-chip {
+    color: #8f889a;
+    font-size: .63rem;
+  }
+
+  .signal-os {
+    right: -4%;
+    bottom: 13%;
+    width: min(310px, 61%);
+    padding: .75rem;
+    transform: rotateY(-8deg) rotateZ(2.5deg);
+  }
+
+  .os-mini-head {
+    display: flex;
+    gap: .32rem;
+    padding: .15rem .1rem .65rem;
+  }
+
+  .os-mini-head span {
+    width: .38rem;
+    height: .38rem;
+    border-radius: 50%;
+    background: rgba(255,255,255,.2);
+  }
+
+  .os-mini-body {
+    padding: .85rem;
+    border-radius: .85rem;
+    background: rgba(0,0,0,.34);
+  }
+
+  .os-mini-command b, .os-mini-command span {
+    display: block;
+  }
+
+  .os-mini-command b {
+    margin-bottom: .4rem;
+    color: #a987ff;
+    font-size: .58rem;
+    text-transform: uppercase;
+  }
+
+  .os-mini-command span {
+    font-size: .75rem;
+    line-height: 1.42;
+  }
+
+  .os-mini-result {
+    margin-top: .7rem;
+    color: #8f889a;
+    font-size: .62rem;
+  }
+
+  .orb {
+    position: absolute;
+    border-radius: 999px;
+    filter: blur(40px);
+    pointer-events: none;
+  }
+
+  .orb-one { top: 30%; left: 12%; width: 250px; height: 250px; background: rgba(92,61,178,.2); }
+  .orb-two { right: 8%; bottom: 8%; width: 220px; height: 220px; background: rgba(181,101,255,.14); }
+
+  .hero-proof {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    margin-top: clamp(4rem, 9vw, 8rem);
+    border-top: 1px solid rgba(255,255,255,.09);
+  }
+
+  .hero-proof div {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    min-height: 86px;
+    border-right: 1px solid rgba(255,255,255,.09);
+  }
+
+  .hero-proof div:last-child { border-right: 0; }
+  .hero-proof strong { color: #5d5668; font-size: .74rem; }
+  .hero-proof span { color: #b5afbd; font-size: .86rem; font-weight: 650; }
+
+  .product-section { background: linear-gradient(to bottom, transparent, rgba(15,12,20,.36), transparent); }
+
+  .feature-grid {
+    display: grid;
+    grid-template-columns: 1.3fr .7fr;
+    gap: 1rem;
+    margin-top: 3.2rem;
+  }
+
+  .feature {
+    min-height: 250px;
+    padding: clamp(1.5rem, 3vw, 2rem);
+    border-radius: 1.5rem;
+  }
+
+  .feature-large {
+    grid-row: span 2;
+    min-height: 560px;
+  }
+
+  .feature-topline, .desktop-caption {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: #8f8899;
+    font-size: .72rem;
+    font-weight: 700;
+  }
+
+  .status-dot {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+  }
+
+  .status-dot::before {
+    width: .42rem;
+    height: .42rem;
+    border-radius: 999px;
+    content: "";
+    background: var(--green);
+    box-shadow: 0 0 12px rgba(94,240,172,.55);
+  }
+
+  .feed-mock {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: .7rem;
+    height: 280px;
+    margin: 2rem 0;
+  }
+
+  .feed-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    overflow: hidden;
+    padding: .9rem;
+    border-radius: 1rem;
+  }
+
+  .feed-card::after {
+    position: absolute;
+    inset: 16% 12% 8%;
+    border-radius: 40% 60% 55% 45%;
+    content: "";
+    background: linear-gradient(145deg, rgba(255,255,255,.34), rgba(255,255,255,.04));
+    transform: rotate(20deg);
+  }
+
+  .feed-card span, .feed-card strong { position: relative; z-index: 2; }
+  .feed-card span { color: rgba(255,255,255,.5); font-size: .65rem; }
+  .feed-card strong { font-size: .9rem; }
+  .feed-purple { background: linear-gradient(145deg, #2a1e44, #814ccb); }
+  .feed-black { background: linear-gradient(145deg, #242128, #080809); }
+  .feed-white { background: linear-gradient(145deg, #c3b8e6, #5b4180); }
+
+  .feature h3 {
+    margin: 1rem 0 .65rem;
+    font-size: 1.35rem;
+    letter-spacing: -.035em;
+  }
+
+  .feature p {
+    margin: 0;
+    color: #9e98a8;
+    line-height: 1.6;
+  }
+
+  .icon-box {
+    display: grid;
+    width: 44px;
+    height: 44px;
+    place-items: center;
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: .8rem;
+    background: rgba(255,255,255,.05);
+    color: #b892ff;
+    font-size: 1.2rem;
+  }
+
+  .split {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(430px, .88fr);
+    gap: clamp(3rem, 8vw, 8rem);
+    align-items: center;
+  }
+
+  .pill-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .6rem;
+    margin-top: 2rem;
+  }
+
+  .terminal {
+    overflow: hidden;
+    border-radius: 1.5rem;
+    box-shadow: 0 40px 100px rgba(0,0,0,.42), 0 0 100px rgba(124,58,237,.08);
+  }
+
+  .terminal-bar {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    min-height: 54px;
+    padding: 0 1rem;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+    background: rgba(255,255,255,.025);
+  }
+
+  .terminal-bar > div { display: flex; gap: .35rem; }
+  .terminal-bar > div span {
+    width: .52rem;
+    height: .52rem;
+    border-radius: 999px;
+    background: rgba(255,255,255,.15);
+  }
+  .terminal-bar strong { font-size: .72rem; }
+  .terminal-bar small { justify-self: end; color: #66e4a7; font-size: .62rem; }
+
+  .conversation { padding: 1.15rem; }
+
+  .turn {
+    padding: .9rem 1rem;
+    border-radius: .9rem;
+  }
+
+  .turn + .turn { margin-top: .6rem; }
+  .turn span { color: #857e90; font-size: .62rem; font-weight: 800; text-transform: uppercase; }
+  .turn p { margin: .38rem 0 0; font-size: .84rem; line-height: 1.45; }
+  .turn em { display: block; margin-top: .55rem; color: #7d7292; font-size: .62rem; font-style: normal; }
+  .turn.user { margin-left: 16%; background: rgba(255,255,255,.055); }
+  .turn.ai { margin-right: 8%; border: 1px solid rgba(150,105,255,.15); background: rgba(102,67,168,.12); }
+
+  .terminal-divider {
+    height: 1px;
+    margin: 1.2rem .5rem;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.12), transparent);
+  }
+
+  .terminal-foot {
+    display: flex;
+    justify-content: space-between;
+    padding: .8rem 1rem;
+    border-top: 1px solid rgba(255,255,255,.08);
+    color: #655e6d;
+    font-size: .65rem;
+  }
+
+  .os-heading {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) .65fr;
+    gap: 3rem;
+    align-items: end;
+  }
+
+  .os-heading .section-copy { margin-bottom: .35rem; }
+
+  .desktop {
+    margin-top: 3.4rem;
+    overflow: hidden;
+    border-radius: 1.65rem;
+  }
+
+  .desktop-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 64px;
+    padding: 0 1.2rem;
+    border-bottom: 1px solid rgba(255,255,255,.075);
+  }
+
+  .desktop-brand, .desktop-state {
+    display: flex;
+    align-items: center;
+    gap: .65rem;
+  }
+
+  .desktop-brand img { width: 25px; height: 25px; }
+  .desktop-brand strong { font-size: .78rem; }
+  .desktop-state { color: #756e7d; font-size: .67rem; }
+  .desktop-state b { color: #b2abb9; }
+
+  .desktop-body {
+    display: grid;
+    grid-template-columns: 230px 1fr;
+    min-height: 470px;
+  }
+
+  .desktop aside {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 1.5rem;
+    border-right: 1px solid rgba(255,255,255,.075);
+    background: rgba(255,255,255,.018);
+  }
+
+  .avatar {
+    display: grid;
+    width: 50px;
+    height: 50px;
+    place-items: center;
+    margin-bottom: 1rem;
+    border: 1px solid rgba(177,134,255,.25);
+    border-radius: 1rem;
+    background: linear-gradient(145deg, rgba(124,58,237,.25), rgba(124,58,237,.04));
+    color: #c5adff;
+    font-weight: 850;
+  }
+
+  .desktop aside > span { font-size: .9rem; font-weight: 800; }
+  .desktop aside small { margin-top: .2rem; color: #6d6573; font-size: .63rem; }
+  .side-line { width: 100%; height: 1px; margin: 1.4rem 0; background: rgba(255,255,255,.07); }
+  .desktop aside p { margin: 0; color: #9991a2; font-size: .78rem; line-height: 1.55; }
+
+  .app-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: .8rem;
+    align-content: center;
+    padding: clamp(1.2rem, 3vw, 2.2rem);
+    background:
+      radial-gradient(circle at 50% 50%, rgba(124,58,237,.08), transparent 45%),
+      rgba(0,0,0,.06);
+  }
+
+  .app-card {
+    min-height: 152px;
+    padding: 1rem;
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 1rem;
+    background: rgba(255,255,255,.035);
+    transition: transform .2s ease, background .2s ease;
+  }
+
+  .app-card:hover { transform: translateY(-3px); background: rgba(255,255,255,.055); }
+  .app-icon { display: grid; width: 36px; height: 36px; place-items: center; margin-bottom: 1.15rem; border-radius: .75rem; background: rgba(139,92,246,.13); color: #bd9cff; }
+  .app-card strong, .app-card span { display: block; }
+  .app-card strong { font-size: .82rem; }
+  .app-card span { margin-top: .35rem; color: #766f7d; font-size: .66rem; line-height: 1.4; }
+
+  .desktop-caption {
+    min-height: 58px;
+    padding: 0 1.2rem;
+    border-top: 1px solid rgba(255,255,255,.075);
+  }
+
+  .loop-grid {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr auto 1fr;
+    gap: 1rem;
+    align-items: center;
+    margin-top: 4rem;
+  }
+
+  .loop-step {
+    min-height: 220px;
+    padding: 1.5rem;
+    border-top: 1px solid rgba(255,255,255,.15);
+  }
+
+  .loop-index { color: #645c70; font-size: .67rem; font-weight: 800; }
+  .loop-step h3 { margin: 3.8rem 0 .6rem; font-size: 1.5rem; letter-spacing: -.045em; }
+  .loop-step p { margin: 0; color: #898290; font-size: .85rem; line-height: 1.58; }
+  .loop-arrow { color: #4c4651; font-size: 1.4rem; }
+
+  .manifesto {
+    display: grid;
+    grid-template-columns: 88px 1fr;
+    gap: 1.6rem;
+    align-items: center;
+    margin-top: 2.5rem;
+    padding: 1.3rem;
+    border-radius: 1.3rem;
+  }
+
+  .manifesto-mark {
+    display: grid;
+    aspect-ratio: 1;
+    place-items: center;
+    border-radius: 1rem;
+    background: linear-gradient(145deg, #7c3aed, #a855f7);
+    font-size: 1.8rem;
+    font-weight: 900;
+    box-shadow: 0 12px 40px rgba(124,58,237,.24);
+  }
+
+  .manifesto p {
+    max-width: 31ch;
+    margin: 0;
+    font-size: clamp(1.2rem, 2.4vw, 2rem);
+    font-weight: 720;
+    line-height: 1.15;
+    letter-spacing: -.04em;
+  }
+
+  .early-card {
+    display: grid;
+    grid-template-columns: .9fr 1.1fr;
+    gap: clamp(2rem, 7vw, 6rem);
+    padding: clamp(1.5rem, 5vw, 4rem);
+    border-radius: 1.7rem;
+    background:
+      radial-gradient(circle at 15% 20%, rgba(124,58,237,.18), transparent 33%),
+      linear-gradient(145deg, rgba(255,255,255,.07), rgba(255,255,255,.02)),
+      #0b0910;
+  }
+
+  .early-card h2 {
+    margin: 1.1rem 0 1rem;
+    font-size: clamp(2.5rem, 5vw, 4.7rem);
+    line-height: .94;
+    letter-spacing: -.06em;
+  }
+
+  .early-card > div > p { max-width: 500px; margin: 0; color: #9b94a2; line-height: 1.65; }
+
+  .waitlist { align-self: center; }
+  .waitlist > label:first-child { display: block; margin-bottom: .55rem; color: #a8a0b1; font-size: .76rem; font-weight: 750; }
+  .field-row { display: grid; grid-template-columns: 1fr auto; gap: .55rem; }
+
+  .field-row input {
+    min-width: 0;
+    min-height: 56px;
+    padding: 0 1rem;
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: .95rem;
+    outline: 0;
+    background: rgba(255,255,255,.055);
+    color: white;
+    transition: border-color .2s ease, background .2s ease;
+  }
+
+  .field-row input:focus {
+    border-color: rgba(166,126,255,.72);
+    background: rgba(255,255,255,.075);
+  }
+
+  .field-row button {
+    min-height: 56px;
+    padding: 0 1.15rem;
+    border: 0;
+    border-radius: .95rem;
+    background: white;
+    color: #100d15;
+    font-size: .82rem;
+    font-weight: 850;
+    cursor: pointer;
+  }
+
+  .field-row button:disabled { cursor: wait; opacity: .55; }
+
+  .consent {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: .6rem;
+    align-items: start;
+    margin-top: .9rem;
+    color: #8d8595;
+    font-size: .72rem;
+    line-height: 1.45;
+  }
+
+  .consent input { width: 1rem; height: 1rem; margin-top: .08rem; accent-color: #8b5cf6; }
+  .form-note, .form-status { margin: .65rem 0 0; color: #6c6573; font-size: .68rem; }
+  .form-note a { color: #aaa0bb; text-decoration: underline; text-underline-offset: 2px; }
+  .form-status { min-height: 1em; color: #9c8fb4; }
+  .trap { position: absolute !important; width: 1px !important; height: 1px !important; overflow: hidden !important; clip: rect(1px,1px,1px,1px) !important; white-space: nowrap !important; }
+
+  .faq-grid { display: grid; grid-template-columns: .82fr 1.18fr; gap: clamp(3rem, 8vw, 8rem); }
+  .faq-list { border-top: 1px solid rgba(255,255,255,.12); }
+  details { border-bottom: 1px solid rgba(255,255,255,.1); }
+  summary { display: flex; justify-content: space-between; gap: 1rem; padding: 1.35rem 0; font-size: .96rem; font-weight: 730; cursor: pointer; list-style: none; }
+  summary::-webkit-details-marker { display: none; }
+  summary span { color: #7f758a; font-size: 1.2rem; transition: transform .2s ease; }
+  details[open] summary span { transform: rotate(45deg); }
+  details p { max-width: 650px; margin: -.2rem 0 1.5rem; color: #8d8694; font-size: .85rem; line-height: 1.65; }
+
+  footer {
+    padding: 3rem 0;
+    border-top: 1px solid rgba(255,255,255,.08);
+    background: #040405;
+  }
+
+  .footer-grid {
+    display: grid;
+    grid-template-columns: 1.2fr .8fr 1fr;
+    gap: 2rem;
+    align-items: end;
+  }
+
+  .footer-grid > div:first-child p { max-width: 360px; margin: 1rem 0 0; color: #726b78; font-size: .77rem; line-height: 1.55; }
+  .footer-links { display: flex; flex-wrap: wrap; gap: 1rem; color: #91899a; font-size: .76rem; }
+  .footer-meta { justify-self: end; color: #5d5663; font-size: .68rem; text-align: right; }
+
+  @media (max-width: 980px) {
+    .nav { grid-template-columns: 1fr auto; }
+    nav { display: none; }
+    .hero-grid, .split, .os-heading, .early-card, .faq-grid { grid-template-columns: 1fr; }
+    .ecosystem-stage { min-height: 650px; max-width: 620px; width: 100%; margin-inline: auto; }
+    .hero-copy h1 { font-size: clamp(4rem, 14vw, 7rem); }
+    .split { gap: 3rem; }
+    .os-heading { gap: .5rem; }
+    .desktop-body { grid-template-columns: 190px 1fr; }
+    .app-grid { grid-template-columns: repeat(2, 1fr); }
+    .footer-grid { grid-template-columns: 1fr 1fr; }
+    .footer-meta { grid-column: 1 / -1; justify-self: start; text-align: left; }
+  }
+
+  @media (max-width: 700px) {
+    .site-header { padding-top: .55rem; }
+    .nav-cta { padding-inline: .8rem; font-size: .74rem; }
+    .hero { padding-top: 7.5rem; }
+    .hero-copy h1 { font-size: clamp(3.35rem, 18vw, 5.2rem); }
+    .hero-proof { grid-template-columns: 1fr; }
+    .hero-proof div { border-right: 0; border-bottom: 1px solid rgba(255,255,255,.08); }
+    .ecosystem-stage { min-height: 560px; }
+    .phone-shell { width: 255px; }
+    .signal-ai { top: 7%; left: -2%; width: 220px; }
+    .signal-os { right: -2%; bottom: 9%; width: 230px; }
+    .feature-grid { grid-template-columns: 1fr; }
+    .feature-large { grid-row: auto; min-height: 520px; }
+    .feed-mock { height: 240px; }
+    .desktop-body { grid-template-columns: 1fr; }
+    .desktop aside { border-right: 0; border-bottom: 1px solid rgba(255,255,255,.075); }
+    .app-grid { grid-template-columns: repeat(2, 1fr); }
+    .desktop-caption { align-items: flex-start; flex-direction: column; justify-content: center; gap: .35rem; min-height: 72px; }
+    .loop-grid { grid-template-columns: 1fr; }
+    .loop-arrow { transform: rotate(90deg); text-align: center; }
+    .manifesto { grid-template-columns: 64px 1fr; }
+    .field-row { grid-template-columns: 1fr; }
+    .field-row button { width: 100%; }
+    .footer-grid { grid-template-columns: 1fr; }
+    .footer-meta { grid-column: auto; }
+  }
+</style>

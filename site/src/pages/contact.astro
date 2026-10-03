@@ -1,0 +1,30 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Brand from "../components/Brand.astro";
+---
+<BaseLayout title="Contact — Swypik" description="Contact and launch information for Swypik.">
+  <main id="main-content" class="contact shell">
+    <Brand />
+    <span class="eyebrow">Swypik contact</span>
+    <h1>Start with the <span class="gradient-text">right channel.</span></h1>
+    <p>The standalone marketing site is still in pre-launch setup. Public support, privacy and press addresses should be connected here after the final Swypik mailboxes are verified.</p>
+    <div class="contact-grid">
+      <a href="/#early-access"><strong>Early access</strong><span>Join the launch list →</span></a>
+      <a href="/#swypik"><strong>Product overview</strong><span>Explore the Swypik ecosystem →</span></a>
+    </div>
+    <a class="back" href="/">← Back to Swypik</a>
+  </main>
+</BaseLayout>
+
+<style>
+  .contact { padding: 2rem 0 7rem; }
+  .contact :global(.brand) { margin-bottom: 8rem; }
+  h1 { max-width: 900px; margin: 1.4rem 0; font-size: clamp(3.5rem, 9vw, 7.5rem); line-height: .9; letter-spacing: -.07em; }
+  .contact > p { max-width: 680px; color: #9f98a8; font-size: 1.05rem; line-height: 1.7; }
+  .contact-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; max-width: 760px; margin-top: 3rem; }
+  .contact-grid a { display: block; padding: 1.5rem; border: 1px solid rgba(255,255,255,.1); border-radius: 1.2rem; background: rgba(255,255,255,.04); }
+  .contact-grid strong, .contact-grid span { display: block; }
+  .contact-grid span { margin-top: .6rem; color: #8f8799; font-size: .85rem; }
+  .back { display: inline-block; margin-top: 3rem; color: #b59aff; }
+  @media (max-width: 640px) { .contact-grid { grid-template-columns: 1fr; } }
+</style>

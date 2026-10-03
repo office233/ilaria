@@ -1,0 +1,205 @@
+---
+import Icon from "../Icon.astro";
+import { commands } from "../../data/commands";
+import { icons } from "../../data/icons";
+---
+<div class="ibar-wrap" data-ibar>
+  <div class="ibar-panel glass-strong" data-panel hidden>
+    <div class="panel-head"><b>ILARIA</b><span>Navigator</span></div>
+    <ul class="suggest" role="listbox" id="ibar-list" aria-label="Suggestions" data-list></ul>
+    <p class="reply" data-reply hidden></p>
+  </div>
+  <form class="ibar" data-form role="search" autocomplete="off">
+    <label class="sr" for="ibar-input">Ask Ilaria or go anywhere</label>
+    <span class="ibar-spark" aria-hidden="true"><Icon name="spark" size={20} /></span>
+    <input
+      id="ibar-input"
+      data-input
+      type="text"
+      placeholder="Ask Ilaria or go anywhere…"
+      role="combobox"
+      aria-expanded="false"
+      aria-controls="ibar-list"
+      aria-autocomplete="list"
+      maxlength="80"
+    />
+    <span class="kbd hide-xs" aria-hidden="true">Ctrl K</span>
+    <button class="ibar-go" type="submit" aria-label="Go"><Icon name="up" size={22} stroke={2.4} /></button>
+  </form>
+  <p class="ibar-hint">Try “open movies”, “open go”, “stiri” or “investors”.</p>
+</div>
+
+<script type="application/json" id="ibar-commands" set:html={JSON.stringify(commands)} />
+
+<script>
+  type Cmd = { label: string; hint: string; href: string; icon: string; keys: string[] };
+  const commands: Cmd[] = JSON.parse(document.getElementById("ibar-commands")?.textContent ?? "[]");
+  const root = document.querySelector<HTMLElement>("[data-ibar]")!;
+  const form = root.querySelector<HTMLFormElement>("[data-form]")!;
+  const input = root.querySelector<HTMLInputElement>("[data-input]")!;
+  const panel = root.querySelector<HTMLElement>("[data-panel]")!;
+  const list = root.querySelector<HTMLUListElement>("[data-list]")!;
+  const reply = root.querySelector<HTMLElement>("[data-reply]")!;
+  const iconMap: Record<string, string> = JSON.parse(document.getElementById("ibar-icons")?.textContent ?? "{}");
+  const iconSvg = (name: string) => iconMap[name] ?? "";
+
+  const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/^(open|go to|goto|show me|show|deschide|arata-mi|arata|du-ma la|mergi la)\s+/, "").trim();
+
+  const score = (c: Cmd, q: string) => {
+    let best = 0;
+    for (const k of [c.label.toLowerCase(), ...c.keys]) {
+      const key = norm(k);
+      if (key === q) best = Math.max(best, 100);
+      else if (key.startsWith(q)) best = Math.max(best, 70 - (key.length - q.length));
+      else if (q.length > 2 && key.includes(q)) best = Math.max(best, 40);
+      else if (q.length > 3 && q.includes(key) && key.length > 2) best = Math.max(best, 35);
+    }
+    return best;
+  };
+
+  const featured = ["/swypik/", "/ilaria/", "/os/", "/swypik/go/", "/swypik/messenger/", "/investors/"];
+  let results: Cmd[] = [];
+  let active = 0;
+
+  function render(q: string) {
+    const nq = norm(q);
+    results = nq
+      ? commands.map((c) => [c, score(c, nq)] as const).filter(([, s]) => s > 0).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([c]) => c)
+      : featured.map((h) => commands.find((c) => c.href === h)!).filter(Boolean);
+    active = 0;
+    reply.hidden = true;
+    list.innerHTML = results.map((c, i) => `
+      <li role="option" id="ibar-opt-${i}" aria-selected="${i === active}" data-href="${c.href}">
+        <span class="opt-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${iconSvg(c.icon)}</svg></span>
+        <span class="opt-text"><strong>${c.label}</strong><small>${c.hint}</small></span>
+        <span class="opt-go">↵</span>
+      </li>`).join("");
+    if (nq && !results.length) {
+      reply.hidden = false;
+      reply.textContent = "I’m the site navigator, not the Ilaria model — I can take you anywhere on swypik.com. Try “open go”, “ilaria”, “kernel” or “investors”.";
+    }
+    open(true);
+    highlight();
+  }
+
+  function highlight() {
+    list.querySelectorAll("li").forEach((li, i) => li.setAttribute("aria-selected", String(i === active)));
+    input.setAttribute("aria-activedescendant", results.length ? `ibar-opt-${active}` : "");
+  }
+
+  function open(on: boolean) {
+    panel.hidden = !on;
+    input.setAttribute("aria-expanded", String(on));
+    root.classList.toggle("is-open", on);
+  }
+
+  function go(href: string) {
+    open(false);
+    input.blur();
+    if (href.startsWith("/#") && location.pathname === "/") {
+      document.querySelector(href.slice(1))?.scrollIntoView({ behavior: "smooth" });
+    } else {
+      location.href = href;
+    }
+  }
+
+  input.addEventListener("focus", () => render(input.value));
+  input.addEventListener("input", () => render(input.value));
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowDown") { e.preventDefault(); active = Math.min(active + 1, results.length - 1); highlight(); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); active = Math.max(active - 1, 0); highlight(); }
+    else if (e.key === "Escape") { open(false); input.blur(); }
+  });
+  list.addEventListener("pointerdown", (e) => {
+    const li = (e.target as HTMLElement).closest("li");
+    if (li?.dataset.href) { e.preventDefault(); go(li.dataset.href); }
+  });
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    if (results[active]) go(results[active].href);
+    else render(input.value);
+  });
+  document.addEventListener("pointerdown", (e) => { if (!root.contains(e.target as Node)) open(false); });
+  document.addEventListener("keydown", (e) => {
+    const typing = (e.target as HTMLElement)?.closest("input, textarea, select, [contenteditable]");
+    if ((e.key === "k" && (e.ctrlKey || e.metaKey)) || (e.key === "/" && !typing)) { e.preventDefault(); input.focus(); }
+  });
+
+  // Rotating placeholder — the bar "speaks" like the OS omnibar.
+  const prompts = ["Ask Ilaria or go anywhere…", "open go", "open movies", "how does Nexus work?", "show me the kernel", "stiri", "investors"];
+  let pi = 0;
+  if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    setInterval(() => { if (document.activeElement !== input && !input.value) { pi = (pi + 1) % prompts.length; input.placeholder = prompts[pi]; } }, 2600);
+  }
+
+  // Expose a hook so pages can drive the bar (e.g. hero demo buttons).
+  document.addEventListener("click", (e) => {
+    const t = (e.target as HTMLElement).closest<HTMLElement>("[data-ibar-query]");
+    if (!t) return;
+    e.preventDefault();
+    input.value = t.dataset.ibarQuery ?? "";
+    input.focus();
+    render(input.value);
+  });
+</script>
+
+<!-- Icon bodies for client-rendered suggestions -->
+<script type="application/json" id="ibar-icons" set:html={JSON.stringify(Object.fromEntries([...new Set(commands.map((c) => c.icon))].map((n) => [n, icons[n] ?? icons.spark])))} />
+
+<style>
+  .ibar-wrap {
+    position: fixed; left: 0; right: 0; bottom: 14px; z-index: 70;
+    display: grid; justify-items: center; padding: 0 14px; pointer-events: none;
+  }
+  .ibar-wrap > * { pointer-events: auto; }
+  .ibar {
+    position: relative; display: flex; align-items: center; gap: .6rem;
+    width: min(100%, 860px); min-height: 66px; padding: 0 .55rem 0 1.25rem;
+    border: 1px solid #fff; border-radius: 36px;
+    background: linear-gradient(115deg, #ffffffe6, #ffffffb5);
+    box-shadow: inset 0 0 0 5px #ffffff70, 0 12px 32px #9a79e63b, 0 0 0 1px #c9b6ff40;
+    backdrop-filter: blur(30px) saturate(1.3); -webkit-backdrop-filter: blur(30px) saturate(1.3);
+    transition: box-shadow .2s ease;
+  }
+  .is-open .ibar, .ibar:focus-within { box-shadow: inset 0 0 0 5px #ffffff70, 0 16px 40px #9a79e655, 0 0 0 2px #b9a0ff; }
+  .ibar-spark { color: var(--brand); display: grid; }
+  .ibar input {
+    flex: 1; min-width: 0; height: 56px; border: 0; outline: 0; background: transparent;
+    font-size: 1rem; font-weight: 500; color: var(--ink);
+  }
+  .ibar input::placeholder { color: #8589a5; }
+  .ibar-go {
+    display: grid; place-items: center; flex: none; width: 52px; height: 52px; cursor: pointer;
+    border: 1px solid #a58bff; border-radius: 17px; color: #fff;
+    background: linear-gradient(140deg, #a38aff, #7737f5 65%, #6427d3);
+    box-shadow: inset 0 2px 3px #ffffff66, 0 4px 12px #7c3aed30; transition: transform .18s ease;
+  }
+  .ibar-go:hover { transform: translateY(-2px); }
+  .ibar-hint { margin: .4rem 0 0; color: #9991ac; font-size: .7rem; font-weight: 500; text-align: center; }
+  .ibar-panel {
+    width: min(100%, 860px); margin-bottom: .6rem; padding: .6rem; border-radius: 24px;
+    background: #fcfbfff5; box-shadow: 0 12px 70px #7965ae50;
+  }
+  .ibar-panel[hidden] { display: none; }
+  .panel-head { display: flex; gap: .6rem; align-items: baseline; padding: .5rem .7rem .6rem; border-bottom: 1px solid var(--line); }
+  .panel-head b { font-size: .72rem; letter-spacing: .14em; }
+  .panel-head span { color: var(--soft); font-size: .72rem; }
+  .suggest { list-style: none; margin: .35rem 0 0; padding: 0; display: grid; gap: .15rem; }
+  .suggest :global(li) { display: flex; align-items: center; gap: .8rem; padding: .55rem .7rem; border-radius: 14px; cursor: pointer; }
+  .suggest :global(li[aria-selected="true"]), .suggest :global(li:hover) { background: var(--hover); }
+  .suggest :global(.opt-icon) { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 11px; background: linear-gradient(145deg, #f0e8ff, #e7ddff); color: var(--brand); }
+  .suggest :global(.opt-icon svg) { width: 19px; height: 19px; }
+  .suggest :global(.opt-text) { display: grid; flex: 1; }
+  .suggest :global(.opt-text strong) { font-size: .92rem; }
+  .suggest :global(.opt-text small) { color: var(--soft); font-size: .76rem; }
+  .suggest :global(.opt-go) { color: #beb3d2; font-size: .9rem; }
+  .reply { margin: .6rem .7rem .5rem; color: var(--muted); font-size: .88rem; line-height: 1.55; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  @media (max-width: 640px) {
+    .ibar { min-height: 56px; padding-left: 1rem; }
+    .ibar input { height: 48px; font-size: .95rem; }
+    .ibar-go { width: 44px; height: 44px; border-radius: 14px; }
+    .ibar-hint, .hide-xs { display: none; }
+  }
+</style>

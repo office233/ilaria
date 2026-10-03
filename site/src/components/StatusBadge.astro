@@ -1,0 +1,28 @@
+---
+import type { Status } from "../data/modules";
+import { statusMeta } from "../data/modules";
+
+interface Props { status: Status; size?: "sm" | "md" }
+const { status, size = "sm" } = Astro.props;
+const meta = statusMeta[status];
+---
+<span class={`status status-${status} status-${size}`} title={meta.hint}>
+  <i aria-hidden="true"></i>{meta.label}
+</span>
+
+<style>
+  .status {
+    display: inline-flex; align-items: center; gap: .4rem; white-space: nowrap;
+    padding: .28rem .6rem; border-radius: 999px; border: 1px solid transparent;
+    font-size: .68rem; font-weight: 700; letter-spacing: .02em;
+  }
+  .status-md { padding: .42rem .8rem; font-size: .76rem; }
+  .status i { width: .42rem; height: .42rem; border-radius: 50%; background: currentColor; }
+  .status-live    { color: #198a72; background: #e3f6f0; border-color: #bfe9dc; }
+  .status-live i  { box-shadow: 0 0 0 3px #32b69a30; animation: ping 2s ease-in-out infinite; }
+  .status-beta    { color: #6d28d9; background: #efe8ff; border-color: #ddd0ff; }
+  .status-built   { color: #1d7f95; background: #e3f5fa; border-color: #c4eaf3; }
+  .status-dev     { color: #996a1d; background: #fcf1dc; border-color: #f3dfb6; }
+  .status-roadmap { color: #5c667d; background: #edf0f6; border-color: #dde2ec; }
+  @keyframes ping { 50% { box-shadow: 0 0 0 6px #32b69a00; } }
+</style>

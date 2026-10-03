@@ -1,0 +1,40 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Brand from "../components/Brand.astro";
+---
+<BaseLayout title="Privacy — Swypik" description="How Swypik handles early-access information.">
+  <main id="main-content" class="legal shell">
+    <Brand />
+    <p class="section-kicker">Legal</p>
+    <h1>Privacy Policy</h1>
+    <p class="lede">This pre-launch policy covers the Swypik marketing site and early-access list. It must be reviewed with the final legal entity, contact details and production vendors before public launch.</p>
+    <section>
+      <h2>What this site collects</h2>
+      <p>The early-access form collects the email address you submit, your consent to receive launch or product updates, the source of the signup, and a timestamp. The anti-spam honeypot is not intended to collect personal information.</p>
+    </section>
+    <section>
+      <h2>Why it is used</h2>
+      <p>The information is used to operate the early-access list, send the updates you requested, protect the signup flow against abuse, and understand where signups originated.</p>
+    </section>
+    <section>
+      <h2>Storage and retention</h2>
+      <p>The planned deployment stores waitlist entries in Cloudflare D1. Retention rules and any subprocessors should be finalized before production launch and documented here.</p>
+    </section>
+    <section>
+      <h2>Your choices</h2>
+      <p>You can unsubscribe from marketing updates at any time. A production privacy contact and deletion-request workflow must be added before external launch.</p>
+    </section>
+    <a class="back" href="/">← Back to Swypik</a>
+  </main>
+</BaseLayout>
+
+<style>
+  .legal { max-width: 820px; padding: 2rem 0 7rem; }
+  .legal :global(.brand) { margin-bottom: 6rem; }
+  .legal h1 { margin: .8rem 0 1.3rem; font-size: clamp(3rem, 8vw, 6rem); line-height: .92; letter-spacing: -.065em; }
+  .lede { color: #aaa3b3; font-size: 1.1rem; line-height: 1.7; }
+  section { padding: 2rem 0; border-top: 1px solid rgba(255,255,255,.1); }
+  h2 { margin: 0 0 .7rem; font-size: 1.15rem; }
+  section p { margin: 0; color: #8e8795; line-height: 1.7; }
+  .back { display: inline-block; margin-top: 2rem; color: #b59aff; }
+</style>

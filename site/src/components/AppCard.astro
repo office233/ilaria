@@ -1,0 +1,38 @@
+---
+import Icon from "./Icon.astro";
+import StatusBadge from "./StatusBadge.astro";
+import type { Module } from "../data/modules";
+import { categories } from "../data/modules";
+
+interface Props { module: Module; showStatus?: boolean; compact?: boolean }
+const { module: m, showStatus = true, compact = false } = Astro.props;
+const cat = categories.find((c) => c.id === m.category)?.label ?? "";
+---
+<a class:list={["app-card", { compact }]} href={`/swypik/${m.slug}/`} data-category={m.category}>
+  <span class={`tone tone-${m.tone}`}>
+    {m.icon === "brand" ? <Icon name="up" stroke={2.6} /> : <Icon name={m.icon} />}
+  </span>
+  <span class="arrow" aria-hidden="true"><Icon name="diag" size={14} /></span>
+  <strong>{m.name}</strong>
+  <small>{compact ? cat : m.short}</small>
+  {showStatus && !compact && <span class="badge"><StatusBadge status={m.status} /></span>}
+</a>
+
+<style>
+  .app-card {
+    position: relative; display: grid; align-content: start; gap: .2rem;
+    min-height: 140px; padding: 1rem 1rem 1.05rem; border-radius: 16px;
+    border: 1px solid #ffffffd8; background: linear-gradient(150deg, #ffffffea, #ffffffa8);
+    box-shadow: 0 10px 26px -18px #6d64b880;
+    transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+  }
+  .app-card:hover { transform: translateY(-3px); border-color: #c3a5ff; box-shadow: 0 18px 34px -18px #7c3aed66; }
+  .app-card .tone { margin-bottom: 1.1rem; }
+  .arrow { position: absolute; top: .9rem; right: .9rem; color: #beb3d2; transition: color .2s ease, transform .2s ease; }
+  .app-card:hover .arrow { color: var(--brand); transform: translate(2px, -2px); }
+  strong { font-size: .95rem; letter-spacing: -.01em; }
+  small { color: var(--soft); font-size: .74rem; font-weight: 500; }
+  .badge { margin-top: .7rem; }
+  .compact { min-height: 118px; padding: .9rem; }
+  .compact .tone { margin-bottom: .9rem; width: 38px; height: 38px; }
+</style>

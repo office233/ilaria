@@ -1,0 +1,65 @@
+---
+// Ambient SwypikOS wallpaper: lilac / cyan / rose blobs and two glass arcs
+// (ported from desktop.css .ambient-* and .wallpaper-arc), with gentle pointer parallax.
+---
+<div class="wallpaper" aria-hidden="true">
+  <div class="blob blob-lilac"></div>
+  <div class="blob blob-cyan"></div>
+  <div class="blob blob-rose"></div>
+  <div class="arc arc-a"></div>
+  <div class="arc arc-b"></div>
+  <div class="grain"></div>
+</div>
+
+<script>
+  const root = document.documentElement;
+  const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (!reduced && window.matchMedia("(pointer: fine)").matches) {
+    let raf = 0;
+    window.addEventListener("pointermove", (e) => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        root.style.setProperty("--px", ((e.clientX / window.innerWidth) - .5).toFixed(3));
+        root.style.setProperty("--py", ((e.clientY / window.innerHeight) - .5).toFixed(3));
+        raf = 0;
+      });
+    }, { passive: true });
+  }
+</script>
+
+<style>
+  .wallpaper { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; background: var(--canvas); }
+  .blob { position: absolute; border-radius: 50%; filter: blur(65px); will-change: transform; }
+  .blob-lilac {
+    width: 65vw; height: 65vh; left: -20vw; top: 30vh;
+    background: radial-gradient(ellipse, #b3a2ff8c, transparent 70%);
+    transform: translate(calc(var(--px, 0) * 40px), calc(var(--py, 0) * 30px));
+    animation: drift-a 26s ease-in-out infinite alternate;
+  }
+  .blob-cyan {
+    width: 55vw; height: 65vh; right: -12vw; top: -18vh;
+    background: radial-gradient(ellipse, #b7ecfc90, transparent 70%);
+    transform: translate(calc(var(--px, 0) * -50px), calc(var(--py, 0) * -30px));
+    animation: drift-b 30s ease-in-out infinite alternate;
+  }
+  .blob-rose {
+    width: 50vw; height: 60vh; right: -10vw; bottom: -22vh;
+    background: radial-gradient(ellipse, #e7c8ff9c, transparent 70%);
+    transform: translate(calc(var(--px, 0) * 30px), calc(var(--py, 0) * -40px));
+    animation: drift-a 34s ease-in-out infinite alternate-reverse;
+  }
+  .arc {
+    position: absolute; left: -5vw; width: 110vw; height: 70vh; border-radius: 50%;
+    border: 1px solid #ffffffbd; background: linear-gradient(170deg, #ffffff20, #ffffff03);
+  }
+  .arc-a { top: 34vh; transform: rotate(-19deg); }
+  .arc-b { top: 8vh; transform: rotate(32deg); opacity: .7; }
+  .grain {
+    position: absolute; inset: 0; opacity: .5;
+    background-image: radial-gradient(#7c3aed0a 1px, transparent 1px);
+    background-size: 22px 22px;
+    mask-image: radial-gradient(ellipse at 50% 30%, black, transparent 75%);
+  }
+  @keyframes drift-a { to { translate: 6vw -4vh; } }
+  @keyframes drift-b { to { translate: -5vw 5vh; } }
+</style>

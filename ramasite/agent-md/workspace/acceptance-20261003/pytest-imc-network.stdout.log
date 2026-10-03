@@ -1,0 +1,23 @@
+.......F.........................................................        [100%]
+================================== FAILURES ===================================
+___________ test_real_owned_sleeping_child_times_out_and_is_reaped ____________
+
+    def test_real_owned_sleeping_child_times_out_and_is_reaped():
+        budget = runner.Budget(datetime.now(timezone.utc) + timedelta(seconds=5), 2, 1)
+        options = {'creationflags': subprocess.CREATE_NO_WINDOW | subprocess.CREATE_NEW_PROCESS_GROUP} if os.name == 'nt' else {'start_new_session': True}
+        child = subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(30)'], **options)
+        started = time.monotonic()
+        try:
+            with pytest.raises(TimeoutError):
+                budget.wait(child, .2)
+        finally:
+            runner.stop_owned(child, budget)
+>       assert child.poll() is not None
+E       AssertionError: assert None is not None
+E        +  where None = poll()
+E        +    where poll = <Popen: returncode: None args: ['C:\\Python312\\python.exe', '-c', 'import t...>.poll
+
+ramasite\scripts\test_verify_imc_network.py:73: AssertionError
+=========================== short test summary info ===========================
+FAILED ramasite/scripts/test_verify_imc_network.py::test_real_owned_sleeping_child_times_out_and_is_reaped
+1 failed, 64 passed in 2.33s

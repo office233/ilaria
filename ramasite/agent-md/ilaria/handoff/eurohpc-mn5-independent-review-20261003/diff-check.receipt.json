@@ -1,0 +1,41 @@
+{
+  "TrackedExit": 0,
+  "TrackedOutput": [],
+  "NewFileChecks": [
+    {
+      "Path": "ilaria/forge/eurohpc/__init__.py",
+      "ExitCode": 1,
+      "Output": []
+    },
+    {
+      "Path": "ilaria/forge/eurohpc/contract.py",
+      "ExitCode": 1,
+      "Output": []
+    },
+    {
+      "Path": "ilaria/forge/eurohpc/prepare.py",
+      "ExitCode": 1,
+      "Output": []
+    },
+    {
+      "Path": "ilaria/forge/eurohpc/node.py",
+      "ExitCode": 1,
+      "Output": []
+    },
+    {
+      "Path": "ilaria/forge/eurohpc/mn5.example.json",
+      "ExitCode": 1,
+      "Output": []
+    },
+    {
+      "Path": "ilaria/forge/test_eurohpc.py",
+      "ExitCode": 1,
+      "Output": []
+    },
+    {
+      "Path": "ramasite/docs/ilaria/runbooks/EUROHPC_MN5_IMC.md",
+      "ExitCode": 1,
+      "Output": []
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "AuthorizedBaseline": "b8d282147c3288dece80cb579cd67a7351379819",
+  "HeadBefore": "584af58d286199fb5a8e6dc2fa722cd0d848ff34",
+  "HeadAfter": "584af58d286199fb5a8e6dc2fa722cd0d848ff34",
+  "IndexHashBefore": "3BCB5DE9223E16EC8ACA69C0A7C5B6C9DA174A914EB2D857F5B15FDB09A06466",
+  "IndexHashAfter": "C46B6823CE65774D39083F0B29F2D09F9FE0DAD7D868202B1C8D863A6BBA2B63",
+  "InputFilesCompared": 43,
+  "InputChanges": [],
+  "EvidenceClassification": "CURRENT_INPUTS",
+  "GoExit": 0,
+  "PytestExit": 1,
+  "PytestSummary": "1 failed,64 passed in2.33s; child remained unreaped after stop_owned in Windows fixture",
+  "DiffCheckExit": 0,
+  "DiffCachedCheckExit": 0,
+  "Claims": "read-only acceptance: planprocess and test_verify_imc_network; no source edits; own evidence directory only",
+  "Limitations": "Windows amd64 only; no WSL/HPC/model/network integration acceptance; external dependency/runtime source trees not independently content-hashed",
+  "Logs": [
+    {
+      "Path": "E:\\nexus\\ramasite\\agent-md\\workspace\\acceptance-20261003\\before.json",
+      "Hash": "BE582C0B52858984BFB7EB2A22A9B1090C86221B084E2006D0F8D5AC1A9DC73D"
+    },
+    {
+      "Path": "E:\\nexus\\ramasite\\agent-md\\workspace\\acceptance-20261003\\after.json",
+      "Hash": "A354187AEE4500303A10B629AF5F8DC547B7B613D30D4BB95B243B0038944659"
+    },
+    {
+      "Path": "E:\\nexus\\ramasite\\agent-md\\workspace\\acceptance-20261003\\go-planprocess.stdout.log",
+      "Hash": "298F3C8F6A2E1798E37B37434D91FD57C7831B49E446C40C1890939DBE56E35A"
+    },
+    {
+      "Path": "E:\\nexus\\ramasite\\agent-md\\workspace\\acceptance-20261003\\go-planprocess.receipt.json",
+      "Hash": "434C7F2B3562FD0EB2DDF72DC85804344347A2AD56A465E9B7249E7AB1BEDAF9"
+    },
+    {
+      "Path": "E:\\nexus\\ramasite\\agent-md\\workspace\\acceptance-20261003\\pytest-imc-network.stdout.log",
+      "Hash": "4D235632DC410EDB59DC9FCB37D69B54A310EDA0CDCDCE2218AF48F5101F4D56"
+    },
+    {
+      "Path": "E:\\nexus\\ramasite\\agent-md\\workspace\\acceptance-20261003\\pytest-imc-network.receipt.json",
+      "Hash": "FC8FDFB81454E31575A7F8D61111208F412FBC059CD06A3B2C45A273894170B9"
+    }
+  ],
+  "RecordedUtc": "2026-10-03T08:27:32.8571699Z"
+}

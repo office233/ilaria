@@ -1,0 +1,22 @@
+{
+  "format": "eurohpc-exclusive-claims-v1",
+  "approvedBy": "root protocol confirmation in current task",
+  "worktree": "E:\\nexus-worktrees\\ilaria-eurohpc-mn5-20261003",
+  "baseline": "3790d965826a9273017e5eca67e7f5d4727c4edb",
+  "sessionID": "ses_eff1d50daffeZIZF9K8o6UiRmi",
+  "paths": [
+    "ilaria/forge/eurohpc/__init__.py",
+    "ilaria/forge/eurohpc/contract.py",
+    "ilaria/forge/eurohpc/prepare.py",
+    "ilaria/forge/eurohpc/runtime.py",
+    "ilaria/forge/eurohpc/node.py",
+    "ilaria/forge/eurohpc/hardware.py",
+    "ilaria/forge/eurohpc/mn5.example.json",
+    "ilaria/forge/test_eurohpc.py",
+    "ramasite/docs/ilaria/runbooks/EUROHPC_MN5_IMC.md"
+  ],
+  "coordinationPrefix": "ramasite/agent-md/ilaria/handoff/eurohpc-mn5-opencode-2026-10-03/",
+  "timeoutTransfersOwnership": false,
+  "mainIntegrationApproved": false,
+  "canonicalExecute": "REFUSED_FOR_INCOMPATIBLE_MN5_TOPOLOGY_PENDING_REAL_QUALIFICATION"
+}

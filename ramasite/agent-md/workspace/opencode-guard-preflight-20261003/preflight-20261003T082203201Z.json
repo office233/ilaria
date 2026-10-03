@@ -1,0 +1,104 @@
+{
+  "schema_version": 1,
+  "observedAtUTC": "2026-10-03T08:22:03.2093145Z",
+  "state": "BLOCKED_NOT_ARMED",
+  "modelJobStarted": false,
+  "integration": {
+    "path": "C:\\Users\\abel\\.codex\\integrations\\opencode-control",
+    "installedMCP": "opencode-control",
+    "backend": "OpenCode v2 shared local service",
+    "connected": true,
+    "version": "2.0.22",
+    "servicePID": 4816
+  },
+  "existingGuardedClient": {
+    "path": "C:\\Users\\abel\\AppData\\Local\\Temp\\nexus-opencode-client-guarded-20261001.mjs",
+    "sha256": "f0fa98501e12c0429d126958d21ca2406f1395e51ec7a2174e146d5aa7fcb61a",
+    "stopBehaviorReadFromPublicSource": [
+      "finite monthly usage required before READY",
+      "interrupt owned active sessions at USD400 monthly or USD30 batch",
+      "absolute UTC deadline interrupts only owned tracker-active sessions",
+      "observation/persistence errors set READY false and attempt owned-only interruption",
+      "pending-launch window is 120 seconds"
+    ],
+    "limitation": "maxConcurrentModelJobs is not enforced by the existing client; actual active API must be verified before admission"
+  },
+  "budget": {
+    "authorisedMonthlyUSD": 500,
+    "monthStopUSD": 400,
+    "batchCapUSD": 30,
+    "maxConcurrentModelJobs": 1,
+    "maximumDeadlineMinutes": 30,
+    "historicalBudgetPath": "E:\\nexus\\ramasite\\agent-md\\workspace\\coordination\\chrome-2026-10-01\\opencode-budget-1.json",
+    "newAzureGrantOrTPMDoNotRaiseBudget": true,
+    "freshLocalCostUSD": null,
+    "freshProviderInvoiceUSD": null
+  },
+  "model": {
+    "historicalProvider": "azure",
+    "historicalModel": "gpt-6.1-sol",
+    "currentlyVerified": false,
+    "endpointVerified": false
+  },
+  "ownedRegistrySessionCount": 5,
+  "ownedReadableSessions": [
+    {
+      "id": "ses_f0946e6cfffe1yUqybTpG7pUb0",
+      "directory": "E:\\nexus",
+      "outcome": "succeeded",
+      "pendingPermissions": 0,
+      "lastIdleAt": 1790853797934,
+      "lastPromptAt": 1790853718559
+    },
+    {
+      "id": "ses_f074f4c81ffegFv1b6Z1qrwpkd",
+      "directory": "E:\\nexus",
+      "outcome": "succeeded",
+      "pendingPermissions": 0,
+      "lastIdleAt": 1790878948377,
+      "lastPromptAt": 1790878896188
+    }
+  ],
+  "actualOwnedLiveJobs": "UNVERIFIED",
+  "oldGuardianPIDChecks": [
+    {
+      "pid": 15836,
+      "present": false
+    },
+    {
+      "pid": 13244,
+      "present": false
+    },
+    {
+      "pid": 29304,
+      "present": false
+    },
+    {
+      "pid": 14752,
+      "present": false
+    }
+  ],
+  "guardianReady": false,
+  "guardianPID": null,
+  "guardianDeadline": null,
+  "blockers": [
+    "Shell CLI 2.0.22 api --help: EPERM, operation not permitted, open C:\\Users\\abel\\.local\\share\\opencode\\log\\opencode.log",
+    "Guarded cliApi GET /api/experimental/session/stats, /api/session/active and owned message route: exit1; fresh cost, live jobs and model could not be obtained via shell CLI",
+    "Get-CimInstance Win32_Process: Access denied; no active guardian identity proof",
+    "MCP opencode_read_session for old OC3: ENOENT realpath E:\\nexus-worktrees\\opencode-cleanup-matrix",
+    "Requested HPC C:\\Users\\abel\\.codex\\worktrees\\ilaria-eurohpc-mn5\\nexus is outside default integration allowed roots; per-process explicit OPENCODE_WORKSPACE could bind only that dedicated worktree, but was not changed or invoked"
+  ],
+  "preparedAdmissionGates": [
+    "owned session and explicit disjoint claim snapshot",
+    "fresh finite local cost below USD400 and USD30 batch",
+    "fresh OWNED actual active job statuses with maximum one paid model job",
+    "pending permissions observed without approval",
+    "existing Azure GPT6.1 model metadata verified",
+    "owned live guardian PID identity, READY and deadline <=30minutes independently checked"
+  ],
+  "officialReferences": [
+    "https://opencode.ai/v2/docs/troubleshooting/",
+    "https://opencode.ai/v2/docs/api",
+    "https://opencode.ai/v2/docs/cli/commands/"
+  ]
+}

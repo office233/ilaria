@@ -1,0 +1,29 @@
+{
+  "observedAtUTC": "2026-10-03T08:53:48.210Z",
+  "sessionID": "ses_eff1d50daffeZIZF9K8o6UiRmi",
+  "outcome": "succeeded",
+  "model": {
+    "id": "gpt-6.1-sol",
+    "providerID": "azure",
+    "variant": "default"
+  },
+  "location": {
+    "directory": "E:\\nexus-worktrees\\ilaria-eurohpc-mn5-20261003"
+  },
+  "lastIdleAt": 1791017391611,
+  "sessionCostUSD": 0.9690064000000004,
+  "actualActiveCount": 0,
+  "ownedActive": false,
+  "pendingPermissions": 0,
+  "localMonthlyCostUSD": 41.39747809999997,
+  "localBatchCostUSD": 0.9690064000000049,
+  "baselineUSD": 40.42847169999997,
+  "costSource": "fresh OpenCode local monthly session stats; provider invoice unavailable",
+  "limits": {
+    "monthlyUSD": 500,
+    "monthlyStopUSD": 400,
+    "batchUSD": 30,
+    "maxModelJobs": 1,
+    "deadlineUTC": "2026-10-03T09:00:18.739Z"
+  }
+}

@@ -1,0 +1,84 @@
+{
+  "Baseline": "3790d965826a9273017e5eca67e7f5d4727c4edb",
+  "HeadAfter": "3790d965826a9273017e5eca67e7f5d4727c4edb",
+  "InputsCompared": 14,
+  "InputChanges": [],
+  "SourceChangesOutsideClaims": [],
+  "ActualClaimFiles": 7,
+  "UnusedOptionalClaims": [
+    "runtime.py",
+    "hardware.py"
+  ],
+  "PytestExit": 0,
+  "PytestSummary": "111 passed in 3.59s; no skips",
+  "CompatibilityProbeExit": 0,
+  "ExecuteRefused": true,
+  "PreparationOnly": true,
+  "TrackedDiffCheckExit": 0,
+  "NewFileDiffChecks": [
+    {
+      "Path": "ilaria/forge/eurohpc/__init__.py",
+      "ExitCode": 1,
+      "Output": []
+    },
+    {
+      "Path": "ilaria/forge/eurohpc/contract.py",
+      "ExitCode": 1,
+      "Output": []
+    },
+    {
+      "Path": "ilaria/forge/eurohpc/prepare.py",
+      "ExitCode": 1,
+      "Output": []
+    },
+    {
+      "Path": "ilaria/forge/eurohpc/node.py",
+      "ExitCode": 1,
+      "Output": []
+    },
+    {
+      "Path": "ilaria/forge/eurohpc/mn5.example.json",
+      "ExitCode": 1,
+      "Output": []
+    },
+    {
+      "Path": "ilaria/forge/test_eurohpc.py",
+      "ExitCode": 1,
+      "Output": []
+    },
+    {
+      "Path": "ramasite/docs/ilaria/runbooks/EUROHPC_MN5_IMC.md",
+      "ExitCode": 1,
+      "Output": []
+    }
+  ],
+  "MainCompatibility": "BLOCKED_PENDING_COORDINATION: resume argv omits the current trainer required --resume-sha256; first-party attestation/root options are not representable when needed. Baseline3790 preparation only is verified; current-Main repin and affected retest are required.",
+  "Scope": "Independent read-only code review and synthetic affected tests; no model/GPU/Slurm/training/remote execution",
+  "Logs": [
+    {
+      "Path": "E:\\nexus\\ramasite\\agent-md\\ilaria\\handoff\\eurohpc-mn5-independent-review-20261003\\before.json",
+      "Hash": "4B0CAD92E07B667EE0676BBD180BC3A7FCEE84D6C159E5D6A139AA4690E95F1C"
+    },
+    {
+      "Path": "E:\\nexus\\ramasite\\agent-md\\ilaria\\handoff\\eurohpc-mn5-independent-review-20261003\\after.json",
+      "Hash": "89A469D8B44E6E0A91318ED38D25842D97AB6AD1D47C959E1688268A1B3C733F"
+    },
+    {
+      "Path": "E:\\nexus\\ramasite\\agent-md\\ilaria\\handoff\\eurohpc-mn5-independent-review-20261003\\pytest.stdout.log",
+      "Hash": "CBEF0BEB2A07A637B7C8118386457414E6EEF3DBD13FF3174831F4C9A2D6228C"
+    },
+    {
+      "Path": "E:\\nexus\\ramasite\\agent-md\\ilaria\\handoff\\eurohpc-mn5-independent-review-20261003\\pytest.receipt.json",
+      "Hash": "088F1294135CEF12C288CEAEA3DFF3F652F16F08279E617E4C3F47EDC486D184"
+    },
+    {
+      "Path": "E:\\nexus\\ramasite\\agent-md\\ilaria\\handoff\\eurohpc-mn5-independent-review-20261003\\compatibility-probes.stdout.json",
+      "Hash": "9929B1F78DA3D02572F6EB11784766CFC73FD9A39F8927250286DF5C66F2A0EA"
+    },
+    {
+      "Path": "E:\\nexus\\ramasite\\agent-md\\ilaria\\handoff\\eurohpc-mn5-independent-review-20261003\\diff-check.receipt.json",
+      "Hash": "82A0FE098607956D408B228DB0B28E021E295D5DE1FE728172388F9C7E538C90"
+    }
+  ],
+  "RecordedUtc": "2026-10-03T08:59:17.5529944Z"
+}

@@ -1,0 +1,33 @@
+{
+  "authorisedMonthlyUSD": 500,
+  "monthStopUSD": 400,
+  "batchCapUSD": 30,
+  "maxConcurrentModelJobs": 1,
+  "monthFrom": 1790802000000,
+  "baselineUSD": 41.39747809999997,
+  "ids": [
+    "ses_efefd4501fferUawxbD82VAav2"
+  ],
+  "stopAtUTC": "2026-10-03T09:35:18.829Z",
+  "guardReady": true,
+  "model": {
+    "id": "gpt-6.1-sol",
+    "providerID": "azure"
+  },
+  "directory": "E:\\nexus-worktrees\\ilaria-eurohpc-mn5-correction-20261003",
+  "baselineCommit": "25b7c65d39955ae221f9e9e368458038103fcd27",
+  "costSource": "OpenCode local monthly stats, provider invoice separate/unavailable",
+  "ownership": "exclusive four correction files; three candidate files frozen; timeout/STOP does not release claims",
+  "guardPID": 12124,
+  "clientPath": "C:\\Users\\abel\\AppData\\Local\\Temp\\nexus-opencode-client-guarded-20261001.mjs",
+  "currentCostUSD": 41.69219439999997,
+  "batchCostUSD": 0.2947162999999975,
+  "checkedAt": "2026-10-03T09:09:25.373Z",
+  "sessions": [
+    {
+      "id": "ses_efefd4501fferUawxbD82VAav2",
+      "permissions": [],
+      "lastPromptAt": 1791018434741
+    }
+  ]
+}

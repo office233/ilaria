@@ -1,0 +1,258 @@
+{
+  "format": "eurohpc-opencode-correction-baseline-v1",
+  "observedAtUTC": "2026-10-03T09:01:31.8213889Z",
+  "mainHEADObserved": "25b7c65d39955ae221f9e9e368458038103fcd27",
+  "worktree": "E:\\nexus-worktrees\\ilaria-eurohpc-mn5-correction-20261003",
+  "gitCommit": "25b7c65d39955ae221f9e9e368458038103fcd27",
+  "state": "DETACHED_CURRENT_MAIN_COMMIT_WITH_ONLY_HASH_VERIFIED_SEVEN_CLAIMS_COPY",
+  "canonicalFiles": [
+    {
+      "path": "AGENTS.md",
+      "sha256": "d919cb7f6479c373f621e104772b7a26d90ae15cbc81a58876daff24eaae8fb1",
+      "mainSHA256": "d919cb7f6479c373f621e104772b7a26d90ae15cbc81a58876daff24eaae8fb1",
+      "historicalSHA256": "d919cb7f6479c373f621e104772b7a26d90ae15cbc81a58876daff24eaae8fb1",
+      "bytes": 1971,
+      "matchesCurrentExpected": true
+    },
+    {
+      "path": "ilaria/AGENTS.md",
+      "sha256": "3ec644791f3066ed2d32443cf24ec4e9a1fd9cb264181fec682c36d9efd4a247",
+      "mainSHA256": "3ec644791f3066ed2d32443cf24ec4e9a1fd9cb264181fec682c36d9efd4a247",
+      "historicalSHA256": "3ec644791f3066ed2d32443cf24ec4e9a1fd9cb264181fec682c36d9efd4a247",
+      "bytes": 2823,
+      "matchesCurrentExpected": true
+    },
+    {
+      "path": "ramasite/RELOCATIONS.json",
+      "sha256": "ff13d1f174b92f33da5b2915db2da6a8b0146b12b4d8c69a81ded7cf6054045f",
+      "mainSHA256": "ff13d1f174b92f33da5b2915db2da6a8b0146b12b4d8c69a81ded7cf6054045f",
+      "historicalSHA256": "ff13d1f174b92f33da5b2915db2da6a8b0146b12b4d8c69a81ded7cf6054045f",
+      "bytes": 35497,
+      "matchesCurrentExpected": true
+    },
+    {
+      "path": "ilaria/forge/imc_model.py",
+      "sha256": "650f4cad06d80760a03fa4396bb2cce27364bd596b8002f39ec02d595205274c",
+      "mainSHA256": "650f4cad06d80760a03fa4396bb2cce27364bd596b8002f39ec02d595205274c",
+      "historicalSHA256": "650f4cad06d80760a03fa4396bb2cce27364bd596b8002f39ec02d595205274c",
+      "bytes": 28425,
+      "matchesCurrentExpected": true
+    },
+    {
+      "path": "ilaria/forge/train_ilaria.py",
+      "sha256": "f5e748bb3e5676f747bc8fcbd5cb2e0853e0b9e5406d76e69c89364b957afbdc",
+      "mainSHA256": "f5e748bb3e5676f747bc8fcbd5cb2e0853e0b9e5406d76e69c89364b957afbdc",
+      "historicalSHA256": "568494437fd3eb419ee502f5d9e352b9828ffd6ca494e5741d29dc4a2aa4a4ed",
+      "bytes": 38532,
+      "matchesCurrentExpected": true
+    },
+    {
+      "path": "ilaria/forge/training_state.py",
+      "sha256": "a6f75be748760c26a05c04f96dcdd0fb91a33207375d8a01f99a49479ef4d0f4",
+      "mainSHA256": "a6f75be748760c26a05c04f96dcdd0fb91a33207375d8a01f99a49479ef4d0f4",
+      "historicalSHA256": "a6f75be748760c26a05c04f96dcdd0fb91a33207375d8a01f99a49479ef4d0f4",
+      "bytes": 5248,
+      "matchesCurrentExpected": true
+    },
+    {
+      "path": "ilaria/forge/gpu_preflight.py",
+      "sha256": "9c2c7a64d4d54b2fe480e935610abd8c74d3b08035dc25f704ac44e31ef040d2",
+      "mainSHA256": "9c2c7a64d4d54b2fe480e935610abd8c74d3b08035dc25f704ac44e31ef040d2",
+      "historicalSHA256": "9c2c7a64d4d54b2fe480e935610abd8c74d3b08035dc25f704ac44e31ef040d2",
+      "bytes": 4653,
+      "matchesCurrentExpected": true
+    },
+    {
+      "path": "ilaria/forge/imc_125m_preflight.py",
+      "sha256": "090ccd6d12740c5c8c310e7067b52324f6f9c84e148cfe48f62b5c0004b553ad",
+      "mainSHA256": "090ccd6d12740c5c8c310e7067b52324f6f9c84e148cfe48f62b5c0004b553ad",
+      "historicalSHA256": "090ccd6d12740c5c8c310e7067b52324f6f9c84e148cfe48f62b5c0004b553ad",
+      "bytes": 7291,
+      "matchesCurrentExpected": true
+    },
+    {
+      "path": "ilaria/forge/imc_125m_launch.py",
+      "sha256": "55da039966202265934de8612fe7f05954e7b60e89de5c34c9990c7c225fb70d",
+      "mainSHA256": "55da039966202265934de8612fe7f05954e7b60e89de5c34c9990c7c225fb70d",
+      "historicalSHA256": "55da039966202265934de8612fe7f05954e7b60e89de5c34c9990c7c225fb70d",
+      "bytes": 12069,
+      "matchesCurrentExpected": true
+    },
+    {
+      "path": "ilaria/forge/imc_125m_recipe.py",
+      "sha256": "52a8f9bb92de5adb207adfda3e83730654dd4c961d284916d031cd44896da2a8",
+      "mainSHA256": "52a8f9bb92de5adb207adfda3e83730654dd4c961d284916d031cd44896da2a8",
+      "historicalSHA256": "52a8f9bb92de5adb207adfda3e83730654dd4c961d284916d031cd44896da2a8",
+      "bytes": 5490,
+      "matchesCurrentExpected": true
+    },
+    {
+      "path": "ilaria/forge/config/imc_125m_recipe.json",
+      "sha256": "c68e6b220a3f184fdb43ced1f0f0b843768a1e94b97ccca80f409f1d231fa32d",
+      "mainSHA256": "c68e6b220a3f184fdb43ced1f0f0b843768a1e94b97ccca80f409f1d231fa32d",
+      "historicalSHA256": "c68e6b220a3f184fdb43ced1f0f0b843768a1e94b97ccca80f409f1d231fa32d",
+      "bytes": 1167,
+      "matchesCurrentExpected": true
+    },
+    {
+      "path": "ilaria/forge/training_launch_gate.py",
+      "sha256": "01434f237459fddc0babf2da0cc0e69f5ddfcb4fb8541bd4082b148ae4c9da00",
+      "mainSHA256": "01434f237459fddc0babf2da0cc0e69f5ddfcb4fb8541bd4082b148ae4c9da00",
+      "historicalSHA256": "01434f237459fddc0babf2da0cc0e69f5ddfcb4fb8541bd4082b148ae4c9da00",
+      "bytes": 24160,
+      "matchesCurrentExpected": true
+    },
+    {
+      "path": "ilaria/forge/qualified_tokenizer_contract.py",
+      "sha256": "7233d51a20f6d0ca164b11369b4c75be54cd22e3831842f9aa1963e9cc92bd2b",
+      "mainSHA256": "7233d51a20f6d0ca164b11369b4c75be54cd22e3831842f9aa1963e9cc92bd2b",
+      "historicalSHA256": "7233d51a20f6d0ca164b11369b4c75be54cd22e3831842f9aa1963e9cc92bd2b",
+      "bytes": 17555,
+      "matchesCurrentExpected": true
+    },
+    {
+      "path": "ilaria/forge/qualified_pilot_v2.py",
+      "sha256": "b3eb5b7a88341f12a956d5c2d02e2249baa9b8a1472647f6039e7ebe8b95e515",
+      "mainSHA256": "b3eb5b7a88341f12a956d5c2d02e2249baa9b8a1472647f6039e7ebe8b95e515",
+      "historicalSHA256": "b3eb5b7a88341f12a956d5c2d02e2249baa9b8a1472647f6039e7ebe8b95e515",
+      "bytes": 28283,
+      "matchesCurrentExpected": true
+    },
+    {
+      "path": "ilaria/forge/dataset_manifest.py",
+      "sha256": "11a7d0550ba52f00608d3688c79f822e196bc2d9f9d296ff90752f8618b1af03",
+      "mainSHA256": "11a7d0550ba52f00608d3688c79f822e196bc2d9f9d296ff90752f8618b1af03",
+      "historicalSHA256": "11a7d0550ba52f00608d3688c79f822e196bc2d9f9d296ff90752f8618b1af03",
+      "bytes": 45988,
+      "matchesCurrentExpected": true
+    },
+    {
+      "path": "ilaria/forge/tokenizer_freeze.py",
+      "sha256": "e1f084758d4092a99f831a4b2c5ff1e874aefd3ae0e7152f82fbef85831252a2",
+      "mainSHA256": "e1f084758d4092a99f831a4b2c5ff1e874aefd3ae0e7152f82fbef85831252a2",
+      "historicalSHA256": "e1f084758d4092a99f831a4b2c5ff1e874aefd3ae0e7152f82fbef85831252a2",
+      "bytes": 29463,
+      "matchesCurrentExpected": true
+    },
+    {
+      "path": "ilaria/forge/production_readiness.py",
+      "sha256": "4a669cf09750cd1fcdd6be168fc3c3ff4004f51c2ca7c2a27bc8d7494d856b6e",
+      "mainSHA256": "4a669cf09750cd1fcdd6be168fc3c3ff4004f51c2ca7c2a27bc8d7494d856b6e",
+      "historicalSHA256": "4a669cf09750cd1fcdd6be168fc3c3ff4004f51c2ca7c2a27bc8d7494d856b6e",
+      "bytes": 16010,
+      "matchesCurrentExpected": true
+    },
+    {
+      "path": "ilaria/forge/imc_125m_promotion_evidence.py",
+      "sha256": "b3ef513bf3a5868e01a6a9d3d4cdbac81f42214f044dcff776f15246bf5890f2",
+      "mainSHA256": "b3ef513bf3a5868e01a6a9d3d4cdbac81f42214f044dcff776f15246bf5890f2",
+      "historicalSHA256": "b3ef513bf3a5868e01a6a9d3d4cdbac81f42214f044dcff776f15246bf5890f2",
+      "bytes": 7415,
+      "matchesCurrentExpected": true
+    },
+    {
+      "path": "ilaria/forge/build_colab_bundle.py",
+      "sha256": "ef37c0bbf5c446cf922b8c4cb3ddeb5e90a6f12e2e791d346648e86840f07f5f",
+      "mainSHA256": "ef37c0bbf5c446cf922b8c4cb3ddeb5e90a6f12e2e791d346648e86840f07f5f",
+      "historicalSHA256": "ef37c0bbf5c446cf922b8c4cb3ddeb5e90a6f12e2e791d346648e86840f07f5f",
+      "bytes": 4953,
+      "matchesCurrentExpected": true
+    },
+    {
+      "path": "ramasite/benchmarks/ilaria/imc_nccl_hardware_gate/gate.py",
+      "sha256": "1942622c8b974d8262bfcdcaeba5d1ccc932322da576272f7c712e6464b575c5",
+      "mainSHA256": "1942622c8b974d8262bfcdcaeba5d1ccc932322da576272f7c712e6464b575c5",
+      "historicalSHA256": "1942622c8b974d8262bfcdcaeba5d1ccc932322da576272f7c712e6464b575c5",
+      "bytes": 30429,
+      "matchesCurrentExpected": true
+    },
+    {
+      "path": "ramasite/benchmarks/ilaria/imc_nccl_bootstrap/probe.py",
+      "sha256": "b4a8b09d36d45449b440dfc393f1ae20f9ab204747a705d98f961e83e3cdc704",
+      "mainSHA256": "b4a8b09d36d45449b440dfc393f1ae20f9ab204747a705d98f961e83e3cdc704",
+      "historicalSHA256": "b4a8b09d36d45449b440dfc393f1ae20f9ab204747a705d98f961e83e3cdc704",
+      "bytes": 31417,
+      "matchesCurrentExpected": true
+    },
+    {
+      "path": "ramasite/benchmarks/ilaria/imc_nccl_bootstrap/containment.py",
+      "sha256": "2f211d79b9e92c6e32f864e4d37d1e8bf7568c38fb2f0a0ad41d25278cfd7894",
+      "mainSHA256": "2f211d79b9e92c6e32f864e4d37d1e8bf7568c38fb2f0a0ad41d25278cfd7894",
+      "historicalSHA256": "2f211d79b9e92c6e32f864e4d37d1e8bf7568c38fb2f0a0ad41d25278cfd7894",
+      "bytes": 26373,
+      "matchesCurrentExpected": true
+    },
+    {
+      "path": "ramasite/benchmarks/ilaria/licensed_code_pilot_package/package.py",
+      "sha256": "3aa58cb64cdfd7f39e5158b725463239a24c31f9a72d08a8fd726c18e1a1b1ae",
+      "mainSHA256": "3aa58cb64cdfd7f39e5158b725463239a24c31f9a72d08a8fd726c18e1a1b1ae",
+      "historicalSHA256": "3aa58cb64cdfd7f39e5158b725463239a24c31f9a72d08a8fd726c18e1a1b1ae",
+      "bytes": 36964,
+      "matchesCurrentExpected": true
+    },
+    {
+      "path": "ramasite/benchmarks/ilaria/production_contamination_clearance/verify.py",
+      "sha256": "a2e2d3e4fc6cb9584d9b4e5216a2f7921321df67c452da884b0f957734011080",
+      "mainSHA256": "a2e2d3e4fc6cb9584d9b4e5216a2f7921321df67c452da884b0f957734011080",
+      "historicalSHA256": "a2e2d3e4fc6cb9584d9b4e5216a2f7921321df67c452da884b0f957734011080",
+      "bytes": 24987,
+      "matchesCurrentExpected": true
+    }
+  ],
+  "historicalSourceReceiptSHA256": "3d49f52a5d3c244a6a0794794cc6e06a4bac12e5e82fcad4501a6b07ebed6a26",
+  "historicalWorktreePreserved": "E:\\nexus-worktrees\\ilaria-eurohpc-mn5-20261003",
+  "copiedClaimFiles": [
+    {
+      "path": "ilaria/forge/eurohpc/__init__.py",
+      "sha256": "c3ffccbabb01078cd1f573f4023f7f4ca76e9209577ba02c8fe2d14d2ac80204",
+      "bytes": 126,
+      "editableInCorrection": false,
+      "frozenInCorrection": true
+    },
+    {
+      "path": "ilaria/forge/eurohpc/contract.py",
+      "sha256": "4a3d707d34ba02018445fb71f8f4e19e4d2c0d339604d9d7183c461bb262a137",
+      "bytes": 17835,
+      "editableInCorrection": true,
+      "frozenInCorrection": false
+    },
+    {
+      "path": "ilaria/forge/eurohpc/prepare.py",
+      "sha256": "3335d82fde1ff42e586b0fe8d42f206b2b5a6e68ed9c70c6a8b9e1224c0cad61",
+      "bytes": 18914,
+      "editableInCorrection": true,
+      "frozenInCorrection": false
+    },
+    {
+      "path": "ilaria/forge/eurohpc/node.py",
+      "sha256": "8367492ccd3323f5888e46e4166303c1251d0b131271a514ab232d53cde2b0f4",
+      "bytes": 4766,
+      "editableInCorrection": false,
+      "frozenInCorrection": true
+    },
+    {
+      "path": "ilaria/forge/eurohpc/mn5.example.json",
+      "sha256": "9d6722e624bca2ad445ccad1d19df8edd07a0a1d9da3a66269ba63c4186f8087",
+      "bytes": 2346,
+      "editableInCorrection": false,
+      "frozenInCorrection": true
+    },
+    {
+      "path": "ilaria/forge/test_eurohpc.py",
+      "sha256": "a19a16ed00ae38b6ad76d9662737e41e6cba89edb0f6b44cb1879f8af1d443bd",
+      "bytes": 22907,
+      "editableInCorrection": true,
+      "frozenInCorrection": false
+    },
+    {
+      "path": "ramasite/docs/ilaria/runbooks/EUROHPC_MN5_IMC.md",
+      "sha256": "9ba5763de2c0a83c6b70d9b0fc07efde8a0a859085b4e25e5d4c27c36034aa47",
+      "bytes": 17038,
+      "editableInCorrection": true,
+      "frozenInCorrection": false
+    }
+  ],
+  "productImplementationByCodex": false,
+  "modelPromptSent": false,
+  "guardianReady": false
+}

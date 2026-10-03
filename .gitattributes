@@ -23,3 +23,6 @@
 *.pt binary
 *.safetensors binary
 *.mp4 binary
+
+# Preserve the exact historical console transcript; its trailing spaces are evidence.
+ramasite/agent-md/swyp/history/NON_LLM_EXPERIMENT_RUNS.txt whitespace=-blank-at-eol

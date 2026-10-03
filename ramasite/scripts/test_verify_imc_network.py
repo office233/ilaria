@@ -327,4 +327,3 @@ def test_fault_receipt_requires_abnormal_faulted_exits_and_explicit_mode():
     plain['classification'] = 'SYNTHETIC'
     with pytest.raises(ValueError, match='unknown recorded proof phase'):
         runner.validate_recorded_receipt(plain)
-

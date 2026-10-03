@@ -36,4 +36,3 @@ Concluzie: pentru 1–2 ore, tariful instanței verificat este 38,40–76,80 USD
 un beneficiu legitim al organizației este confirmat explicit în Brev. Nu există aici dovadă de reducere imediată.
 Brev separă limita de consum USD/oră de soldul de credite; un sold suficient nu dovedește că organizația poate lansa 38,40 USD/oră.
 Nu am lansat GPU-uri, introdus coduri, trimis mesaje sau acceptat termeni. Claims mobile rămân înghețate.
-

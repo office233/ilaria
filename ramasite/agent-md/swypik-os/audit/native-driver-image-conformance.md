@@ -1,7 +1,7 @@
 # Native driver-image Go/C differential conformance
 
-Date: 2026-10-01  
-Worktree: `E:\nexus-worktrees\opencode-driver-conformance`  
+Date: 2026-10-01
+Worktree: `E:\nexus-worktrees\opencode-driver-conformance`
 Branch: `codex/opencode-driver-conformance`
 
 ## Scope

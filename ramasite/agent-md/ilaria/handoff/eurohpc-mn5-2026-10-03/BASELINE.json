@@ -1,0 +1,149 @@
+{
+  "format": "ilaria-eurohpc-handoff-baseline-v1",
+  "verified_utc": "2026-10-03T08:17:45Z",
+  "git_commit": "3790d965826a9273017e5eca67e7f5d4727c4edb",
+  "worktree": "C:\\Users\\abel\\.codex\\worktrees\\ilaria-eurohpc-mn5\\nexus",
+  "worktree_state": "DETACHED_BASELINE_NO_MAIN_OVERLAY",
+  "requested_branch": "codex/ilaria-eurohpc-mn5",
+  "branch_creation": "REFUSED_PERMISSION_DENIED_GIT_REF_LOCK",
+  "implementation_started": false,
+  "guardian_ready": "NOT_CHECKED",
+  "opencode_dispatch": "NOT_DISPATCHED",
+  "resources": [
+    {
+      "provider": "EuroHPC",
+      "system": "MareNostrum5 ACC",
+      "award": "EHPC-AIF-2026FL01-1157",
+      "gpu_hours": 12000,
+      "status": "USER_DECLARED_AWARDED_NOT_ACCESS_VERIFIED"
+    },
+    {
+      "provider": "EuroHPC",
+      "system": "Leonardo",
+      "gpu_hours": 64000,
+      "status": "USER_DECLARED_UNDER_EVALUATION_NOT_AWARDED"
+    }
+  ],
+  "files": [
+    {
+      "path": "AGENTS.md",
+      "sha256": "d919cb7f6479c373f621e104772b7a26d90ae15cbc81a58876daff24eaae8fb1",
+      "bytes": 1971
+    },
+    {
+      "path": "ilaria/AGENTS.md",
+      "sha256": "3ec644791f3066ed2d32443cf24ec4e9a1fd9cb264181fec682c36d9efd4a247",
+      "bytes": 2823
+    },
+    {
+      "path": "ramasite/RELOCATIONS.json",
+      "sha256": "ff13d1f174b92f33da5b2915db2da6a8b0146b12b4d8c69a81ded7cf6054045f",
+      "bytes": 35497
+    },
+    {
+      "path": "ilaria/forge/imc_model.py",
+      "sha256": "650f4cad06d80760a03fa4396bb2cce27364bd596b8002f39ec02d595205274c",
+      "bytes": 28425
+    },
+    {
+      "path": "ilaria/forge/train_ilaria.py",
+      "sha256": "568494437fd3eb419ee502f5d9e352b9828ffd6ca494e5741d29dc4a2aa4a4ed",
+      "bytes": 34665
+    },
+    {
+      "path": "ilaria/forge/training_state.py",
+      "sha256": "a6f75be748760c26a05c04f96dcdd0fb91a33207375d8a01f99a49479ef4d0f4",
+      "bytes": 5248
+    },
+    {
+      "path": "ilaria/forge/gpu_preflight.py",
+      "sha256": "9c2c7a64d4d54b2fe480e935610abd8c74d3b08035dc25f704ac44e31ef040d2",
+      "bytes": 4653
+    },
+    {
+      "path": "ilaria/forge/imc_125m_preflight.py",
+      "sha256": "090ccd6d12740c5c8c310e7067b52324f6f9c84e148cfe48f62b5c0004b553ad",
+      "bytes": 7291
+    },
+    {
+      "path": "ilaria/forge/imc_125m_launch.py",
+      "sha256": "55da039966202265934de8612fe7f05954e7b60e89de5c34c9990c7c225fb70d",
+      "bytes": 12069
+    },
+    {
+      "path": "ilaria/forge/imc_125m_recipe.py",
+      "sha256": "52a8f9bb92de5adb207adfda3e83730654dd4c961d284916d031cd44896da2a8",
+      "bytes": 5490
+    },
+    {
+      "path": "ilaria/forge/config/imc_125m_recipe.json",
+      "sha256": "c68e6b220a3f184fdb43ced1f0f0b843768a1e94b97ccca80f409f1d231fa32d",
+      "bytes": 1167
+    },
+    {
+      "path": "ilaria/forge/training_launch_gate.py",
+      "sha256": "01434f237459fddc0babf2da0cc0e69f5ddfcb4fb8541bd4082b148ae4c9da00",
+      "bytes": 24160
+    },
+    {
+      "path": "ilaria/forge/qualified_tokenizer_contract.py",
+      "sha256": "7233d51a20f6d0ca164b11369b4c75be54cd22e3831842f9aa1963e9cc92bd2b",
+      "bytes": 17555
+    },
+    {
+      "path": "ilaria/forge/qualified_pilot_v2.py",
+      "sha256": "b3eb5b7a88341f12a956d5c2d02e2249baa9b8a1472647f6039e7ebe8b95e515",
+      "bytes": 28283
+    },
+    {
+      "path": "ilaria/forge/dataset_manifest.py",
+      "sha256": "11a7d0550ba52f00608d3688c79f822e196bc2d9f9d296ff90752f8618b1af03",
+      "bytes": 45988
+    },
+    {
+      "path": "ilaria/forge/tokenizer_freeze.py",
+      "sha256": "e1f084758d4092a99f831a4b2c5ff1e874aefd3ae0e7152f82fbef85831252a2",
+      "bytes": 29463
+    },
+    {
+      "path": "ilaria/forge/production_readiness.py",
+      "sha256": "4a669cf09750cd1fcdd6be168fc3c3ff4004f51c2ca7c2a27bc8d7494d856b6e",
+      "bytes": 16010
+    },
+    {
+      "path": "ilaria/forge/imc_125m_promotion_evidence.py",
+      "sha256": "b3ef513bf3a5868e01a6a9d3d4cdbac81f42214f044dcff776f15246bf5890f2",
+      "bytes": 7415
+    },
+    {
+      "path": "ilaria/forge/build_colab_bundle.py",
+      "sha256": "ef37c0bbf5c446cf922b8c4cb3ddeb5e90a6f12e2e791d346648e86840f07f5f",
+      "bytes": 4953
+    },
+    {
+      "path": "ramasite/benchmarks/ilaria/imc_nccl_hardware_gate/gate.py",
+      "sha256": "1942622c8b974d8262bfcdcaeba5d1ccc932322da576272f7c712e6464b575c5",
+      "bytes": 30429
+    },
+    {
+      "path": "ramasite/benchmarks/ilaria/imc_nccl_bootstrap/probe.py",
+      "sha256": "b4a8b09d36d45449b440dfc393f1ae20f9ab204747a705d98f961e83e3cdc704",
+      "bytes": 31417
+    },
+    {
+      "path": "ramasite/benchmarks/ilaria/imc_nccl_bootstrap/containment.py",
+      "sha256": "2f211d79b9e92c6e32f864e4d37d1e8bf7568c38fb2f0a0ad41d25278cfd7894",
+      "bytes": 26373
+    },
+    {
+      "path": "ramasite/benchmarks/ilaria/licensed_code_pilot_package/package.py",
+      "sha256": "3aa58cb64cdfd7f39e5158b725463239a24c31f9a72d08a8fd726c18e1a1b1ae",
+      "bytes": 36964
+    },
+    {
+      "path": "ramasite/benchmarks/ilaria/production_contamination_clearance/verify.py",
+      "sha256": "a2e2d3e4fc6cb9584d9b4e5216a2f7921321df67c452da884b0f957734011080",
+      "bytes": 24987
+    }
+  ]
+}

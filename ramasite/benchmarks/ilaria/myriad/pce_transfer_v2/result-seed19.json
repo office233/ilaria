@@ -1,0 +1,985 @@
+{
+  "anchor_count": 8,
+  "anchor_pretrain": {
+    "loss_end": 0.00025018901214934886,
+    "loss_start": 5.526081562042236,
+    "steps": 250,
+    "test_before_sleep": {
+      "correct": 2,
+      "count": 8,
+      "mean_nll": 4.936184905353002,
+      "per_item": {
+        "anchor-001": {
+          "correct": false,
+          "nll": 8.108404159545898,
+          "prediction": 276,
+          "target": 272
+        },
+        "anchor-002": {
+          "correct": false,
+          "nll": 9.872345924377441,
+          "prediction": 272,
+          "target": 273
+        },
+        "anchor-003": {
+          "correct": true,
+          "nll": 0.010526019148528576,
+          "prediction": 274,
+          "target": 274
+        },
+        "anchor-004": {
+          "correct": false,
+          "nll": 5.864877700805664,
+          "prediction": 276,
+          "target": 275
+        },
+        "anchor-005": {
+          "correct": false,
+          "nll": 4.429453372955322,
+          "prediction": 278,
+          "target": 276
+        },
+        "anchor-006": {
+          "correct": false,
+          "nll": 9.260491371154785,
+          "prediction": 278,
+          "target": 277
+        },
+        "anchor-007": {
+          "correct": false,
+          "nll": 1.9079197645187378,
+          "prediction": 272,
+          "target": 278
+        },
+        "anchor-008": {
+          "correct": true,
+          "nll": 0.035460930317640305,
+          "prediction": 279,
+          "target": 279
+        }
+      },
+      "top1_accuracy": 0.25
+    },
+    "train_before_sleep": {
+      "correct": 8,
+      "count": 8,
+      "mean_nll": 0.0003305654008727288,
+      "per_item": {
+        "anchor-001": {
+          "correct": true,
+          "nll": 0.0004642124113161117,
+          "prediction": 272,
+          "target": 272
+        },
+        "anchor-002": {
+          "correct": true,
+          "nll": 0.00024375328212045133,
+          "prediction": 273,
+          "target": 273
+        },
+        "anchor-003": {
+          "correct": true,
+          "nll": 0.0002971446083392948,
+          "prediction": 274,
+          "target": 274
+        },
+        "anchor-004": {
+          "correct": true,
+          "nll": 0.0005489272880367935,
+          "prediction": 275,
+          "target": 275
+        },
+        "anchor-005": {
+          "correct": true,
+          "nll": 0.0002307625545654446,
+          "prediction": 276,
+          "target": 276
+        },
+        "anchor-006": {
+          "correct": true,
+          "nll": 0.0003854485403280705,
+          "prediction": 277,
+          "target": 277
+        },
+        "anchor-007": {
+          "correct": true,
+          "nll": 0.00029202012228779495,
+          "prediction": 278,
+          "target": 278
+        },
+        "anchor-008": {
+          "correct": true,
+          "nll": 0.00018225439998786896,
+          "prediction": 279,
+          "target": 279
+        }
+      },
+      "top1_accuracy": 1.0
+    },
+    "val_before_sleep": {
+      "correct": 0,
+      "count": 8,
+      "mean_nll": 7.451255649328232,
+      "per_item": {
+        "anchor-001": {
+          "correct": false,
+          "nll": 7.400141716003418,
+          "prediction": 277,
+          "target": 272
+        },
+        "anchor-002": {
+          "correct": false,
+          "nll": 9.993661880493164,
+          "prediction": 278,
+          "target": 273
+        },
+        "anchor-003": {
+          "correct": false,
+          "nll": 6.11591100692749,
+          "prediction": 272,
+          "target": 274
+        },
+        "anchor-004": {
+          "correct": false,
+          "nll": 8.630290985107422,
+          "prediction": 274,
+          "target": 275
+        },
+        "anchor-005": {
+          "correct": false,
+          "nll": 3.781653642654419,
+          "prediction": 277,
+          "target": 276
+        },
+        "anchor-006": {
+          "correct": false,
+          "nll": 7.340043067932129,
+          "prediction": 274,
+          "target": 277
+        },
+        "anchor-007": {
+          "correct": false,
+          "nll": 7.1374406814575195,
+          "prediction": 276,
+          "target": 278
+        },
+        "anchor-008": {
+          "correct": false,
+          "nll": 9.210902214050293,
+          "prediction": 278,
+          "target": 279
+        }
+      },
+      "top1_accuracy": 0.0
+    }
+  },
+  "causal_advantage_accuracy": 0.0,
+  "causal_advantage_nll": 0.4401354988416033,
+  "control_anchor_accuracy_delta": 0.0,
+  "control_anchor_generalization_delta": -0.125,
+  "control_sleep": {
+    "accepted_updates": 2,
+    "best_metrics": {
+      "anchor_accuracy": 1.0,
+      "anchor_generalization_accuracy": 0.0,
+      "anchor_generalization_nll": 6.278484463691711,
+      "anchor_nll": 0.05747630895348266,
+      "objective": 4.5803325573603315,
+      "skill_accuracy": 0.0,
+      "skill_key_accuracy": 0.08333333333333333,
+      "skill_key_nll": 4.432656188805898,
+      "skill_nll": 4.5803325573603315
+    },
+    "best_step": 40,
+    "history": [
+      {
+        "anchor_accuracy": 1.0,
+        "anchor_generalization_accuracy": 0.0,
+        "anchor_generalization_nll": 7.451255649328232,
+        "anchor_nll": 0.0003305654008727288,
+        "eligible": true,
+        "objective": 14.20433751742045,
+        "promoted": true,
+        "skill_accuracy": 0.0,
+        "skill_key_accuracy": 0.0,
+        "skill_key_nll": 15.084136883417765,
+        "skill_nll": 14.20433751742045,
+        "step": 0
+      },
+      {
+        "anchor_accuracy": 1.0,
+        "anchor_floor": 0.875,
+        "anchor_generalization_accuracy": 0.125,
+        "anchor_generalization_nll": 7.244234025478363,
+        "anchor_nll": 0.21098579390672967,
+        "eligible": true,
+        "objective": 4.850436906019847,
+        "promoted": true,
+        "skill_accuracy": 0.16666666666666666,
+        "skill_key_accuracy": 0.0,
+        "skill_key_nll": 4.863506436347961,
+        "skill_nll": 4.850436906019847,
+        "step": 20,
+        "train_loss": 3.308072328567505
+      },
+      {
+        "anchor_accuracy": 1.0,
+        "anchor_floor": 0.875,
+        "anchor_generalization_accuracy": 0.0,
+        "anchor_generalization_nll": 6.278484463691711,
+        "anchor_nll": 0.05747630895348266,
+        "eligible": true,
+        "objective": 4.5803325573603315,
+        "promoted": true,
+        "skill_accuracy": 0.0,
+        "skill_key_accuracy": 0.08333333333333333,
+        "skill_key_nll": 4.432656188805898,
+        "skill_nll": 4.5803325573603315,
+        "step": 40,
+        "train_loss": 1.6116695404052734
+      },
+      {
+        "anchor_accuracy": 1.0,
+        "anchor_floor": 0.875,
+        "anchor_generalization_accuracy": 0.125,
+        "anchor_generalization_nll": 5.352056369185448,
+        "anchor_nll": 0.01343932858435437,
+        "eligible": true,
+        "objective": 4.936188995838165,
+        "promoted": false,
+        "skill_accuracy": 0.0,
+        "skill_key_accuracy": 0.16666666666666666,
+        "skill_key_nll": 4.487657447655995,
+        "skill_nll": 4.936188995838165,
+        "step": 60,
+        "train_loss": 1.1598827838897705
+      },
+      {
+        "anchor_accuracy": 1.0,
+        "anchor_floor": 0.875,
+        "anchor_generalization_accuracy": 0.25,
+        "anchor_generalization_nll": 4.6343414187431335,
+        "anchor_nll": 0.007953693042509258,
+        "eligible": true,
+        "objective": 4.800855219364166,
+        "promoted": false,
+        "skill_accuracy": 0.0,
+        "skill_key_accuracy": 0.16666666666666666,
+        "skill_key_nll": 4.330968201160431,
+        "skill_nll": 4.800855219364166,
+        "step": 80,
+        "train_loss": 1.0769675970077515
+      },
+      {
+        "anchor_accuracy": 1.0,
+        "anchor_floor": 0.875,
+        "anchor_generalization_accuracy": 0.125,
+        "anchor_generalization_nll": 4.454990014433861,
+        "anchor_nll": 0.0033975288388319314,
+        "eligible": true,
+        "objective": 4.996701896190643,
+        "promoted": false,
+        "skill_accuracy": 0.0,
+        "skill_key_accuracy": 0.0,
+        "skill_key_nll": 4.816384156545003,
+        "skill_nll": 4.996701896190643,
+        "step": 100,
+        "train_loss": 1.0255205631256104
+      }
+    ],
+    "initial_metrics": {
+      "anchor_accuracy": 1.0,
+      "anchor_generalization_accuracy": 0.0,
+      "anchor_generalization_nll": 7.451255649328232,
+      "anchor_nll": 0.0003305654008727288,
+      "objective": 14.20433751742045,
+      "skill_accuracy": 0.0,
+      "skill_key_accuracy": 0.0,
+      "skill_key_nll": 15.084136883417765,
+      "skill_nll": 14.20433751742045
+    },
+    "rejected_for_forgetting": 0,
+    "stopped_early": true
+  },
+  "control_test": {
+    "anchor_generalization": {
+      "correct": 1,
+      "count": 8,
+      "mean_nll": 6.4724686443805695,
+      "per_item": {
+        "anchor-001": {
+          "correct": false,
+          "nll": 9.24764347076416,
+          "prediction": 276,
+          "target": 272
+        },
+        "anchor-002": {
+          "correct": false,
+          "nll": 8.721880912780762,
+          "prediction": 272,
+          "target": 273
+        },
+        "anchor-003": {
+          "correct": true,
+          "nll": 0.05422568321228027,
+          "prediction": 274,
+          "target": 274
+        },
+        "anchor-004": {
+          "correct": false,
+          "nll": 8.865734100341797,
+          "prediction": 260,
+          "target": 275
+        },
+        "anchor-005": {
+          "correct": false,
+          "nll": 5.88694429397583,
+          "prediction": 278,
+          "target": 276
+        },
+        "anchor-006": {
+          "correct": false,
+          "nll": 7.35957145690918,
+          "prediction": 267,
+          "target": 277
+        },
+        "anchor-007": {
+          "correct": false,
+          "nll": 3.239351272583008,
+          "prediction": 267,
+          "target": 278
+        },
+        "anchor-008": {
+          "correct": false,
+          "nll": 8.404397964477539,
+          "prediction": 266,
+          "target": 279
+        }
+      },
+      "top1_accuracy": 0.125
+    },
+    "anchor_known": {
+      "correct": 8,
+      "count": 8,
+      "mean_nll": 0.05747630895348266,
+      "per_item": {
+        "anchor-001": {
+          "correct": true,
+          "nll": 0.01597956009209156,
+          "prediction": 272,
+          "target": 272
+        },
+        "anchor-002": {
+          "correct": true,
+          "nll": 0.007811711169779301,
+          "prediction": 273,
+          "target": 273
+        },
+        "anchor-003": {
+          "correct": true,
+          "nll": 0.004652152303606272,
+          "prediction": 274,
+          "target": 274
+        },
+        "anchor-004": {
+          "correct": true,
+          "nll": 0.009067192673683167,
+          "prediction": 275,
+          "target": 275
+        },
+        "anchor-005": {
+          "correct": true,
+          "nll": 0.2550979554653168,
+          "prediction": 276,
+          "target": 276
+        },
+        "anchor-006": {
+          "correct": true,
+          "nll": 0.01029880065470934,
+          "prediction": 277,
+          "target": 277
+        },
+        "anchor-007": {
+          "correct": true,
+          "nll": 0.11598650366067886,
+          "prediction": 278,
+          "target": 278
+        },
+        "anchor-008": {
+          "correct": true,
+          "nll": 0.04091659560799599,
+          "prediction": 279,
+          "target": 279
+        }
+      },
+      "top1_accuracy": 1.0
+    },
+    "skill": {
+      "correct": 0,
+      "count": 12,
+      "mean_nll": 4.898640692234039,
+      "per_item": {
+        "code-001": {
+          "correct": false,
+          "nll": 5.8020524978637695,
+          "prediction": 265,
+          "target": 264
+        },
+        "code-002": {
+          "correct": false,
+          "nll": 5.082671165466309,
+          "prediction": 274,
+          "target": 265
+        },
+        "dev-001": {
+          "correct": false,
+          "nll": 2.9891300201416016,
+          "prediction": 278,
+          "target": 262
+        },
+        "dev-002": {
+          "correct": false,
+          "nll": 5.998112201690674,
+          "prediction": 265,
+          "target": 263
+        },
+        "math-001": {
+          "correct": false,
+          "nll": 2.8990674018859863,
+          "prediction": 261,
+          "target": 266
+        },
+        "math-002": {
+          "correct": false,
+          "nll": 5.6776299476623535,
+          "prediction": 276,
+          "target": 267
+        },
+        "ops-001": {
+          "correct": false,
+          "nll": 6.737497806549072,
+          "prediction": 275,
+          "target": 268
+        },
+        "ops-002": {
+          "correct": false,
+          "nll": 5.149267196655273,
+          "prediction": 270,
+          "target": 269
+        },
+        "phone-001": {
+          "correct": false,
+          "nll": 3.4159138202667236,
+          "prediction": 261,
+          "target": 270
+        },
+        "robot-001": {
+          "correct": false,
+          "nll": 4.830718040466309,
+          "prediction": 261,
+          "target": 271
+        },
+        "veh-001": {
+          "correct": false,
+          "nll": 5.665396213531494,
+          "prediction": 266,
+          "target": 260
+        },
+        "veh-002": {
+          "correct": false,
+          "nll": 4.536231994628906,
+          "prediction": 273,
+          "target": 261
+        }
+      },
+      "top1_accuracy": 0.0
+    }
+  },
+  "experiment": "pce-transfer-v2-collective-sleep",
+  "seed": 19,
+  "skill_before_sleep": {
+    "test": {
+      "correct": 0,
+      "count": 12,
+      "mean_nll": 14.595764557520548,
+      "per_item": {
+        "code-001": {
+          "correct": false,
+          "nll": 14.527752876281738,
+          "prediction": 273,
+          "target": 264
+        },
+        "code-002": {
+          "correct": false,
+          "nll": 15.31783676147461,
+          "prediction": 276,
+          "target": 265
+        },
+        "dev-001": {
+          "correct": false,
+          "nll": 13.804201126098633,
+          "prediction": 278,
+          "target": 262
+        },
+        "dev-002": {
+          "correct": false,
+          "nll": 14.144454956054688,
+          "prediction": 276,
+          "target": 263
+        },
+        "math-001": {
+          "correct": false,
+          "nll": 13.990805625915527,
+          "prediction": 279,
+          "target": 266
+        },
+        "math-002": {
+          "correct": false,
+          "nll": 15.379050254821777,
+          "prediction": 272,
+          "target": 267
+        },
+        "ops-001": {
+          "correct": false,
+          "nll": 16.13640022277832,
+          "prediction": 275,
+          "target": 268
+        },
+        "ops-002": {
+          "correct": false,
+          "nll": 14.380061149597168,
+          "prediction": 272,
+          "target": 269
+        },
+        "phone-001": {
+          "correct": false,
+          "nll": 16.327129364013672,
+          "prediction": 278,
+          "target": 270
+        },
+        "robot-001": {
+          "correct": false,
+          "nll": 13.305028915405273,
+          "prediction": 272,
+          "target": 271
+        },
+        "veh-001": {
+          "correct": false,
+          "nll": 13.404507637023926,
+          "prediction": 277,
+          "target": 260
+        },
+        "veh-002": {
+          "correct": false,
+          "nll": 14.43194580078125,
+          "prediction": 276,
+          "target": 261
+        }
+      },
+      "top1_accuracy": 0.0
+    },
+    "val": {
+      "correct": 0,
+      "count": 12,
+      "mean_nll": 14.20433751742045,
+      "per_item": {
+        "code-001": {
+          "correct": false,
+          "nll": 13.24433422088623,
+          "prediction": 276,
+          "target": 264
+        },
+        "code-002": {
+          "correct": false,
+          "nll": 13.90240478515625,
+          "prediction": 276,
+          "target": 265
+        },
+        "dev-001": {
+          "correct": false,
+          "nll": 16.1237850189209,
+          "prediction": 272,
+          "target": 262
+        },
+        "dev-002": {
+          "correct": false,
+          "nll": 14.155746459960938,
+          "prediction": 275,
+          "target": 263
+        },
+        "math-001": {
+          "correct": false,
+          "nll": 12.638251304626465,
+          "prediction": 272,
+          "target": 266
+        },
+        "math-002": {
+          "correct": false,
+          "nll": 15.352127075195312,
+          "prediction": 275,
+          "target": 267
+        },
+        "ops-001": {
+          "correct": false,
+          "nll": 14.452110290527344,
+          "prediction": 274,
+          "target": 268
+        },
+        "ops-002": {
+          "correct": false,
+          "nll": 13.528840065002441,
+          "prediction": 275,
+          "target": 269
+        },
+        "phone-001": {
+          "correct": false,
+          "nll": 13.28209114074707,
+          "prediction": 274,
+          "target": 270
+        },
+        "robot-001": {
+          "correct": false,
+          "nll": 14.582661628723145,
+          "prediction": 274,
+          "target": 271
+        },
+        "veh-001": {
+          "correct": false,
+          "nll": 15.428709983825684,
+          "prediction": 272,
+          "target": 260
+        },
+        "veh-002": {
+          "correct": false,
+          "nll": 13.760988235473633,
+          "prediction": 272,
+          "target": 261
+        }
+      },
+      "top1_accuracy": 0.0
+    }
+  },
+  "skill_count": 12,
+  "sleep_policy": {
+    "action_rank_weight": 1.0,
+    "anchor_batch_size": 2,
+    "anchor_replay_ratio": 0.35,
+    "eval_every": 20,
+    "lr": 0.002,
+    "max_anchor_accuracy_drop": 0.125,
+    "max_steps": 320,
+    "min_improvement": 0.01,
+    "patience_evals": 3,
+    "replay_consistency_weight": 0.1,
+    "replay_label_smoothing": 0.1,
+    "skill_batch_size": 2,
+    "teacher_kl_weight": 0.05
+  },
+  "ternary": true,
+  "transfer_anchor_accuracy_delta": 0.0,
+  "transfer_anchor_generalization_delta": -0.125,
+  "transfer_gain_accuracy": 0.0,
+  "transfer_gain_nll": 10.137259364128113,
+  "transfer_sleep": {
+    "accepted_updates": 1,
+    "best_metrics": {
+      "anchor_accuracy": 1.0,
+      "anchor_generalization_accuracy": 0.0,
+      "anchor_generalization_nll": 7.849641054868698,
+      "anchor_nll": 0.10429777076933533,
+      "objective": 4.62073536713918,
+      "skill_accuracy": 0.08333333333333333,
+      "skill_key_accuracy": 0.0,
+      "skill_key_nll": 4.77832951148351,
+      "skill_nll": 4.62073536713918
+    },
+    "best_step": 20,
+    "history": [
+      {
+        "anchor_accuracy": 1.0,
+        "anchor_generalization_accuracy": 0.0,
+        "anchor_generalization_nll": 7.451255649328232,
+        "anchor_nll": 0.0003305654008727288,
+        "eligible": true,
+        "objective": 14.20433751742045,
+        "promoted": true,
+        "skill_accuracy": 0.0,
+        "skill_key_accuracy": 0.0,
+        "skill_key_nll": 15.084136883417765,
+        "skill_nll": 14.20433751742045,
+        "step": 0
+      },
+      {
+        "anchor_accuracy": 1.0,
+        "anchor_floor": 0.875,
+        "anchor_generalization_accuracy": 0.0,
+        "anchor_generalization_nll": 7.849641054868698,
+        "anchor_nll": 0.10429777076933533,
+        "eligible": true,
+        "objective": 4.62073536713918,
+        "promoted": true,
+        "skill_accuracy": 0.08333333333333333,
+        "skill_key_accuracy": 0.0,
+        "skill_key_nll": 4.77832951148351,
+        "skill_nll": 4.62073536713918,
+        "step": 20,
+        "train_loss": 4.310968399047852
+      },
+      {
+        "anchor_accuracy": 1.0,
+        "anchor_floor": 0.875,
+        "anchor_generalization_accuracy": 0.0,
+        "anchor_generalization_nll": 6.668468713760376,
+        "anchor_nll": 0.0394270425895229,
+        "eligible": true,
+        "objective": 4.861589809258779,
+        "promoted": false,
+        "skill_accuracy": 0.0,
+        "skill_key_accuracy": 0.0,
+        "skill_key_nll": 4.299870351950328,
+        "skill_nll": 4.861589809258779,
+        "step": 40,
+        "train_loss": 1.273424744606018
+      },
+      {
+        "anchor_accuracy": 1.0,
+        "anchor_floor": 0.875,
+        "anchor_generalization_accuracy": 0.0,
+        "anchor_generalization_nll": 4.656318821012974,
+        "anchor_nll": 0.006807962519815192,
+        "eligible": true,
+        "objective": 5.356411457061768,
+        "promoted": false,
+        "skill_accuracy": 0.0,
+        "skill_key_accuracy": 0.0,
+        "skill_key_nll": 4.472391823927562,
+        "skill_nll": 5.356411457061768,
+        "step": 60,
+        "train_loss": 1.1018506288528442
+      },
+      {
+        "anchor_accuracy": 1.0,
+        "anchor_floor": 0.875,
+        "anchor_generalization_accuracy": 0.125,
+        "anchor_generalization_nll": 4.209710347466171,
+        "anchor_nll": 0.006824131618486717,
+        "eligible": true,
+        "objective": 4.808566927909851,
+        "promoted": false,
+        "skill_accuracy": 0.0,
+        "skill_key_accuracy": 0.08333333333333333,
+        "skill_key_nll": 4.398334701855977,
+        "skill_nll": 4.808566927909851,
+        "step": 80,
+        "train_loss": 1.0476888418197632
+      }
+    ],
+    "initial_metrics": {
+      "anchor_accuracy": 1.0,
+      "anchor_generalization_accuracy": 0.0,
+      "anchor_generalization_nll": 7.451255649328232,
+      "anchor_nll": 0.0003305654008727288,
+      "objective": 14.20433751742045,
+      "skill_accuracy": 0.0,
+      "skill_key_accuracy": 0.0,
+      "skill_key_nll": 15.084136883417765,
+      "skill_nll": 14.20433751742045
+    },
+    "rejected_for_forgetting": 0,
+    "stopped_early": true
+  },
+  "transfer_test": {
+    "anchor_generalization": {
+      "correct": 1,
+      "count": 8,
+      "mean_nll": 7.305167660117149,
+      "per_item": {
+        "anchor-001": {
+          "correct": false,
+          "nll": 9.123119354248047,
+          "prediction": 265,
+          "target": 272
+        },
+        "anchor-002": {
+          "correct": false,
+          "nll": 9.787496566772461,
+          "prediction": 272,
+          "target": 273
+        },
+        "anchor-003": {
+          "correct": true,
+          "nll": 1.4727214574813843,
+          "prediction": 274,
+          "target": 274
+        },
+        "anchor-004": {
+          "correct": false,
+          "nll": 4.579714298248291,
+          "prediction": 265,
+          "target": 275
+        },
+        "anchor-005": {
+          "correct": false,
+          "nll": 7.222641944885254,
+          "prediction": 278,
+          "target": 276
+        },
+        "anchor-006": {
+          "correct": false,
+          "nll": 10.738567352294922,
+          "prediction": 278,
+          "target": 277
+        },
+        "anchor-007": {
+          "correct": false,
+          "nll": 8.108152389526367,
+          "prediction": 266,
+          "target": 278
+        },
+        "anchor-008": {
+          "correct": false,
+          "nll": 7.408927917480469,
+          "prediction": 260,
+          "target": 279
+        }
+      },
+      "top1_accuracy": 0.125
+    },
+    "anchor_known": {
+      "correct": 8,
+      "count": 8,
+      "mean_nll": 0.10429777076933533,
+      "per_item": {
+        "anchor-001": {
+          "correct": true,
+          "nll": 0.03609652817249298,
+          "prediction": 272,
+          "target": 272
+        },
+        "anchor-002": {
+          "correct": true,
+          "nll": 0.026107097044587135,
+          "prediction": 273,
+          "target": 273
+        },
+        "anchor-003": {
+          "correct": true,
+          "nll": 0.016694016754627228,
+          "prediction": 274,
+          "target": 274
+        },
+        "anchor-004": {
+          "correct": true,
+          "nll": 0.011728263460099697,
+          "prediction": 275,
+          "target": 275
+        },
+        "anchor-005": {
+          "correct": true,
+          "nll": 0.16703981161117554,
+          "prediction": 276,
+          "target": 276
+        },
+        "anchor-006": {
+          "correct": true,
+          "nll": 0.06253653764724731,
+          "prediction": 277,
+          "target": 277
+        },
+        "anchor-007": {
+          "correct": true,
+          "nll": 0.4678381681442261,
+          "prediction": 278,
+          "target": 278
+        },
+        "anchor-008": {
+          "correct": true,
+          "nll": 0.04634174332022667,
+          "prediction": 279,
+          "target": 279
+        }
+      },
+      "top1_accuracy": 1.0
+    },
+    "skill": {
+      "correct": 0,
+      "count": 12,
+      "mean_nll": 4.458505193392436,
+      "per_item": {
+        "code-001": {
+          "correct": false,
+          "nll": 3.4145026206970215,
+          "prediction": 279,
+          "target": 264
+        },
+        "code-002": {
+          "correct": false,
+          "nll": 3.384892702102661,
+          "prediction": 274,
+          "target": 265
+        },
+        "dev-001": {
+          "correct": false,
+          "nll": 5.548810005187988,
+          "prediction": 265,
+          "target": 262
+        },
+        "dev-002": {
+          "correct": false,
+          "nll": 3.868467330932617,
+          "prediction": 264,
+          "target": 263
+        },
+        "math-001": {
+          "correct": false,
+          "nll": 5.361387252807617,
+          "prediction": 260,
+          "target": 266
+        },
+        "math-002": {
+          "correct": false,
+          "nll": 3.7530863285064697,
+          "prediction": 266,
+          "target": 267
+        },
+        "ops-001": {
+          "correct": false,
+          "nll": 7.319418907165527,
+          "prediction": 275,
+          "target": 268
+        },
+        "ops-002": {
+          "correct": false,
+          "nll": 3.552837371826172,
+          "prediction": 265,
+          "target": 269
+        },
+        "phone-001": {
+          "correct": false,
+          "nll": 5.282567501068115,
+          "prediction": 272,
+          "target": 270
+        },
+        "robot-001": {
+          "correct": false,
+          "nll": 4.260028839111328,
+          "prediction": 266,
+          "target": 271
+        },
+        "veh-001": {
+          "correct": false,
+          "nll": 3.738058090209961,
+          "prediction": 265,
+          "target": 260
+        },
+        "veh-002": {
+          "correct": false,
+          "nll": 4.01800537109375,
+          "prediction": 274,
+          "target": 261
+        }
+      },
+      "top1_accuracy": 0.0
+    }
+  }
+}

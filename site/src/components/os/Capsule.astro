@@ -1,0 +1,112 @@
+---
+import Brand from "../Brand.astro";
+import Icon from "../Icon.astro";
+
+const path = Astro.url.pathname;
+const links = [
+  { href: "/swypik/", label: "Swypik" },
+  { href: "/ilaria/", label: "Ilaria" },
+  { href: "/os/", label: "SwypikOS" },
+  { href: "/swyp/", label: "Swyp" },
+  { href: "/nexus/", label: "Nexus" },
+];
+const isActive = (href: string) => path === href || path.startsWith(href) || path === href.slice(0, -1);
+---
+<header class="capsule-wrap">
+  <div class="capsule">
+    <Brand />
+    <span class="divider" aria-hidden="true"></span>
+    <nav aria-label="Primary">
+      {links.map((l) => (
+        <a href={l.href} class:list={{ active: isActive(l.href) }} aria-current={isActive(l.href) ? "page" : undefined}>{l.label}</a>
+      ))}
+    </nav>
+    <span class="divider hide-sm" aria-hidden="true"></span>
+    <div class="clock hide-sm" aria-hidden="true">
+      <strong data-clock-time>--:--</strong>
+      <small data-clock-date>&nbsp;</small>
+    </div>
+    <span class="state hide-md"><i class="live-dot"></i>Built in Europe</span>
+    <a class="cta" href="/investors/" class:list={{ active: isActive("/investors/") }}>Investors <Icon name="diag" size={15} stroke={2} /></a>
+    <button class="menu-btn" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-menu" data-menu-btn>
+      <Icon name="menu" size={20} />
+    </button>
+  </div>
+  <div id="mobile-menu" class="mobile-menu glass-strong" hidden data-menu>
+    {links.map((l) => <a href={l.href} class:list={{ active: isActive(l.href) }}>{l.label}<Icon name="arrow" size={18} /></a>)}
+    <a href="/investors/" class="mm-cta">Investors <Icon name="diag" size={18} /></a>
+  </div>
+</header>
+
+<script>
+  const t = document.querySelector<HTMLElement>("[data-clock-time]");
+  const d = document.querySelector<HTMLElement>("[data-clock-date]");
+  const tick = () => {
+    const now = new Date();
+    if (t) t.textContent = now.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+    if (d) d.textContent = now.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+  };
+  tick();
+  setInterval(tick, 15000);
+
+  const btn = document.querySelector<HTMLButtonElement>("[data-menu-btn]");
+  const menu = document.querySelector<HTMLElement>("[data-menu]");
+  btn?.addEventListener("click", () => {
+    if (!menu) return;
+    const open = menu.hidden;
+    menu.hidden = !open;
+    btn.setAttribute("aria-expanded", String(open));
+  });
+  const wrap = document.querySelector<HTMLElement>(".capsule-wrap");
+  const onScroll = () => wrap?.classList.toggle("scrolled", window.scrollY > 12);
+  onScroll();
+  window.addEventListener("scroll", onScroll, { passive: true });
+</script>
+
+<style>
+  .capsule-wrap { position: fixed; top: 14px; left: 0; right: 0; z-index: 60; display: grid; justify-items: center; padding: 0 14px; pointer-events: none; }
+  .capsule {
+    pointer-events: auto; display: flex; align-items: center; gap: 1rem;
+    min-height: 62px; width: min(100%, 1020px); padding: 0 .65rem 0 .9rem;
+    border: 1px solid #fff; border-radius: 40px;
+    background: linear-gradient(120deg, #fffffff0, #ffffff8c);
+    box-shadow: 0 12px 34px -16px #6d64b866, 0 2px 6px #6063960a;
+    backdrop-filter: blur(28px) saturate(1.3); -webkit-backdrop-filter: blur(28px) saturate(1.3);
+    transition: box-shadow .25s ease, transform .25s ease;
+  }
+  .scrolled .capsule { box-shadow: 0 16px 40px -14px #6d64b88a, 0 2px 6px #6063960f; }
+  .divider { width: 1px; height: 26px; background: var(--line-strong); }
+  nav { display: flex; gap: .2rem; }
+  nav a {
+    padding: .5rem .8rem; border-radius: 999px; border: 1px solid transparent;
+    color: #5d5a78; font-size: .86rem; font-weight: 600; transition: background .18s ease, color .18s ease;
+  }
+  nav a:hover { background: var(--hover); color: var(--brand-deep); }
+  nav a.active { border-color: var(--brand-soft); color: var(--brand-deep); background: linear-gradient(110deg, #eee7ff, #f5f1ff70); }
+  .clock { display: grid; line-height: 1.1; }
+  .clock strong { font-size: .86rem; font-weight: 700; }
+  .clock small { color: var(--soft); font-size: .68rem; font-weight: 600; }
+  .state { display: inline-flex; align-items: center; gap: .45rem; color: #5d5a78; font-size: .78rem; font-weight: 600; white-space: nowrap; }
+  .cta {
+    margin-left: auto; display: inline-flex; align-items: center; gap: .35rem; white-space: nowrap;
+    min-height: 44px; padding: 0 1rem; border-radius: 999px; color: #fff; font-size: .86rem; font-weight: 700;
+    border: 1px solid #a58bff; background: linear-gradient(140deg, #a38aff, #7737f5 65%, #6427d3);
+    box-shadow: inset 0 2px 3px #ffffff66, 0 4px 12px #7c3aed30; transition: transform .18s ease;
+  }
+  .cta:hover { transform: translateY(-1px); }
+  .menu-btn { display: none; place-items: center; width: 44px; height: 44px; border: 1px solid var(--line); border-radius: 999px; background: #fff; cursor: pointer; }
+  .mobile-menu { pointer-events: auto; width: min(100%, 1020px); margin-top: .5rem; padding: .5rem; border-radius: 24px; display: grid; }
+  .mobile-menu[hidden] { display: none; }
+  .mobile-menu a { display: flex; justify-content: space-between; align-items: center; padding: .95rem 1rem; border-radius: 16px; font-weight: 650; }
+  .mobile-menu a.active, .mobile-menu a:hover { background: var(--hover); color: var(--brand-deep); }
+  .mobile-menu .mm-cta { color: var(--brand-deep); }
+
+  @media (max-width: 1080px) { .hide-md { display: none; } }
+  @media (max-width: 900px) {
+    .hide-sm, nav { display: none; }
+    .divider { display: none; }
+    .menu-btn { display: grid; }
+    .cta { margin-left: auto; }
+  }
+  @media (max-width: 420px) { .cta { display: none; } .menu-btn { margin-left: auto; } }
+</style>

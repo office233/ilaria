@@ -1,0 +1,32 @@
+[
+  {
+    "step": "aplicare restaurant in DB",
+    "status": "PASS",
+    "note": "5f056d3e-cc40-4a1c-87be-12d151697f8c|Restaurantul Țest QA|pending",
+    "shot": ""
+  },
+  {
+    "step": "aprobare restaurant din admin UI",
+    "status": "PASS",
+    "note": "Restaurantul Țest QA|active",
+    "shot": ""
+  },
+  {
+    "step": "aplicare curier in DB",
+    "status": "PASS",
+    "note": "b031ce1e-6fe3-417b-a812-bf7b849abdbd|Driver Țest|pending\n81ed87cf-9b7d-4162-a089-37045408052b|Vasile Curier Verificare|approved\n764f9d6f-884f-4475-9cd2-669d553a720b|Ion Sofer Verificare|approved",
+    "shot": ""
+  },
+  {
+    "step": "aprobare curier din admin UI",
+    "status": "PASS",
+    "note": "Driver Țest|pending\nVasile Curier Verificare|approved\nIon Sofer Verificare|approved",
+    "shot": ""
+  },
+  {
+    "step": "PWA /courier",
+    "status": "INFO",
+    "note": "Sări la conținut|Swypik Curier|Codul meu|Câștiguri|○ OFFLINE|Comenzi|Câștiguri|Treci online ca să primești comenzi.",
+    "shot": ""
+  }
+]

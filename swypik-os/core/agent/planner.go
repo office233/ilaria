@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"unicode"
+	"unicode/utf8"
 )
 
 // JSONPlanner adapts the existing Ilaria text endpoint. It does not claim native
@@ -132,8 +134,31 @@ func DecodeObject(raw []byte, target interface{}, limit int) error {
 	d.DisallowUnknownFields()
 	return d.Decode(target)
 }
+
+// maxJSONNestingDepth limits object and array nesting during duplicate-key validation.
+const maxJSONNestingDepth = 16
+
+// jsonFoldKey folds an object key exactly like encoding/json matches keys to
+// struct fields (ASCII upper-casing, Unicode ToUpper(ToLower(r))), so two
+// keys that would decode into the same field are always seen as duplicates.
+func jsonFoldKey(name string) string {
+	var b strings.Builder
+	b.Grow(len(name))
+	for _, r := range name {
+		if r < utf8.RuneSelf {
+			if 'a' <= r && r <= 'z' {
+				r -= 'a' - 'A'
+			}
+			b.WriteRune(r)
+			continue
+		}
+		b.WriteRune(unicode.ToUpper(unicode.ToLower(r)))
+	}
+	return b.String()
+}
+
 func uniqueValue(d *json.Decoder, depth int) error {
-	if depth > 16 {
+	if depth > maxJSONNestingDepth {
 		return fmt.Errorf("JSON nesting limit exceeded")
 	}
 	tok, err := d.Token()
@@ -152,10 +177,14 @@ func uniqueValue(d *json.Decoder, depth int) error {
 				return err
 			}
 			name, ok := key.(string)
-			if !ok || keys[name] {
+			if !ok {
 				return fmt.Errorf("duplicate or invalid JSON key")
 			}
-			keys[name] = true
+			folded := jsonFoldKey(name)
+			if keys[folded] {
+				return fmt.Errorf("duplicate or invalid JSON key")
+			}
+			keys[folded] = true
 			if err := uniqueValue(d, depth+1); err != nil {
 				return err
 			}

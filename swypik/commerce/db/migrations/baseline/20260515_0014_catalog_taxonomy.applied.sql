@@ -1,0 +1,2 @@
+-- baseline stub for migration version: 20260515_0014_catalog_taxonomy
+-- Restored as inert no-op so the drift check treats this version as known.

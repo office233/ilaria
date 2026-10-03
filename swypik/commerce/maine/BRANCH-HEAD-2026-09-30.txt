@@ -1,0 +1,3 @@
+﻿fix/p0-security-ci-integrated
+3fbaf9f642dbb4e0cba31a7f798da72d466ed974
+3fbaf9f test: align production smoke with deployed state

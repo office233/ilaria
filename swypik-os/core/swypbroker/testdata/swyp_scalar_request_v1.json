@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "request_id": "sha256:0b962f5669a8488f00b2f92634e82726fb220060c3fbfbe2f75d912dec26cb99",
+  "plan_version": 1,
+  "plan_id": "sha256:8f5f6131f9e3c132ee7d95c1b801629e3d5355bfe6bf1179fa3e4fd51290cdef",
+  "hir_version": 1,
+  "entry": "main",
+  "call_id": "main:foreign:0",
+  "caller": "main",
+  "target": "c_add",
+  "abi": "C",
+  "abi_version": "swyp-c64-v1",
+  "symbol": "c_add",
+  "effect": "foreign.call",
+  "capability": {"name": "native_math", "effect": "foreign.call"},
+  "arguments": [
+    {
+      "type": {"kind": "i64", "size": 8, "align": 8},
+      "encoding": "swyp-c64-le-v1/base64",
+      "data": "AgAAAAAAIAA="
+    },
+    {
+      "type": {"kind": "i64", "size": 8, "align": 8},
+      "encoding": "swyp-c64-le-v1/base64",
+      "data": "AQAAAAAAAAA="
+    }
+  ],
+  "result": {"kind": "i64", "size": 8, "align": 8}
+}

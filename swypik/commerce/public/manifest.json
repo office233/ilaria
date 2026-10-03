@@ -1,0 +1,39 @@
+{
+  "name": "Swypik — Shopping Inteligent cu AI",
+  "short_name": "Swypik",
+  "description": "Cele mai bune oferte din România, găsite cu AI",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#7C3AED",
+  "orientation": "portrait",
+  "shortcuts": [
+    {
+      "name": "Swypik Eats",
+      "short_name": "Eats",
+      "description": "Comandă mâncare de la restaurantele locale",
+      "url": "/food",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Swypik Go",
+      "short_name": "Go",
+      "description": "Cheamă o mașină în oraș",
+      "url": "/go",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Comenzile mele",
+      "short_name": "Comenzi",
+      "description": "Comenzile Eats și cursele Go",
+      "url": "/orders",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ],
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

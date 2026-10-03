@@ -2,8 +2,12 @@ package appstore
 
 import (
 	"fmt"
+	"math"
+	"sort"
 	"strings"
 	"sync"
+
+	resourcepolicy "swypik-os/core/resource"
 )
 
 // AppPackage represents a sovereign, native AI-driven application.
@@ -21,103 +25,36 @@ type AppPackage struct {
 
 // Store coordinates sovereign app distribution and on-demand AI app generation.
 type Store struct {
-	mu   sync.RWMutex
-	apps map[string]*AppPackage
+	mu      sync.RWMutex
+	apps    map[string]*AppPackage
+	maxApps int
 }
 
 // NewStore initializes the sovereign AI App Store catalog.
 func NewStore() *Store {
-	s := &Store{
-		apps: make(map[string]*AppPackage),
+	return &Store{
+		apps:    make(map[string]*AppPackage),
+		maxApps: resourcepolicy.Default().MaxAppCatalogEntries,
 	}
-	s.seedDefaultApps()
-	return s
 }
 
-func (s *Store) seedDefaultApps() {
-	defaultApps := []*AppPackage{
-		{
-			ID:          "app.sheets.ai",
-			Name:        "Swypik Sheets AI",
-			Category:    "Productivity",
-			Version:     "2.4.0",
-			SizeMB:      3.2,
-			Description: "Intelligent reactive grid with voice-prompted formula synthesis and financial forecasting.",
-			AIDriven:    true,
-			Installed:   true,
-			Platform:    "universal",
-		},
-		{
-			ID:          "app.docs.ai",
-			Name:        "Swypik Docs AI",
-			Category:    "Productivity",
-			Version:     "1.9.0",
-			SizeMB:      2.8,
-			Description: "Autonomous document writer, executive summarizer, and markdown-to-PDF compiler.",
-			AIDriven:    true,
-			Installed:   true,
-			Platform:    "universal",
-		},
-		{
-			ID:          "app.coder.studio",
-			Name:        "Swypik Coder Studio",
-			Category:    "Developer Tools",
-			Version:     "3.1.0",
-			SizeMB:      5.4,
-			Description: "Agentic coding environment (Claude Code style) with direct native terminal execution.",
-			AIDriven:    true,
-			Installed:   true,
-			Platform:    "universal",
-		},
-		{
-			ID:          "app.swarm.compute",
-			Name:        "Swypik Swarm Compute",
-			Category:    "Finance & Compute",
-			Version:     "4.0.1",
-			SizeMB:      2.1,
-			Description: "Background P2P mesh compute daemon monetizing idle GPU/CPU cycles into SWP coin rewards.",
-			AIDriven:    true,
-			Installed:   true,
-			Platform:    "universal",
-		},
-		{
-			ID:          "app.search.shield",
-			Name:        "Swypik Sovereign Search",
-			Category:    "Internet & Privacy",
-			Version:     "2.0.0",
-			SizeMB:      1.5,
-			Description: "Zero-tracking, ad-free private web synthesizer replacing Google entirely.",
-			AIDriven:    true,
-			Installed:   true,
-			Platform:    "universal",
-		},
-		{
-			ID:          "app.connect.mesh",
-			Name:        "Swypik P2P Connect",
-			Category:    "Communication",
-			Version:     "1.5.0",
-			SizeMB:      3.0,
-			Description: "End-to-end encrypted direct peer-to-peer chat, voice, and instant file sync between PC and Mobile.",
-			AIDriven:    true,
-			Installed:   false,
-			Platform:    "universal",
-		},
-		{
-			ID:          "app.media.studio",
-			Name:        "Swypik Neural Studio",
-			Category:    "Creative",
-			Version:     "1.2.0",
-			SizeMB:      6.8,
-			Description: "Instant AI visual design, image remastering, and layout generation.",
-			AIDriven:    true,
-			Installed:   false,
-			Platform:    "universal",
-		},
+// RegisterCatalogEntry owns explicitly supplied metadata. It cannot establish
+// installed state, and duplicate IDs never overwrite an existing entry.
+func (s *Store) RegisterCatalogEntry(entry AppPackage) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if strings.TrimSpace(entry.ID) == "" || strings.TrimSpace(entry.Name) == "" ||
+		entry.Installed || entry.SizeMB < 0 || math.IsNaN(entry.SizeMB) || math.IsInf(entry.SizeMB, 0) {
+		return fmt.Errorf("invalid or unverified catalog entry")
 	}
-
-	for _, app := range defaultApps {
-		s.apps[app.ID] = app
+	if _, exists := s.apps[entry.ID]; exists {
+		return fmt.Errorf("catalog entry already exists: %s", entry.ID)
 	}
+	if len(s.apps) >= s.maxApps {
+		return fmt.Errorf("catalog entry limit reached")
+	}
+	s.apps[entry.ID] = &entry
+	return nil
 }
 
 // ListApps returns all catalog applications.
@@ -127,45 +64,59 @@ func (s *Store) ListApps() []*AppPackage {
 
 	list := make([]*AppPackage, 0, len(s.apps))
 	for _, app := range s.apps {
-		list = append(list, app)
+		copy := *app
+		list = append(list, &copy)
 	}
+	sort.Slice(list, func(i, j int) bool { return list[i].ID < list[j].ID })
 	return list
 }
 
-// InstallApp marks an app as installed.
+// InstallApp fails closed until the store owns a real installation transport.
 func (s *Store) InstallApp(id string) (*AppPackage, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 
 	app, exists := s.apps[id]
 	if !exists {
 		return nil, fmt.Errorf("app not found: %s", id)
 	}
-
-	app.Installed = true
-	return app, nil
+	copy := *app
+	return &copy, fmt.Errorf("app installation is unavailable: no installation transport configured")
 }
 
-// GenerateOnDemand creates a new custom micro-app synthesized by Ilaria AI.
+// GenerateOnDemand creates a bounded catalog draft only. No code is generated,
+// installed or executed by this package.
 func (s *Store) GenerateOnDemand(name, description, category string) *AppPackage {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	slug := strings.ToLower(strings.ReplaceAll(name, " ", "."))
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return nil
+	}
+	slug := strings.ToLower(strings.Join(strings.Fields(name), "."))
 	id := fmt.Sprintf("custom.ai.%s", slug)
+	if existing, exists := s.apps[id]; exists {
+		copy := *existing
+		return &copy
+	}
+	if len(s.apps) >= s.maxApps {
+		return nil
+	}
 
 	app := &AppPackage{
 		ID:          id,
 		Name:        name,
 		Category:    category,
-		Version:     "1.0.0-ai",
-		SizeMB:      1.2,
+		Version:     "draft",
+		SizeMB:      0,
 		Description: description,
 		AIDriven:    true,
-		Installed:   true,
+		Installed:   false,
 		Platform:    "universal",
 	}
 
 	s.apps[id] = app
-	return app
+	copy := *app
+	return &copy
 }

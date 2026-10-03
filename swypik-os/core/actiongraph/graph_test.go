@@ -1,8 +1,11 @@
 package actiongraph
 
 import (
+	"fmt"
 	"strings"
+	"sync/atomic"
 	"testing"
+	"time"
 )
 
 func TestCyclicActionGraphAndCompaction(t *testing.T) {
@@ -90,5 +93,33 @@ func TestCyclicActionGraphAndCompaction(t *testing.T) {
 	// Should have triggered auto-compaction and reset usage to 25% (250 tokens)
 	if tokens > 300 {
 		t.Errorf("Expected tokens to be reduced after auto-compaction, got: %d", tokens)
+	}
+}
+
+func TestActionGraphBoundsParallelism(t *testing.T) {
+	graph := NewCyclicActionGraph(1000)
+	graph.maxWorkers = 2
+	var active int32
+	var peak int32
+	for i := 0; i < 8; i++ {
+		id := fmt.Sprintf("n%d", i)
+		graph.RegisterNode(id, func(_ *GraphContext, _ []GraphMessage) ([]GraphMessage, error) {
+			n := atomic.AddInt32(&active, 1)
+			for {
+				old := atomic.LoadInt32(&peak)
+				if n <= old || atomic.CompareAndSwapInt32(&peak, old, n) {
+					break
+				}
+			}
+			time.Sleep(10 * time.Millisecond)
+			atomic.AddInt32(&active, -1)
+			return nil, nil
+		})
+	}
+	if _, err := graph.Step(0); err != nil {
+		t.Fatal(err)
+	}
+	if got := atomic.LoadInt32(&peak); got > 2 {
+		t.Fatalf("peak workers=%d want <=2", got)
 	}
 }

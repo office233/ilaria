@@ -1,0 +1,50 @@
+[
+  {
+    "step": "like scrie in DB",
+    "status": "PASS",
+    "note": "likes 0 -> 1",
+    "shot": ""
+  },
+  {
+    "step": "unlike",
+    "status": "PASS",
+    "note": "likes 1 -> 0",
+    "shot": ""
+  },
+  {
+    "step": "like rapid x5 race",
+    "status": "PASS",
+    "note": "likes final=1",
+    "shot": ""
+  },
+  {
+    "step": "comentariu in DB",
+    "status": "FAIL",
+    "note": "0 -> 0",
+    "shot": ""
+  },
+  {
+    "step": "follow in DB",
+    "status": "PASS",
+    "note": "2 -> 1",
+    "shot": ""
+  },
+  {
+    "step": "profil /u/creator_test vazut de creator",
+    "status": "INFO",
+    "note": "contoare=[('1', 'CLIPURI')] elems_video=1 len=246",
+    "shot": ""
+  },
+  {
+    "step": "profil /u/creator_test vazut de viewer",
+    "status": "INFO",
+    "note": "contoare=[('1', 'CLIPURI')] elems_video=1 len=243",
+    "shot": ""
+  },
+  {
+    "step": "profil /u/creator_test vazut de incognito",
+    "status": "INFO",
+    "note": "contoare=[('1', 'CLIPURI')] elems_video=1 len=187",
+    "shot": ""
+  }
+]

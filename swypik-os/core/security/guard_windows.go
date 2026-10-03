@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	kernel32DLL                   = syscall.NewLazyDLL("kernel32.dll")
+	kernel32DLL                    = syscall.NewLazyDLL("kernel32.dll")
 	procIsDebuggerPresent          = kernel32DLL.NewProc("IsDebuggerPresent")
 	procCheckRemoteDebuggerPresent = kernel32DLL.NewProc("CheckRemoteDebuggerPresent")
 	procGetCurrentProcess          = kernel32DLL.NewProc("GetCurrentProcess")

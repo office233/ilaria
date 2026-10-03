@@ -15,13 +15,15 @@ import (
 	"time"
 )
 
-const intentInstructions = `You expand Swyp Lang intent statements, not an entire program.
+func intentInstructions() string {
+	return `You expand Swyp Lang intent statements, not an entire program.
 Reply only with JSON: {"replacements":[{"id":0,"code":"Swyp statements here"}]}.
 Return exactly one replacement per directive. Preserve the supplied handwritten code.
 Each replacement is a statement fragment in its existing scope, not new top-level functions.
 Use surrounding variables and types. Requests may be Romanian or English.
 If unavailable capabilities are needed, reply UNSUPPORTED: with the missing capability.
-` + draftInstructions
+` + draftInstructions()
+}
 
 func expandedIntent(ctx context.Context, backend ilaria.Backend, filename, source string) (string, error) {
 	intents, err := swyplang.Intents(filename, source)
@@ -39,7 +41,7 @@ func expandedIntent(ctx context.Context, backend ilaria.Backend, filename, sourc
 		return "", err
 	}
 	// The fragment response contract overrides the generic full-program wording.
-	prompt := intentInstructions + "\nIMPORTANT: return replacements JSON, not a complete program.\n" + string(payload)
+	prompt := intentInstructions() + "\nIMPORTANT: return replacements JSON, not a complete program.\n" + string(payload)
 	reply, err := backend.Chat(ctx, prompt, nil)
 	if err != nil {
 		return "", err
@@ -142,8 +144,7 @@ func intentCommand(operation string, args []string) error {
 			return err
 		}
 	}
-	var backend ilaria.Backend = ilaria.NewLocalBackend("http://127.0.0.1:8091")
-	backendName := "Ilaria loopback; model/checkpoint identity not reported"
+	backend, backendName := configuredIlariaBackend()
 	if *response != "" {
 		bytes, err := os.ReadFile(*response)
 		if err != nil {
@@ -175,7 +176,7 @@ func intentCommand(operation string, args []string) error {
 		return err
 	}
 	generated = "// Swyp " + operation + "; backend: " + backendName + ". Review semantics before use.\n" + generated
-	record := generationRecord{Version: "0.3", Operation: operation, Backend: backendName, SourceSHA256: digest(source), OutputSHA256: digest(generated), Diagnostics: diagnostic, StaticChecks: true}
+	record := generationRecord{Version: swypLanguageVersion, Operation: operation, Backend: backendName, SourceSHA256: digest(source), OutputSHA256: digest(generated), Diagnostics: diagnostic, StaticChecks: true}
 	if err = saveGeneration(*out, generated, record); err != nil {
 		return err
 	}

@@ -150,3 +150,48 @@ func TestPlannerAcceptsFencedJSONAndRepairsOnce(t *testing.T) {
 		t.Fatal("two invalid replies must fail closed")
 	}
 }
+
+func TestDuplicateKeyCaseFoldingRejected(t *testing.T) {
+	var target struct {
+		Command string `json:"command"`
+	}
+	mixedCase := []byte(`{"command":"go test ./...","COMMAND":"del /q x"}`)
+	if err := DecodeObject(mixedCase, &target, 4096); err == nil {
+		t.Fatalf("expected duplicate key error for mixed-case payload, got nil (target=%+v)", target)
+	}
+
+	var nested struct {
+		Action string `json:"action"`
+		Args   struct {
+			Path string `json:"path"`
+		} `json:"args"`
+	}
+	nestedPayload := []byte(`{"action":"tool","args":{"path":"foo","PATH":"bar"}}`)
+	if err := DecodeObject(nestedPayload, &nested, 4096); err == nil {
+		t.Fatalf("expected duplicate key error for nested mixed-case payload, got nil")
+	}
+
+	validPayload := []byte(`{"command":"go test ./..."}`)
+	if err := DecodeObject(validPayload, &target, 4096); err != nil {
+		t.Fatalf("valid payload rejected: %v", err)
+	}
+	if target.Command != "go test ./..." {
+		t.Fatalf("unexpected command decoded: %s", target.Command)
+	}
+}
+
+func TestDuplicateKeyUnicodeFoldingMatchesEncodingJSON(t *testing.T) {
+	type args struct {
+		ExpectedSHA256 string `json:"expected_sha256"`
+	}
+	// U+017F (long s) folds to "S" in encoding/json, so this key sets the field.
+	var probe args
+	if err := json.Unmarshal([]byte(`{"expected_ſha256":"x"}`), &probe); err != nil || probe.ExpectedSHA256 != "x" {
+		t.Skipf("encoding/json no longer folds U+017F (got %+v, %v)", probe, err)
+	}
+	var target args
+	payload := []byte(`{"expected_sha256":"a","expected_ſha256":"b"}`)
+	if err := DecodeObject(payload, &target, 4096); err == nil {
+		t.Fatalf("keys that decode into the same field must be rejected as duplicates (target=%+v)", target)
+	}
+}

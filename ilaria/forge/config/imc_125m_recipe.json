@@ -1,0 +1,53 @@
+{
+  "format": "imc-125m-recipe-v1",
+  "status": "BOOTSTRAP_NOT_PROMOTED",
+  "preset": "imc-125m",
+  "parameter_count": 125882112,
+  "vocab_size": 65536,
+  "context": 2048,
+  "max_seq_len": 2048,
+  "target_tokens": 1000000000,
+  "global_batch_tokens": 262144,
+  "curriculum": {
+    "filename": "imc_125m_curriculum.json",
+    "identity_sha256": "3ac9c6e0a36e85151e543dfbff09c8ea319b1566b6dd77d981cab8c8f34a4432"
+  },
+  "optimizer": {
+    "name": "AdamW",
+    "lr": 0.0006,
+    "min_lr": 0.00006,
+    "warmup_steps": 200,
+    "weight_decay": 0.1,
+    "beta1": 0.9,
+    "beta2": 0.95,
+    "adam_eps": 1e-08,
+    "grad_clip": 1.0,
+    "lr_schedule": "cosine"
+  },
+  "execution": {
+    "chunked_loss": true,
+    "grad_checkpoint": true,
+    "precision": "auto"
+  },
+  "experiments": [
+    {
+      "name": "ternary_candidate",
+      "ternary": true,
+      "seeds": [7, 11, 19]
+    },
+    {
+      "name": "full_precision_control",
+      "ternary": false,
+      "seeds": [7, 11, 19]
+    }
+  ],
+  "required_evaluations": [
+    "frozen_validation",
+    "general",
+    "code",
+    "math_science",
+    "calibration",
+    "pce_transfer",
+    "continual_learning_regression"
+  ]
+}

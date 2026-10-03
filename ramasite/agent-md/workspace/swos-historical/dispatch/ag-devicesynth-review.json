@@ -1,0 +1,8 @@
+{
+  "prompt": "READ-ONLY architecture review. In E:\\CEO\\wt\\swos-device-synthesis-m1 read E:\\CEO\\projects\\swos\\analysis\\08-universal-native-ai-install.md and current repo. Do not edit. Design adversarial requirements for a universal hardware manifest, device graph, generated user-mode driver ABI and Ilaria synthesize->verify->canary->rollback pipeline across PC/phone/embedded/automotive. Focus on capability safety, IOMMU/MMIO/IRQ/DMA, locked boot chains, provenance, rollback and exact hardware binding. Return concrete API/test suggestions.",
+  "cwd": "E:\\CEO\\wt\\swos-device-synthesis-m1",
+  "model": "gemini-3.8-flash-high",
+  "mode": "plan",
+  "sandbox": true,
+  "timeoutMs": 900000
+}

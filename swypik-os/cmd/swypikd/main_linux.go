@@ -15,18 +15,26 @@ import (
 	"syscall"
 	"time"
 
+	"swypik-os/config"
 	"swypik-os/core/agent"
 	"swypik-os/core/ilaria"
+	resourcepolicy "swypik-os/core/resource"
 	"swypik-os/core/search"
 	"swypik-os/core/service"
 )
 
 func main() {
-	socket := flag.String("socket", "/run/swypik/control.sock", "Private Unix socket")
-	root := flag.String("workspace", "/home/swypik/Workspace", "Explicit workspace")
-	index := flag.String("index", "/var/lib/swypik/index.jsonl", "Search index path (append-only log)")
-	state := flag.String("state-dir", "/var/lib/swypik/agent", "Private directory for last-run checkpoints")
-	endpoint := flag.String("ilaria-url", "http://127.0.0.1:8091", "Ilaria loopback HTTP or authenticated HTTPS endpoint")
+	resourcepolicy.ApplyRuntime(resourcepolicy.Default())
+	defaults, err := config.DefaultDaemonConfig()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	socket := flag.String("socket", defaults.Socket, "Private Unix socket")
+	root := flag.String("workspace", defaults.Workspace, "Explicit absolute workspace (required; or SWYPIK_WORKSPACE_DIR)")
+	index := flag.String("index", defaults.Index, "Search index path (append-only log)")
+	state := flag.String("state-dir", defaults.StateDir, "Private directory for last-run checkpoints")
+	endpoint := flag.String("ilaria-url", defaults.IlariaURL, "Ilaria loopback HTTP or authenticated HTTPS endpoint")
 	flag.Parse()
 	if os.Geteuid() == 0 {
 		fmt.Fprintln(os.Stderr, "Refusing to run the agent service as root")
@@ -38,6 +46,10 @@ func main() {
 	}
 }
 func run(socket, root, index, state, endpoint string) error {
+	if err := (config.DaemonConfig{Socket: socket, Workspace: root, Index: index,
+		StateDir: state, IlariaURL: endpoint}).Validate(); err != nil {
+		return err
+	}
 	if err := os.MkdirAll(root, 0700); err != nil {
 		return err
 	}

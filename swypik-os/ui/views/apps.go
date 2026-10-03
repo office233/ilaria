@@ -10,16 +10,16 @@ import (
 type AppID string
 
 const (
-	AppNone     AppID = ""
-	AppSearch   AppID = "search"
-	AppStudio   AppID = "studio"
-	AppWallet   AppID = "wallet"
-	AppTasks    AppID = "tasks"
-	AppConnect  AppID = "connect"
-	AppSettings AppID = "settings"
-	AppFiles    AppID = "files"
-	AppStore    AppID = "store"
-	AppCyber    AppID = "cyber"
+	AppNone         AppID = ""
+	AppSearch       AppID = "search"
+	AppStudio       AppID = "studio"
+	AppComputeSwarm AppID = "compute-swarm"
+	AppTasks        AppID = "tasks"
+	AppConnect      AppID = "connect"
+	AppSettings     AppID = "settings"
+	AppFiles        AppID = "files"
+	AppStore        AppID = "store"
+	AppCyber        AppID = "cyber"
 )
 
 // AppMetadata represents an app's display card in the launcher and taskbar.
@@ -55,11 +55,11 @@ var NativeApps = []AppMetadata{
 		Glyph:       "Studio",
 	},
 	{
-		ID:          AppWallet,
-		Name:        "Wallet & Swarm",
-		Category:    "Finance & Compute",
-		Description: "SWP Coins ledger, P2P transfers, and GPU compute node monitor",
-		Glyph:       "Wallet",
+		ID:          AppComputeSwarm,
+		Name:        "Compute Swarm",
+		Category:    "Compute",
+		Description: "Optional P2P compute contribution: revocable consent, no coins, rewards or transfers",
+		Glyph:       "Connect",
 	},
 	{
 		ID:          AppTasks,

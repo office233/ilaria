@@ -1,0 +1,113 @@
+{
+  "format": "imc-1b-azure-plan-v1",
+  "status": "PLANNED_NOT_READY",
+  "plan_sha256": "4b7302574dedbdaad8b470c50dc919358f5ce3eda73ddcf8e50293a9b7e6ebfe",
+  "model": {
+    "family": "IMC",
+    "preset": "imc-1b",
+    "parameter_count": 1000555520,
+    "vocab_size": 65536,
+    "eos_token_id": 61440,
+    "initialization": "random",
+    "weight_mode": "ternary",
+    "ffn_act": "silu"
+  },
+  "experiment": {
+    "name": "ternary_candidate",
+    "ternary": true,
+    "seed": 7
+  },
+  "target_tokens": 20000000000,
+  "global_batch_tokens": 524288,
+  "world_size": 8,
+  "curriculum": {
+    "filename": "imc_125m_curriculum.json",
+    "identity_sha256": "3ac9c6e0a36e85151e543dfbff09c8ea319b1566b6dd77d981cab8c8f34a4432"
+  },
+  "optimizer": {
+    "name": "AdamW",
+    "lr": 0.0003,
+    "min_lr": 3e-05,
+    "warmup_steps": 1000,
+    "weight_decay": 0.1,
+    "beta1": 0.9,
+    "beta2": 0.95,
+    "adam_eps": 1e-08,
+    "grad_clip": 1.0,
+    "lr_schedule": "cosine"
+  },
+  "execution": {
+    "precision": "bf16",
+    "chunked_loss": true,
+    "grad_checkpoint": true,
+    "compile": false,
+    "sample_tokens": 0
+  },
+  "evaluation": {
+    "every_steps": 250,
+    "iterations": 64,
+    "status": "PROVISIONAL"
+  },
+  "required_dataset": {
+    "minimum_train_tokens": 20000000000,
+    "minimum_validation_tokens": 20000000,
+    "preserve_prior_holdouts": true,
+    "token_budget_semantics": "processed_tokens_not_unique_source_tokens"
+  },
+  "profiles": [
+    {
+      "name": "a100-40gb-2k",
+      "gpu_memory_gb": 40,
+      "context": 2048,
+      "max_seq_len": 2048,
+      "micro_batch": 2,
+      "accum": 16,
+      "role": "baseline",
+      "status": "UNBENCHMARKED"
+    },
+    {
+      "name": "a100-80gb-2k",
+      "gpu_memory_gb": 80,
+      "context": 2048,
+      "max_seq_len": 2048,
+      "micro_batch": 8,
+      "accum": 4,
+      "role": "baseline",
+      "status": "UNBENCHMARKED"
+    },
+    {
+      "name": "a100-40gb-4k-candidate",
+      "gpu_memory_gb": 40,
+      "context": 4096,
+      "max_seq_len": 4096,
+      "micro_batch": 1,
+      "accum": 16,
+      "role": "candidate",
+      "status": "UNBENCHMARKED"
+    },
+    {
+      "name": "a100-80gb-4k-candidate",
+      "gpu_memory_gb": 80,
+      "context": 4096,
+      "max_seq_len": 4096,
+      "micro_batch": 4,
+      "accum": 4,
+      "role": "candidate",
+      "status": "UNBENCHMARKED"
+    }
+  ],
+  "required_gates": [
+    "production_dataset_20b",
+    "frozen_validation_20m_and_prior_holdouts",
+    "frozen_tokenizer_and_lineage",
+    "eight_full_a100_hardware_topology",
+    "eight_rank_nccl_smoke",
+    "eight_rank_exact_resume",
+    "measured_memory_throughput",
+    "approved_time_cost_budget",
+    "frozen_capability_evaluations",
+    "immutable_checkpoint_generations_restart",
+    "azure_ddp_orchestration",
+    "rank_local_cuda_rng_scope"
+  ]
+}

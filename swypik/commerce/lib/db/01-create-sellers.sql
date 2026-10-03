@@ -1,0 +1,14 @@
+-- lib/db/01-create-sellers.sql
+-- DEPRECATED: Use db/migrations/20260511_0003_seller_platform_tables.sql instead.
+-- This file is kept only for reference. The canonical schema is in db/migrations/.
+--
+-- The sellers table is now defined in migration 0003 with these columns:
+--   id, name, email, cui, phone, product_type, status, stripe_account_id,
+--   business_details, metadata, created_at, updated_at
+--
+-- Related tables defined in migrations:
+--   seller_sessions        (migration 0003)
+--   creators               (migration 0004)
+--   creator_videos         (migration 0004)
+--   commerce_order_items.source_status   (migration 0003)
+--   commerce_order_items.payout_status   (migration 0004)

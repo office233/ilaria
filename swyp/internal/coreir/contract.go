@@ -1,18 +1,24 @@
 package coreir
 
-import "fmt"
+import (
+	"fmt"
+	"math"
+)
 
-// Contract v1 describes pure scalar functions. Numeric intervals are inclusive;
-// predicates are a typed expression tree, never host code or natural language.
-// MaxSteps is a verification bound, not a proof of a program's complexity.
+// Contract v1 describes scalar functions. Effect metadata may describe a
+// brokered effect profile, but verification never executes those host effects.
+// Numeric intervals are inclusive; predicates are a typed expression tree,
+// never host code or natural language. MaxSteps is a verification bound, not a
+// proof of a program's complexity.
 type Contract struct {
-	Version  int         `json:"version"`
-	Entry    string      `json:"entry"`
-	Inputs   []Domain    `json:"inputs,omitempty"`
-	Requires []Predicate `json:"requires,omitempty"`
-	Ensures  []Predicate `json:"ensures"`
-	Effects  []string    `json:"effects,omitempty"`
-	MaxSteps int         `json:"max_steps"`
+	Version       int         `json:"version"`
+	Entry         string      `json:"entry"`
+	Inputs        []Domain    `json:"inputs,omitempty"`
+	Requires      []Predicate `json:"requires,omitempty"`
+	Ensures       []Predicate `json:"ensures"`
+	EffectVersion int         `json:"effect_version,omitempty"`
+	Effects       []string    `json:"effects,omitempty"`
+	MaxSteps      int         `json:"max_steps"`
 }
 type Domain struct {
 	Name string `json:"name"`
@@ -37,8 +43,18 @@ func DecodeContract(data []byte) (Contract, error) {
 }
 func (c Contract) validate(e *Executable) ([]interval, error) {
 	bad := func(s string) error { return diagnostic("invalid_contract", s) }
-	if c.Version != 1 || c.Entry == "" || len(c.Inputs) > 4 || len(c.Ensures) < 1 || len(c.Ensures) > 16 || len(c.Requires) > 16 || len(c.Effects) != 0 || c.MaxSteps < 1 || c.MaxSteps > MaxFuel {
-		return nil, bad("version, entry, predicate count, effects or step bound invalid")
+	if c.Version != 1 || c.Entry == "" || len(c.Inputs) > 4 || len(c.Ensures) < 1 || len(c.Ensures) > 16 || len(c.Requires) > 16 || c.MaxSteps < 1 || c.MaxSteps > MaxFuel {
+		return nil, bad("version, entry, predicate count or step bound invalid")
+	}
+	if err := validateCanonicalEffects(c.EffectVersion, c.Effects); err != nil {
+		return nil, bad(err.Error())
+	}
+	semantics, err := e.Semantics(c.Entry)
+	if err != nil {
+		return nil, err
+	}
+	if !effectsEqual(c.Effects, semantics.Effects) {
+		return nil, bad("contract effects do not exactly match executable effects")
 	}
 	params, result, err := e.Parameters(c.Entry)
 	if err != nil {
@@ -61,6 +77,9 @@ func (c Contract) validate(e *Executable) ([]interval, error) {
 		high, err := ParseValue(d.Type, d.Max)
 		if err != nil {
 			return nil, bad(err.Error())
+		}
+		if d.Type == IEEE64 && (math.IsNaN(low.f) || math.IsInf(low.f, 0) || math.IsNaN(high.f) || math.IsInf(high.f, 0)) {
+			return nil, bad("ieee64 contract bounds must be finite")
 		}
 		le, _ := Apply("le", low, high)
 		if !le.b {

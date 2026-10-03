@@ -1,0 +1,79 @@
+{
+  "format": "imc-125m-smoke-v1",
+  "status": "NON_PROMOTABLE_SMOKE_ONLY",
+  "date": "2026-09-29",
+  "runtime": {
+    "device": "cpu",
+    "torch": "2.14.0+cpu",
+    "cuda_available": false
+  },
+  "model": {
+    "preset": "imc-125m",
+    "parameter_count": 125882112,
+    "vocab_size": 65536,
+    "eos_token_id": 61440,
+    "d_model": 768,
+    "layers": 12,
+    "heads": 12,
+    "kv_heads": 4,
+    "ffn_dim": 2048,
+    "max_seq_len": 2048
+  },
+  "smoke_stream": {
+    "synthetic": true,
+    "tokens": 8192,
+    "ctx": 4,
+    "batch": 1,
+    "accum": 1,
+    "stream_sha256": "b59fe6b37479bfeda9254bfa11eb3163929f6237f6f0a336b5575ee5e7de6773",
+    "tokenizer_sha256": "cc1dc074b955c4be91b9fb9f88d46d73a1565912795f6e0c51ecf42cb762c19f"
+  },
+  "ternary_candidate": {
+    "seed": 7,
+    "ternary": true,
+    "gradient_checkpointing": true,
+    "chunked_loss": true,
+    "pause_resume_exercised": true,
+    "resume_from_step": 1,
+    "final_checkpoint_step": 2,
+    "tokens_seen": 8,
+    "best_validation_loss": 11.312065124511719,
+    "steps": [
+      {
+        "step": 1,
+        "train_loss": 11.014261245727539,
+        "validation_loss": 11.312065124511719,
+        "tokens_seen": 4
+      },
+      {
+        "step": 2,
+        "train_loss": 11.467453956604004,
+        "validation_loss": 11.583840370178223,
+        "tokens_seen": 8
+      }
+    ],
+    "best_export_sha256": "31236600884b81b0311cc796100086490590d374dd34ba66883cc4e1227ab916",
+    "checkpoint_sha256": "52cfb8942239fb46069c187e118096b946811480f7a14f5d2c234be07efc903c",
+    "checkpoint_schema_version": 3,
+    "best_export_hash_verified": true
+  },
+  "full_precision_control": {
+    "seed": 7,
+    "ternary": false,
+    "gradient_checkpointing": true,
+    "chunked_loss": true,
+    "final_checkpoint_step": 1,
+    "tokens_seen": 4,
+    "best_validation_loss": 11.550189018249512,
+    "steps": [
+      {
+        "step": 1,
+        "train_loss": 11.708881378173828,
+        "validation_loss": 11.550189018249512,
+        "tokens_seen": 4
+      }
+    ],
+    "best_export_sha256": "7d50bfdbf9e231eb849d09436d3e7c350e7e49029a9ba8b6896cf2449dc90b3c",
+    "checkpoint_sha256": "9c0407db03e9be17017aa25f360fb427edd8fc4adef6cd7eeec6c5f422c82337"
+  }
+}

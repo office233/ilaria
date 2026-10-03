@@ -1,0 +1,51 @@
+goos: windows
+goarch: amd64
+pkg: swypik-os/internal/swyplang
+cpu: Intel(R) Core(TM) i7-9700 CPU @ 3.00GHz
+BenchmarkMigration/Sum1000/Go         	  156652	      1624 ns/op	       8 B/op	       1 allocs/op
+BenchmarkMigration/Sum1000/Go         	  148152	      1674 ns/op	       8 B/op	       1 allocs/op
+BenchmarkMigration/Sum1000/Go         	  166443	      1452 ns/op	       8 B/op	       1 allocs/op
+BenchmarkMigration/Sum1000/Go         	  164810	      1695 ns/op	       8 B/op	       1 allocs/op
+BenchmarkMigration/Sum1000/Go         	  151526	      1483 ns/op	       8 B/op	       1 allocs/op
+BenchmarkMigration/Sum1000/Swyp       	     729	    371103 ns/op	   23984 B/op	    2998 allocs/op
+BenchmarkMigration/Sum1000/Swyp       	     681	    320395 ns/op	   23985 B/op	    2998 allocs/op
+BenchmarkMigration/Sum1000/Swyp       	     696	    341330 ns/op	   23985 B/op	    2998 allocs/op
+BenchmarkMigration/Sum1000/Swyp       	     736	    343074 ns/op	   23985 B/op	    2998 allocs/op
+BenchmarkMigration/Sum1000/Swyp       	     742	    353507 ns/op	   23985 B/op	    2998 allocs/op
+BenchmarkMigration/Fibonacci15/Go     	   70224	      3259 ns/op	       8 B/op	       1 allocs/op
+BenchmarkMigration/Fibonacci15/Go     	   81444	      3007 ns/op	       8 B/op	       1 allocs/op
+BenchmarkMigration/Fibonacci15/Go     	   76867	      3081 ns/op	       8 B/op	       1 allocs/op
+BenchmarkMigration/Fibonacci15/Go     	   81121	      3018 ns/op	       8 B/op	       1 allocs/op
+BenchmarkMigration/Fibonacci15/Go     	   77727	      3026 ns/op	       8 B/op	       1 allocs/op
+BenchmarkMigration/Fibonacci15/Swyp   	     486	    489278 ns/op	   20649 B/op	    2581 allocs/op
+BenchmarkMigration/Fibonacci15/Swyp   	     404	    539094 ns/op	   20649 B/op	    2581 allocs/op
+BenchmarkMigration/Fibonacci15/Swyp   	     486	    493292 ns/op	   20649 B/op	    2581 allocs/op
+BenchmarkMigration/Fibonacci15/Swyp   	     525	    461761 ns/op	   20649 B/op	    2581 allocs/op
+BenchmarkMigration/Fibonacci15/Swyp   	     501	    469407 ns/op	   20649 B/op	    2581 allocs/op
+BenchmarkMigration/AudioClamp1000/Go  	   37570	      6486 ns/op	       8 B/op	       1 allocs/op
+BenchmarkMigration/AudioClamp1000/Go  	   34008	      6888 ns/op	       8 B/op	       1 allocs/op
+BenchmarkMigration/AudioClamp1000/Go  	   39388	      6406 ns/op	       8 B/op	       1 allocs/op
+BenchmarkMigration/AudioClamp1000/Go  	   35740	      6395 ns/op	       8 B/op	       1 allocs/op
+BenchmarkMigration/AudioClamp1000/Go  	   40838	      5691 ns/op	       8 B/op	       1 allocs/op
+BenchmarkMigration/AudioClamp1000/Swyp         	     412	    587651 ns/op	   49978 B/op	    6247 allocs/op
+BenchmarkMigration/AudioClamp1000/Swyp         	     372	    630790 ns/op	   49978 B/op	    6247 allocs/op
+BenchmarkMigration/AudioClamp1000/Swyp         	     422	    580954 ns/op	   49978 B/op	    6247 allocs/op
+BenchmarkMigration/AudioClamp1000/Swyp         	     417	    625783 ns/op	   49978 B/op	    6247 allocs/op
+BenchmarkMigration/AudioClamp1000/Swyp         	     388	    627461 ns/op	   49978 B/op	    6247 allocs/op
+BenchmarkSwypParse/Sum1000                     	   25951	      8270 ns/op	   13056 B/op	      71 allocs/op
+BenchmarkSwypParse/Sum1000                     	   34069	      6531 ns/op	   13056 B/op	      71 allocs/op
+BenchmarkSwypParse/Sum1000                     	   35982	      6627 ns/op	   13056 B/op	      71 allocs/op
+BenchmarkSwypParse/Sum1000                     	   35602	      7011 ns/op	   13056 B/op	      71 allocs/op
+BenchmarkSwypParse/Sum1000                     	   34641	      6571 ns/op	   13056 B/op	      71 allocs/op
+BenchmarkSwypParse/Fibonacci15                 	   35414	      7712 ns/op	   13016 B/op	      84 allocs/op
+BenchmarkSwypParse/Fibonacci15                 	   31502	      6364 ns/op	   13016 B/op	      84 allocs/op
+BenchmarkSwypParse/Fibonacci15                 	   38922	      6211 ns/op	   13016 B/op	      84 allocs/op
+BenchmarkSwypParse/Fibonacci15                 	   33873	      6504 ns/op	   13016 B/op	      84 allocs/op
+BenchmarkSwypParse/Fibonacci15                 	   34624	      6775 ns/op	   13016 B/op	      84 allocs/op
+BenchmarkSwypParse/AudioClamp1000              	   19626	     11533 ns/op	   24096 B/op	     127 allocs/op
+BenchmarkSwypParse/AudioClamp1000              	   20644	     11721 ns/op	   24096 B/op	     127 allocs/op
+BenchmarkSwypParse/AudioClamp1000              	   17144	     17462 ns/op	   24096 B/op	     127 allocs/op
+BenchmarkSwypParse/AudioClamp1000              	   10000	     22847 ns/op	   24096 B/op	     127 allocs/op
+BenchmarkSwypParse/AudioClamp1000              	   17906	     13311 ns/op	   24096 B/op	     127 allocs/op
+PASS
+ok  	swypik-os/internal/swyplang	14.515s

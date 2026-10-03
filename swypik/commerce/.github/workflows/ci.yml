@@ -1,0 +1,125 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-typecheck-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      CI: "true"
+      NEXT_TELEMETRY_DISABLED: "1"
+      # Build-time placeholder env (real secrets only used at runtime on VPS)
+      DATABASE_URL: "postgresql://ci:ci@localhost:5432/ci"
+      REDIS_URL: "redis://localhost:6379"
+      NEXT_PUBLIC_SITE_URL: "https://swypik.com"
+      NEXT_PUBLIC_APP_URL: "https://swypik.com"
+      APP_URL: "https://swypik.com"
+      NEXTAUTH_SECRET: "ci-placeholder-not-real"
+      SESSION_SECRET: "ci-placeholder-not-real"
+      ADMIN_SECRET: "ci-placeholder-not-real"
+      INTERNAL_HEALTH_SECRET: "ci-placeholder-not-real"
+      SUPPLIER_WEBHOOK_SECRET: "ci-placeholder-not-real"
+      STRIPE_SECRET_KEY: "sk_test_ci_placeholder"
+      STRIPE_WEBHOOK_SECRET: "whsec_ci_placeholder"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund --prefer-offline
+
+      - name: Lint
+        run: npm run lint --if-present
+
+      # Design system: blochează culori hex noi și text sub 12px în app/ + components/
+      # (baseline în .design-baseline.json — doar scăderea e permisă).
+      - name: Design debt guard
+        run: npm run lint:design
+
+      - name: Translation guard
+        run: npm run lint:i18n
+
+      - name: Typecheck
+        run: npm run typecheck --if-present
+
+      # 2026-08-15 (audit): testele unitare (vitest, tests/unit/*) existau dar
+      # NU rulau nicăieri — nici în ci.yml, nici în scriptul `npm run ci`.
+      # Puteai sparge checkout/ledger/scoring fără ca nimic să te oprească.
+      - name: Unit tests
+        run: npm test
+
+      # Vulnerabilitățile high/critical din dependențele de producție blochează
+      # livrarea. `--omit=dev` păstrează gate-ul concentrat pe runtime.
+      - name: Audit dependențe (producție)
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Build
+        run: npm run build
+
+      - name: Bundle performance budget
+        run: npm run perf:budget
+
+  # ---------------------------------------------------------------------------
+  # 2026-08-15 (audit): existau 9 fișiere de test Python (video-worker ×6,
+  # ai-worker ×3) și teste Go pentru checkout/events/feed/social/videos/http —
+  # NICIUNUL nu rula vreodată automat. CI-ul executa doar lint/typecheck/build
+  # pe Node. Job-urile de mai jos închid golul.
+  # ---------------------------------------------------------------------------
+  python-workers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        worker: [video-worker, ai-worker]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        working-directory: workers/${{ matrix.worker }}
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Pytest
+        working-directory: workers/${{ matrix.worker }}
+        run: python -m pytest -q
+
+  go-platform-api:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: services/platform-api/go.mod
+          cache-dependency-path: services/platform-api/go.sum
+
+      - name: Vet
+        working-directory: services/platform-api
+        run: go vet ./...
+
+      - name: Test
+        working-directory: services/platform-api
+        run: go test ./...

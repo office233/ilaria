@@ -1,0 +1,285 @@
+{
+  "version": 1,
+  "declarations": [
+    {
+      "kind": "component",
+      "name": "ControlKernel",
+      "capabilities": [
+        "task.create",
+        "task.lease",
+        "evidence.record"
+      ],
+      "states": [
+        {
+          "name": "graph",
+          "type": "DurableTaskGraph"
+        }
+      ],
+      "invariants": [
+        "executor identity is authenticated and security-bound",
+        "side effects require explicit capabilities",
+        "uncertain effects are never blindly replayed"
+      ]
+    },
+    {
+      "kind": "record",
+      "name": "ResourcePolicy",
+      "fields": [
+        {
+          "name": "profile",
+          "type": "string"
+        },
+        {
+          "name": "device_class",
+          "type": "string"
+        },
+        {
+          "name": "max_background_cpu_percent",
+          "type": "u64"
+        },
+        {
+          "name": "max_background_gpu_percent",
+          "type": "u64"
+        },
+        {
+          "name": "max_background_workers",
+          "type": "u64"
+        },
+        {
+          "name": "status_poll_ms",
+          "type": "u64"
+        },
+        {
+          "name": "search_max_files",
+          "type": "u64"
+        },
+        {
+          "name": "search_max_documents",
+          "type": "u64"
+        },
+        {
+          "name": "search_max_text_bytes",
+          "type": "u64"
+        },
+        {
+          "name": "max_graph_checkpoints",
+          "type": "u64"
+        },
+        {
+          "name": "memory_limit_mb",
+          "type": "u64"
+        },
+        {
+          "name": "gc_percent",
+          "type": "u64"
+        },
+        {
+          "name": "max_training_delta_params",
+          "type": "u64"
+        },
+        {
+          "name": "max_pending_deltas",
+          "type": "u64"
+        },
+        {
+          "name": "max_chat_history_messages",
+          "type": "u64"
+        },
+        {
+          "name": "max_document_bytes",
+          "type": "u64"
+        },
+        {
+          "name": "max_app_catalog_entries",
+          "type": "u64"
+        },
+        {
+          "name": "max_resident_peers",
+          "type": "u64"
+        },
+        {
+          "name": "max_hive_tasks",
+          "type": "u64"
+        },
+        {
+          "name": "p2p_inspection_queue",
+          "type": "u64"
+        },
+        {
+          "name": "p2p_inspection_payload_max",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "kind": "record",
+      "name": "ResourceState",
+      "fields": [
+        {
+          "name": "profile",
+          "type": "string"
+        },
+        {
+          "name": "device_class",
+          "type": "string"
+        },
+        {
+          "name": "base_background_cpu_percent",
+          "type": "u64"
+        },
+        {
+          "name": "base_background_gpu_percent",
+          "type": "u64"
+        },
+        {
+          "name": "base_background_workers",
+          "type": "u64"
+        },
+        {
+          "name": "max_background_cpu_percent",
+          "type": "u64"
+        },
+        {
+          "name": "max_background_gpu_percent",
+          "type": "u64"
+        },
+        {
+          "name": "max_background_workers",
+          "type": "u64"
+        },
+        {
+          "name": "paused",
+          "type": "bool"
+        },
+        {
+          "name": "preempt",
+          "type": "bool"
+        },
+        {
+          "name": "reasons",
+          "type": "string_list"
+        },
+        {
+          "name": "revision",
+          "type": "u64"
+        },
+        {
+          "name": "observed_at_unix_ms",
+          "type": "i64"
+        }
+      ]
+    },
+    {
+      "kind": "component",
+      "name": "ResourceGovernor",
+      "capabilities": [
+        "resource.enforce"
+      ],
+      "states": [
+        {
+          "name": "policy",
+          "type": "ResourcePolicy"
+        },
+        {
+          "name": "runtime",
+          "type": "ResourceState"
+        }
+      ],
+      "invariants": [
+        "foreground responsiveness has priority over background work",
+        "background worker count is bounded",
+        "disabled compute performs no synthetic work",
+        "search and checkpoint retention remain bounded",
+        "runtime resource state never exceeds the selected base envelope"
+      ]
+    },
+    {
+      "kind": "record",
+      "name": "EffectEvidence",
+      "fields": [
+        {
+          "name": "task_id",
+          "type": "string"
+        },
+        {
+          "name": "node_id",
+          "type": "string"
+        },
+        {
+          "name": "attempt_id",
+          "type": "string"
+        },
+        {
+          "name": "executor_id",
+          "type": "string"
+        },
+        {
+          "name": "capability_id",
+          "type": "string"
+        },
+        {
+          "name": "effect",
+          "type": "string"
+        },
+        {
+          "name": "status",
+          "type": "string"
+        },
+        {
+          "name": "observed_hash",
+          "type": "string"
+        },
+        {
+          "name": "epoch",
+          "type": "u64"
+        },
+        {
+          "name": "occurred_at_unix_ms",
+          "type": "i64"
+        },
+        {
+          "name": "details",
+          "type": "string_map"
+        }
+      ]
+    },
+    {
+      "kind": "effect",
+      "name": "ExecuteEffect",
+      "capabilities": [
+        "effect.execute"
+      ],
+      "requires": [
+        "capability token is valid for the requested effect"
+      ],
+      "ensures": [
+        "evidence records the observed outcome or uncertainty"
+      ]
+    },
+    {
+      "kind": "task",
+      "name": "VerifiedEffect",
+      "capabilities": [
+        "effect.execute"
+      ],
+      "effects": [
+        "control.execute"
+      ],
+      "verifiers": [
+        "EffectEvidencePolicy"
+      ],
+      "properties": {
+        "timeout_seconds": 300
+      }
+    },
+    {
+      "kind": "verify",
+      "name": "EffectEvidencePolicy",
+      "checks": [
+        "authenticated_executor",
+        "capability_scope",
+        "postcondition_evidence"
+      ]
+    }
+  ]
+}

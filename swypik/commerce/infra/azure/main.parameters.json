@@ -1,0 +1,71 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "value": "swedencentral"
+    },
+    "namePrefix": {
+      "value": "swypik-prod"
+    },
+    "webCount": {
+      "value": 2
+    },
+    "webVmSize": {
+      "value": "Standard_D2as_v7"
+    },
+    "dataVmSize": {
+      "value": "Standard_E2as_v7"
+    },
+    "dataDiskSizeGB": {
+      "value": 256
+    },
+    "workerCount": {
+      "value": 1
+    },
+    "workerVmSize": {
+      "value": "Standard_D2as_v7"
+    },
+    "workerUseSpot": {
+      "value": false
+    },
+    "adminUsername": {
+      "value": "swypikadmin"
+    },
+    "adminSshPublicKey": {
+      "value": "<OWNER: cheia ta publica, ex. ssh-ed25519 AAAA... owner@pc>"
+    },
+    "deploySshPublicKey": {
+      "value": "<OWNER: swypik_deploy.pub generat cu ssh-keygen -t ed25519 -f swypik_deploy -C swypik-deploy>"
+    },
+    "sshAllowedSourceCidr": {
+      "value": ""
+    },
+    "monthlyBudgetAmount": {
+      "value": 450
+    },
+    "budgetContactEmails": {
+      "value": [
+        "<OWNER: email pentru alertele de buget>"
+      ]
+    },
+    "budgetStartDate": {
+      "value": "<OWNER: prima zi a lunii, ex. 2026-10-01>"
+    },
+    "tags": {
+      "value": {
+        "app": "swypik",
+        "env": "prod",
+        "owner": "swypik",
+        "costCenter": "ms-startups-credits",
+        "managedBy": "bicep"
+      }
+    },
+    "availabilityZone": {
+      "value": "1"
+    },
+    "diskControllerType": {
+      "value": "NVMe"
+    }
+  }
+}

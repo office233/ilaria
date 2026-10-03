@@ -1,0 +1,81 @@
+---
+import "../styles/global.css";
+import Wallpaper from "../components/os/Wallpaper.astro";
+import Capsule from "../components/os/Capsule.astro";
+import IlariaBar from "../components/os/IlariaBar.astro";
+import SiteFooter from "../components/os/SiteFooter.astro";
+
+interface Props {
+  title: string;
+  description: string;
+  canonical?: string;
+  noindex?: boolean;
+  image?: string;
+}
+
+const {
+  title,
+  description,
+  canonical = Astro.url.pathname,
+  noindex = false,
+  image = "/og-preview.jpg",
+} = Astro.props;
+
+const canonicalUrl = new URL(canonical, Astro.site ?? Astro.url.origin).toString();
+const socialImageUrl = new URL(image, Astro.site ?? Astro.url.origin).toString();
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f5f5fb" />
+    <meta name="description" content={description} />
+    <meta name="robots" content={noindex ? "noindex,nofollow" : "index,follow"} />
+    <link rel="canonical" href={canonicalUrl} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preload" href="/fonts/PlusJakartaSans-ExtraBold.ttf" as="font" type="font/ttf" crossorigin />
+    <link rel="preload" href="/fonts/PlusJakartaSans-Medium.ttf" as="font" type="font/ttf" crossorigin />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Swypik" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:image" content={socialImageUrl} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Swypik — the super-app, Ilaria and SwypikOS" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={socialImageUrl} />
+    <title>{title}</title>
+    <slot name="head" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <Wallpaper />
+    <Capsule />
+    <main id="main-content">
+      <slot />
+    </main>
+    <SiteFooter />
+    <IlariaBar />
+    <script is:inline>
+      (function () {
+        var items = document.querySelectorAll(".reveal");
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches || !("IntersectionObserver" in window)) {
+          items.forEach(function (i) { i.classList.add("is-visible"); });
+          return;
+        }
+        var io = new IntersectionObserver(function (entries) {
+          entries.forEach(function (e) {
+            if (e.isIntersecting) { e.target.classList.add("is-visible"); io.unobserve(e.target); }
+          });
+        }, { threshold: 0.12, rootMargin: "0px 0px -6% 0px" });
+        items.forEach(function (i) { io.observe(i); });
+      })();
+    </script>
+  </body>
+</html>

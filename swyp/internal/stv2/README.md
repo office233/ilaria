@@ -59,7 +59,7 @@ bytecode or that interpreting it is faster.
 
 ## Run and reproduce
 
-From D:\nexus\swyp:
+From the `swyp/` module:
 
 ```powershell
 go run ./experiments/ternaryvm/cmd examples/swyp/sum.ternary.tasm 100

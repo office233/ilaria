@@ -1,0 +1,28 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Brand from "../components/Brand.astro";
+---
+<BaseLayout title="Terms — Swypik" description="Pre-launch website terms for Swypik.">
+  <main id="main-content" class="legal shell">
+    <Brand />
+    <p class="section-kicker">Legal</p>
+    <h1>Website Terms</h1>
+    <p class="lede">These are pre-launch website terms, not final commercial terms for the Swypik app, Ilaria or SwypikOS.</p>
+    <section><h2>Product status</h2><p>Features described on this site include software already implemented, active development and longer-term roadmap work. Roadmap descriptions are not guarantees of release date, final scope or availability.</p></section>
+    <section><h2>Early access</h2><p>Joining the early-access list does not guarantee admission to a private preview or a particular launch date. Access may be staged by platform, geography or technical readiness.</p></section>
+    <section><h2>Content and intellectual property</h2><p>Swypik names, visual assets and product materials are provided for information about the project. Third-party marks, when present, remain the property of their respective owners.</p></section>
+    <section><h2>Final review required</h2><p>The operator identity, governing law, liability terms and support contact must be completed and legally reviewed before production launch.</p></section>
+    <a class="back" href="/">← Back to Swypik</a>
+  </main>
+</BaseLayout>
+
+<style>
+  .legal { max-width: 820px; padding: 2rem 0 7rem; }
+  .legal :global(.brand) { margin-bottom: 6rem; }
+  .legal h1 { margin: .8rem 0 1.3rem; font-size: clamp(3rem, 8vw, 6rem); line-height: .92; letter-spacing: -.065em; }
+  .lede { color: #aaa3b3; font-size: 1.1rem; line-height: 1.7; }
+  section { padding: 2rem 0; border-top: 1px solid rgba(255,255,255,.1); }
+  h2 { margin: 0 0 .7rem; font-size: 1.15rem; }
+  section p { margin: 0; color: #8e8795; line-height: 1.7; }
+  .back { display: inline-block; margin-top: 2rem; color: #b59aff; }
+</style>

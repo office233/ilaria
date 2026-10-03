@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"swypik-os/core/autogenesis"
+	"swypik-os/core/devicesynth"
 	"swypik-os/core/hal"
 	"swypik-os/installer/universal"
 )
@@ -46,6 +47,12 @@ func TestUniversalInstallerPCWritesMetadataOnly(t *testing.T) {
 	if plan.TargetProfile != "SwypikOS-Desktop-SpatialLuxury" {
 		t.Error(plan.TargetProfile)
 	}
+	if env.HardwareManifest.DeviceClass != devicesynth.PlatformWorkstation {
+		t.Fatalf("device class=%q want workstation", env.HardwareManifest.DeviceClass)
+	}
+	if plan.ResourcePolicy.DeviceClass != string(devicesynth.PlatformWorkstation) || plan.ResourcePolicy.Profile == "" {
+		t.Fatalf("resource policy not derived from manifest: %+v", plan.ResourcePolicy)
+	}
 
 	target := t.TempDir()
 	if err := eng.Deploy(ctx, target, env, plan); err != nil {
@@ -67,6 +74,43 @@ func TestUniversalInstallerPCWritesMetadataOnly(t *testing.T) {
 	}
 }
 
+func TestProbeTargetCarriesExplicitHALResourcesWithoutFabrication(t *testing.T) {
+	manager := hal.NewManager()
+	manager.RegisterScanner(func(context.Context) ([]*hal.DiscoveredDevice, error) {
+		return []*hal.DiscoveredDevice{{
+			ID:           "dev_fixture_nic",
+			Name:         "Fixture NIC",
+			Class:        hal.ClassNetwork,
+			Bus:          hal.BusPCIe,
+			Protocol:     "FIXTURE",
+			DriverStatus: hal.DriverNeedsAutogenesis,
+			Resources: []hal.HardwareResource{
+				{Kind: hal.ResourceMMIO, Start: 0xfebf0000, Length: 0x1000},
+				{Kind: hal.ResourceIRQ, Start: 17, Length: 1},
+			},
+		}}, nil
+	})
+	eng := universal.NewInstallerEngine(manager, autogenesis.NewSynthesizer(t.TempDir()))
+	env, err := eng.ProbeTarget(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	var resources []devicesynth.DeviceResource
+	for _, resource := range env.HardwareManifest.Graph.Resources {
+		if resource.DeviceID == "dev_fixture_nic" {
+			resources = append(resources, resource)
+		}
+	}
+	if len(resources) != 2 || resources[0].Kind != devicesynth.ResourceIRQ && resources[1].Kind != devicesynth.ResourceIRQ {
+		t.Fatalf("manifest resources=%+v", resources)
+	}
+	for _, resource := range env.HardwareManifest.Graph.Resources {
+		if resource.DeviceID == "dev_host_compute_0" {
+			t.Fatalf("legacy HAL fabricated host-compute authority: %+v", resource)
+		}
+	}
+}
+
 func TestUniversalInstallerRobotAndVehicle(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
@@ -82,8 +126,15 @@ func TestUniversalInstallerRobotAndVehicle(t *testing.T) {
 	if envRobot.PlatformType != universal.PlatformRobot {
 		t.Error(envRobot.PlatformType)
 	}
-	if mode := engRobot.GenerateAdaptationPlan(envRobot).SafetyGovernorMode; mode != "ROBOTICS_ESTOP_ARMED" {
+	robotPlan := engRobot.GenerateAdaptationPlan(envRobot)
+	if mode := robotPlan.SafetyGovernorMode; mode != "ROBOTICS_ESTOP_ARMED" {
 		t.Error(mode)
+	}
+	if envRobot.HardwareManifest.DeviceClass != devicesynth.PlatformRobot || robotPlan.ResourcePolicy.DeviceClass != string(devicesynth.PlatformRobot) {
+		t.Fatalf("robot manifest/policy mismatch: class=%q policy=%+v", envRobot.HardwareManifest.DeviceClass, robotPlan.ResourcePolicy)
+	}
+	if robotPlan.ResourcePolicy.MaxBackgroundWorkers != 1 || robotPlan.ResourcePolicy.MaxBackgroundCPUPercent > 3 || robotPlan.ResourcePolicy.MaxBackgroundGPUPercent > 8 {
+		t.Fatalf("robot background envelope too permissive: %+v", robotPlan.ResourcePolicy)
 	}
 
 	halVehicle := hal.NewManager()
@@ -96,8 +147,22 @@ func TestUniversalInstallerRobotAndVehicle(t *testing.T) {
 	if envVehicle.PlatformType != universal.PlatformVehicle {
 		t.Error(envVehicle.PlatformType)
 	}
-	if mode := engVehicle.GenerateAdaptationPlan(envVehicle).SafetyGovernorMode; mode != "AUTOMOTIVE_CRITICAL_WATCHDOG" {
+	vehiclePlan := engVehicle.GenerateAdaptationPlan(envVehicle)
+	if mode := vehiclePlan.SafetyGovernorMode; mode != "AUTOMOTIVE_CRITICAL_WATCHDOG" {
 		t.Error(mode)
+	}
+	if envVehicle.HardwareManifest.DeviceClass != devicesynth.PlatformAutomotive || vehiclePlan.ResourcePolicy.DeviceClass != string(devicesynth.PlatformAutomotive) {
+		t.Fatalf("vehicle manifest/policy mismatch: class=%q policy=%+v", envVehicle.HardwareManifest.DeviceClass, vehiclePlan.ResourcePolicy)
+	}
+	if vehiclePlan.ResourcePolicy.MaxBackgroundWorkers != 1 || vehiclePlan.ResourcePolicy.MaxBackgroundCPUPercent > 2 || vehiclePlan.ResourcePolicy.MaxBackgroundGPUPercent > 5 {
+		t.Fatalf("automotive background envelope too permissive: %+v", vehiclePlan.ResourcePolicy)
+	}
+	manifestJSON, err := json.Marshal(envVehicle.HardwareManifest)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(manifestJSON), "1FA6P8CF5H123456") {
+		t.Fatal("vehicle private identifier leaked into hardware manifest")
 	}
 }
 

@@ -1,0 +1,32 @@
+[
+  {
+    "step": "login",
+    "status": "PASS",
+    "note": "http://127.0.0.1:3005/account",
+    "shot": ""
+  },
+  {
+    "step": "upload portrait15s",
+    "status": "INFO",
+    "note": "clicked=Continuă outcome=\"['procesare']\" url=http://127.0.0.1:3005/upload fails=[]",
+    "shot": ""
+  },
+  {
+    "step": "upload mov",
+    "status": "INFO",
+    "note": "clicked=Continuă outcome=\"['procesare']\" url=http://127.0.0.1:3005/upload fails=[]",
+    "shot": ""
+  },
+  {
+    "step": "upload fake",
+    "status": "INFO",
+    "note": "clicked=Continuă outcome=\"['procesare']\" url=http://127.0.0.1:3005/upload fails=[]",
+    "shot": ""
+  },
+  {
+    "step": "videos DB dupa upload",
+    "status": "INFO",
+    "note": "cd48d47a-eb8b-4458-81c1-b9806ee6efed|fake_video.mp4|failed\n3b3c47d5-2283-4762-819b-0fb9815d3fd5|clip_test.mov|failed\n19e3c58c-09ce-4b5f-934e-36101389c582|clip_portrait_15s.mp4|failed\ncc243956-b7ee-4467-bf19-bb87b0f479f5|clip_test.mov|uploading\n1acfa78d-15c0-4dff-be84-0394567b4eec|fake_video.mp4|uploading\n0ca11b1d-c4b2-4cb9-89c2-bfa280093c97|clip_test.mov|uploading\n6afd1a42-7d57-4358-bc98-062fce485e67|clip_portrait_15s.mp4|uploading\n6351a888-e147-4b52-a3ec-7cc250981ae7|clip_portrait_15s.mp4|uploading",
+    "shot": ""
+  }
+]

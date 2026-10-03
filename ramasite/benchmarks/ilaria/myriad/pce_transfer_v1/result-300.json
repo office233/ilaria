@@ -1,0 +1,224 @@
+{
+  "baseline": {
+    "action_perplexity": 428.55015439905765,
+    "correct": 0,
+    "mean_action_nll": 6.060407777627309,
+    "per_task": {
+      "code-001": {
+        "correct": false,
+        "nll": 6.733545303344727,
+        "predicted_action_index": null
+      },
+      "code-002": {
+        "correct": false,
+        "nll": 5.691865921020508,
+        "predicted_action_index": null
+      },
+      "dev-001": {
+        "correct": false,
+        "nll": 5.944725036621094,
+        "predicted_action_index": null
+      },
+      "dev-002": {
+        "correct": false,
+        "nll": 7.1022210121154785,
+        "predicted_action_index": null
+      },
+      "math-001": {
+        "correct": false,
+        "nll": 5.55711030960083,
+        "predicted_action_index": null
+      },
+      "math-002": {
+        "correct": false,
+        "nll": 5.177696228027344,
+        "predicted_action_index": null
+      },
+      "ops-001": {
+        "correct": false,
+        "nll": 3.1516454219818115,
+        "predicted_action_index": null
+      },
+      "ops-002": {
+        "correct": false,
+        "nll": 5.451089382171631,
+        "predicted_action_index": null
+      },
+      "phone-001": {
+        "correct": false,
+        "nll": 7.338367462158203,
+        "predicted_action_index": null
+      },
+      "robot-001": {
+        "correct": false,
+        "nll": 6.7970967292785645,
+        "predicted_action_index": null
+      },
+      "veh-001": {
+        "correct": false,
+        "nll": 6.387160778045654,
+        "predicted_action_index": null
+      },
+      "veh-002": {
+        "correct": false,
+        "nll": 7.392369747161865,
+        "predicted_action_index": 8
+      }
+    },
+    "top1_accuracy": 0.0
+  },
+  "causal_advantage_accuracy": 0.0,
+  "causal_advantage_nll": 1.530021911035874,
+  "control": {
+    "action_perplexity": 729.6055819723596,
+    "correct": 2,
+    "mean_action_nll": 6.5925040894605145,
+    "per_task": {
+      "code-001": {
+        "correct": true,
+        "nll": 0.03378615528345108,
+        "predicted_action_index": 4
+      },
+      "code-002": {
+        "correct": false,
+        "nll": 8.88026237487793,
+        "predicted_action_index": 10
+      },
+      "dev-001": {
+        "correct": false,
+        "nll": 8.924328804016113,
+        "predicted_action_index": 7
+      },
+      "dev-002": {
+        "correct": false,
+        "nll": 4.8713250160217285,
+        "predicted_action_index": 1
+      },
+      "math-001": {
+        "correct": false,
+        "nll": 10.329428672790527,
+        "predicted_action_index": 8
+      },
+      "math-002": {
+        "correct": false,
+        "nll": 7.533474922180176,
+        "predicted_action_index": 10
+      },
+      "ops-001": {
+        "correct": true,
+        "nll": 0.00025555206229910254,
+        "predicted_action_index": 8
+      },
+      "ops-002": {
+        "correct": false,
+        "nll": 7.803688049316406,
+        "predicted_action_index": 7
+      },
+      "phone-001": {
+        "correct": false,
+        "nll": 5.556607723236084,
+        "predicted_action_index": 4
+      },
+      "robot-001": {
+        "correct": false,
+        "nll": 10.34349250793457,
+        "predicted_action_index": 10
+      },
+      "veh-001": {
+        "correct": false,
+        "nll": 8.768904685974121,
+        "predicted_action_index": 8
+      },
+      "veh-002": {
+        "correct": false,
+        "nll": 6.064494609832764,
+        "predicted_action_index": 8
+      }
+    },
+    "top1_accuracy": 0.16666666666666666
+  },
+  "experiment": "pce-transfer-v1-action-token",
+  "lr": 0.003,
+  "seed": 7,
+  "steps_per_cell": 300,
+  "tasks": 12,
+  "ternary": true,
+  "train_loss_end": {
+    "control": 0.000398198957554996,
+    "transfer": 0.0007003477076068521
+  },
+  "train_loss_start": {
+    "control": 5.2755608558654785,
+    "transfer": 4.987586498260498
+  },
+  "transfer": {
+    "action_perplexity": 157.98216997895133,
+    "correct": 2,
+    "mean_action_nll": 5.0624821784246405,
+    "per_task": {
+      "code-001": {
+        "correct": false,
+        "nll": 3.486097812652588,
+        "predicted_action_index": 3
+      },
+      "code-002": {
+        "correct": false,
+        "nll": 8.479696273803711,
+        "predicted_action_index": 7
+      },
+      "dev-001": {
+        "correct": false,
+        "nll": 6.624686241149902,
+        "predicted_action_index": 8
+      },
+      "dev-002": {
+        "correct": true,
+        "nll": 0.07980095595121384,
+        "predicted_action_index": 3
+      },
+      "math-001": {
+        "correct": false,
+        "nll": 1.9224518537521362,
+        "predicted_action_index": 3
+      },
+      "math-002": {
+        "correct": false,
+        "nll": 2.6033616065979004,
+        "predicted_action_index": 11
+      },
+      "ops-001": {
+        "correct": false,
+        "nll": 10.880547523498535,
+        "predicted_action_index": 0
+      },
+      "ops-002": {
+        "correct": false,
+        "nll": 7.489034652709961,
+        "predicted_action_index": 7
+      },
+      "phone-001": {
+        "correct": false,
+        "nll": 9.211299896240234,
+        "predicted_action_index": 3
+      },
+      "robot-001": {
+        "correct": false,
+        "nll": 2.985072612762451,
+        "predicted_action_index": 3
+      },
+      "veh-001": {
+        "correct": false,
+        "nll": 6.985451698303223,
+        "predicted_action_index": 7
+      },
+      "veh-002": {
+        "correct": true,
+        "nll": 0.002285013673827052,
+        "predicted_action_index": 1
+      }
+    },
+    "top1_accuracy": 0.16666666666666666
+  },
+  "transfer_gain_accuracy": 0.16666666666666666,
+  "transfer_gain_nll": 0.9979255992026683
+}

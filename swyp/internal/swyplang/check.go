@@ -32,7 +32,7 @@ func merge(a, b *typeVar, pos scanner.Position) {
 	b = b.root()
 	mask := a.mask & b.mask
 	if mask == 0 {
-		panic(failure(pos, "type mismatch: %s versus %s", typeLabel(a.mask), typeLabel(b.mask)))
+		panic(diagnosticAt(DiagnosticTypeMismatch, pos, "type mismatch: %s versus %s", typeLabel(a.mask), typeLabel(b.mask)))
 	}
 	if a != b {
 		b.parent = a
@@ -88,14 +88,14 @@ func (s *typeScope) lookup(n string, pos scanner.Position) *typeVar {
 			return v
 		}
 	}
-	panic(failure(pos, "unknown variable %q", n))
+	panic(diagnosticAt(DiagnosticUnknownVariable, pos, "unknown variable %q", n))
 }
 
 // Check enforces monomorphic types, lexical names, arity and return coverage.
 func (p *Program) Check() error { _, err := p.check(); return err }
 func (p *Program) check() (c *checked, err error) {
 	if p.core {
-		return nil, fmt.Errorf("core source requires CoreIR; legacy backends are unchanged")
+		return nil, diagnosticMessage(DiagnosticCorePipelineNeeded, "core source requires CoreIR; legacy backends are unchanged")
 	}
 	defer func() {
 		if r := recover(); r != nil {
@@ -122,7 +122,7 @@ func (p *Program) check() (c *checked, err error) {
 		if hasReturn(f.body) {
 			mask = valueTypes
 			if !returns(f.body) {
-				panic(failure(f.pos, "function %s may finish without returning a value", name))
+				panic(diagnosticAt(DiagnosticMissingReturn, f.pos, "function %s may finish without returning a value", name))
 			}
 		}
 		sig.result = newType(mask)
@@ -145,14 +145,14 @@ func (p *Program) check() (c *checked, err error) {
 		for _, v := range append(append([]*typeVar{}, sig.params...), sig.result) {
 			m := v.root().mask
 			if m&(m-1) != 0 {
-				panic(failure(p.functions[name].pos, "cannot infer type in function %s; add parameter/return annotations", name))
+				panic(diagnosticAt(DiagnosticCannotInferType, p.functions[name].pos, "cannot infer type in function %s; add parameter/return annotations", name))
 			}
 		}
 	}
 	for e, v := range c.expressions {
 		m := v.root().mask
 		if m&(m-1) != 0 {
-			panic(failure(e.pos, "cannot infer expression type"))
+			panic(diagnosticAt(DiagnosticCannotInferType, e.pos, "cannot infer expression type"))
 		}
 	}
 	return c, nil
@@ -182,7 +182,7 @@ func (c *checked) block(body []*stmt, parent *typeScope, result *typeVar) {
 		switch s.kind {
 		case "let":
 			if _, ok := env.vars[s.name]; ok {
-				panic(failure(s.pos, "duplicate variable %q", s.name))
+				panic(diagnosticAt(DiagnosticDuplicateVariable, s.pos, "duplicate variable %q", s.name))
 			}
 			v := c.expression(s.value, env)
 			restrict(v, valueTypes, s.pos)
@@ -218,20 +218,20 @@ func (c *checked) expression(e *expr, env *typeScope) *typeVar {
 	case "variable":
 		t = env.lookup(e.name, e.pos)
 	case "call":
-		if e.name == "print" {
+		if e.name == "print" || e.name == "eprint" {
 			for _, a := range e.args {
 				restrict(c.expression(a, env), valueTypes, a.pos)
 			}
 			t = newType(voidType)
 			break
 		}
-		if e.name == "arg" || e.name == "clock" {
+		if e.name == "arg" || e.name == "clock" || e.name == "random" {
 			want := 0
 			if e.name == "arg" {
 				want = 1
 			}
 			if len(e.args) != want {
-				panic(failure(e.pos, "%s expects %d arguments", e.name, want))
+				panic(diagnosticAt(DiagnosticArityMismatch, e.pos, "%s expects %d arguments", e.name, want))
 			}
 			for _, a := range e.args {
 				restrict(c.expression(a, env), numType, a.pos)
@@ -241,10 +241,10 @@ func (c *checked) expression(e *expr, env *typeScope) *typeVar {
 		}
 		sig, ok := c.signatures[e.name]
 		if !ok {
-			panic(failure(e.pos, "unknown function %q", e.name))
+			panic(diagnosticAt(DiagnosticUnknownFunction, e.pos, "unknown function %q", e.name))
 		}
 		if len(e.args) != len(sig.params) {
-			panic(failure(e.pos, "%s expects %d arguments, got %d", e.name, len(sig.params), len(e.args)))
+			panic(diagnosticAt(DiagnosticArityMismatch, e.pos, "%s expects %d arguments, got %d", e.name, len(sig.params), len(e.args)))
 		}
 		for i, a := range e.args {
 			merge(sig.params[i], c.expression(a, env), a.pos)

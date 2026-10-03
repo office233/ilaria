@@ -1,0 +1,58 @@
+﻿{
+    "Summary":  [
+                    {
+                        "Profile":  "balanced",
+                        "AvgWorkingSetMB":  38.88,
+                        "AvgPrivateMB":  49.42,
+                        "AvgIdleCPUPercent":  0.078,
+                        "AvgThreads":  11,
+                        "AvgHandles":  198
+                    },
+                    {
+                        "Profile":  "phone",
+                        "AvgWorkingSetMB":  20.23,
+                        "AvgPrivateMB":  49.04,
+                        "AvgIdleCPUPercent":  0,
+                        "AvgThreads":  10,
+                        "AvgHandles":  187
+                    }
+                ],
+    "Runs":  [
+                 {
+                     "Run":  1,
+                     "Profile":  "balanced",
+                     "WorkingSetMB":  57.8,
+                     "PrivateMB":  49.71,
+                     "IdleCPUPercent":  0.078,
+                     "Threads":  12,
+                     "Handles":  201
+                 },
+                 {
+                     "Run":  2,
+                     "Profile":  "phone",
+                     "WorkingSetMB":  20.28,
+                     "PrivateMB":  49.04,
+                     "IdleCPUPercent":  0,
+                     "Threads":  10,
+                     "Handles":  187
+                 },
+                 {
+                     "Run":  3,
+                     "Profile":  "balanced",
+                     "WorkingSetMB":  19.96,
+                     "PrivateMB":  49.12,
+                     "IdleCPUPercent":  0.078,
+                     "Threads":  10,
+                     "Handles":  195
+                 },
+                 {
+                     "Run":  4,
+                     "Profile":  "phone",
+                     "WorkingSetMB":  20.17,
+                     "PrivateMB":  49.03,
+                     "IdleCPUPercent":  0,
+                     "Threads":  10,
+                     "Handles":  187
+                 }
+             ]
+}

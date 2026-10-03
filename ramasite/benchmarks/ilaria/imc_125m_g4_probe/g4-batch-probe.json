@@ -1,0 +1,71 @@
+{
+  "device": {
+    "bf16_native": true,
+    "compute_capability": [
+      12,
+      0
+    ],
+    "name": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+    "total_memory_bytes": 101974081536
+  },
+  "format": "imc-125m-g4-batch-probe-v1",
+  "global_batch_tokens": 262144,
+  "max_vram_utilization": 0.85,
+  "model": {
+    "context": 2048,
+    "parameters": 125882112,
+    "preset": "imc-125m",
+    "ternary": true
+  },
+  "recommended": {
+    "accum": 4,
+    "micro_batch": 32,
+    "peak_allocated_bytes": 10368536576
+  },
+  "results": [
+    {
+      "accum": 32,
+      "elapsed_seconds": 1.1081458600001497,
+      "grad_norm": 0.07724707573652267,
+      "loss": 11.579863548278809,
+      "micro_batch": 4,
+      "micro_tokens": 8192,
+      "micro_tokens_per_second": 7392.528633368619,
+      "peak_allocated_bytes": 7428751360,
+      "success": true
+    },
+    {
+      "accum": 16,
+      "elapsed_seconds": 0.309013122000124,
+      "grad_norm": 0.10853424668312073,
+      "loss": 11.588638305664062,
+      "micro_batch": 8,
+      "micro_tokens": 16384,
+      "micro_tokens_per_second": 53020.402156234086,
+      "peak_allocated_bytes": 8032894976,
+      "success": true
+    },
+    {
+      "accum": 8,
+      "elapsed_seconds": 0.708450571999947,
+      "grad_norm": 0.15215858817100525,
+      "loss": 11.59259033203125,
+      "micro_batch": 16,
+      "micro_tokens": 32768,
+      "micro_tokens_per_second": 46253.05038218312,
+      "peak_allocated_bytes": 8788197888,
+      "success": true
+    },
+    {
+      "accum": 4,
+      "elapsed_seconds": 1.4534547949997432,
+      "grad_norm": 0.2155272215604782,
+      "loss": 11.591684341430664,
+      "micro_batch": 32,
+      "micro_tokens": 65536,
+      "micro_tokens_per_second": 45089.80962150363,
+      "peak_allocated_bytes": 10368536576,
+      "success": true
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "bundle_sha256": "aee20bb8e6e63aa5f7a6ba862a1b5c138ae9987a8fd37a53b92cdfe210ebba04",
+  "decision_sha256": "769dbe62d0d219583a7d577ab5ebc443d0333162fc43ec667d67fde4bd7f55f1",
+  "evidence": {
+    "evidence_sha256": "972b54be133a8f1c7da451eef43789eab961b668689f185dd736eca65cc0e12c",
+    "filename": "data_rights_evidence.json",
+    "sha256": "a79ff478a2e456ffb8b08977c3d94502a1aa38168c0c4cfda7c1972358ef660f"
+  },
+  "first_party_attestations": {
+    "first_party_contracts": {
+      "attestation_sha256": "fa639d391f4305665346668ad6b41ca783e101999944d10bf8055d76ae3e6f73",
+      "filename": "first_party_tools_protocol.attestation.json",
+      "ownership_attested": true,
+      "sha256": "94adac26744c9d14404d942cfdbb327e2f20b1687280bff809fa166078ad50b9"
+    },
+    "first_party_trajectories": {
+      "attestation_sha256": "913a6221c076a0feefc9e87c67d834dcba17b13d002eded92623cf31d11dbddf",
+      "filename": "first_party_trajectories.attestation.json",
+      "ownership_attested": true,
+      "sha256": "455f29c1e6a2f12caf9e0719ae27629ba3650a1cb319cf2a0b8362250f274f00"
+    }
+  },
+  "format": "imc-125m-reviewed-rights-bundle-v1",
+  "production_approved": true,
+  "rejections": {
+    "external": [],
+    "first_party": []
+  },
+  "review_packet_sha256": "21cb5fe4ea956009259aff668a0c09c1dd1aede0a9aa0a48a542ee59670c1639",
+  "rights": {
+    "filename": "data_rights.json",
+    "sha256": "5587a64d5782d85484e4301288aa83b6e4feb5f0c45f9197528892ee789bf954"
+  }
+}

@@ -1,0 +1,963 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-10-03T10:30:00+03:00",
+  "environment": {
+    "os": "Windows 11 (Windows PowerShell 5.1)",
+    "swypik_root": "E:\\Swypik",
+    "nexus_root": "E:\\nexus"
+  },
+  "inventory_summary": {
+    "total_swypik_top_level_items": 11,
+    "total_swypik_bytes": 62817294527,
+    "total_swypik_size_gb": 58.5,
+    "total_git_repositories_identified": 6,
+    "total_attached_worktrees": 39,
+    "nexus_current_pack_size_mb": 129.46,
+    "recommended_import_size_addition_mb": 10.7,
+    "legacy_deep_history_size_mb": 116.83
+  },
+  "top_level_entries": [
+    {
+      "name": "swypik",
+      "type": "directory",
+      "files": 57298,
+      "bytes": 806021886,
+      "size_mb": 768.68,
+      "is_git_root": false,
+      "contains_git": true,
+      "description": "Contains nested full clone app-fix-20260929 (1350 commits, blob:none) and abandoned empty Claude worktree app"
+    },
+    {
+      "name": "swypik-commerce-platform",
+      "type": "directory",
+      "files": 73990,
+      "bytes": 4991092434,
+      "size_mb": 4759.88,
+      "is_git_root": true,
+      "contains_git": true,
+      "description": "Primary active clone of Swypik Commerce Web/Backend (origin: office233/swypik-commerce-platform.git). Shallow history (29 commits). 18 linked worktrees."
+    },
+    {
+      "name": "swypik-consolidate-2vm",
+      "type": "directory",
+      "files": 57138,
+      "bytes": 773856480,
+      "size_mb": 738.01,
+      "is_git_root": false,
+      "contains_git": true,
+      "is_worktree": true,
+      "worktree_parent": "E:\\Swypik\\swypik-commerce-platform",
+      "branch": "infra/consolidate-2vm",
+      "commit": "44b3524",
+      "description": "Linked worktree of swypik-commerce-platform configuring 2-VM Azure topology"
+    },
+    {
+      "name": "swypik-mobile-pilot",
+      "type": "directory",
+      "files": 40935,
+      "bytes": 411176710,
+      "size_mb": 392.13,
+      "is_git_root": true,
+      "contains_git": true,
+      "description": "Primary active clone of Swypik Mobile Pilot (origin: office233/swypik-mobile-pilot.git). Full history (70 objects). 6 linked worktrees."
+    },
+    {
+      "name": "swypik-site",
+      "type": "directory",
+      "files": 13359,
+      "bytes": 214419735,
+      "size_mb": 204.49,
+      "is_git_root": true,
+      "contains_git": true,
+      "description": "Primary active clone of Swypik Marketing Site (origin: office233/swypik-site.git). Full history (45 objects, Astro 7.3.5 / Tailwind 4)."
+    },
+    {
+      "name": "_conversatii-claude",
+      "type": "directory",
+      "files": 1079,
+      "bytes": 361435426,
+      "size_mb": 344.69,
+      "is_git_root": false,
+      "contains_git": false,
+      "description": "Archived Claude Code subagent session transcripts from August-September 2026"
+    },
+    {
+      "name": "_p0-fix",
+      "type": "directory",
+      "files": 57588,
+      "bytes": 785989760,
+      "size_mb": 749.58,
+      "is_git_root": true,
+      "contains_git": true,
+      "description": "Secondary shallow clone of swypik-commerce-platform created for P0/P1 triage on 2026-09-29. Has 15 attached worktrees in _work/."
+    },
+    {
+      "name": "_work",
+      "type": "directory",
+      "files": 796575,
+      "bytes": 54655475464,
+      "size_mb": 52123.52,
+      "is_git_root": false,
+      "contains_git": true,
+      "description": "Massive scratch and task worktree folder (52.1 GB) holding swypik-p0 (full 1350-commit clone) and 31 worktrees from commerce, mobile, and p0-fix"
+    },
+    {
+      "name": "_wt",
+      "type": "directory",
+      "files": 60060,
+      "bytes": 791610676,
+      "size_mb": 754.94,
+      "is_git_root": false,
+      "contains_git": true,
+      "description": "Worktree container holding claude-audit-fixes-20261002 and company-identity, both linked to swypik-commerce-platform"
+    },
+    {
+      "name": "CUM-SE-CONECTEAZA-AGENTII.md",
+      "type": "file",
+      "files": 1,
+      "bytes": 3474,
+      "size_mb": 0.0033,
+      "is_git_root": false,
+      "contains_git": false,
+      "description": "Instructions for agent SSH, tunnels, and port forwarding"
+    },
+    {
+      "name": "HANDOFF-2026-09-30-SWYPIK-PRODUCTION.md",
+      "type": "file",
+      "files": 1,
+      "bytes": 16584,
+      "size_mb": 0.0158,
+      "is_git_root": false,
+      "contains_git": false,
+      "description": "Comprehensive production cutover handoff document for Azure deployment"
+    }
+  ],
+  "git_repositories": [
+    {
+      "name": "swypik-commerce-platform (primary)",
+      "path": "E:\\Swypik\\swypik-commerce-platform",
+      "remotes": {
+        "origin": "https://github.com/office233/swypik-commerce-platform.git"
+      },
+      "is_shallow": true,
+      "root_commit": "cfd2db0d4154819fc74f5b57c088fa5936ca55cd",
+      "commit_count_all": 29,
+      "current_branch": "fix/p0-security-ci-integrated",
+      "head_commit": "3fbaf9f642dbb4e0cba31a7f798da72d466ed974",
+      "local_branches": [
+        {
+          "name": "agent/company-identity",
+          "date": "2026-09-29T14:12:55+03:00",
+          "tip": "abe9d47"
+        },
+        {
+          "name": "audit/complete-20260930",
+          "date": "2026-10-01T00:21:12+03:00",
+          "tip": "ccdbd8d"
+        },
+        {
+          "name": "codex/claude-audit-fixes-20261002",
+          "date": "2026-09-29T11:33:49+03:00",
+          "tip": "3fbaf9f"
+        },
+        {
+          "name": "fix/deploy-converge-node-state-20260930",
+          "date": "2026-09-30T10:25:56+03:00",
+          "tip": "0f13286"
+        },
+        {
+          "name": "fix/p0-security-ci-20260929",
+          "date": "2026-09-29T12:08:08+03:00",
+          "tip": "ff00e6c"
+        },
+        {
+          "name": "fix/p0-security-ci-integrated",
+          "date": "2026-09-29T11:33:49+03:00",
+          "tip": "3fbaf9f"
+        },
+        {
+          "name": "infra/consolidate-2vm",
+          "date": "2026-09-29T13:32:27+03:00",
+          "tip": "44b3524"
+        },
+        {
+          "name": "main",
+          "date": "2026-09-28T14:16:25+03:00",
+          "tip": "cfd2db0"
+        },
+        {
+          "name": "task/battles-e2e-20260930",
+          "date": "2026-09-30T12:06:58+03:00",
+          "tip": "fe02c45"
+        },
+        {
+          "name": "task/cares-e2e-20260930",
+          "date": "2026-09-30T12:06:58+03:00",
+          "tip": "fe02c45"
+        },
+        {
+          "name": "task/food-e2e-20260930",
+          "date": "2026-09-30T12:06:58+03:00",
+          "tip": "fe02c45"
+        },
+        {
+          "name": "task/go-e2e-20260930",
+          "date": "2026-09-30T12:06:58+03:00",
+          "tip": "fe02c45"
+        },
+        {
+          "name": "task/integration-modules-20260930",
+          "date": "2026-09-30T12:06:58+03:00",
+          "tip": "fe02c45"
+        },
+        {
+          "name": "task/live-e2e-20260930",
+          "date": "2026-09-30T12:06:58+03:00",
+          "tip": "fe02c45"
+        },
+        {
+          "name": "task/messenger-e2e-20260930",
+          "date": "2026-09-30T12:06:58+03:00",
+          "tip": "fe02c45"
+        },
+        {
+          "name": "task/missions-e2e-20260930",
+          "date": "2026-09-30T12:06:58+03:00",
+          "tip": "fe02c45"
+        },
+        {
+          "name": "task/seller-e2e-20260930",
+          "date": "2026-09-30T12:06:58+03:00",
+          "tip": "fe02c45"
+        },
+        {
+          "name": "task/shop-e2e-20260930",
+          "date": "2026-09-30T12:06:58+03:00",
+          "tip": "fe02c45"
+        },
+        {
+          "name": "task/stays-e2e-20260930",
+          "date": "2026-09-30T12:06:58+03:00",
+          "tip": "fe02c45"
+        }
+      ],
+      "unpushed_commits": [
+        "ccdbd8d audit: integrate work and harden payments, security and infrastructure",
+        "abe9d47 legal: identify the real operator THERAPIUM GROUP SRL on every legal page",
+        "44b3524 infra(azure): restore webCount=2 (keep workerCount=0)",
+        "0d7aa54 infra(azure): declare 2-VM layout (web-1 + data) and dev-subnet SSH",
+        "99e1f39 infra(azure): run video-worker safely on the data VM",
+        "ff00e6c fix: close v1 mutation proxy gap and harden release gates",
+        "3fbaf9f test: align production smoke with deployed state",
+        "1ac7aeb ci: require green CI before production deploy",
+        "80ebf43 fix: close v1 proxy boundary and harden release gates"
+      ],
+      "tags": [],
+      "stash_count": 0,
+      "dirty_file_count": 292,
+      "has_worktrees": true,
+      "worktree_count": 18,
+      "worktrees": [
+        {
+          "path": "E:/Swypik/swypik-commerce-platform",
+          "commit": "3fbaf9f",
+          "branch": "fix/p0-security-ci-integrated"
+        },
+        {
+          "path": "E:/Swypik/_work/audit-complete-20260930",
+          "commit": "ccdbd8d",
+          "branch": "audit/complete-20260930"
+        },
+        {
+          "path": "E:/Swypik/_work/battles-e2e-20260930",
+          "commit": "fe02c45",
+          "branch": "task/battles-e2e-20260930"
+        },
+        {
+          "path": "E:/Swypik/_work/cares-e2e-20260930",
+          "commit": "fe02c45",
+          "branch": "task/cares-e2e-20260930"
+        },
+        {
+          "path": "E:/Swypik/_work/deploy-converge-node-state-20260930",
+          "commit": "0f13286",
+          "branch": "fix/deploy-converge-node-state-20260930",
+          "locked": true
+        },
+        {
+          "path": "E:/Swypik/_work/deploy-node-release-marker-20260930",
+          "commit": "3797e05",
+          "branch": "detached HEAD"
+        },
+        {
+          "path": "E:/Swypik/_work/food-e2e-20260930",
+          "commit": "fe02c45",
+          "branch": "task/food-e2e-20260930"
+        },
+        {
+          "path": "E:/Swypik/_work/go-e2e-20260930",
+          "commit": "fe02c45",
+          "branch": "task/go-e2e-20260930"
+        },
+        {
+          "path": "E:/Swypik/_work/integration-modules-20260930",
+          "commit": "fe02c45",
+          "branch": "task/integration-modules-20260930"
+        },
+        {
+          "path": "E:/Swypik/_work/live-e2e-20260930",
+          "commit": "fe02c45",
+          "branch": "task/live-e2e-20260930"
+        },
+        {
+          "path": "E:/Swypik/_work/messenger-e2e-20260930",
+          "commit": "fe02c45",
+          "branch": "task/messenger-e2e-20260930"
+        },
+        {
+          "path": "E:/Swypik/_work/missions-e2e-20260930",
+          "commit": "fe02c45",
+          "branch": "task/missions-e2e-20260930"
+        },
+        {
+          "path": "E:/Swypik/_work/seller-e2e-20260930",
+          "commit": "fe02c45",
+          "branch": "task/seller-e2e-20260930"
+        },
+        {
+          "path": "E:/Swypik/_work/shop-e2e-20260930",
+          "commit": "fe02c45",
+          "branch": "task/shop-e2e-20260930"
+        },
+        {
+          "path": "E:/Swypik/_work/stays-e2e-20260930",
+          "commit": "fe02c45",
+          "branch": "task/stays-e2e-20260930"
+        },
+        {
+          "path": "E:/Swypik/_wt/claude-audit-fixes-20261002",
+          "commit": "3fbaf9f",
+          "branch": "codex/claude-audit-fixes-20261002"
+        },
+        {
+          "path": "E:/Swypik/_wt/company-identity",
+          "commit": "abe9d47",
+          "branch": "agent/company-identity"
+        },
+        {
+          "path": "E:/Swypik/swypik-consolidate-2vm",
+          "commit": "44b3524",
+          "branch": "infra/consolidate-2vm"
+        }
+      ],
+      "history_size": {
+        "count": 985,
+        "size": "3.57 MiB",
+        "in_pack": 4143,
+        "packs": 2,
+        "size_pack": "6.26 MiB",
+        "prune_packable": 11,
+        "total_approx_mb": 9.83
+      }
+    },
+    {
+      "name": "swypik-mobile-pilot",
+      "path": "E:\\Swypik\\swypik-mobile-pilot",
+      "remotes": {
+        "origin": "https://github.com/office233/swypik-mobile-pilot.git"
+      },
+      "is_shallow": false,
+      "root_commit": "35d88dcb0faf46ea86ec61d58709724c684af102",
+      "commit_count_all": 16,
+      "current_branch": "audit/complete-20260930",
+      "head_commit": "ee64f47951010c614139b19065cebb72eb62b77f",
+      "local_branches": [
+        {
+          "name": "audit/complete-20260930",
+          "date": "2026-09-30T22:30:11+03:00",
+          "tip": "ee64f47"
+        },
+        {
+          "name": "codex/mobile-contribution-governor-20261002",
+          "date": "2026-09-30T22:30:11+03:00",
+          "tip": "ee64f47"
+        },
+        {
+          "name": "codex/mobile-memory-20261002",
+          "date": "2026-09-30T22:30:11+03:00",
+          "tip": "ee64f47"
+        },
+        {
+          "name": "codex/mobile-native-build-20261002",
+          "date": "2026-09-30T22:30:11+03:00",
+          "tip": "ee64f47"
+        },
+        {
+          "name": "codex/swypik-mobile-reconciled",
+          "date": "2026-09-30T22:30:11+03:00",
+          "tip": "ee64f47"
+        },
+        {
+          "name": "codex/swypik-mobile-session-lifecycle",
+          "date": "2026-09-30T22:30:11+03:00",
+          "tip": "ee64f47"
+        },
+        {
+          "name": "main",
+          "date": "2026-09-28T20:30:17+03:00",
+          "tip": "35d88dc"
+        }
+      ],
+      "unpushed_commits": [
+        "ee64f47 fix: harden mobile API origin and URI decoder dependencies"
+      ],
+      "tags": [],
+      "stash_count": 0,
+      "dirty_file_count": 13,
+      "has_worktrees": true,
+      "worktree_count": 6,
+      "worktrees": [
+        {
+          "path": "E:/Swypik/swypik-mobile-pilot",
+          "commit": "ee64f47",
+          "branch": "audit/complete-20260930"
+        },
+        {
+          "path": "E:/Swypik/_work/codex-mobile-contribution-governor-20261002",
+          "commit": "ee64f47",
+          "branch": "codex/mobile-contribution-governor-20261002"
+        },
+        {
+          "path": "E:/Swypik/_work/codex-mobile-memory-20261002",
+          "commit": "ee64f47",
+          "branch": "codex/mobile-memory-20261002"
+        },
+        {
+          "path": "E:/Swypik/_work/codex-mobile-native-build-20261002",
+          "commit": "ee64f47",
+          "branch": "codex/mobile-native-build-20261002"
+        },
+        {
+          "path": "E:/Swypik/_work/codex-mobile-reconciled-20261002",
+          "commit": "ee64f47",
+          "branch": "codex/swypik-mobile-reconciled"
+        },
+        {
+          "path": "E:/Swypik/_work/codex-mobile-session-lifecycle-20261001",
+          "commit": "ee64f47",
+          "branch": "codex/swypik-mobile-session-lifecycle"
+        }
+      ],
+      "history_size": {
+        "count": 70,
+        "size": "761.53 KiB",
+        "in_pack": 0,
+        "packs": 0,
+        "size_pack": "0 bytes",
+        "total_approx_mb": 0.74
+      }
+    },
+    {
+      "name": "swypik-site",
+      "path": "E:\\Swypik\\swypik-site",
+      "remotes": {
+        "origin": "https://github.com/office233/swypik-site.git"
+      },
+      "is_shallow": false,
+      "root_commit": "9460a5c1040febcdf6590cb56e451c01a04c6653",
+      "commit_count_all": 4,
+      "current_branch": "audit/complete-20260930",
+      "head_commit": "c165ae98b55937e2e8f3905ca8fc4dd47e5f9c66",
+      "local_branches": [
+        {
+          "name": "audit/complete-20260930",
+          "date": "2026-09-30T22:29:47+03:00",
+          "tip": "c165ae9"
+        },
+        {
+          "name": "main",
+          "date": "2026-09-28T13:38:37+03:00",
+          "tip": "9460a5c"
+        }
+      ],
+      "unpushed_commits": [
+        "c165ae9 fix: bound waitlist payloads and recover from storage failures"
+      ],
+      "tags": [],
+      "stash_count": 0,
+      "dirty_file_count": 0,
+      "has_worktrees": false,
+      "worktree_count": 1,
+      "history_size": {
+        "count": 45,
+        "size": "127.68 KiB",
+        "in_pack": 0,
+        "packs": 0,
+        "size_pack": "0 bytes",
+        "total_approx_mb": 0.13
+      }
+    },
+    {
+      "name": "_p0-fix (commerce clone)",
+      "path": "E:\\Swypik\\_p0-fix",
+      "remotes": {
+        "origin": "https://github.com/office233/swypik-commerce-platform.git"
+      },
+      "is_shallow": true,
+      "root_commit": "cfd2db0d4154819fc74f5b57c088fa5936ca55cd",
+      "commit_count_all": 52,
+      "current_branch": "fix/p0-security-ci-20260929",
+      "head_commit": "80ebf436808ef94364501dde79e3cdfe639f7c06",
+      "local_branches": [
+        {
+          "name": "feat/food-merchant-settings-20260930",
+          "date": "2026-09-30T12:06:58+03:00",
+          "tip": "fe02c45"
+        },
+        {
+          "name": "feat/stays-digital-checkin-20260930",
+          "date": "2026-09-30T12:06:58+03:00",
+          "tip": "fe02c45"
+        },
+        {
+          "name": "fix/deploy-marker-state-hardening-20260930",
+          "date": "2026-09-30T11:58:21+03:00",
+          "tip": "5ca39e0"
+        },
+        {
+          "name": "fix/deploy-skip-inactive-worker-runtime-20260930",
+          "date": "2026-09-30T10:14:17+03:00",
+          "tip": "ffc341d"
+        },
+        {
+          "name": "fix/dispatch-gps-eligibility-20260930",
+          "date": "2026-09-30T12:06:58+03:00",
+          "tip": "fe02c45"
+        },
+        {
+          "name": "fix/p0-brace-expansion-audit-20260930",
+          "date": "2026-09-30T10:05:55+03:00",
+          "tip": "c82b030"
+        },
+        {
+          "name": "fix/p0-security-ci-20260929",
+          "date": "2026-09-29T10:40:39+03:00",
+          "tip": "80ebf43"
+        },
+        {
+          "name": "fix/p1-bicep-customdata-reapply-20260929",
+          "date": "2026-09-29T23:05:27+03:00",
+          "tip": "9b53d43"
+        },
+        {
+          "name": "fix/p1-cron-daily-maintenance-20260929",
+          "date": "2026-09-29T18:11:29+03:00",
+          "tip": "87c74a9"
+        },
+        {
+          "name": "fix/p1-data-keyvault-recovery-20260929",
+          "date": "2026-09-29T17:42:17+03:00",
+          "tip": "cd0f051"
+        },
+        {
+          "name": "fix/p1-deploy-health-gate-20260929",
+          "date": "2026-09-29T22:13:07+03:00",
+          "tip": "8d33df3"
+        },
+        {
+          "name": "fix/p1-deploy-topology-fanout-20260930",
+          "date": "2026-09-30T00:34:28+03:00",
+          "tip": "8777f54"
+        },
+        {
+          "name": "fix/p1-email-reset-delivery-20260929",
+          "date": "2026-09-29T18:33:58+03:00",
+          "tip": "4416cab"
+        },
+        {
+          "name": "fix/p1-fraud-fulfillment-hold-20260929",
+          "date": "2026-09-29T18:16:53+03:00",
+          "tip": "733f0c6"
+        },
+        {
+          "name": "fix/p1-runtime-env-contract-20260929",
+          "date": "2026-09-29T17:53:50+03:00",
+          "tip": "8acfd84"
+        },
+        {
+          "name": "fix/p1-staging-isolation-20260929",
+          "date": "2026-09-29T18:06:46+03:00",
+          "tip": "83f6975"
+        },
+        {
+          "name": "main",
+          "date": "2026-09-28T14:16:25+03:00",
+          "tip": "cfd2db0"
+        },
+        {
+          "name": "tmp/cron-remote-current",
+          "date": "2026-09-29T18:36:32+03:00",
+          "tip": "18780e3"
+        },
+        {
+          "name": "tmp/pr13-update",
+          "date": "2026-09-29T18:38:12+03:00",
+          "tip": "3698b58"
+        },
+        {
+          "name": "tmp/runtime-env-merge",
+          "date": "2026-09-29T17:56:43+03:00",
+          "tip": "76f2b53"
+        }
+      ],
+      "unpushed_commits_count": 18,
+      "unique_commits_vs_primary": 25,
+      "tags": [],
+      "stash_count": 0,
+      "dirty_file_count": 1,
+      "has_worktrees": true,
+      "worktree_count": 15,
+      "history_size": {
+        "count": 285,
+        "size": "782.88 KiB",
+        "in_pack": 3987,
+        "packs": 1,
+        "size_pack": "5.99 MiB",
+        "total_approx_mb": 6.75
+      }
+    },
+    {
+      "name": "swypik/app-fix-20260929 (commerce full clone)",
+      "path": "E:\\Swypik\\swypik\\app-fix-20260929",
+      "remotes": {
+        "origin": "https://github.com/office233/swypik-commerce-platform.git [blob:none]"
+      },
+      "is_shallow": false,
+      "root_commit": "fc446f531cdbb52d66abbe33361b8fdac29a47be",
+      "commit_count_all": 1350,
+      "current_branch": "fix/p1-runtime-readiness-20260929",
+      "head_commit": "7931763cd26b804c24df70d471815b8468b80b5a",
+      "local_branches": [
+        {
+          "name": "fix/p0-security-ci-20260929",
+          "date": "2026-09-29T11:33:49+03:00",
+          "tip": "3fbaf9f6"
+        },
+        {
+          "name": "fix/p1-runtime-readiness-20260929",
+          "date": "2026-09-29T13:18:59+03:00",
+          "tip": "7931763c"
+        },
+        {
+          "name": "main",
+          "date": "2026-09-28T14:16:25+03:00",
+          "tip": "cfd2db0d"
+        }
+      ],
+      "unpushed_commits": [],
+      "tags": [
+        "pre-cleanup-2026-05-13",
+        "swypik-clean-foundation"
+      ],
+      "stash_count": 0,
+      "dirty_file_count": 1,
+      "has_worktrees": false,
+      "worktree_count": 1,
+      "history_size": {
+        "count": 47,
+        "size": "190.91 KiB",
+        "in_pack": 18386,
+        "packs": 6,
+        "size_pack": "8.27 MiB",
+        "total_approx_mb": 8.46
+      }
+    },
+    {
+      "name": "_work/swypik-p0 (commerce full packed clone)",
+      "path": "E:\\Swypik\\_work\\swypik-p0",
+      "remotes": {
+        "origin": "https://github.com/office233/swypik-commerce-platform.git"
+      },
+      "is_shallow": false,
+      "root_commit": "fc446f531cdbb52d66abbe33361b8fdac29a47be",
+      "commit_count_all": 1350,
+      "current_branch": "fix/feed-optional-import-20260929",
+      "head_commit": "a044d0e4471737c7f318cebe710c9467df0ef145",
+      "local_branches": [
+        {
+          "name": "chore/dependabot-monitoring-20260929",
+          "date": "2026-09-29T12:55:45+03:00",
+          "tip": "756c9b22"
+        },
+        {
+          "name": "fix/feed-optional-import-20260929",
+          "date": "2026-09-29T13:09:56+03:00",
+          "tip": "a044d0e4"
+        },
+        {
+          "name": "fix/p0-security-ci-20260929",
+          "date": "2026-09-29T12:12:47+03:00",
+          "tip": "fb7a9df0"
+        },
+        {
+          "name": "fix/seller-session-otp-20260929",
+          "date": "2026-09-29T12:55:45+03:00",
+          "tip": "839911fd"
+        },
+        {
+          "name": "main",
+          "date": "2026-09-29T12:12:47+03:00",
+          "tip": "fb7a9df0"
+        }
+      ],
+      "unpushed_commits": [
+        "756c9b22 security: reject seller OTP cookies as sessions"
+      ],
+      "tags": [
+        "pre-cleanup-2026-05-13",
+        "swypik-clean-foundation"
+      ],
+      "stash_count": 0,
+      "dirty_file_count": 1,
+      "has_worktrees": false,
+      "worktree_count": 1,
+      "history_size": {
+        "count": 22,
+        "size": "27.14 KiB",
+        "in_pack": 30262,
+        "packs": 1,
+        "size_pack": "116.83 MiB",
+        "total_approx_mb": 116.86
+      }
+    }
+  ],
+  "mobile_clarification": {
+    "summary": "swypik-mobile-pilot is a greenfield Expo SDK 57 / React Native 0.86 native mobile application; swypik-commerce-platform/mobile is an older Capacitor WebView shell wrapping the responsive web store.",
+    "pilot_details": {
+      "framework": "Expo SDK 57, React Native 0.86, Expo Router, Hermes Bytecode, TypeScript",
+      "package_name": "swypik-mobile-pilot",
+      "bundle_id": "com.swypik.pilot",
+      "purpose": "Evaluates high-performance mobile-first screens: Descoper\u0103 (Feed), Magazin (Catalog/Shop), and Cont (Account with SecureStore Bearer auth). Zero npm audit vulnerabilities.",
+      "location_in_nexus": "E:\\nexus\\swypik\\mobile"
+    },
+    "commerce_mobile_details": {
+      "framework": "Capacitor native wrapper (android/ and ios/ native folders, capacitor.config.json)",
+      "app_id": "com.swypik.app",
+      "server_url": "https://swypik.com",
+      "purpose": "Hybrid WebView wrapper embedding the responsive Next.js 14 web app into mobile shells.",
+      "location_in_nexus": "E:\\nexus\\swypik\\commerce\\mobile"
+    },
+    "relationship": "The pilot was created to test a modern, compiled alternative to the WebView wrapper. As stated in swypik-mobile-pilot/README.md: \"Proiectele Capacitor existente sunt p\u0103strate pentru compara\u021bie.\" (Existing Capacitor projects are kept for comparison)."
+  },
+  "site_provenance": {
+    "origin": "E:\\Swypik\\swypik-site",
+    "remote": "https://github.com/office233/swypik-site.git",
+    "source_branch": "audit/complete-20260930",
+    "source_commit": "c165ae98b55937e2e8f3905ca8fc4dd47e5f9c66",
+    "tech_stack": "Astro 7.3.5, Tailwind CSS 4.3.3, TypeScript 6.0.3, Cloudflare Workers Types",
+    "package_name": "swypik-site",
+    "destination_in_nexus": "E:\\nexus\\site",
+    "record_in_sources_json": true,
+    "record_in_relocations_json": true,
+    "relocated_files": [
+      {
+        "from": "site/docs/CLAIMS.md",
+        "to": "ramasite/docs/site/CLAIMS.md"
+      },
+      {
+        "from": "site/docs/LAUNCH-CHECKLIST.md",
+        "to": "ramasite/docs/site/LAUNCH-CHECKLIST.md"
+      }
+    ]
+  },
+  "snapshot_verification": {
+    "commerce": {
+      "source_path": "E:\\Swypik\\swypik-commerce-platform",
+      "nexus_path": "E:\\nexus\\swypik\\commerce",
+      "source_filtered_file_count": 3044,
+      "nexus_filtered_file_count": 2842,
+      "identical_sha256_count": 2840,
+      "differing_sha256_count": 2,
+      "differing_files": [
+        {
+          "file": "README.md",
+          "source_sha256": "fa0f52738e06d80c17c0d3b9d4a5604f01bdc7ca4cbb975b29536c58f7e55ca4",
+          "nexus_sha256": "acfa3c6bcadcf7973cba7140ed8377afb4bcfd8df35cd476691cb7780a0e5d88",
+          "reason": "Adjusted during ramasite relocation to update monorepo paths"
+        },
+        {
+          "file": "infra/README.md",
+          "source_sha256": "33b5083c4540f80133adc1810b815a5f1351f2079aceecdee6883fcf989b7996",
+          "nexus_sha256": "873e274b6c0a9cc47944cd111ae51ab38b1b11d717de1a1ae263579d088bbc3f",
+          "reason": "Adjusted during ramasite relocation to update monorepo paths"
+        }
+      ],
+      "missing_in_nexus_count": 202,
+      "missing_in_nexus_breakdown": {
+        "relocated_docs_to_ramasite": 184,
+        "skipped_scripts_data_fixtures": 18
+      },
+      "sample_missing_files": [
+        "docs/SECURITY_AUDIT.md",
+        "docs/REAL_E2E_JOURNAL.md",
+        "docs/AUDIT-PLAYWRIGHT-2026-08-03.md",
+        "docs/AUDIT_AGENTS_2026-06-02.md",
+        "docs/PROMPT_AUDIT_TOTAL_CLAUDE_CODE.md",
+        "docs/AUDIT-COMPLET-2026-08-01.md",
+        "docs/infra/azure-cutover.md",
+        "docs/audits/2026-09-27-mobile-pilot-findings.md",
+        "docs/audits/2026-09-27-mobile-domain-migration-plan.md",
+        "docs/superpowers/specs/2026-09-21-swypik-music-design.md",
+        "docs/superpowers/plans/2026-09-21-swypik-movies.md",
+        "docs/deploy/2026-09-21-movies-release.md",
+        "docs/qa/evidence/P1/_state.json",
+        "docs/qa/evidence/P2/_journal.json",
+        "docs/qa/e2e/p7b_moderation.py",
+        "scripts/data/seed-official-swypik.sql",
+        "scripts/data/retranslate-stale-products.mjs",
+        "scripts/data/translate-messages.mjs",
+        "scripts/data/translate-products-studiai.mjs",
+        "scripts/data/seed-arena-demo.sql",
+        "scripts/data/retry-publish-clips.sh",
+        "scripts/data/seed-blender-open-movies.mjs",
+        "scripts/data/enqueue-ae-videos-cron.sh",
+        "scripts/data/import-merchants.mjs",
+        "scripts/data/seed-taxonomy-i18n.mjs",
+        "scripts/data/translate.mjs",
+        "scripts/data/merchants-sample.csv",
+        "scripts/data/import-osm-merchants.mjs",
+        "scripts/data/import-official-videos.sh",
+        "scripts/data/generate-video-descriptions.mjs"
+      ],
+      "missing_in_source_count": 0
+    },
+    "mobile": {
+      "source_path": "E:\\Swypik\\swypik-mobile-pilot",
+      "nexus_path": "E:\\nexus\\swypik\\mobile",
+      "source_filtered_file_count": 50,
+      "nexus_filtered_file_count": 47,
+      "identical_sha256_count": 47,
+      "differing_sha256_count": 0,
+      "missing_in_nexus_count": 3,
+      "missing_files": [
+        "docs/AUTH-PILOT-2026-09-28.md",
+        "docs/ILARIA-RECONCILIATION-HANDOFF-2026-10-02.md",
+        "docs/ILARIA-INTEGRATION.md"
+      ],
+      "missing_files_reason": "All 3 files relocated to ramasite/docs/swypik-mobile/ and ramasite/agent-md/swypik-mobile/ per RELOCATIONS.json",
+      "missing_in_source_count": 0
+    },
+    "site": {
+      "source_path": "E:\\Swypik\\swypik-site",
+      "nexus_path": "E:\\nexus\\site",
+      "source_filtered_file_count": 30,
+      "nexus_filtered_file_count": 23,
+      "identical_sha256_count": 23,
+      "differing_sha256_count": 0,
+      "missing_in_nexus_count": 7,
+      "missing_files_breakdown": {
+        "astro_generated_cache": 5,
+        "relocated_docs_to_ramasite": 2
+      },
+      "missing_files": [
+        ".astro/content.d.ts",
+        ".astro/types.d.ts",
+        ".astro/settings.json",
+        ".astro/dev.json",
+        ".astro/preview.json",
+        "docs/CLAIMS.md",
+        "docs/LAUNCH-CHECKLIST.md"
+      ],
+      "missing_in_source_count": 0
+    }
+  },
+  "security_and_secrets_audit": {
+    "policy": "Path-only reporting; no secret contents read or printed",
+    "swypik_commerce_platform_shallow_history": {
+      "risk_level": "Low / Manageable",
+      "sensitive_paths_committed": [
+        "docs/ops-history/arhiva/ops-wsl-2026-09-28/preview.env"
+      ],
+      "safe_templates_committed": [
+        ".env.example",
+        ".env.social.example",
+        "infra/azure/staging.env.example",
+        "workers/video-worker/.env.example"
+      ]
+    },
+    "swypik_commerce_legacy_deep_history_via_swypik_p0": {
+      "risk_level": "HIGH - Contains committed production environment files and secrets",
+      "sensitive_paths_committed": [
+        ".env.production",
+        ".env.vercel",
+        ".env.vercel.prod",
+        ".env.vercel.test",
+        "ae-token.json",
+        "docs/ops-history/arhiva/ops-wsl-2026-09-28/preview.env"
+      ]
+    },
+    "swypik_mobile_pilot_history": {
+      "risk_level": "CLEAN",
+      "sensitive_paths_committed": [],
+      "safe_templates_committed": [
+        ".env.example"
+      ]
+    },
+    "swypik_site_history": {
+      "risk_level": "CLEAN",
+      "sensitive_paths_committed": [],
+      "safe_templates_committed": []
+    }
+  },
+  "import_plan": {
+    "recommended_strategy": "Four-stage Subtree Import with Shallow Commerce and External Legacy History Archival",
+    "stages": [
+      {
+        "stage": 1,
+        "title": "Safety Preflight & Snapshot Staging",
+        "steps": [
+          "Verify clean working tree on E:\\nexus branch chore/unify-swypik-20261003",
+          "Move untracked working-tree snapshots temporarily aside: Move-Item E:\\nexus\\swypik\\commerce E:\\nexus\\swypik\\_snap_commerce_tmp; Move-Item E:\\nexus\\swypik\\mobile E:\\nexus\\swypik\\_snap_mobile_tmp; Move-Item E:\\nexus\\site E:\\nexus\\_snap_site_tmp"
+        ]
+      },
+      {
+        "stage": 2,
+        "title": "Remote Configuration & Branch Archival Tagging",
+        "steps": [
+          "Add local file remotes in nexus: git remote add swypik-commerce E:/Swypik/swypik-commerce-platform; git remote add swypik-mobile E:/Swypik/swypik-mobile-pilot; git remote add swypik-site E:/Swypik/swypik-site; git remote add swypik-p0-fix E:/Swypik/_p0-fix",
+          "Fetch all remotes: git fetch swypik-commerce; git fetch swypik-mobile; git fetch swypik-site; git fetch swypik-p0-fix",
+          "Create lightweight archival tags for all product branches to preserve history forever: git tag archive/swypik-commerce/<branch> swypik-commerce/<branch>; git tag archive/swypik-mobile/<branch> swypik-mobile/<branch>; git tag archive/swypik-site/<branch> swypik-site/<branch>; git tag archive/swypik-p0-fix/<branch> swypik-p0-fix/<branch>"
+        ]
+      },
+      {
+        "stage": 3,
+        "title": "Subtree Integration & Working Tree Reconciliation",
+        "steps": [
+          "Import site: git subtree add --prefix=site swypik-site/audit/complete-20260930 -m \"feat(site): import swypik-site history\"",
+          "Import mobile: git subtree add --prefix=swypik/mobile swypik-mobile/audit/complete-20260930 -m \"feat(mobile): import swypik-mobile-pilot history\"",
+          "Import commerce: git subtree add --prefix=swypik/commerce swypik-commerce/fix/p0-security-ci-integrated -m \"feat(commerce): import swypik-commerce-platform history\"",
+          "Re-apply the 292 uncommitted commerce working-tree changes, 13 uncommitted mobile changes, and README updates from temporary staging folders",
+          "Create reconciliation commit: git commit -am \"chore(swypik): reconcile working-tree modifications and ramasite relocations\"",
+          "Remove temporary staging folders"
+        ]
+      },
+      {
+        "stage": 4,
+        "title": "Legacy Deep History Archival (Offline)",
+        "steps": [
+          "Create standalone bundle of full 1350-commit history: git -C E:\\Swypik\\_work\\swypik-p0 bundle create E:\\nexus\\ramasite\\local\\archives\\legacy-commerce-full.bundle --all",
+          "Store outside active git object database to save 116.8 MB and isolate historical .env files"
+        ]
+      }
+    ],
+    "size_impact_analysis": {
+      "nexus_before_mb": 129.46,
+      "shallow_import_added_mb": 10.7,
+      "nexus_after_shallow_mb": 140.16,
+      "nexus_after_percentage_increase": "+8.3%",
+      "legacy_deep_import_added_mb": 116.83,
+      "nexus_after_deep_mb": 246.29,
+      "nexus_after_deep_percentage_increase": "+90.2%"
+    }
+  }
+}

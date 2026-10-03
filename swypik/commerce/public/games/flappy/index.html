@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Flappy Swyp - Swypik Arcade</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    body {
+      background: #090d16;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      touch-action: manipulation;
+    }
+    #gameCanvas {
+      background: linear-gradient(to bottom, #1e1b4b, #0f172a);
+      border: 2px solid #38bdf8;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(56, 189, 248, 0.2);
+      max-width: 95vw;
+      max-height: 80vh;
+    }
+    .hud {
+      position: absolute;
+      top: 20px;
+      color: #fff;
+      font-size: 24px;
+      font-weight: 800;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="hud" id="hud"></div>
+  <canvas id="gameCanvas" width="360" height="560"></canvas>
+
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const hud = document.getElementById("hud");
+
+    // Swypik bridge: textele vin de la pagina-părinte (SWYPIK_GAME_STRINGS, traduse),
+    // iar fiecare (re)start anunță SWYPIK_GAME_START ca să primească o sesiune nouă de scor.
+    const GAME_ID = 'game_flappy';
+    const STR = { score: "Score", best: "Best", gameOver: "Game over", tapToRestart: "Tap to restart", tapToStart: "Tap to start" };
+    function post(msg) {
+      if (window.parent && window.parent !== window) window.parent.postMessage(msg, window.location.origin);
+    }
+    window.addEventListener("message", e => {
+      if (e.origin !== window.location.origin) return;
+      const d = e.data;
+      if (!d || d.type !== 'SWYPIK_GAME_STRINGS' || !d.strings || typeof d.strings !== 'object') return;
+      for (const k of Object.keys(STR)) if (typeof d.strings[k] === 'string') STR[k] = d.strings[k];
+    });
+
+    let bird = { x: 60, y: 250, radius: 14, velocity: 0, gravity: 0.35, jump: -6.5 };
+    let pipes = [];
+    let score = 0;
+    let highScore = localStorage.getItem("swypik_flappy_high") || 0;
+    let gameState = "START"; // START, PLAYING, GAMEOVER
+    let frames = 0;
+    let startTime = 0;
+
+    function resetGame() {
+      bird.y = 250;
+      bird.velocity = 0;
+      pipes = [];
+      score = 0;
+      frames = 0;
+      startTime = Date.now();
+      gameState = "PLAYING";
+      hud.innerText = STR.score + ": 0";
+      post({ type: 'SWYPIK_GAME_START', gameId: GAME_ID });
+    }
+
+    function flap() {
+      if(gameState === "START") {
+        resetGame();
+      } else if(gameState === "PLAYING") {
+        bird.velocity = bird.jump;
+      } else if(gameState === "GAMEOVER") {
+        resetGame();
+      }
+    }
+
+    window.addEventListener("pointerdown", flap);
+    window.addEventListener("keydown", e => { if(e.code === "Space") flap(); });
+
+    function update() {
+      if(gameState !== "PLAYING") return;
+      frames++;
+
+      bird.velocity += bird.gravity;
+      bird.y += bird.velocity;
+
+      // Generare țevi
+      if(frames % 100 === 0) {
+        let gap = 135;
+        let topHeight = Math.floor(Math.random() * (canvas.height - gap - 120)) + 40;
+        pipes.push({ x: canvas.width, top: topHeight, bottom: canvas.height - topHeight - gap, passed: false });
+      }
+
+      // Deplasare țevi
+      for(let i = pipes.length - 1; i >= 0; i--) {
+        let p = pipes[i];
+        p.x -= 2.2;
+
+        // Verificare scor
+        if(!p.passed && p.x + 45 < bird.x) {
+          p.passed = true;
+          score++;
+          hud.innerText = STR.score + ": " + score;
+          post({ type: 'SWYPIK_SCORE_UPDATE', gameId: GAME_ID, score });
+        }
+
+        // Coliziune țevi
+        if(
+          bird.x + bird.radius > p.x &&
+          bird.x - bird.radius < p.x + 45 &&
+          (bird.y - bird.radius < p.top || bird.y + bird.radius > canvas.height - p.bottom)
+        ) {
+          gameOver();
+        }
+
+        // Eliminare țevi ieșite din ecran
+        if(p.x < -50) pipes.splice(i, 1);
+      }
+
+      // Coliziune sol / tavan
+      if(bird.y + bird.radius >= canvas.height || bird.y - bird.radius <= 0) {
+        gameOver();
+      }
+    }
+
+    function gameOver() {
+      if (gameState !== "PLAYING") return;
+      gameState = "GAMEOVER";
+      if(score > highScore) {
+        highScore = score;
+        localStorage.setItem("swypik_flappy_high", highScore);
+      }
+      hud.innerText = STR.best + ": " + highScore;
+      const durationMs = Date.now() - startTime;
+      post({ type: 'SWYPIK_GAME_OVER', gameId: GAME_ID, score, durationMs });
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Desenează stele pe fundal
+      ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
+      for(let i=0; i<15; i++) {
+        ctx.fillRect((i * 47 + frames * 0.2) % canvas.width, (i * 37) % canvas.height, 2, 2);
+      }
+
+      // Desenează țevi
+      for(let p of pipes) {
+        let grad = ctx.createLinearGradient(p.x, 0, p.x + 45, 0);
+        grad.addColorStop(0, "#0284c7");
+        grad.addColorStop(1, "#38bdf8");
+        ctx.fillStyle = grad;
+
+        // Țeavă sus
+        ctx.fillRect(p.x, 0, 45, p.top);
+        // Țeavă jos
+        ctx.fillRect(p.x, canvas.height - p.bottom, 45, p.bottom);
+
+        ctx.strokeStyle = "#e0f2fe";
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(p.x, 0, 45, p.top);
+        ctx.strokeRect(p.x, canvas.height - p.bottom, 45, p.bottom);
+      }
+
+      // Desenează pasărea Swyp
+      ctx.save();
+      ctx.translate(bird.x, bird.y);
+      let angle = Math.min(Math.PI / 4, Math.max(-Math.PI / 4, (bird.velocity / 10)));
+      ctx.rotate(angle);
+
+      // Corp
+      let birdGrad = ctx.createRadialGradient(0, 0, 2, 0, 0, bird.radius);
+      birdGrad.addColorStop(0, "#fbbf24");
+      birdGrad.addColorStop(1, "#f97316");
+      ctx.fillStyle = birdGrad;
+      ctx.beginPath();
+      ctx.arc(0, 0, bird.radius, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Ochi
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath();
+      ctx.arc(5, -4, 4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#0f172a";
+      ctx.beginPath();
+      ctx.arc(6, -4, 2, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Cioc
+      ctx.fillStyle = "#ef4444";
+      ctx.beginPath();
+      ctx.moveTo(10, 0);
+      ctx.lineTo(18, 2);
+      ctx.lineTo(10, 5);
+      ctx.fill();
+
+      ctx.restore();
+
+      if(gameState === "START") {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#38bdf8";
+        ctx.font = "bold 26px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("FLAPPY SWYP", canvas.width / 2, 220);
+        ctx.fillStyle = "#f8fafc";
+        ctx.font = "16px sans-serif";
+        ctx.fillText(STR.tapToStart, canvas.width / 2, 260);
+      } else if(gameState === "GAMEOVER") {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.75)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#ef4444";
+        ctx.font = "bold 28px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(STR.gameOver, canvas.width / 2, 220);
+        ctx.fillStyle = "#f8fafc";
+        ctx.font = "18px sans-serif";
+        ctx.fillText(STR.score + ": " + score, canvas.width / 2, 260);
+        ctx.fillStyle = "#38bdf8";
+        ctx.font = "14px sans-serif";
+        ctx.fillText(STR.tapToRestart, canvas.width / 2, 300);
+      }
+
+      requestAnimationFrame(() => {
+        update();
+        draw();
+      });
+    }
+
+    draw();
+  </script>
+</body>
+</html>

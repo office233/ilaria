@@ -27,6 +27,7 @@ import (
 	"swypik-os/core/coder"
 	"swypik-os/core/compute"
 	"swypik-os/core/ilaria"
+	resourcepolicy "swypik-os/core/resource"
 	"swypik-os/core/search"
 	"swypik-os/core/service"
 	"swypik-os/ui/desktop"
@@ -120,6 +121,9 @@ func openDesktopLog(dataDir string) (*os.File, error) {
 var desktopLimits = agent.Limits{MaxSteps: 16, Duration: 30 * time.Minute, ToolTimeout: time.Minute, MaxOutputBytes: 64 * 1024}
 
 func run(args []string, output io.Writer) error {
+	selection := resourcepolicy.DefaultSelection()
+	policy := selection.Policy
+	resourcepolicy.ApplyRuntime(policy)
 	options, err := parseLaunchOptions(args, output)
 	if errors.Is(err, flag.ErrHelp) {
 		return nil
@@ -169,7 +173,14 @@ func run(args []string, output io.Writer) error {
 			TokenConfigured bool   `json:"token_configured"`
 			Browser         bool   `json:"browser_required"`
 			Listener        bool   `json:"http_listener"`
-		}{buildVersion, "win32", workspace, dataDir, settingsPath, settings.IlariaURL, token != "", false, false})
+			ResourceProfile string `json:"resource_profile"`
+			MemoryLimitMB   int    `json:"memory_limit_mb"`
+			BackgroundCPU   int    `json:"background_cpu_percent"`
+			BackgroundGPU   int    `json:"background_gpu_percent"`
+			ResourceSource  string `json:"resource_source"`
+			ResourceReason  string `json:"resource_reason"`
+			ResourcePolicy  any    `json:"resource_policy"`
+		}{buildVersion, "win32", workspace, dataDir, settingsPath, settings.IlariaURL, token != "", false, false, string(policy.Profile), policy.MemoryLimitMB, policy.MaxBackgroundCPUPercent, policy.MaxBackgroundGPUPercent, selection.Source, selection.Reason, policy.Contract()})
 	}
 
 	file, err := openDesktopLog(dataDir)
@@ -178,7 +189,7 @@ func run(args []string, output io.Writer) error {
 	}
 	defer file.Close()
 	logger := log.New(file, "SwypikOS ", log.LstdFlags|log.Lmicroseconds)
-	logger.Printf("Starting native Windows desktop build=%s arch=%s", buildVersion, runtime.GOARCH)
+	logger.Printf("Starting native Windows desktop build=%s arch=%s resource_profile=%s source=%s reason=%s", buildVersion, runtime.GOARCH, policy.Profile, selection.Source, selection.Reason)
 	if err := os.MkdirAll(workspace, 0700); err != nil {
 		logger.Printf("Workspace unavailable: %v", err)
 		return err

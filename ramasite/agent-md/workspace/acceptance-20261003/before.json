@@ -1,0 +1,183 @@
+{
+  "AuthorizedBaseline": "b8d282147c3288dece80cb579cd67a7351379819",
+  "Head": "584af58d286199fb5a8e6dc2fa722cd0d848ff34",
+  "Branch": "chore/nexus-unify-20261003",
+  "IndexHash": "3BCB5DE9223E16EC8ACA69C0A7C5B6C9DA174A914EB2D857F5B15FDB09A06466",
+  "Staged": [],
+  "Files": [
+    {
+      "Path": "E:\\nexus\\.github\\workflows\\ci.yml",
+      "Hash": "D0E347F61FF857EE8DEDA78D96FB1A6C255D093FD8F4085D5F887AA0A0F5516D"
+    },
+    {
+      "Path": "E:\\nexus\\ramasite\\RELOCATIONS.json",
+      "Hash": "FF13D1F174B92F33DA5B2915DB2DA6A8B0146B12B4D8C69A81DED7CF6054045F"
+    },
+    {
+      "Path": "E:\\nexus\\ramasite\\scripts\\public-checkout.inputs.json",
+      "Hash": "6CBD65D1C8D5771DB2AD1EBDFE7BC695B78785066991944442655B9C227BC196"
+    },
+    {
+      "Path": "E:\\nexus\\ramasite\\scripts\\test_verify_imc_network.py",
+      "Hash": "C2334B672C81014E16CD53A0F235D5B828B33BC1A983FAD0D19CEBE0775F3D4E"
+    },
+    {
+      "Path": "E:\\nexus\\ramasite\\scripts\\verify-imc-network.py",
+      "Hash": "1E286F822B4444944E5EC372AFBE090722F7432C2F04FAA4C20E2FC1987ACF91"
+    },
+    {
+      "Path": "E:\\nexus\\swypik-os\\core\\resource\\adaptive_test.go",
+      "Hash": "452FAABE8983F8FEA71A99565A0A7601825D9F088A6A0896EC889758D1459E8D"
+    },
+    {
+      "Path": "E:\\nexus\\swypik-os\\core\\resource\\adaptive.go",
+      "Hash": "070536F561CB12E60FC76C5F0B9EAC09B66F799DDE6802B438AA120EECAB4DD7"
+    },
+    {
+      "Path": "E:\\nexus\\swypik-os\\core\\resource\\energy_linux_test.go",
+      "Hash": "149CFB2ADC72B201474550E164DA17874E31EEF5D64379A6588AD665D3D980E8"
+    },
+    {
+      "Path": "E:\\nexus\\swypik-os\\core\\resource\\energy_linux.go",
+      "Hash": "7DE5C6F81C34157B29CC09A9FE58C73D2BFD5563D686B09C74302EC9E0266246"
+    },
+    {
+      "Path": "E:\\nexus\\swypik-os\\core\\resource\\energy_other.go",
+      "Hash": "CB1288324E9CF0A69005A82D30693C8DB8D6A7AE74B07F1766363FBCCCD09F12"
+    },
+    {
+      "Path": "E:\\nexus\\swypik-os\\core\\resource\\energy_test.go",
+      "Hash": "F0BDBAE3C199AEE264EDAEE581FDA76B20359A45B1EE6465A0D90F938020FC15"
+    },
+    {
+      "Path": "E:\\nexus\\swypik-os\\core\\resource\\energy_windows_test.go",
+      "Hash": "308C870B9CF824224D335EE9A4D362C3887754A0ECDD1EE4130BC75E05E5DF07"
+    },
+    {
+      "Path": "E:\\nexus\\swypik-os\\core\\resource\\energy_windows.go",
+      "Hash": "AB5CE59E571840627300DC320B88E42589289E325E65379BC553FD14B8679495"
+    },
+    {
+      "Path": "E:\\nexus\\swypik-os\\core\\resource\\energy.go",
+      "Hash": "0980246B7AFA29FA120A43149C22497B2CEB224AA405B5541F0A340E1623B2C8"
+    },
+    {
+      "Path": "E:\\nexus\\swypik-os\\core\\resource\\governor_test.go",
+      "Hash": "6A4421B2A0B2C5E94C4FED0D23E7B3348C5E2B348F19B789B06B736E7D6FE91F"
+    },
+    {
+      "Path": "E:\\nexus\\swypik-os\\core\\resource\\governor.go",
+      "Hash": "59A5C3EF772FDACDA1BEE820A4F1934B2DD660022AF36D89ED6B154599F52423"
+    },
+    {
+      "Path": "E:\\nexus\\swypik-os\\core\\resource\\policy_test.go",
+      "Hash": "9AE9E1548D9A2BBB8CB4CDBD314EE6669E71D23941AF101A961C3791938DDBA6"
+    },
+    {
+      "Path": "E:\\nexus\\swypik-os\\core\\resource\\policy.go",
+      "Hash": "D0D718493C665D765514319663553067210DF4ED9E4C214F8C68A8305D7BCC53"
+    },
+    {
+      "Path": "E:\\nexus\\swypik-os\\core\\resource\\process_usage_linux.go",
+      "Hash": "ED2F2A5176CA2DF15857A1173D86413954682532265B0754069CF7891AE469F1"
+    },
+    {
+      "Path": "E:\\nexus\\swypik-os\\core\\resource\\process_usage_other.go",
+      "Hash": "101BF5FDF6D0EDF1AA797689C3235A064CE1D5F0A8DF2EB39EF3D73B41C10A78"
+    },
+    {
+      "Path": "E:\\nexus\\swypik-os\\core\\resource\\process_usage_test.go",
+      "Hash": "824A6EADC537341B17273062EC1A27EA2FC2D7FB3B5F868BFEE8EB395FDBB630"
+    },
+    {
+      "Path": "E:\\nexus\\swypik-os\\core\\resource\\process_usage_windows.go",
+      "Hash": "54CD3EEEF3CE5300E24ACFD05346EF02F26D6BA83581651CF355599AC62A2E1B"
+    },
+    {
+      "Path": "E:\\nexus\\swypik-os\\core\\resource\\process_usage.go",
+      "Hash": "72E7B41B597BD32078F438F53D6B8B665A54FD4F228E7C385E80159971DB75C2"
+    },
+    {
+      "Path": "E:\\nexus\\swypik-os\\core\\resource\\system_signals_linux.go",
+      "Hash": "3BE70C7F8BF1775497E948AFCED171C1C99727DC1A476143A6819F364E0E3355"
+    },
+    {
+      "Path": "E:\\nexus\\swypik-os\\core\\resource\\system_signals_other.go",
+      "Hash": "B490316EBCD9BC982D5263530BF6A1DD6524E8E2434C6FFF0E5D0E677C67AB1F"
+    },
+    {
+      "Path": "E:\\nexus\\swypik-os\\core\\resource\\system_signals_windows.go",
+      "Hash": "93D5D0D257118BDB4980439D94E552FE65273E7288EF35957106E709E4B2C486"
+    },
+    {
+      "Path": "E:\\nexus\\swypik-os\\go.mod",
+      "Hash": "4C4C5391D38BB6C224A60BBD50962D54DC0FFE284DA54A9BBADCB776F49CAD7B"
+    },
+    {
+      "Path": "E:\\nexus\\swypik-os\\go.sum",
+      "Hash": "C6F154E22C5DB8B8E7DF11FC72FF4706FAFFFD9493A9D88669988B069A5F1B73"
+    },
+    {
+      "Path": "E:\\nexus\\swypik-os\\internal\\planprocess\\child_env_test.go",
+      "Hash": "AF798FB4112DE78E375CBC56880891B09276789072C620557F1D836D5BE5CC74"
+    },
+    {
+      "Path": "E:\\nexus\\swypik-os\\internal\\planprocess\\frame_limit_test.go",
+      "Hash": "F5061CCE0FB064616F3684835F09107638627CC755D3EF540AE4DED7A780C12E"
+    },
+    {
+      "Path": "E:\\nexus\\swypik-os\\internal\\planprocess\\group_linux_test.go",
+      "Hash": "563DF039849890E054B9DA1E7CFD2A4FC83FB78B15F5B786ABB47FF10E1D718D"
+    },
+    {
+      "Path": "E:\\nexus\\swypik-os\\internal\\planprocess\\group_linux.go",
+      "Hash": "65265B0D4229CFD3FB5B47DA9BFCC363F80439D9D50FBD824A68C4C9908FB49B"
+    },
+    {
+      "Path": "E:\\nexus\\swypik-os\\internal\\planprocess\\group_other.go",
+      "Hash": "3639EF5A6E51D8849D9F03F6AE445D572F9A0FC47E99863637CC7B1C5315F51B"
+    },
+    {
+      "Path": "E:\\nexus\\swypik-os\\internal\\planprocess\\group_windows_test.go",
+      "Hash": "00B3CDA16E9D7EEA3CB9F70A3FCE07B41AA47BDA195DF26B67DD0C38623F45AF"
+    },
+    {
+      "Path": "E:\\nexus\\swypik-os\\internal\\planprocess\\group_windows.go",
+      "Hash": "EBA72EEEB4F010A9205079820B46EF565AE838D12BEE44F066C643C0F2B394ED"
+    },
+    {
+      "Path": "E:\\nexus\\swypik-os\\internal\\planprocess\\group.go",
+      "Hash": "D857A87AE7EABF6BE47F2DC9EC7605B72B71481D1B426D0E3969C01C1E8FAD3F"
+    },
+    {
+      "Path": "E:\\nexus\\swypik-os\\internal\\planprocess\\monitor.go",
+      "Hash": "CB674DC959B38E3CB09B168039FBC25AA824F5BE60A53042EA127AAF053747BF"
+    },
+    {
+      "Path": "E:\\nexus\\swypik-os\\internal\\planprocess\\platform_linux.go",
+      "Hash": "DDCB588D790D770B62DB3769A0AD8D557A3DF96EE193036002CF2B51D56BCDD4"
+    },
+    {
+      "Path": "E:\\nexus\\swypik-os\\internal\\planprocess\\platform_other.go",
+      "Hash": "72F7BE2172BD707577979A3A9F6450367EE9A0F1E918761979EADFA873E879CE"
+    },
+    {
+      "Path": "E:\\nexus\\swypik-os\\internal\\planprocess\\platform_windows.go",
+      "Hash": "E68661265635B66AC1DBDDB350A1D9FC37DF784EE266B2EDD741744CB96150B7"
+    },
+    {
+      "Path": "E:\\nexus\\swypik-os\\internal\\planprocess\\process_eof_test.go",
+      "Hash": "87B1ADE64EF367327E7D7E41BC78D055EB64D37F86417D75C2DC179B108F6499"
+    },
+    {
+      "Path": "E:\\nexus\\swypik-os\\internal\\planprocess\\process_test.go",
+      "Hash": "329B313F8BED5DE213EB9E5BE8E0FD1C9A6F0880ABFCD5E9A321283AE6F25E5F"
+    },
+    {
+      "Path": "E:\\nexus\\swypik-os\\internal\\planprocess\\process.go",
+      "Hash": "B6496E90E36702DEEE023659D183AF7F7C533F8C65B5C2C2F4AFE16DDF8E92DF"
+    }
+  ],
+  "Claims": "read-only acceptance: planprocess and test_verify_imc_network; no source edits; own evidence directory only",
+  "CapturedUtc": "2026-10-03T08:24:49.3697153Z"
+}

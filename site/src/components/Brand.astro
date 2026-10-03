@@ -1,0 +1,16 @@
+---
+import Icon from "./Icon.astro";
+
+interface Props { compact?: boolean; os?: boolean }
+const { compact = false, os = false } = Astro.props;
+---
+<a class="brand" href="/" aria-label="Swypik home">
+  <span class="brand-symbol"><Icon name="brand" /></span>
+  {!compact && <span class="word">Swypik{os && <b>OS</b>}</span>}
+</a>
+
+<style>
+  .brand { display: inline-flex; align-items: center; gap: .65rem; }
+  .word { font-size: 1.2rem; font-weight: 700; letter-spacing: -.045em; color: var(--ink); }
+  .word b { font-weight: 600; margin-left: .05em; }
+</style>

@@ -1,0 +1,493 @@
+# ============================================================================
+# Swypik Production — Hetzner VPS
+# ============================================================================
+# Usage:
+#   cd infra/hetzner
+#   docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
+#
+# IMPORTANT: Production Docker builds set NEXT_BUILD_STANDALONE=1.
+# next.config.mjs uses that flag to emit .next/standalone/ only for deploy
+# builds, while local and CI builds keep the default output mode.
+# ============================================================================
+
+name: swypik-prod
+
+services:
+
+  # ──────────────────────────────────────────────
+  # 1. web-next — Next.js 14 standalone SSR
+  # ──────────────────────────────────────────────
+  web-next:
+    build:
+      context: ../../
+      args:
+        BUILD_COMMIT: ${BUILD_COMMIT:-unknown}
+        BUILD_TIME: ${BUILD_TIME:-unknown}
+        DEPLOYED_AT: ${DEPLOYED_AT:-unknown}
+        NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY:-}
+        # Sentry pentru browser. La fel ca la Stripe: NEXT_PUBLIC_* se coace în
+        # bundle la BUILD. Setat doar în .env.production, ar merge Sentry pe
+        # server (instrumentation.ts citește SENTRY_DSN la runtime) dar NU în
+        # browser — jumătate de instrumentare, fără niciun semn că lipsește.
+        NEXT_PUBLIC_SENTRY_DSN: ${NEXT_PUBLIC_SENTRY_DSN:-}
+        NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE: ${NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE:-}
+        SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-production}
+        # Flag-urile verticalelor: NEXT_PUBLIC_* se coc în bundle-ul de browser
+        # (meniul hamburger, provider-ul de player), iar FEATURE_* trebuie să
+        # existe și la build pentru paginile index prerandate (/movies, /music,
+        # /news, /gaming, /messages).
+        FEATURE_MOVIES: ${FEATURE_MOVIES:-}
+        NEXT_PUBLIC_FEATURE_MOVIES: ${NEXT_PUBLIC_FEATURE_MOVIES:-}
+        FEATURE_MUSIC: ${FEATURE_MUSIC:-}
+        NEXT_PUBLIC_FEATURE_MUSIC: ${NEXT_PUBLIC_FEATURE_MUSIC:-}
+        FEATURE_NEWS: ${FEATURE_NEWS:-}
+        NEXT_PUBLIC_FEATURE_NEWS: ${NEXT_PUBLIC_FEATURE_NEWS:-}
+        FEATURE_GAMING: ${FEATURE_GAMING:-}
+        NEXT_PUBLIC_FEATURE_GAMING: ${NEXT_PUBLIC_FEATURE_GAMING:-}
+        FEATURE_MESSENGER: ${FEATURE_MESSENGER:-}
+        NEXT_PUBLIC_FEATURE_MESSENGER: ${NEXT_PUBLIC_FEATURE_MESSENGER:-}
+        FEATURE_DM: ${FEATURE_DM:-}
+        NEXT_PUBLIC_FEATURE_DM: ${NEXT_PUBLIC_FEATURE_DM:-}
+        # Media (R2 + CDN, docs/infra/r2.md): CSP-ul din next.config.mjs și
+        # loader-ul next/image se calculează la BUILD din aceste valori.
+        MEDIA_PUBLIC_BASE_URL: ${MEDIA_PUBLIC_BASE_URL:-}
+        MEDIA_SIGNED_BASE_URL: ${MEDIA_SIGNED_BASE_URL:-}
+        S3_PRESIGN_ENDPOINT: ${S3_PRESIGN_ENDPOINT:-}
+        NEXT_PUBLIC_MEDIA_PUBLIC_BASE_URL: ${NEXT_PUBLIC_MEDIA_PUBLIC_BASE_URL:-}
+        NEXT_PUBLIC_MEDIA_IMAGE_TRANSFORM: ${NEXT_PUBLIC_MEDIA_IMAGE_TRANSFORM:-}
+        # NEXT_PUBLIC_CALLS_ENABLED=1 afișează butoanele de apel (Cloudflare
+        # RealtimeKit); cheile rămân server-only în .env.production.
+        NEXT_PUBLIC_CALLS_ENABLED: ${NEXT_PUBLIC_CALLS_ENABLED:-}
+      dockerfile_inline: |
+        # ── Build stage ──
+        FROM node:20.19.0-alpine AS builder
+        WORKDIR /app
+
+        # Install deps first (Docker layer cache)
+        COPY package.json package-lock.json ./
+        RUN npm ci --ignore-scripts
+
+        # Copy source
+        COPY . .
+
+        # Build Next.js in standalone mode for deploy images only.
+        ENV NEXT_BUILD_STANDALONE=1
+        # BUILD_COMMIT la BUILD: next.config.mjs derivă din el BUILD_ID-ul
+        # determinist (commit + hash flag-uri) — toate replicile din aceeași
+        # imagine servesc aceleași /_next/static/<buildId>. Construiește imaginea
+        # O SINGURĂ DATĂ și rulează aceeași imagine pe toate VM-urile.
+        ARG BUILD_COMMIT=unknown
+        ENV BUILD_COMMIT=$BUILD_COMMIT
+        # NEXT_PUBLIC_* se inlineaza in bundle la BUILD, nu la runtime —
+        # fara ARG aici cheia Stripe ajunge "" si checkout-ul crapa.
+        ARG NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+        ENV NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=$NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+        ARG NEXT_PUBLIC_SENTRY_DSN
+        ENV NEXT_PUBLIC_SENTRY_DSN=$NEXT_PUBLIC_SENTRY_DSN
+        ARG NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE
+        ENV NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE=$NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE
+        # Folosit și de `instrumentation-client.ts` la build, și de server la runtime.
+        ARG SENTRY_ENVIRONMENT
+        ENV SENTRY_ENVIRONMENT=$SENTRY_ENVIRONMENT
+        ARG FEATURE_MOVIES
+        ENV FEATURE_MOVIES=$FEATURE_MOVIES
+        ARG NEXT_PUBLIC_FEATURE_MOVIES
+        ENV NEXT_PUBLIC_FEATURE_MOVIES=$NEXT_PUBLIC_FEATURE_MOVIES
+        ARG FEATURE_MUSIC
+        ENV FEATURE_MUSIC=$FEATURE_MUSIC
+        ARG NEXT_PUBLIC_FEATURE_MUSIC
+        ENV NEXT_PUBLIC_FEATURE_MUSIC=$NEXT_PUBLIC_FEATURE_MUSIC
+        ARG FEATURE_NEWS
+        ENV FEATURE_NEWS=$FEATURE_NEWS
+        ARG NEXT_PUBLIC_FEATURE_NEWS
+        ENV NEXT_PUBLIC_FEATURE_NEWS=$NEXT_PUBLIC_FEATURE_NEWS
+        ARG FEATURE_GAMING
+        ENV FEATURE_GAMING=$FEATURE_GAMING
+        ARG NEXT_PUBLIC_FEATURE_GAMING
+        ENV NEXT_PUBLIC_FEATURE_GAMING=$NEXT_PUBLIC_FEATURE_GAMING
+        ARG FEATURE_MESSENGER
+        ENV FEATURE_MESSENGER=$FEATURE_MESSENGER
+        ARG NEXT_PUBLIC_FEATURE_MESSENGER
+        ENV NEXT_PUBLIC_FEATURE_MESSENGER=$NEXT_PUBLIC_FEATURE_MESSENGER
+        ARG FEATURE_DM
+        ENV FEATURE_DM=$FEATURE_DM
+        ARG NEXT_PUBLIC_FEATURE_DM
+        ENV NEXT_PUBLIC_FEATURE_DM=$NEXT_PUBLIC_FEATURE_DM
+        ARG MEDIA_PUBLIC_BASE_URL
+        ENV MEDIA_PUBLIC_BASE_URL=$MEDIA_PUBLIC_BASE_URL
+        ARG MEDIA_SIGNED_BASE_URL
+        ENV MEDIA_SIGNED_BASE_URL=$MEDIA_SIGNED_BASE_URL
+        ARG S3_PRESIGN_ENDPOINT
+        ENV S3_PRESIGN_ENDPOINT=$S3_PRESIGN_ENDPOINT
+        ARG NEXT_PUBLIC_MEDIA_PUBLIC_BASE_URL
+        ENV NEXT_PUBLIC_MEDIA_PUBLIC_BASE_URL=$NEXT_PUBLIC_MEDIA_PUBLIC_BASE_URL
+        ARG NEXT_PUBLIC_MEDIA_IMAGE_TRANSFORM
+        ENV NEXT_PUBLIC_MEDIA_IMAGE_TRANSFORM=$NEXT_PUBLIC_MEDIA_IMAGE_TRANSFORM
+        ARG NEXT_PUBLIC_CALLS_ENABLED
+        ENV NEXT_PUBLIC_CALLS_ENABLED=$NEXT_PUBLIC_CALLS_ENABLED
+        RUN npm run build
+
+        # ── Runtime stage ──
+        FROM node:20.19.0-alpine AS runner
+        WORKDIR /app
+
+        ENV NODE_ENV=production
+        ENV PORT=3000
+        ENV HOSTNAME="0.0.0.0"
+
+        # Release metadata injected at build time and exposed by /api/health.
+        ARG BUILD_COMMIT=unknown
+        ARG BUILD_TIME=unknown
+        ARG DEPLOYED_AT=unknown
+        ENV BUILD_COMMIT=$BUILD_COMMIT
+        ENV BUILD_TIME=$BUILD_TIME
+        ENV DEPLOYED_AT=$DEPLOYED_AT
+
+        RUN addgroup --system --gid 1001 nodejs && \
+            adduser  --system --uid 1001 nextjs
+
+        # Copy standalone output
+        COPY --from=builder /app/.next/standalone ./
+        COPY --from=builder /app/.next/static ./.next/static
+        COPY --from=builder /app/public ./public
+
+        # Fix cache permissions
+        RUN chown -R nextjs:nodejs /app/.next
+        RUN mkdir -p /app/.next/cache && chown -R nextjs:nodejs /app/.next/cache
+
+        USER nextjs
+        EXPOSE 3000
+
+        CMD ["node", "server.js"]
+    env_file:
+      # Server-only runtime secrets pass through as-is from .env.production —
+      # no defaults here, missing values fail loudly in the code that reads
+      # them (lib/realtime/config.ts, lib/audio/jamendo.ts, lib/ai/azure):
+      # CF_REALTIME_*, CF_REALTIMEKIT_*, CF_TURN_*, AZURE_OPENAI_* /
+      # AZURE_CONTENT_SAFETY_*, JAMENDO_CLIENT_ID.
+      - .env.production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      # /api/ready: DB + Redis (partajate) și replica nu e în oprire. Mai ieftin
+      # decât /api/health (care verifică și R2 + email) — potrivit la 30 s × N replici.
+      # nosemgrep: trailofbits.generic.wget-unencrypted-url.wget-unencrypted-url - container-local healthcheck over loopback.
+      test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1:3000/api/ready"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 90s
+    # SIGTERM → Next închide serverul și așteaptă cererile în curs; stream-urile
+    # SSE sunt închise imediat cu `event: reconnect` (lib/runtime/shutdown.ts),
+    # clienții se reconectează la altă replică. 30 s acoperă cererile lungi normale.
+    stop_grace_period: 30s
+    mem_limit: 2g
+    cpus: 1.5
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+    restart: unless-stopped
+
+  # ──────────────────────────────────────────────
+  # 2. platform-api — Go REST/gRPC API
+  # ──────────────────────────────────────────────
+  platform-api:
+    build:
+      context: ../../services/platform-api
+      dockerfile_inline: |
+        # ── Build stage ──
+        # GOTOOLCHAIN=auto: descarca automat toolchain-ul cerut de go.mod
+        # (go.mod poate cere versiuni patch mai noi decat imaginea de baza).
+        FROM golang:1.26-bookworm AS builder
+        ENV GOTOOLCHAIN=auto
+        RUN apt-get update && apt-get install -y --no-install-recommends git ca-certificates && rm -rf /var/lib/apt/lists/*
+        WORKDIR /src
+
+        COPY go.mod go.sum ./
+        RUN go mod download
+
+        COPY . .
+        RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+            go build -ldflags="-s -w" -o /bin/api ./cmd/api
+
+        # ── Runtime stage ──
+        FROM alpine:3.20.3 AS runner
+        RUN apk add --no-cache ca-certificates tzdata
+        COPY --from=builder /bin/api /usr/local/bin/api
+
+        EXPOSE 8080
+        ENTRYPOINT ["api"]
+    env_file:
+      - .env.production
+    environment:
+      ENVIRONMENT: production
+      NODE_ENV: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      # nosemgrep: trailofbits.generic.wget-unencrypted-url.wget-unencrypted-url - container-local healthcheck over loopback.
+      test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1:8080/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+    restart: unless-stopped
+
+  # ──────────────────────────────────────────────
+  # 3. postgres — PostgreSQL 16
+  # ──────────────────────────────────────────────
+  postgres:
+    image: pgvector/pgvector:pg16  # pinned minor
+    env_file:
+      - .env.production
+    ports:
+      # 5432 e ocupat de meister-postgres pe acelasi host; aplicatia oricum
+      # se conecteaza prin reteaua Docker (host "postgres"), portul e doar
+      # pentru administrare de pe VPS.
+      - "127.0.0.1:5433:5432"
+    shm_size: 2g
+    command:
+      - postgres
+      - -c
+      - shared_buffers=2GB
+      - -c
+      - work_mem=16MB
+      - -c
+      - effective_cache_size=5GB
+    volumes:
+      - swypik_postgres_data:/var/lib/postgresql/data
+      - ../../db/migrations/:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    mem_limit: 4g
+    cpus: 2.0
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+
+  # ──────────────────────────────────────────────
+  # 4. redis — Redis 7
+  # ──────────────────────────────────────────────
+  redis:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "512mb", "--maxmemory-policy", "allkeys-lru"]
+    volumes:
+      - swypik_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+
+  # ──────────────────────────────────────────────
+  # 5. video-worker — Python FFmpeg pipeline
+  # ──────────────────────────────────────────────
+  video-worker:
+    scale: 3
+    build:
+      context: ../../workers/video-worker
+      dockerfile_inline: |
+        FROM python:3.11.10-slim
+
+        # System deps for FFmpeg video processing
+        RUN apt-get update && \
+            apt-get install -y --no-install-recommends ffmpeg && \
+            rm -rf /var/lib/apt/lists/*
+
+        WORKDIR /app
+
+        COPY requirements.txt .
+        RUN pip install --no-cache-dir -r requirements.txt
+
+        COPY . .
+
+        CMD ["python", "-m", "video_worker.main"]
+    env_file:
+      - .env.production
+    # Coada = tabela video_processing_jobs (Postgres, FOR UPDATE SKIP LOCKED +
+    # lease/heartbeat). Workerii sunt „competing consumers” identici: scalează
+    # cu `--scale video-worker=N` sau pornește-i pe alt host — au nevoie doar de
+    # DATABASE_URL + credențiale S3/R2 (Redis doar pentru trezire, opțional).
+    # SIGTERM în timpul unui job → ffmpeg oprit, jobul eliberat înapoi în coadă
+    # (VIDEO_SHUTDOWN_MODE=release) — 30 s ajung. Cu VIDEO_SHUTDOWN_MODE=finish
+    # stop_grace_period trebuie să depășească FFMPEG_TIMEOUT_SECONDS.
+    stop_grace_period: 30s
+    volumes:
+      # Doar scratch (sursa + randările în lucru); nimic durabil — rezultatele merg în R2.
+      - /tmp/video-processing:/tmp/video-processing
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      # Fișierul e atins la fiecare iterație a buclei și la fiecare heartbeat de
+      # lease (≤ 40 s în timpul unui transcode lung).
+      test: ["CMD-SHELL", "test $$(( $$(date +%s) - $$(cut -d. -f1 /tmp/video-worker-heartbeat 2>/dev/null || echo 0) )) -lt 180 || exit 1"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    mem_limit: 2g
+    cpus: 1.5
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+    restart: unless-stopped
+
+  # ──────────────────────────────────────────────
+  # 6. cron-worker — Lightweight scheduled curls
+  # ──────────────────────────────────────────────
+  cron-worker:
+    build:
+      context: ./cron-worker
+    env_file:
+      - .env.production
+    depends_on:
+      web-next:
+        # FIX 2026-07-31: service_started pornea cronurile inainte ca Next sa
+        # raspunda -> primele apeluri esuau la fiecare boot/deploy.
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "test $(($(date +%s) - $(cat /tmp/cron-heartbeat 2>/dev/null || echo 0))) -lt 180 || exit 1"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+    restart: unless-stopped
+
+  # ──────────────────────────────────────────────
+  # 6b. dispatch-worker — tick-ul de dispecerat la 10 s (Go/Food)
+  # ──────────────────────────────────────────────
+  # Înlocuiește serviciul systemd `swypik-dispatch` (activează cu
+  # `--profile dispatch`, apoi `systemctl disable --now swypik-dispatch`).
+  # Rularea dublă e inofensivă: /api/cron/dispatch-tick ia un advisory lock
+  # Postgres, deci un singur tick avansează valurile la un moment dat.
+  dispatch-worker:
+    profiles: [dispatch]
+    image: node:20.19.0-alpine
+    command: ["node", "/app/dispatch-worker.mjs"]
+    env_file:
+      - .env.production
+    environment:
+      DISPATCH_TICK_URL: ${DISPATCH_TICK_URL:-http://web-next:3000/api/cron/dispatch-tick}
+    volumes:
+      - ../../scripts/dispatch-worker.mjs:/app/dispatch-worker.mjs:ro
+    depends_on:
+      web-next:
+        condition: service_healthy
+    user: "node"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    restart: unless-stopped
+
+  # ──────────────────────────────────────────────
+  # 7. caddy — Reverse proxy + auto TLS
+  # ──────────────────────────────────────────────
+  caddy:
+    image: caddy:2.8-alpine
+    ports:
+      # nosemgrep: trailofbits.yaml.docker-compose.port-all-interfaces.port-all-interfaces - Caddy is the public edge and must bind HTTP/HTTPS on all interfaces.
+      - "80:80"
+      # nosemgrep: trailofbits.yaml.docker-compose.port-all-interfaces.port-all-interfaces - Caddy is the public edge and must bind HTTP/HTTPS on all interfaces.
+      - "443:443"
+      # nosemgrep: trailofbits.yaml.docker-compose.port-all-interfaces.port-all-interfaces - Caddy is the public edge and must bind HTTP/3 on all interfaces.
+      - "443:443/udp"   # HTTP/3 QUIC
+    volumes:
+      - ../../infra/hetzner/Caddyfile:/etc/caddy/Caddyfile:ro
+      - swypik_caddy_data:/data
+      - swypik_caddy_config:/config
+    depends_on:
+      web-next:
+        condition: service_started
+      platform-api:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "sh", "-c", "nc -z localhost 80 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+      - NET_BIND_SERVICE
+    restart: unless-stopped
+
+
+  # ──────────────────────────────────────────────
+  # 8. pgbouncer — Connection pooler (NOT STARTED — see docs/scale-prep.md)
+  # ──────────────────────────────────────────────
+  pgbouncer:
+    image: bitnami/pgbouncer:1.23.1
+    profiles: [disabled]  # disabled by fix agent 2026-05-17 — not in use
+    restart: unless-stopped
+    environment:
+      POSTGRESQL_HOST: postgres
+      POSTGRESQL_PORT: 5432
+      POSTGRESQL_USERNAME: swypik
+      POSTGRESQL_PASSWORD: ${POSTGRES_PASSWORD:-}
+      POSTGRESQL_DATABASE: swypik
+      PGBOUNCER_DATABASE: swypik
+      PGBOUNCER_POOL_MODE: transaction
+      PGBOUNCER_DEFAULT_POOL_SIZE: 25
+      PGBOUNCER_MAX_CLIENT_CONN: 200
+      PGBOUNCER_PORT: 6432
+      PGBOUNCER_AUTH_TYPE: scram-sha-256
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+
+# ============================================================================
+# Named volumes — persistent data on Hetzner VPS disk
+# ============================================================================
+volumes:
+  swypik_postgres_data:
+  swypik_redis_data:
+  swypik_caddy_data:
+  swypik_caddy_config:

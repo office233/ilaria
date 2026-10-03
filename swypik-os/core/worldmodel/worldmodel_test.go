@@ -4,15 +4,33 @@ import (
 	"testing"
 )
 
+func simulationFixture(t *testing.T) *Simulator {
+	t.Helper()
+	sim, err := NewConfiguredSimulator(testCalibration())
+	if err != nil {
+		t.Fatal(err)
+	}
+	return sim
+}
+
+func testCalibration() Config {
+	return Config{Version: CalibrationVersion, GravityMetersS2: 9.81,
+		SurfaceFriction: map[SurfaceType]float64{SurfaceDryAsphalt: 0.9,
+			SurfaceWetAsphalt: 0.55, SurfaceSnow: 0.25, SurfaceIce: 0.12},
+		VehicleRiskThreshold: 0.15, RobotTorqueFraction: 0.85, RobotDynamicMargin: 0.2,
+		FrictionVariationCount: 100, FrictionVariationFraction: 0.2}
+}
+
 func TestWorldModelSimulator(t *testing.T) {
-	sim := NewSimulator()
+	sim := simulationFixture(t)
 
 	// 1. Safe dry asphalt braking maneuver (60 km/h, 0.4 G decel, straight)
 	dryState := VehicleState{
-		VelocityKmh: 60.0,
-		SteerAngle:  0.0,
-		MassKg:      1500.0,
-		Surface:     SurfaceDryAsphalt,
+		VelocityKmh:     60.0,
+		SteerAngle:      0.0,
+		MassKg:          1500.0,
+		Surface:         SurfaceDryAsphalt,
+		WheelbaseMeters: 2.7,
 	}
 
 	verdictDry := sim.EvaluateVehicleManeuver(dryState, 0.4, 0.0)
@@ -25,10 +43,11 @@ func TestWorldModelSimulator(t *testing.T) {
 
 	// 2. Dangerous black ice maneuver (80 km/h, aggressive 0.6 G braking)
 	iceState := VehicleState{
-		VelocityKmh: 80.0,
-		SteerAngle:  15.0,
-		MassKg:      1500.0,
-		Surface:     SurfaceIce,
+		VelocityKmh:     80.0,
+		SteerAngle:      15.0,
+		MassKg:          1500.0,
+		Surface:         SurfaceIce,
+		WheelbaseMeters: 2.7,
 	}
 
 	verdictIce := sim.EvaluateVehicleManeuver(iceState, 0.6, 15.0)

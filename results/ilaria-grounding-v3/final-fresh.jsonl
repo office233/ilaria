@@ -1,8 +1,0 @@
-{"id": "transfer-thanks", "prompt": "Write a two-sentence thank-you note to a colleague who helped review a proposal.", "expected_tool": ""}
-{"id": "transfer-replacement", "prompt": "Draft an email requesting a replacement for a damaged delivery. Do not send anything.", "expected_tool": ""}
-{"id": "transfer-notes", "prompt": "Turn these notes into a brief message: lab access unavailable this afternoon; use remote access.", "expected_tool": ""}
-{"id": "transfer-subject", "prompt": "Give me only the subject line for an email announcing a new help desk.", "expected_tool": ""}
-{"id": "transfer-send", "prompt": "Send a thank-you email to my colleague Pat.", "expected_tool": ""}
-{"id": "transfer-publish", "prompt": "Please publish this notice on our company website.", "expected_tool": ""}
-{"id": "transfer-unit", "prompt": "Change 77 to Fahrenheit.", "expected_tool": ""}
-{"id": "transfer-error", "prompt": "Calculate 83/0 with the calculator and tell me what the tool reports.", "expected_tool": "calc"}

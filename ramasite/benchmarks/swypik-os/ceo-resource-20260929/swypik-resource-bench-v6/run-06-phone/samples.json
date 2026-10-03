@@ -1,0 +1,688 @@
+﻿{
+    "profile":  "phone",
+    "run":  3,
+    "startup":  [
+                    {
+                        "elapsed_ms":  10,
+                        "working_set_mb":  2.363,
+                        "private_mb":  33.883,
+                        "cpu_seconds":  0,
+                        "threads":  1,
+                        "handles":  39
+                    },
+                    {
+                        "elapsed_ms":  122,
+                        "working_set_mb":  22.445,
+                        "private_mb":  48.184,
+                        "cpu_seconds":  0.03125,
+                        "threads":  10,
+                        "handles":  184
+                    },
+                    {
+                        "elapsed_ms":  237,
+                        "working_set_mb":  22.469,
+                        "private_mb":  48.191,
+                        "cpu_seconds":  0.03125,
+                        "threads":  10,
+                        "handles":  184
+                    },
+                    {
+                        "elapsed_ms":  346,
+                        "working_set_mb":  22.516,
+                        "private_mb":  48.227,
+                        "cpu_seconds":  0.046875,
+                        "threads":  10,
+                        "handles":  184
+                    },
+                    {
+                        "elapsed_ms":  450,
+                        "working_set_mb":  22.566,
+                        "private_mb":  48.266,
+                        "cpu_seconds":  0.046875,
+                        "threads":  10,
+                        "handles":  184
+                    },
+                    {
+                        "elapsed_ms":  564,
+                        "working_set_mb":  22.617,
+                        "private_mb":  48.332,
+                        "cpu_seconds":  0.0625,
+                        "threads":  10,
+                        "handles":  184
+                    },
+                    {
+                        "elapsed_ms":  674,
+                        "working_set_mb":  22.633,
+                        "private_mb":  48.332,
+                        "cpu_seconds":  0.09375,
+                        "threads":  10,
+                        "handles":  184
+                    },
+                    {
+                        "elapsed_ms":  783,
+                        "working_set_mb":  22.633,
+                        "private_mb":  48.332,
+                        "cpu_seconds":  0.125,
+                        "threads":  10,
+                        "handles":  184
+                    },
+                    {
+                        "elapsed_ms":  892,
+                        "working_set_mb":  22.703,
+                        "private_mb":  48.332,
+                        "cpu_seconds":  0.15625,
+                        "threads":  10,
+                        "handles":  184
+                    },
+                    {
+                        "elapsed_ms":  1000,
+                        "working_set_mb":  22.77,
+                        "private_mb":  48.398,
+                        "cpu_seconds":  0.15625,
+                        "threads":  10,
+                        "handles":  184
+                    },
+                    {
+                        "elapsed_ms":  1109,
+                        "working_set_mb":  22.832,
+                        "private_mb":  48.398,
+                        "cpu_seconds":  0.171875,
+                        "threads":  10,
+                        "handles":  184
+                    },
+                    {
+                        "elapsed_ms":  1218,
+                        "working_set_mb":  22.832,
+                        "private_mb":  48.398,
+                        "cpu_seconds":  0.203125,
+                        "threads":  10,
+                        "handles":  184
+                    },
+                    {
+                        "elapsed_ms":  1328,
+                        "working_set_mb":  31.633,
+                        "private_mb":  56.145,
+                        "cpu_seconds":  0.234375,
+                        "threads":  10,
+                        "handles":  184
+                    },
+                    {
+                        "elapsed_ms":  1438,
+                        "working_set_mb":  31.91,
+                        "private_mb":  56.324,
+                        "cpu_seconds":  0.28125,
+                        "threads":  10,
+                        "handles":  184
+                    },
+                    {
+                        "elapsed_ms":  1546,
+                        "working_set_mb":  31.91,
+                        "private_mb":  56.324,
+                        "cpu_seconds":  0.28125,
+                        "threads":  10,
+                        "handles":  184
+                    },
+                    {
+                        "elapsed_ms":  1656,
+                        "working_set_mb":  31.91,
+                        "private_mb":  56.324,
+                        "cpu_seconds":  0.28125,
+                        "threads":  10,
+                        "handles":  184
+                    },
+                    {
+                        "elapsed_ms":  1766,
+                        "working_set_mb":  31.91,
+                        "private_mb":  56.324,
+                        "cpu_seconds":  0.28125,
+                        "threads":  10,
+                        "handles":  184
+                    },
+                    {
+                        "elapsed_ms":  1877,
+                        "working_set_mb":  31.91,
+                        "private_mb":  56.324,
+                        "cpu_seconds":  0.28125,
+                        "threads":  10,
+                        "handles":  184
+                    },
+                    {
+                        "elapsed_ms":  1986,
+                        "working_set_mb":  31.91,
+                        "private_mb":  56.324,
+                        "cpu_seconds":  0.28125,
+                        "threads":  10,
+                        "handles":  184
+                    },
+                    {
+                        "elapsed_ms":  2095,
+                        "working_set_mb":  31.91,
+                        "private_mb":  56.324,
+                        "cpu_seconds":  0.28125,
+                        "threads":  10,
+                        "handles":  184
+                    },
+                    {
+                        "elapsed_ms":  2205,
+                        "working_set_mb":  31.91,
+                        "private_mb":  56.324,
+                        "cpu_seconds":  0.28125,
+                        "threads":  10,
+                        "handles":  184
+                    },
+                    {
+                        "elapsed_ms":  2314,
+                        "working_set_mb":  31.91,
+                        "private_mb":  56.324,
+                        "cpu_seconds":  0.28125,
+                        "threads":  10,
+                        "handles":  184
+                    },
+                    {
+                        "elapsed_ms":  2424,
+                        "working_set_mb":  31.91,
+                        "private_mb":  56.324,
+                        "cpu_seconds":  0.28125,
+                        "threads":  10,
+                        "handles":  184
+                    },
+                    {
+                        "elapsed_ms":  2534,
+                        "working_set_mb":  31.91,
+                        "private_mb":  56.324,
+                        "cpu_seconds":  0.28125,
+                        "threads":  10,
+                        "handles":  184
+                    },
+                    {
+                        "elapsed_ms":  2637,
+                        "working_set_mb":  31.91,
+                        "private_mb":  56.324,
+                        "cpu_seconds":  0.28125,
+                        "threads":  10,
+                        "handles":  184
+                    },
+                    {
+                        "elapsed_ms":  2746,
+                        "working_set_mb":  31.91,
+                        "private_mb":  56.324,
+                        "cpu_seconds":  0.28125,
+                        "threads":  10,
+                        "handles":  184
+                    },
+                    {
+                        "elapsed_ms":  2861,
+                        "working_set_mb":  31.91,
+                        "private_mb":  56.324,
+                        "cpu_seconds":  0.28125,
+                        "threads":  10,
+                        "handles":  184
+                    },
+                    {
+                        "elapsed_ms":  2970,
+                        "working_set_mb":  31.91,
+                        "private_mb":  56.324,
+                        "cpu_seconds":  0.28125,
+                        "threads":  10,
+                        "handles":  184
+                    },
+                    {
+                        "elapsed_ms":  3080,
+                        "working_set_mb":  31.91,
+                        "private_mb":  56.324,
+                        "cpu_seconds":  0.28125,
+                        "threads":  10,
+                        "handles":  184
+                    },
+                    {
+                        "elapsed_ms":  3190,
+                        "working_set_mb":  31.91,
+                        "private_mb":  56.324,
+                        "cpu_seconds":  0.28125,
+                        "threads":  10,
+                        "handles":  184
+                    },
+                    {
+                        "elapsed_ms":  3293,
+                        "working_set_mb":  31.91,
+                        "private_mb":  56.324,
+                        "cpu_seconds":  0.28125,
+                        "threads":  10,
+                        "handles":  184
+                    },
+                    {
+                        "elapsed_ms":  3403,
+                        "working_set_mb":  31.938,
+                        "private_mb":  56.348,
+                        "cpu_seconds":  0.3125,
+                        "threads":  10,
+                        "handles":  184
+                    },
+                    {
+                        "elapsed_ms":  3513,
+                        "working_set_mb":  32.035,
+                        "private_mb":  56.453,
+                        "cpu_seconds":  0.3125,
+                        "threads":  10,
+                        "handles":  184
+                    },
+                    {
+                        "elapsed_ms":  3621,
+                        "working_set_mb":  32.035,
+                        "private_mb":  56.453,
+                        "cpu_seconds":  0.3125,
+                        "threads":  10,
+                        "handles":  184
+                    },
+                    {
+                        "elapsed_ms":  3736,
+                        "working_set_mb":  32.035,
+                        "private_mb":  56.453,
+                        "cpu_seconds":  0.3125,
+                        "threads":  10,
+                        "handles":  184
+                    },
+                    {
+                        "elapsed_ms":  3844,
+                        "working_set_mb":  32.035,
+                        "private_mb":  56.453,
+                        "cpu_seconds":  0.3125,
+                        "threads":  10,
+                        "handles":  184
+                    },
+                    {
+                        "elapsed_ms":  3955,
+                        "working_set_mb":  32.035,
+                        "private_mb":  56.453,
+                        "cpu_seconds":  0.3125,
+                        "threads":  10,
+                        "handles":  184
+                    },
+                    {
+                        "elapsed_ms":  4064,
+                        "working_set_mb":  32.035,
+                        "private_mb":  56.453,
+                        "cpu_seconds":  0.3125,
+                        "threads":  10,
+                        "handles":  184
+                    }
+                ],
+    "idle":  [
+                 {
+                     "elapsed_ms":  4066,
+                     "working_set_mb":  32.035,
+                     "private_mb":  56.453,
+                     "cpu_seconds":  0.3125,
+                     "threads":  10,
+                     "handles":  184
+                 },
+                 {
+                     "elapsed_ms":  4168,
+                     "working_set_mb":  32.035,
+                     "private_mb":  56.453,
+                     "cpu_seconds":  0.3125,
+                     "threads":  10,
+                     "handles":  184
+                 },
+                 {
+                     "elapsed_ms":  4278,
+                     "working_set_mb":  32.035,
+                     "private_mb":  56.453,
+                     "cpu_seconds":  0.3125,
+                     "threads":  10,
+                     "handles":  184
+                 },
+                 {
+                     "elapsed_ms":  4387,
+                     "working_set_mb":  32.035,
+                     "private_mb":  56.453,
+                     "cpu_seconds":  0.3125,
+                     "threads":  10,
+                     "handles":  184
+                 },
+                 {
+                     "elapsed_ms":  4496,
+                     "working_set_mb":  32.035,
+                     "private_mb":  56.453,
+                     "cpu_seconds":  0.3125,
+                     "threads":  10,
+                     "handles":  184
+                 },
+                 {
+                     "elapsed_ms":  4605,
+                     "working_set_mb":  32.035,
+                     "private_mb":  56.453,
+                     "cpu_seconds":  0.3125,
+                     "threads":  10,
+                     "handles":  184
+                 },
+                 {
+                     "elapsed_ms":  4721,
+                     "working_set_mb":  32.035,
+                     "private_mb":  56.453,
+                     "cpu_seconds":  0.3125,
+                     "threads":  10,
+                     "handles":  184
+                 },
+                 {
+                     "elapsed_ms":  4830,
+                     "working_set_mb":  32.035,
+                     "private_mb":  56.453,
+                     "cpu_seconds":  0.3125,
+                     "threads":  10,
+                     "handles":  184
+                 },
+                 {
+                     "elapsed_ms":  4939,
+                     "working_set_mb":  32.035,
+                     "private_mb":  56.453,
+                     "cpu_seconds":  0.3125,
+                     "threads":  10,
+                     "handles":  184
+                 },
+                 {
+                     "elapsed_ms":  5049,
+                     "working_set_mb":  32.035,
+                     "private_mb":  56.453,
+                     "cpu_seconds":  0.3125,
+                     "threads":  10,
+                     "handles":  184
+                 },
+                 {
+                     "elapsed_ms":  5159,
+                     "working_set_mb":  32.035,
+                     "private_mb":  56.453,
+                     "cpu_seconds":  0.3125,
+                     "threads":  10,
+                     "handles":  184
+                 },
+                 {
+                     "elapsed_ms":  5267,
+                     "working_set_mb":  32.035,
+                     "private_mb":  56.453,
+                     "cpu_seconds":  0.3125,
+                     "threads":  10,
+                     "handles":  184
+                 },
+                 {
+                     "elapsed_ms":  5376,
+                     "working_set_mb":  32.035,
+                     "private_mb":  56.453,
+                     "cpu_seconds":  0.3125,
+                     "threads":  10,
+                     "handles":  184
+                 },
+                 {
+                     "elapsed_ms":  5486,
+                     "working_set_mb":  32.035,
+                     "private_mb":  56.453,
+                     "cpu_seconds":  0.3125,
+                     "threads":  10,
+                     "handles":  184
+                 },
+                 {
+                     "elapsed_ms":  5595,
+                     "working_set_mb":  32.035,
+                     "private_mb":  56.453,
+                     "cpu_seconds":  0.3125,
+                     "threads":  10,
+                     "handles":  184
+                 },
+                 {
+                     "elapsed_ms":  5706,
+                     "working_set_mb":  24.586,
+                     "private_mb":  48.992,
+                     "cpu_seconds":  0.3125,
+                     "threads":  10,
+                     "handles":  184
+                 },
+                 {
+                     "elapsed_ms":  5815,
+                     "working_set_mb":  24.586,
+                     "private_mb":  48.992,
+                     "cpu_seconds":  0.3125,
+                     "threads":  10,
+                     "handles":  184
+                 },
+                 {
+                     "elapsed_ms":  5923,
+                     "working_set_mb":  24.586,
+                     "private_mb":  48.992,
+                     "cpu_seconds":  0.3125,
+                     "threads":  10,
+                     "handles":  184
+                 },
+                 {
+                     "elapsed_ms":  6035,
+                     "working_set_mb":  24.586,
+                     "private_mb":  48.992,
+                     "cpu_seconds":  0.3125,
+                     "threads":  10,
+                     "handles":  184
+                 },
+                 {
+                     "elapsed_ms":  6137,
+                     "working_set_mb":  24.586,
+                     "private_mb":  48.992,
+                     "cpu_seconds":  0.3125,
+                     "threads":  10,
+                     "handles":  184
+                 },
+                 {
+                     "elapsed_ms":  6252,
+                     "working_set_mb":  24.586,
+                     "private_mb":  48.992,
+                     "cpu_seconds":  0.3125,
+                     "threads":  10,
+                     "handles":  184
+                 },
+                 {
+                     "elapsed_ms":  6361,
+                     "working_set_mb":  24.586,
+                     "private_mb":  48.992,
+                     "cpu_seconds":  0.3125,
+                     "threads":  10,
+                     "handles":  184
+                 },
+                 {
+                     "elapsed_ms":  6471,
+                     "working_set_mb":  24.586,
+                     "private_mb":  48.992,
+                     "cpu_seconds":  0.3125,
+                     "threads":  10,
+                     "handles":  184
+                 },
+                 {
+                     "elapsed_ms":  6581,
+                     "working_set_mb":  24.586,
+                     "private_mb":  48.992,
+                     "cpu_seconds":  0.3125,
+                     "threads":  10,
+                     "handles":  184
+                 },
+                 {
+                     "elapsed_ms":  6683,
+                     "working_set_mb":  24.586,
+                     "private_mb":  48.992,
+                     "cpu_seconds":  0.3125,
+                     "threads":  10,
+                     "handles":  184
+                 },
+                 {
+                     "elapsed_ms":  6793,
+                     "working_set_mb":  24.586,
+                     "private_mb":  48.992,
+                     "cpu_seconds":  0.3125,
+                     "threads":  10,
+                     "handles":  184
+                 },
+                 {
+                     "elapsed_ms":  6904,
+                     "working_set_mb":  24.586,
+                     "private_mb":  48.992,
+                     "cpu_seconds":  0.3125,
+                     "threads":  10,
+                     "handles":  184
+                 },
+                 {
+                     "elapsed_ms":  7013,
+                     "working_set_mb":  24.586,
+                     "private_mb":  48.992,
+                     "cpu_seconds":  0.3125,
+                     "threads":  10,
+                     "handles":  184
+                 },
+                 {
+                     "elapsed_ms":  7122,
+                     "working_set_mb":  24.586,
+                     "private_mb":  48.992,
+                     "cpu_seconds":  0.3125,
+                     "threads":  10,
+                     "handles":  184
+                 },
+                 {
+                     "elapsed_ms":  7232,
+                     "working_set_mb":  24.586,
+                     "private_mb":  48.992,
+                     "cpu_seconds":  0.3125,
+                     "threads":  10,
+                     "handles":  184
+                 },
+                 {
+                     "elapsed_ms":  7341,
+                     "working_set_mb":  24.586,
+                     "private_mb":  48.992,
+                     "cpu_seconds":  0.3125,
+                     "threads":  10,
+                     "handles":  184
+                 },
+                 {
+                     "elapsed_ms":  7450,
+                     "working_set_mb":  24.586,
+                     "private_mb":  48.992,
+                     "cpu_seconds":  0.3125,
+                     "threads":  10,
+                     "handles":  184
+                 },
+                 {
+                     "elapsed_ms":  7559,
+                     "working_set_mb":  24.586,
+                     "private_mb":  48.992,
+                     "cpu_seconds":  0.3125,
+                     "threads":  10,
+                     "handles":  184
+                 },
+                 {
+                     "elapsed_ms":  7680,
+                     "working_set_mb":  24.586,
+                     "private_mb":  48.992,
+                     "cpu_seconds":  0.3125,
+                     "threads":  10,
+                     "handles":  184
+                 },
+                 {
+                     "elapsed_ms":  7783,
+                     "working_set_mb":  24.586,
+                     "private_mb":  48.992,
+                     "cpu_seconds":  0.3125,
+                     "threads":  10,
+                     "handles":  184
+                 },
+                 {
+                     "elapsed_ms":  7892,
+                     "working_set_mb":  24.586,
+                     "private_mb":  48.992,
+                     "cpu_seconds":  0.3125,
+                     "threads":  10,
+                     "handles":  184
+                 },
+                 {
+                     "elapsed_ms":  8002,
+                     "working_set_mb":  24.586,
+                     "private_mb":  48.992,
+                     "cpu_seconds":  0.3125,
+                     "threads":  10,
+                     "handles":  184
+                 },
+                 {
+                     "elapsed_ms":  8110,
+                     "working_set_mb":  24.586,
+                     "private_mb":  48.992,
+                     "cpu_seconds":  0.3125,
+                     "threads":  10,
+                     "handles":  184
+                 },
+                 {
+                     "elapsed_ms":  8219,
+                     "working_set_mb":  24.586,
+                     "private_mb":  48.992,
+                     "cpu_seconds":  0.3125,
+                     "threads":  10,
+                     "handles":  184
+                 },
+                 {
+                     "elapsed_ms":  8329,
+                     "working_set_mb":  24.586,
+                     "private_mb":  48.992,
+                     "cpu_seconds":  0.3125,
+                     "threads":  10,
+                     "handles":  184
+                 },
+                 {
+                     "elapsed_ms":  8437,
+                     "working_set_mb":  24.586,
+                     "private_mb":  48.992,
+                     "cpu_seconds":  0.3125,
+                     "threads":  10,
+                     "handles":  184
+                 },
+                 {
+                     "elapsed_ms":  8547,
+                     "working_set_mb":  24.586,
+                     "private_mb":  48.992,
+                     "cpu_seconds":  0.3125,
+                     "threads":  10,
+                     "handles":  184
+                 },
+                 {
+                     "elapsed_ms":  8658,
+                     "working_set_mb":  24.586,
+                     "private_mb":  48.992,
+                     "cpu_seconds":  0.3125,
+                     "threads":  10,
+                     "handles":  184
+                 },
+                 {
+                     "elapsed_ms":  8766,
+                     "working_set_mb":  24.586,
+                     "private_mb":  48.992,
+                     "cpu_seconds":  0.3125,
+                     "threads":  10,
+                     "handles":  184
+                 },
+                 {
+                     "elapsed_ms":  8876,
+                     "working_set_mb":  24.586,
+                     "private_mb":  48.992,
+                     "cpu_seconds":  0.3125,
+                     "threads":  10,
+                     "handles":  184
+                 },
+                 {
+                     "elapsed_ms":  8985,
+                     "working_set_mb":  24.586,
+                     "private_mb":  48.992,
+                     "cpu_seconds":  0.3125,
+                     "threads":  10,
+                     "handles":  184
+                 },
+                 {
+                     "elapsed_ms":  9095,
+                     "working_set_mb":  24.586,
+                     "private_mb":  48.992,
+                     "cpu_seconds":  0.3125,
+                     "threads":  10,
+                     "handles":  184
+                 }
+             ]
+}

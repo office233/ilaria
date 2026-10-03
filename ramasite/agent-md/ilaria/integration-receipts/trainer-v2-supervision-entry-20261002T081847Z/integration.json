@@ -1,0 +1,28 @@
+{
+  "after": {
+    "docs/coordination/chrome-2026-10-01/trainer-v2-supervision-entry-handoff.md": "e84e23e7b880ff7522aff8abcbab3b612218521fe0bd3c788f98613c82f8d9a9",
+    "ilaria/forge/qualified_pilot_v2.py": "b3eb5b7a88341f12a956d5c2d02e2249baa9b8a1472647f6039e7ebe8b95e515",
+    "ilaria/forge/test_qualified_pilot_v2.py": "ed33da90bad4e17b3b8e54f0b94bfadbb6a451328a4da40f5bad9e7f1deb0390"
+  },
+  "backup_root": "E:/nexus-training/integration-receipts/trainer-v2-supervision-entry-20261002T081847Z/before",
+  "before": {
+    "docs/coordination/chrome-2026-10-01/trainer-v2-supervision-entry-handoff.md": null,
+    "ilaria/forge/qualified_pilot_v2.py": "e15294b4f0f54b0dfb0e64b9a045287042b2513513569854901a7fda33018de1",
+    "ilaria/forge/test_qualified_pilot_v2.py": "0c4134f6a56117afcd6e232c20eb1fce7b44310a00102c796a9392d687570b40"
+  },
+  "branch": "codex/nexus-supervisor-v3",
+  "claims": [
+    "docs/coordination/chrome-2026-10-01/trainer-v2-supervision-entry-handoff.md",
+    "ilaria/forge/qualified_pilot_v2.py",
+    "ilaria/forge/test_qualified_pilot_v2.py"
+  ],
+  "cloud_allocation": false,
+  "format": "trainer-v2-supervision-entry-main-integration-v1",
+  "head": "06a5f39f805cf36897e05ffe306d05ed212a5a3a",
+  "integrated_at_utc": "2026-10-02T08:18:48.070069+00:00",
+  "source_pins_sha256": "e4885960d7f68e475448b3a8a1c5e3777ad47a2e73699a10f233abcf4af89dd3",
+  "source_worktree": "E:/nexus-worktrees/trainer-v2-supervision-entry-20261002",
+  "stage_commit_push": false,
+  "staged_after": [],
+  "staged_before": []
+}

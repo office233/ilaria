@@ -1,0 +1,64 @@
+{
+  "Worktree": "E:\\nexus-worktrees\\ilaria-eurohpc-mn5-20261003",
+  "Head": "3790d965826a9273017e5eca67e7f5d4727c4edb",
+  "Files": [
+    {
+      "Path": "E:\\nexus-worktrees\\ilaria-eurohpc-mn5-20261003\\ilaria\\forge\\eurohpc\\__init__.py",
+      "Hash": "C3FFCCBABB01078CD1F573F4023F7F4CA76E9209577BA02C8FE2D14D2AC80204"
+    },
+    {
+      "Path": "E:\\nexus-worktrees\\ilaria-eurohpc-mn5-20261003\\ilaria\\forge\\eurohpc\\contract.py",
+      "Hash": "4A3D707D34BA02018445FB71F8F4E19E4D2C0D339604D9D7183C461BB262A137"
+    },
+    {
+      "Path": "E:\\nexus-worktrees\\ilaria-eurohpc-mn5-20261003\\ilaria\\forge\\eurohpc\\mn5.example.json",
+      "Hash": "9D6722E624BCA2AD445CCAD1D19DF8EDD07A0A1D9DA3A66269BA63C4186F8087"
+    },
+    {
+      "Path": "E:\\nexus-worktrees\\ilaria-eurohpc-mn5-20261003\\ilaria\\forge\\eurohpc\\node.py",
+      "Hash": "8367492CCD3323F5888E46E4166303C1251D0B131271A514AB232D53CDE2B0F4"
+    },
+    {
+      "Path": "E:\\nexus-worktrees\\ilaria-eurohpc-mn5-20261003\\ilaria\\forge\\eurohpc\\prepare.py",
+      "Hash": "3335D82FDE1FF42E586B0FE8D42F206B2B5A6E68ED9C70C6A8B9E1224C0CAD61"
+    },
+    {
+      "Path": "E:\\nexus-worktrees\\ilaria-eurohpc-mn5-20261003\\ilaria\\forge\\config\\imc_125m_curriculum.json",
+      "Hash": "B51E5FCDDCB08317C3B0BCED28185427AE54817B5860C6391D1E03538B9B1A4E"
+    },
+    {
+      "Path": "E:\\nexus-worktrees\\ilaria-eurohpc-mn5-20261003\\ilaria\\forge\\config\\imc_125m_recipe.json",
+      "Hash": "C68E6B220A3F184FDB43CED1F0F0B843768A1E94B97CCCA80F409F1D231FA32D"
+    },
+    {
+      "Path": "E:\\nexus-worktrees\\ilaria-eurohpc-mn5-20261003\\ilaria\\forge\\gpu_preflight.py",
+      "Hash": "9C2C7A64D4D54B2FE480E935610ABD8C74D3B08035DC25F704AC44E31EF040D2"
+    },
+    {
+      "Path": "E:\\nexus-worktrees\\ilaria-eurohpc-mn5-20261003\\ilaria\\forge\\imc_125m_launch.py",
+      "Hash": "55DA039966202265934DE8612FE7F05954E7B60E89DE5C34C9990C7C225FB70D"
+    },
+    {
+      "Path": "E:\\nexus-worktrees\\ilaria-eurohpc-mn5-20261003\\ilaria\\forge\\imc_125m_recipe.py",
+      "Hash": "52A8F9BB92DE5ADB207ADFDA3E83730654DD4C961D284916D031CD44896DA2A8"
+    },
+    {
+      "Path": "E:\\nexus-worktrees\\ilaria-eurohpc-mn5-20261003\\ilaria\\forge\\test_eurohpc.py",
+      "Hash": "A19A16ED00AE38B6AD76D9662737E41E6CBA89EDB0F6B44CB1879F8AF1D443BD"
+    },
+    {
+      "Path": "E:\\nexus-worktrees\\ilaria-eurohpc-mn5-20261003\\ilaria\\forge\\test_imc_125m_launch.py",
+      "Hash": "0C0F1AD7E41EC61036F7EEC50F51E6330BD8C592BF2C6223CDB384AF92C55BC6"
+    },
+    {
+      "Path": "E:\\nexus-worktrees\\ilaria-eurohpc-mn5-20261003\\ilaria\\forge\\training_launch_gate.py",
+      "Hash": "01434F237459FDDC0BABF2DA0CC0E69F5DDFCB4FB8541BD4082B148AE4C9DA00"
+    },
+    {
+      "Path": "E:\\nexus-worktrees\\ilaria-eurohpc-mn5-20261003\\ramasite\\docs\\ilaria\\runbooks\\EUROHPC_MN5_IMC.md",
+      "Hash": "9BA5763DE2C0A83C6B70D9B0FC07EFDE8A0A859085B4E25E5D4C27C36034AA47"
+    }
+  ],
+  "Claims": "Independent review and affected tests only; code unchanged; sanitized own evidence only",
+  "CapturedUtc": "2026-10-03T08:56:12.3817855Z"
+}

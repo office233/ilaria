@@ -1,0 +1,171 @@
+# ============================================================
+# Swypik Production — Caddy Reverse Proxy Configuration
+# HTTPS is automatic via Let's Encrypt (ACME).
+# ============================================================
+
+# Global options
+{
+	email admin@swypik.com
+	# Staging CA for testing — remove for production:
+	# acme_ca https://acme-staging-v02.api.letsencrypt.org/directory
+}
+
+# -------------------------------------------------------
+# Main storefront — swypik.com
+# -------------------------------------------------------
+swypik.com {
+	# Security headers
+	header {
+		X-Frame-Options            "DENY"
+		X-Content-Type-Options     "nosniff"
+		Referrer-Policy            "strict-origin-when-cross-origin"
+		Strict-Transport-Security  "max-age=63072000; includeSubDomains; preload"
+		# X-XSS-Protection eliminat (deprecated; modern browsers ignoră,
+		# IE legacy + Edge pre-Chromium pot introduce noi vulnerabilități cf. OWASP 2024).
+		# CSP frame-ancestors 'none' + X-Frame-Options DENY rămân protecția anti-XSS reală.
+		-X-XSS-Protection
+		Permissions-Policy         "camera=(self), microphone=(self), geolocation=()"
+		# Cross-Origin isolation (best-effort; same-origin pentru izolare totală)
+		Cross-Origin-Opener-Policy "same-origin-allow-popups"
+		Cross-Origin-Resource-Policy "same-origin"
+		# Remove server identity
+		-Server
+	}
+
+	# Gzip / zstd compression
+	encode zstd gzip
+
+	# Logging
+	log {
+		output file /var/log/caddy/access.log {
+			roll_size 100MiB
+			roll_keep 10
+			roll_keep_for 720h
+		}
+		format json
+	}
+
+	# Next.js static assets — long cache (Cache-Control set by Next, no dup here)
+	handle /_next/static/* {
+		reverse_proxy web-next:3000 {
+			lb_try_duration 10s
+			lb_try_interval 250ms
+			fail_duration 5s
+			max_fails 3
+		}
+	}
+
+	# Next.js data / image optimisation routes
+	handle /_next/* {
+		reverse_proxy web-next:3000 {
+			lb_try_duration 10s
+			lb_try_interval 250ms
+			fail_duration 5s
+			max_fails 3
+		}
+	}
+
+	# API routes served by the Next.js backend (BFF)
+	handle /api/* {
+		reverse_proxy web-next:3000 {
+			# IP-ul real vine doar de la Caddy: un X-Real-IP trimis de client e suprascris (rate-limit, dedup plays).
+			header_up X-Real-IP {remote_host}
+			lb_try_duration 10s
+			lb_try_interval 250ms
+			fail_duration 5s
+			max_fails 3
+		}
+	}
+
+	# Same-origin media proxy for HLS/video assets. R2 public domain does not
+	# expose CORS headers with the current bucket key, so the feed reads via /media.
+	handle_path /media/* {
+		header Access-Control-Allow-Origin "https://swypik.com"
+		header Access-Control-Allow-Methods "GET, HEAD, OPTIONS"
+		header Access-Control-Allow-Headers "Range, Content-Type"
+		header Access-Control-Expose-Headers "Content-Length, Content-Range, Accept-Ranges, ETag"
+		header Cache-Control "public, max-age=31536000, immutable"
+		header CDN-Cache-Control "public, max-age=31536000"
+		reverse_proxy https://media.swypik.com {
+			header_up Host media.swypik.com
+		}
+	}
+
+	# Everything else → Next.js SSR
+	handle {
+		reverse_proxy web-next:3000 {
+			# IP-ul real vine doar de la Caddy: un X-Real-IP trimis de client e suprascris (rate-limit, dedup plays).
+			header_up X-Real-IP {remote_host}
+			lb_try_duration 10s
+			lb_try_interval 250ms
+			fail_duration 5s
+			max_fails 3
+		}
+	}
+}
+
+# -------------------------------------------------------
+# Platform API — api.swypik.com  (Go service)
+# -------------------------------------------------------
+api.swypik.com {
+	# Security headers
+	header {
+		X-Frame-Options            "DENY"
+		X-Content-Type-Options     "nosniff"
+		Referrer-Policy            "no-referrer"
+		Strict-Transport-Security  "max-age=63072000; includeSubDomains; preload"
+		-X-XSS-Protection
+		Permissions-Policy         "camera=(), microphone=(), geolocation=()"
+		Content-Security-Policy    "default-src 'none'; frame-ancestors 'none'"
+		Cross-Origin-Resource-Policy "same-origin"
+		-Server
+	}
+
+	encode zstd gzip
+
+	log {
+		output file /var/log/caddy/api-access.log {
+			roll_size 100MiB
+			roll_keep 10
+			roll_keep_for 720h
+		}
+		format json
+	}
+
+	# CORS preflight — adjust origins as needed
+	@cors_preflight method OPTIONS
+	handle @cors_preflight {
+		header Access-Control-Allow-Origin  "https://swypik.com"
+		header Access-Control-Allow-Methods "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+		header Access-Control-Allow-Headers "Authorization, Content-Type"
+		header Access-Control-Max-Age       "86400"
+		respond "" 204
+	}
+
+	# All traffic → Go API
+	reverse_proxy platform-api:8080 {
+		lb_try_duration 10s
+		lb_try_interval 250ms
+		fail_duration 5s
+		max_fails 3
+	}
+}
+
+# -------------------------------------------------------
+# www.swypik.com → swypik.com (301)
+# -------------------------------------------------------
+www.swypik.com {
+	redir https://swypik.com{uri} 301
+}
+# -------------------------------------------------------
+# Swypik 18+ — DECOMMISSIONED 2026-05-28
+# Service removed; respond 410 Gone for SEO de-indexing.
+# -------------------------------------------------------
+18.swypik.com, media-adult.swypik.com {
+	header {
+		X-Robots-Tag "noindex, nofollow, noarchive, nosnippet"
+		Cache-Control "no-store"
+		-Server
+	}
+	respond "Gone" 410
+}

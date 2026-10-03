@@ -1,0 +1,110 @@
+# Deploy în producție (Azure) — fără chei SSH pe niciun calculator.
+#
+# GitHub se autentifică în Azure prin OIDC (identitatea gestionată
+# `id-swypik-gh-deploy`, credențial federat doar pentru acest repo + environment
+# `production`), apoi rulează `infra/azure/deploy.sh` pe web-1 prin Azure Run
+# Command, exact ca deploy-ul manual (lock, backup, migrări, rolling, smoke).
+#
+# Setup o singură dată: docs/infra/github-deploy.md.
+name: Deploy production
+
+on:
+  workflow_dispatch:
+    inputs:
+      services:
+        description: "Servicii extra (ex. 'video-worker cron-worker'); gol = doar web"
+        required: false
+        default: ""
+      max_migrations:
+        description: "Limita de migrări noi acceptate într-un deploy"
+        required: false
+        default: "10"
+      flags:
+        description: "Feature flags de pornit (ex. 'FEATURE_MOVIES'); gol = fără"
+        required: false
+        default: ""
+
+permissions:
+  id-token: write
+  contents: read
+  actions: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 95
+    env:
+      RG: rg-swypik-prod
+      VM: swypik-prod-web-1
+    steps:
+      - name: Validează inputurile
+        env:
+          SERVICES: ${{ inputs.services }}
+          MAX_MIG: ${{ inputs.max_migrations }}
+          FLAGS: ${{ inputs.flags }}
+        run: |
+          set -euo pipefail
+          [[ "$SERVICES" =~ ^[a-z\ -]*$ ]] || { echo "services invalid"; exit 1; }
+          for s in $SERVICES; do case "$s" in video-worker|cron-worker|platform-api) ;; *) echo "serviciu nepermis: $s"; exit 1 ;; esac; done
+          [[ "$MAX_MIG" =~ ^[0-9]{1,2}$ ]] || { echo "max_migrations invalid"; exit 1; }
+          [[ "$FLAGS" =~ ^[A-Z0-9_\ ]*$ ]] || { echo "flags invalid"; exit 1; }
+
+      - name: Refuză deploy dacă CI nu este verde pentru commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          green=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/workflows/ci.yml/runs?head_sha=${SHA}&event=push&per_page=20" \
+            --jq '[.workflow_runs[] | select(.status == "completed" and .conclusion == "success")] | length')
+          if [ "$green" -lt 1 ]; then
+            echo "::error::Deploy refuzat: commitul $SHA nu are un CI push complet și verde."
+            exit 1
+          fi
+
+      - name: Login Azure (OIDC, fără secret)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy pe web-1 (Run Command)
+        env:
+          SERVICES: ${{ inputs.services }}
+          MAX_MIG: ${{ inputs.max_migrations }}
+          FLAGS: ${{ inputs.flags }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          args="--max-migrations $MAX_MIG"
+          [ -n "$SERVICES" ] && args="$args --services '$SERVICES'"
+          [ -n "$FLAGS" ] && args="$args --flags '$FLAGS'"
+          log="/opt/swypik/logs/deploy-gh-${GITHUB_RUN_ID}.log"
+          script="mkdir -p /opt/swypik/logs && chown dev:dev /opt/swypik/logs
+          sudo -iu dev bash -c \"git -C /opt/swypik/app fetch -q origin main && git -C /opt/swypik/app merge -q --ff-only $SHA && bash /opt/swypik/app/infra/azure/deploy.sh $args\" > $log 2>&1
+          rc=\$?
+          grep -E '== |OK după|DEPLOY|OPRIT|aplic:|în așteptare' $log | tail -60
+          echo EXIT=\$rc
+          exit \$rc"
+          out=$(az vm run-command invoke -g "$RG" -n "$VM" --command-id RunShellScript \
+                  --scripts "$script" --query "value[0].message" -o tsv)
+          echo "$out"
+          echo "$out" | grep -q '^EXIT=0' || { echo "::error::deploy eșuat (log complet pe web-1: $log)"; exit 1; }
+
+      - name: Verifică versiunea live
+        env:
+          SHA: ${{ github.sha }}
+        run: |
+          for i in 1 2 3 4 5 6; do
+            live=$(curl -fsS -m 20 https://swypik.com/api/health | grep -o '"commit":"[0-9a-f]*"' || true)
+            echo "live: $live"
+            [[ "$live" == *"$SHA"* ]] && exit 0
+            sleep 10
+          done
+          echo "::error::swypik.com nu raportează commitul $SHA"; exit 1

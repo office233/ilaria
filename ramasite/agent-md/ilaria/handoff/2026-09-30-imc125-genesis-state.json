@@ -1,0 +1,111 @@
+{
+  "snapshot": "2026-09-30T09:26:13+03:00",
+  "workspace": "E:\\nexus",
+  "project": "E:\\nexus\\ilaria",
+  "branch": "agent/nexus-clean-swyp-fast",
+  "changed_files_observed": 1041,
+  "canonical_plan": "docs/plans/MASTER_PLAN.md",
+  "runbook": "docs/runbooks/IMC_125M_GPU_TRAINING.md",
+  "latest_handoff": "docs/handoff/2026-09-30-imc125-genesis-colab.md",
+  "model": {
+    "family": "IMC",
+    "preset": "imc-125m",
+    "parameter_count": 125882112,
+    "vocab_size": 65536,
+    "eos_id": 61440,
+    "context": 2048
+  },
+  "curriculum": {
+    "target_tokens": 1000000000,
+    "global_batch_tokens": 262144,
+    "expected_optimizer_steps": 3815,
+    "expected_exposed_tokens": 1000079360,
+    "identity_sha256": "3ac9c6e0a36e85151e543dfbff09c8ea319b1566b6dd77d981cab8c8f34a4432",
+    "mix": {
+      "general_knowledge": 300000000,
+      "code": 220000000,
+      "mathematics": 145000000,
+      "science_technical_reasoning": 105000000,
+      "os_hardware_drivers_standards": 100000000,
+      "agent_tool_trajectories": 80000000,
+      "world_device_trajectories": 50000000,
+      "romanian_multilingual": 0
+    }
+  },
+  "hashes": {
+    "forge/config/imc_125m_curriculum.json": "b51e5fcddcb08317c3b0bced28185427ae54817b5860c6391d1e03538b9b1a4e",
+    "forge/config/imc_125m_recipe.json": "c68e6b220a3f184fdb43ced1f0f0b843768a1e94b97ccca80f409f1d231fa32d",
+    "forge/config/git_sources.lock.json": "8572496c89e95c4de401f2bca760288c75cec6fb5dd80ffdf491b04ba2453a6f",
+    "forge/config/data_rights.json": "0c1020c4c49ffd1e90e6e844ff635e66750351f14871557b7ea9cc5676c8771c",
+    "forge/config/data_rights_evidence.json": "74dd08a17b198d48153c727967f3af5bcdd4e26ee97a5301541f701480e82535",
+    "forge/config/corpus_strategy.json": "60e487f5aba317e41535bc7e23e4a0184b54de33174293caef49550bc2ab56a0",
+    "git_source_lock_identity": "f643020c68764eda809c3f316cf7027ee23bc60aad847eacad54e0dacbb7996f"
+  },
+  "colab": {
+    "notebook_name": "Ilaria_IMC125_Genesis_English.ipynb",
+    "notebook_url": "https://colab.research.google.com/drive/1xQhoaHlUcrm0VcxnyzehApPNZajEZwY6",
+    "requested_gpu": "H100 High-RAM",
+    "allocated_gpu_type": "G4",
+    "observed_gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+    "vram_gib": 94.97,
+    "system_ram_gb": 176.9,
+    "compute_capability": "12.0",
+    "bf16": true,
+    "torch": "2.11.0+cu128",
+    "cuda": "12.8",
+    "pro_plus": true,
+    "compute_units_observed_approx": 2307,
+    "usage_rate_cu_per_hour_observed_approx": 8.9
+  },
+  "colab_cli": {
+    "venv": "E:\\nexus\\ilaria\\.colab-cli-venv",
+    "version": "0.7.4",
+    "noninteractive_windows_shim": true,
+    "interactive_console_supported_on_windows": false,
+    "oauth_authorized": false,
+    "blocker": "Fresh Google OAuth + phone 2FA required. Do not reuse previous ephemeral challenge number."
+  },
+  "bundle": {
+    "zip": "data/colab/ilaria-live-training-bundle.zip",
+    "manifest": "data/colab/ilaria-live-training-bundle.manifest.json",
+    "files": 100,
+    "zip_sha256": "483d30799a858a7cc18ef6ee9c85d58de1ee4ca1691a1841e5a2776787fbeab9",
+    "manifest_sha256": "296c8b9c554faa04068907f183b27fe4260f0f0e9deb951f1bdb3ccd0a7e81f4",
+    "remote_verified": true
+  },
+  "actual_training": {
+    "production_genesis_started": false,
+    "production_dataset_ready": false,
+    "production_tokenizer_frozen": false,
+    "smoke_passed": true,
+    "smoke_evidence": "bench/imc_125m_smoke/RESULTS.md"
+  },
+  "candidate_inventory": {
+    "path": "bench/imc_125m_data_inventory/candidate-inventory.json",
+    "evidence": "bench/imc_125m_data_inventory/RESULTS.md",
+    "identity_sha256": "0c109f85d209c09acfc36a4f6e47217501347ce5a316b2b8e2af6327fb5e49d6",
+    "mode": "estimated",
+    "documents": 14053,
+    "text_bytes": 119129094,
+    "estimated_tokens_min": 29796327,
+    "estimated_tokens_max": 37241895,
+    "approved_tokens": 0,
+    "code_estimated_tokens_min": 163273,
+    "code_estimated_tokens_max": 204078,
+    "os_hardware_estimated_tokens_min": 29633054,
+    "os_hardware_estimated_tokens_max": 37037818
+  },
+  "immediate_next": [
+    "Acquire and inventory enough unique English-first data for every nonzero lane; current staged candidates total only ~29.8M-37.2M estimated tokens",
+    "Add provenance-preserving classifiers/acquisition for substantially larger code and OS sources",
+    "Acquire general English and math/science sources at pinned revisions without manufacturing quota by repetition",
+    "Build verifier-backed agent/tool and world/device trajectory generation at meaningful scale",
+    "Complete manual rights review decisions for every production source",
+    "Complete first-party ownership/provenance attestation for tools/protocol contracts",
+    "Freeze production IlariaLex-65K",
+    "Build immutable 1B-token dataset manifest",
+    "Pass production_readiness and imc_125m_preflight",
+    "Authorize Colab CLI, verify the target GPU and upload the hash-pinned training bundle only after the dataset gates pass",
+    "Launch ternary_candidate seed 7 with persistent hash-pinned checkpoints"
+  ]
+}

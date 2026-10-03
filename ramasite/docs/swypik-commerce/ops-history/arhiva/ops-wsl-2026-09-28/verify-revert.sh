@@ -1,0 +1,5 @@
+P="docker exec swypik-prod-postgres-1 psql -v ON_ERROR_STOP=1 -U swypik -d swypik_prod -tAc"
+$P "update users set email_verified_at = null where id in ('04cf3bfa-d7a8-49e8-a292-4344bc1005ae','27f1fbe6-e489-482b-8149-42a5b7cf3236','609f4ce7-2dae-45c9-823c-d3aab91a7b8d') and email_verified_at = created_at returning id"
+echo "users now: $($P 'select count(*) from users')   in backup: $(( $(wc -l < /tmp/users_copy.txt) - 1 ))"
+echo "users created today: $($P "select count(*) from users where created_at > now() - interval '1 day'")"
+echo "conversations now: $($P 'select count(*) from conversations')"

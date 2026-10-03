@@ -1,0 +1,60 @@
+.env
+.env.*
+!.env.example
+!**\env.example
+node_modules/
+.next/
+out/
+dist/
+build/
+coverage/
+*.log
+*.pem
+*.key
+.ssh*
+remote_files/
+
+# Build artifacts
+tsconfig.tsbuildinfo
+*.tsbuildinfo
+
+# Backups
+*.bak
+*.bak.*
+*.backup
+
+# Local scratch / audit
+scratch/
+audit-*.json
+audit_*.txt
+samples.txt
+all-ae-ids.txt
+ae-local-import.mjs
+extract-ids.js
+fix-old-categories.mjs
+
+# Rogue files
+/layout.tsx
+static_analysis_semgrep_1/
+*.env*.bak*
+playwright-report/
+test-results/
+playwright/.cache/
+MEMORY.md
+.cache/
+.backups/
+
+build.log
+build.ok
+tsc_out.txt
+
+# Artefacte de build ale agentilor paraleli (NEXT_DIST_DIR custom)
+.next-*/
+*.tsx.new
+build_*.log
+knip_out.txt
+workers/**/__pycache__/
+
+# rapoarte generate local
+i18n-audit.json
+.next-*/

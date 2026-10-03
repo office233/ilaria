@@ -1,0 +1,14 @@
+{
+  "name": "swypik-media-worker",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Cloudflare Worker: signed private media from R2 on the media CDN domain (see docs/infra/r2.md)",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "cd ../../.. && npx vitest run tests/unit/media-worker.test.ts tests/unit/media-signed-url.test.ts"
+  },
+  "devDependencies": {
+    "wrangler": "^4.40.0"
+  }
+}

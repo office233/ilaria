@@ -1,0 +1,326 @@
+{
+  "attribution_sha256": "2943b8c9ef398b3b50f7e0100aa0ec844f57bdeee66ad45d21483bdc86f0fdc9",
+  "external_sources": {
+    "apache_nuttx": {
+      "declared_license": "Apache-2.0 or Apache-2.0-compatible per repository policy, filtered per-file by SPDX",
+      "documents": 18156,
+      "evidence_urls": [
+        "https://github.com/apache/nuttx/blob/master/LICENSE",
+        "https://github.com/apache/nuttx",
+        "https://nuttx.apache.org/docs/latest/introduction/resources.html"
+      ],
+      "manifest_filename": "apache_nuttx.manifest.json",
+      "manifest_sha256": "10419ca03fb8211ce862f4bd38ee6a614feb6c2f2494f2bd0baaafc338992040",
+      "pipeline": {
+        "agent_instruction_filter": "known-agent-files-v1",
+        "allowed_spdx": [
+          "0BSD",
+          "Apache-2.0",
+          "BSD-2-Clause",
+          "BSD-3-Clause",
+          "CC0-1.0",
+          "ISC",
+          "MIT",
+          "Python-2.0.1"
+        ],
+        "licensed_tree_manifest_sha256": "63572f382a5d988ebaba74d8e1354db404de000e0984d9978744144088e2c33f",
+        "name": "licensed-tree-corpus-v1",
+        "secret_filter": "strong-markers-v1"
+      },
+      "review_obligations": [
+        "ingest only per-file SPDX expressions allowed by the corpus policy",
+        "review Apache-2.0 attribution and NOTICE handling for corpus artifacts and model documentation",
+        "retain exact repository revision and per-file provenance for every accepted file"
+      ],
+      "revision": {
+        "commit": "4295024832a0f70820156d2a7e6e09d68897e91f",
+        "kind": "git",
+        "ref": "master",
+        "url": "https://github.com/apache/nuttx.git"
+      }
+    },
+    "freebsd_licensed_tree": {
+      "declared_license": "BSD-2-Clause collection with file-level exceptions",
+      "documents": 11741,
+      "evidence_urls": [
+        "https://github.com/freebsd/freebsd-src",
+        "https://github.com/freebsd/freebsd-doc/blob/main/documentation/content/en/articles/license-guide/_index.adoc"
+      ],
+      "manifest_filename": "freebsd_licensed_tree.manifest.json",
+      "manifest_sha256": "28fae86e168fab2bbb9d3cb51731cdf5e99529620f0894b8fcf09a1a70f0d6c1",
+      "pipeline": {
+        "agent_instruction_filter": "known-agent-files-v1",
+        "allowed_spdx": [
+          "0BSD",
+          "Apache-2.0",
+          "BSD-2-Clause",
+          "BSD-3-Clause",
+          "CC0-1.0",
+          "ISC",
+          "MIT",
+          "Python-2.0.1"
+        ],
+        "licensed_tree_manifest_sha256": "37e89e10105e801fbc7dd79c544431af763ea4f368a1e8b7f5e22338e3525bb3",
+        "name": "licensed-tree-corpus-v1",
+        "secret_filter": "strong-markers-v1"
+      },
+      "review_obligations": [
+        "apply per-file SPDX allowlist and exclude cddl/contrib/other non-allowlisted material",
+        "retain file-level provenance and applicable copyright/license notices"
+      ],
+      "revision": {
+        "commit": "52b2056849e4f77581594b9ca21ac3feb60429c3",
+        "kind": "git",
+        "ref": "main",
+        "url": "https://github.com/freebsd/freebsd-src.git"
+      }
+    },
+    "freertos_kernel": {
+      "declared_license": "MIT",
+      "documents": 636,
+      "evidence_urls": [
+        "https://github.com/FreeRTOS/FreeRTOS-Kernel/blob/main/include/FreeRTOS.h"
+      ],
+      "manifest_filename": "freertos_kernel.manifest.json",
+      "manifest_sha256": "6e1558c1f17b8869c32e326cb9706db372530676d154cd9dbc02581c4d2a8960",
+      "pipeline": {
+        "agent_instruction_filter": "known-agent-files-v1",
+        "allowed_spdx": [
+          "0BSD",
+          "Apache-2.0",
+          "BSD-2-Clause",
+          "BSD-3-Clause",
+          "CC0-1.0",
+          "ISC",
+          "MIT"
+        ],
+        "licensed_tree_manifest_sha256": "bde0e1a17c2f2529071b3c7aea95492058c7b2ec3b07c89fa46fccae08a378a7",
+        "name": "licensed-tree-corpus-v1",
+        "secret_filter": "strong-markers-v1"
+      },
+      "review_obligations": [
+        "retain MIT copyright/license notice in attribution records",
+        "keep acquisition scoped to the FreeRTOS-Kernel repository and separately review submodules or external ports"
+      ],
+      "revision": {
+        "commit": "8be86d4a24fd4091f8f4192018423ab590f408db",
+        "kind": "git",
+        "ref": "main",
+        "url": "https://github.com/FreeRTOS/FreeRTOS-Kernel.git"
+      }
+    },
+    "opencode_reasoning_split0": {
+      "declared_license": "CC-BY-4.0 with per-row CC-BY-4.0/Apache-2.0/MIT allowlist",
+      "documents": 120000,
+      "evidence_urls": [
+        "https://huggingface.co/datasets/nvidia/OpenCodeReasoning/blob/20a1ca19c0d050fe9057fc08339d6b370ec1c67a/README.md",
+        "https://creativecommons.org/licenses/by/4.0/"
+      ],
+      "manifest_filename": "opencode_reasoning_split0.manifest.json",
+      "manifest_sha256": "18610249e57ea29567492982cb396d43f7357b96c6a04fe4733f855aa837bc21",
+      "pipeline": {
+        "cleaning_policy": "ilaria-clean-text-v1",
+        "name": "prepare-corpus-v2",
+        "pii_policy": "mask-email-phone-iban-v1",
+        "seed": 42,
+        "source_sha256": "eabd6d142570b5a2c091dfe1b04791ec594037b25cd291b330fef310f814e136"
+      },
+      "review_obligations": [
+        "retain per-row license provenance and attribution for accepted samples",
+        "restrict ingestion to rows whose embedded license is CC-BY-4.0, Apache-2.0 or MIT",
+        "review upstream competitive-programming problem provenance before production eligibility"
+      ],
+      "revision": {
+        "config": "split_0",
+        "kind": "huggingface",
+        "provider": "nvidia/OpenCodeReasoning",
+        "revision": "20a1ca19c0d050fe9057fc08339d6b370ec1c67a"
+      }
+    },
+    "openmath_reasoning_cot": {
+      "declared_license": "CC-BY-4.0",
+      "documents": 100000,
+      "evidence_urls": [
+        "https://huggingface.co/datasets/nvidia/OpenMathReasoning/blob/d3d08664755704f422af97d43a7ff0ded4bd95df/README.md",
+        "https://creativecommons.org/licenses/by/4.0/"
+      ],
+      "manifest_filename": "openmath_reasoning_cot.manifest.json",
+      "manifest_sha256": "7585e6a7670cfb73d9460d4d2ffbabb8888747b5b882b4b465fb1f2f50796fde",
+      "pipeline": {
+        "cleaning_policy": "ilaria-clean-text-v1",
+        "name": "prepare-corpus-v2",
+        "pii_policy": "mask-email-phone-iban-v1",
+        "seed": 42,
+        "source_sha256": "eabd6d142570b5a2c091dfe1b04791ec594037b25cd291b330fef310f814e136"
+      },
+      "review_obligations": [
+        "retain attribution and exact NVIDIA dataset revision/provenance for accepted rows",
+        "review attribution and pass-through rights for underlying AoPS/MATH problem content before production eligibility"
+      ],
+      "revision": {
+        "config": null,
+        "kind": "huggingface",
+        "provider": "nvidia/OpenMathReasoning",
+        "revision": "d3d08664755704f422af97d43a7ff0ded4bd95df"
+      }
+    },
+    "openscience_reasoning_2": {
+      "declared_license": "CC-BY-4.0",
+      "documents": 80000,
+      "evidence_urls": [
+        "https://huggingface.co/datasets/nvidia/OpenScienceReasoning-2/blob/174b02c9cdf231f220765b2a1d5ece4550921894/README.md",
+        "https://creativecommons.org/licenses/by/4.0/"
+      ],
+      "manifest_filename": "openscience_reasoning_2.manifest.json",
+      "manifest_sha256": "846b524041889478fae6b6483d69d76b24488e5b726e00eeba8b71a6a0dd8aed",
+      "pipeline": {
+        "cleaning_policy": "ilaria-clean-text-v1",
+        "name": "prepare-corpus-v2",
+        "pii_policy": "mask-email-phone-iban-v1",
+        "seed": 42,
+        "source_sha256": "3553880d23bbe4f3efdec7dd741f10542202b707669c9bc3545d857c1b67a653"
+      },
+      "review_obligations": [
+        "retain CC-BY-4.0 attribution and exact NVIDIA dataset revision/provenance for accepted rows"
+      ],
+      "revision": {
+        "config": null,
+        "kind": "huggingface",
+        "provider": "nvidia/OpenScienceReasoning-2",
+        "revision": "174b02c9cdf231f220765b2a1d5ece4550921894"
+      }
+    },
+    "wiki_en": {
+      "declared_license": "CC-BY-SA-3.0 + GFDL (dataset card)",
+      "documents": 1200000,
+      "evidence_urls": [
+        "https://huggingface.co/datasets/wikimedia/wikipedia/blob/main/README.md",
+        "https://foundation.wikimedia.org/wiki/Legal:Wikimedia_Developer_App_Guidelines",
+        "https://foundation.wikimedia.org/wiki/Terms_of_Use"
+      ],
+      "manifest_filename": "wiki_en.manifest.json",
+      "manifest_sha256": "38fc03e155a4407c4f5c9ffcdc31bf0b0bc4674dbbae8e95d06136272f754bbe",
+      "pipeline": {
+        "lane_policy": "exclusive-article-topic-general-fallback-v1",
+        "name": "wiki-en-topic-corpus-v1",
+        "provenance": "article-id-title-url-source-row-v1",
+        "topic_policy_sha256": "1fd2482a3033ad6fe4a94645a434aa6f6952ec94cec76aa2639185d20630e9e8"
+      },
+      "review_obligations": [
+        "define attribution path to article authors/source history",
+        "review share-alike implications for redistributed derived corpus artifacts",
+        "retain provenance needed to satisfy reuse obligations"
+      ],
+      "revision": {
+        "config": "20231101.en",
+        "kind": "huggingface",
+        "provider": "wikimedia/wikipedia",
+        "revision": "b04c8d1ceb2f5cd4588862100d08de323dccfbaa"
+      }
+    },
+    "zephyr": {
+      "declared_license": "Apache-2.0",
+      "documents": 13417,
+      "evidence_urls": [
+        "https://docs.zephyrproject.org/latest/LICENSING.html",
+        "https://docs.zephyrproject.org/latest/contribute/guidelines.html",
+        "https://github.com/zephyrproject-rtos/zephyr/blob/main/LICENSE"
+      ],
+      "manifest_filename": "zephyr.manifest.json",
+      "manifest_sha256": "4cbbc9c8601509f62f5b727b1b372a9089994e1b42a205d991a73d0d787a53b9",
+      "pipeline": {
+        "agent_instruction_filter": "known-agent-files-v1",
+        "allowed_spdx": [
+          "0BSD",
+          "Apache-2.0",
+          "BSD-2-Clause",
+          "BSD-3-Clause",
+          "CC0-1.0",
+          "ISC",
+          "MIT"
+        ],
+        "licensed_tree_manifest_sha256": "48bd68f74020c9592d8ca5efbe15a0927e7fea639649d11b1ff85d809d4e4ae6",
+        "name": "licensed-tree-corpus-v1",
+        "secret_filter": "strong-markers-v1"
+      },
+      "review_obligations": [
+        "ingest only per-file SPDX/REUSE entries allowed by the corpus policy",
+        "review Apache-2.0 attribution and NOTICE handling for corpus artifacts and model documentation",
+        "retain exact repository revision and per-file provenance for every accepted file"
+      ],
+      "revision": {
+        "commit": "f0bdf59a0b7d1b4dadbec339662d764cba78138a",
+        "kind": "git",
+        "ref": "main",
+        "url": "https://github.com/zephyrproject-rtos/zephyr.git"
+      }
+    }
+  },
+  "first_party_sources": {
+    "first_party_contracts": {
+      "attestation_scope_sha256": "0f136c85e91a0523bd85261dcac28903b6503ec078f4e187a2fe663360f4e111",
+      "attestation_sha256": "e70c709bced17a5a7da0fd07f3636e66a02df06041968a8a433fe0e49531f6ad",
+      "files": [
+        {
+          "path": "runtime/connectome/connectome.go",
+          "sha256": "32cd8a6f334dc3835fba020ec07d9b6c99373c9a8ff7e58893752a48e7c7f5f9"
+        },
+        {
+          "path": "runtime/pce/capsule.go",
+          "sha256": "e83e532b3c553f12fb05617436e64ec0254647b02c2d2ca638b412520b9300a8"
+        },
+        {
+          "path": "runtime/pce/replay_artifact.go",
+          "sha256": "aff1dbfd78cf4086746e6586f6cc2b5a2347dce80b04b5d696f64b2080cd6f0f"
+        },
+        {
+          "path": "runtime/protocol/contract.go",
+          "sha256": "37beb66a35b59a4dafca23d14c2f6009be5534b31b542837782debe0cb8e83ff"
+        },
+        {
+          "path": "runtime/router/router.go",
+          "sha256": "65ea3357a004741c095b7374c5b8b4c0b8b4b37069752820ee1d39ba2aca813f"
+        },
+        {
+          "path": "runtime/world/world.go",
+          "sha256": "4cd8a1dac0375654575454f29ac43d333abe8c36fec045213ec1ddd9bf4b7c85"
+        },
+        {
+          "path": "specs/myriad.swyp",
+          "sha256": "e3bcb8d254cbc508f282b605230184034955517509f0b770d4fca47bbd4adf47"
+        }
+      ]
+    },
+    "first_party_trajectories": {
+      "attestation_scope_sha256": "bcb8d1191f62f150ca2d3970c83afd5ba0294231119868a224a06c85ec9cb7bd",
+      "attestation_sha256": "8bd361bbd0fafbe68200939e57f425517b81a127dd9d42abcdfd51cfb18f203e",
+      "files": [
+        {
+          "path": "forge/config/imc_125m_trajectory_generation.json",
+          "sha256": "90a34c5e02ab063e5742432f64fa8138dc5dbccdc035eb7fc9bcb0d9558d76a3"
+        },
+        {
+          "path": "forge/data_contract.py",
+          "sha256": "95449cb67c712d4889fcb688431ee3f9c2cd151536765b9f212377bc954ae53c"
+        },
+        {
+          "path": "forge/first_party_attestation.py",
+          "sha256": "af0d101e93caa4fd8a34b15305ff8f50aa81a8bf7c55af52dd41ae3503a4b339"
+        },
+        {
+          "path": "forge/hf_tokenizer.py",
+          "sha256": "0a0d30734a9c2c1ecb635e8f599506ad69ceeb3f6325433008a0e9a23282a3b7"
+        },
+        {
+          "path": "forge/verified_trajectory_corpus.py",
+          "sha256": "59b54021cf82a399081f462a48604b6c772348ef89f89e279dcb8c31919df80f"
+        }
+      ]
+    }
+  },
+  "format": "imc-125m-production-attribution-v1",
+  "review_packet": {
+    "filename": "REVIEW_PACKET.json",
+    "sha256": "21cb5fe4ea956009259aff668a0c09c1dd1aede0a9aa0a48a542ee59670c1639"
+  }
+}

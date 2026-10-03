@@ -127,19 +127,8 @@ func synthCommand(args []string) error {
 		return fmt.Errorf("generated source rejected: %w", err)
 	}
 
-	file, err := os.OpenFile(*out, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
-	if err != nil {
+	if err := writeNewModule(*out, []byte(source)); err != nil {
 		return err
-	}
-	_, writeErr := file.WriteString(source)
-	closeErr := file.Close()
-	if writeErr != nil {
-		_ = os.Remove(*out)
-		return writeErr
-	}
-	if closeErr != nil {
-		_ = os.Remove(*out)
-		return closeErr
 	}
 
 	fmt.Printf("Synthesized %s (evaluated %d candidates)\n", *out, res.Candidates)

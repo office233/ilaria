@@ -1,0 +1,228 @@
+{
+  "bytes_per_category_target": 40000000,
+  "categories": {
+    "code": {
+      "bytes": 40004460,
+      "documents": 5177,
+      "filename": "code.txt",
+      "sha256": "38e5012f8d2debb950ae2fd1951692291416975091653710c3e182baced0a64e",
+      "sources": [
+        {
+          "manifest": "opencode_reasoning_split0.manifest.json",
+          "manifest_sha256": "7396d5b2cbc6f5bbe009692d6648a30d78c1f656fd6426ab5f6bffcfb366380a",
+          "revision": "20a1ca19c0d050fe9057fc08339d6b370ec1c67a",
+          "source": "opencode_reasoning_split0"
+        }
+      ]
+    },
+    "english": {
+      "bytes": 40001386,
+      "documents": 25635,
+      "filename": "english.txt",
+      "sha256": "0a4bbe3d198e40b24919fe0675d4203b7670c28d8f305c2b89fc60517621f08e",
+      "sources": [
+        {
+          "manifest": "wiki_en.manifest.json",
+          "manifest_sha256": "38fc03e155a4407c4f5c9ffcdc31bf0b0bc4674dbbae8e95d06136272f754bbe",
+          "revision": "b04c8d1ceb2f5cd4588862100d08de323dccfbaa",
+          "source": "wiki_en"
+        }
+      ]
+    },
+    "hardware": {
+      "bytes": 40002347,
+      "documents": 2859,
+      "filename": "hardware.txt",
+      "sha256": "3acdc03850ef6595b81db1d4fb2c7225c495b0dce77a4a2e4143ca3200806553",
+      "sources": [
+        {
+          "manifest": "apache_nuttx.manifest.json",
+          "manifest_sha256": "10419ca03fb8211ce862f4bd38ee6a614feb6c2f2494f2bd0baaafc338992040",
+          "revision": "4295024832a0f70820156d2a7e6e09d68897e91f",
+          "source": "apache_nuttx"
+        },
+        {
+          "manifest": "freebsd_licensed_tree.manifest.json",
+          "manifest_sha256": "28fae86e168fab2bbb9d3cb51731cdf5e99529620f0894b8fcf09a1a70f0d6c1",
+          "revision": "52b2056849e4f77581594b9ca21ac3feb60429c3",
+          "source": "freebsd_licensed_tree"
+        },
+        {
+          "manifest": "freertos_kernel.manifest.json",
+          "manifest_sha256": "6e1558c1f17b8869c32e326cb9706db372530676d154cd9dbc02581c4d2a8960",
+          "revision": "8be86d4a24fd4091f8f4192018423ab590f408db",
+          "source": "freertos_kernel"
+        },
+        {
+          "manifest": "zephyr.manifest.json",
+          "manifest_sha256": "4cbbc9c8601509f62f5b727b1b372a9089994e1b42a205d991a73d0d787a53b9",
+          "revision": "f0bdf59a0b7d1b4dadbec339662d764cba78138a",
+          "source": "zephyr"
+        }
+      ]
+    },
+    "math_science": {
+      "bytes": 40001316,
+      "documents": 5132,
+      "filename": "math_science.txt",
+      "sha256": "6274e70635a0cb555f0a1718637d0925c5ac005737bc14faef2e9b29f0cf8c2c",
+      "sources": [
+        {
+          "manifest": "openmath_reasoning_cot.manifest.json",
+          "manifest_sha256": "854f4c9697d13f9b304606a7dd27b949dcd672519e2bb1f67c7e051b6326b316",
+          "revision": "d3d08664755704f422af97d43a7ff0ded4bd95df",
+          "source": "openmath_reasoning_cot"
+        },
+        {
+          "manifest": "openscience_reasoning_2.manifest.json",
+          "manifest_sha256": "846b524041889478fae6b6483d69d76b24488e5b726e00eeba8b71a6a0dd8aed",
+          "revision": "174b02c9cdf231f220765b2a1d5ece4550921894",
+          "source": "openscience_reasoning_2"
+        }
+      ]
+    },
+    "os_drivers": {
+      "bytes": 40002347,
+      "documents": 2859,
+      "filename": "os_drivers.txt",
+      "sha256": "3acdc03850ef6595b81db1d4fb2c7225c495b0dce77a4a2e4143ca3200806553",
+      "sources": [
+        {
+          "manifest": "apache_nuttx.manifest.json",
+          "manifest_sha256": "10419ca03fb8211ce862f4bd38ee6a614feb6c2f2494f2bd0baaafc338992040",
+          "revision": "4295024832a0f70820156d2a7e6e09d68897e91f",
+          "source": "apache_nuttx"
+        },
+        {
+          "manifest": "freebsd_licensed_tree.manifest.json",
+          "manifest_sha256": "28fae86e168fab2bbb9d3cb51731cdf5e99529620f0894b8fcf09a1a70f0d6c1",
+          "revision": "52b2056849e4f77581594b9ca21ac3feb60429c3",
+          "source": "freebsd_licensed_tree"
+        },
+        {
+          "manifest": "freertos_kernel.manifest.json",
+          "manifest_sha256": "6e1558c1f17b8869c32e326cb9706db372530676d154cd9dbc02581c4d2a8960",
+          "revision": "8be86d4a24fd4091f8f4192018423ab590f408db",
+          "source": "freertos_kernel"
+        },
+        {
+          "manifest": "zephyr.manifest.json",
+          "manifest_sha256": "4cbbc9c8601509f62f5b727b1b372a9089994e1b42a205d991a73d0d787a53b9",
+          "revision": "f0bdf59a0b7d1b4dadbec339662d764cba78138a",
+          "source": "zephyr"
+        }
+      ]
+    },
+    "tools_protocol": {
+      "bytes": 40000372,
+      "documents": 82446,
+      "filename": "tools_protocol.txt",
+      "sha256": "0ccd16244625eaa33a2c950ba126418295cdb08e78b6b04fecdcdc1cc6dae191",
+      "sources": [
+        {
+          "manifest": "first_party_trajectories.manifest.json",
+          "manifest_sha256": "7b565307f11d93074ce673720a7ab09e0a68319be31fd2d13c1174b82bbb3ab6",
+          "revision": "38af49db73700cf19a334adea170a5654ddcd37a237e7499b41b1119c520d9f2",
+          "source": "first_party_trajectories"
+        }
+      ]
+    }
+  },
+  "format": "ilarialex-candidate-sample-v1",
+  "inputs": [
+    {
+      "category": "code",
+      "manifest": "opencode_reasoning_split0.manifest.json",
+      "manifest_sha256": "7396d5b2cbc6f5bbe009692d6648a30d78c1f656fd6426ab5f6bffcfb366380a",
+      "revision": "20a1ca19c0d050fe9057fc08339d6b370ec1c67a",
+      "source": "opencode_reasoning_split0"
+    },
+    {
+      "category": "english",
+      "manifest": "wiki_en.manifest.json",
+      "manifest_sha256": "38fc03e155a4407c4f5c9ffcdc31bf0b0bc4674dbbae8e95d06136272f754bbe",
+      "revision": "b04c8d1ceb2f5cd4588862100d08de323dccfbaa",
+      "source": "wiki_en"
+    },
+    {
+      "category": "hardware",
+      "manifest": "apache_nuttx.manifest.json",
+      "manifest_sha256": "10419ca03fb8211ce862f4bd38ee6a614feb6c2f2494f2bd0baaafc338992040",
+      "revision": "4295024832a0f70820156d2a7e6e09d68897e91f",
+      "source": "apache_nuttx"
+    },
+    {
+      "category": "hardware",
+      "manifest": "freebsd_licensed_tree.manifest.json",
+      "manifest_sha256": "28fae86e168fab2bbb9d3cb51731cdf5e99529620f0894b8fcf09a1a70f0d6c1",
+      "revision": "52b2056849e4f77581594b9ca21ac3feb60429c3",
+      "source": "freebsd_licensed_tree"
+    },
+    {
+      "category": "hardware",
+      "manifest": "freertos_kernel.manifest.json",
+      "manifest_sha256": "6e1558c1f17b8869c32e326cb9706db372530676d154cd9dbc02581c4d2a8960",
+      "revision": "8be86d4a24fd4091f8f4192018423ab590f408db",
+      "source": "freertos_kernel"
+    },
+    {
+      "category": "hardware",
+      "manifest": "zephyr.manifest.json",
+      "manifest_sha256": "4cbbc9c8601509f62f5b727b1b372a9089994e1b42a205d991a73d0d787a53b9",
+      "revision": "f0bdf59a0b7d1b4dadbec339662d764cba78138a",
+      "source": "zephyr"
+    },
+    {
+      "category": "math_science",
+      "manifest": "openmath_reasoning_cot.manifest.json",
+      "manifest_sha256": "854f4c9697d13f9b304606a7dd27b949dcd672519e2bb1f67c7e051b6326b316",
+      "revision": "d3d08664755704f422af97d43a7ff0ded4bd95df",
+      "source": "openmath_reasoning_cot"
+    },
+    {
+      "category": "math_science",
+      "manifest": "openscience_reasoning_2.manifest.json",
+      "manifest_sha256": "846b524041889478fae6b6483d69d76b24488e5b726e00eeba8b71a6a0dd8aed",
+      "revision": "174b02c9cdf231f220765b2a1d5ece4550921894",
+      "source": "openscience_reasoning_2"
+    },
+    {
+      "category": "os_drivers",
+      "manifest": "apache_nuttx.manifest.json",
+      "manifest_sha256": "10419ca03fb8211ce862f4bd38ee6a614feb6c2f2494f2bd0baaafc338992040",
+      "revision": "4295024832a0f70820156d2a7e6e09d68897e91f",
+      "source": "apache_nuttx"
+    },
+    {
+      "category": "os_drivers",
+      "manifest": "freebsd_licensed_tree.manifest.json",
+      "manifest_sha256": "28fae86e168fab2bbb9d3cb51731cdf5e99529620f0894b8fcf09a1a70f0d6c1",
+      "revision": "52b2056849e4f77581594b9ca21ac3feb60429c3",
+      "source": "freebsd_licensed_tree"
+    },
+    {
+      "category": "os_drivers",
+      "manifest": "freertos_kernel.manifest.json",
+      "manifest_sha256": "6e1558c1f17b8869c32e326cb9706db372530676d154cd9dbc02581c4d2a8960",
+      "revision": "8be86d4a24fd4091f8f4192018423ab590f408db",
+      "source": "freertos_kernel"
+    },
+    {
+      "category": "os_drivers",
+      "manifest": "zephyr.manifest.json",
+      "manifest_sha256": "4cbbc9c8601509f62f5b727b1b372a9089994e1b42a205d991a73d0d787a53b9",
+      "revision": "f0bdf59a0b7d1b4dadbec339662d764cba78138a",
+      "source": "zephyr"
+    },
+    {
+      "category": "tools_protocol",
+      "manifest": "first_party_trajectories.manifest.json",
+      "manifest_sha256": "7b565307f11d93074ce673720a7ab09e0a68319be31fd2d13c1174b82bbb3ab6",
+      "revision": "38af49db73700cf19a334adea170a5654ddcd37a237e7499b41b1119c520d9f2",
+      "source": "first_party_trajectories"
+    }
+  ],
+  "production_eligible": false,
+  "purpose": "tokenizer-development-and-exact-candidate-counting-only",
+  "sample_sha256": "8f44aed7f79c55bb416b911654275e11acedcb6ea4e79cd8f97eb34b1042805a"
+}

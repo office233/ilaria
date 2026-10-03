@@ -1,0 +1,2246 @@
+{
+  "format": "ilaria-audit-source-inventory-v1",
+  "date": "2026-09-30",
+  "counts": {
+    "go": 20,
+    "json_contract_config": 17,
+    "python_implementation": 65,
+    "python_tests": 54,
+    "swyp": 1
+  },
+  "files": [
+    {
+      "path": "forge/atomic_io.py",
+      "bytes": 1543,
+      "lines": 40,
+      "sha256": "6810bd5ce89d9421a95e4e692d6961dfefbb56ef9e4568e09ac780f76d5d93f3",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "atomic_binary_writer"
+      ],
+      "purpose": "Publish one checkpoint without truncating the previous successful file."
+    },
+    {
+      "path": "forge/benchmark_exclusion_plan.py",
+      "bytes": 4754,
+      "lines": 136,
+      "sha256": "0d700b6f654c06425e30eb803cb86a3b4bd0e9a865acb381133ed30ca88c3f77",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "_identity",
+        "load_plan",
+        "assess_plan",
+        "rehash_plan",
+        "main"
+      ],
+      "purpose": "Content-addressed benchmark exclusion plan for IMC-125M Genesis."
+    },
+    {
+      "path": "forge/build_colab_bundle.py",
+      "bytes": 3764,
+      "lines": 129,
+      "sha256": "33e2630e453d234f078921b2284a1cab63bade9e079a1943c38cae6a77490e7b",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "_sha256",
+        "collect_files",
+        "build_bundle",
+        "main"
+      ],
+      "purpose": "Build the deterministic code bundle uploaded to Colab training runtimes."
+    },
+    {
+      "path": "forge/build_genesis_streams.py",
+      "bytes": 6921,
+      "lines": 116,
+      "sha256": "bef71ce919165141f0f8833333021d3385f20c4ff9a4d5bd689a6e335693248e",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "_load_encoded",
+        "_lane_prefixes",
+        "build_genesis_streams",
+        "main"
+      ],
+      "purpose": "Build canonical IMC-125M train/validation curriculum streams from encoded lanes."
+    },
+    {
+      "path": "forge/collective_sleep.py",
+      "bytes": 5718,
+      "lines": 176,
+      "sha256": "a43157ba87f64499c2283db99beee803af44ade2bdb780705f611df05d684dc2",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "SleepPolicy",
+        "SleepResult",
+        "_validate_metrics",
+        "consolidate"
+      ],
+      "purpose": "Collective Sleep v1: verifier-gated replay consolidation."
+    },
+    {
+      "path": "forge/concat_streams.py",
+      "bytes": 7507,
+      "lines": 227,
+      "sha256": "a48977da7e050469549a14c624b3e57b0be4e9b0062e463917bef1d7a0abb262",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "_meta",
+        "interleave_prefixes",
+        "concat",
+        "main"
+      ],
+      "purpose": "Join canonical Ilaria token shards into one immutable training stream."
+    },
+    {
+      "path": "forge/config/corpus_sources.lock.json",
+      "bytes": 1474,
+      "lines": 46,
+      "sha256": "3b8c52863b3bc4712730ea4dd37d190835574468b53d8e06fea74afb46b343d6",
+      "inspection": "full-file JSON syntax verification; not an approval of data/rights evidence"
+    },
+    {
+      "path": "forge/config/corpus_strategy.json",
+      "bytes": 7256,
+      "lines": 184,
+      "sha256": "0fb01e9167faaad1199db33e74b8fa5ff03af1aa2d9b2f5fd853eb1596e04227",
+      "inspection": "full-file JSON syntax verification; not an approval of data/rights evidence"
+    },
+    {
+      "path": "forge/config/data_rights.json",
+      "bytes": 7613,
+      "lines": 133,
+      "sha256": "5587a64d5782d85484e4301288aa83b6e4feb5f0c45f9197528892ee789bf954",
+      "inspection": "full-file JSON syntax verification; not an approval of data/rights evidence"
+    },
+    {
+      "path": "forge/config/data_rights_evidence.json",
+      "bytes": 9428,
+      "lines": 223,
+      "sha256": "a79ff478a2e456ffb8b08977c3d94502a1aa38168c0c4cfda7c1972358ef660f",
+      "inspection": "full-file JSON syntax verification; not an approval of data/rights evidence"
+    },
+    {
+      "path": "forge/config/first_party_math.attestation.json",
+      "bytes": 549,
+      "lines": 17,
+      "sha256": "4ef453aad401d1a49dadf5e1e6d7171196a38f4d9f5ca8ce63a377e2abc6b2e7",
+      "inspection": "full-file JSON syntax verification; not an approval of data/rights evidence"
+    },
+    {
+      "path": "forge/config/first_party_tools_protocol.attestation.json",
+      "bytes": 1407,
+      "lines": 37,
+      "sha256": "94adac26744c9d14404d942cfdbb327e2f20b1687280bff809fa166078ad50b9",
+      "inspection": "full-file JSON syntax verification; not an approval of data/rights evidence"
+    },
+    {
+      "path": "forge/config/first_party_trajectories.attestation.json",
+      "bytes": 1162,
+      "lines": 29,
+      "sha256": "455f29c1e6a2f12caf9e0719ae27629ba3650a1cb319cf2a0b8362250f274f00",
+      "inspection": "full-file JSON syntax verification; not an approval of data/rights evidence"
+    },
+    {
+      "path": "forge/config/git_sources.lock.json",
+      "bytes": 1323,
+      "lines": 41,
+      "sha256": "11f8549f9345d7b730bd75a72a8de8f1ab603d625dd834b15cd17d46912d11d1",
+      "inspection": "full-file JSON syntax verification; not an approval of data/rights evidence"
+    },
+    {
+      "path": "forge/config/imc_125m_benchmark_exclusions.json",
+      "bytes": 897,
+      "lines": 27,
+      "sha256": "a7173bb838df376bbdc66de9e97bb90ce7835bbc1cd0ec800c151eb8fd77bf1e",
+      "inspection": "full-file JSON syntax verification; not an approval of data/rights evidence"
+    },
+    {
+      "path": "forge/config/imc_125m_curriculum.json",
+      "bytes": 443,
+      "lines": 15,
+      "sha256": "b51e5fcddcb08317c3b0bced28185427ae54817b5860c6391d1e03538b9b1a4e",
+      "inspection": "full-file JSON syntax verification; not an approval of data/rights evidence"
+    },
+    {
+      "path": "forge/config/imc_125m_inventory_lanes.json",
+      "bytes": 2627,
+      "lines": 140,
+      "sha256": "3686d228ddf603eaac32311217bb023aab4d326ee6dca1e3bc4d76621473694f",
+      "inspection": "full-file JSON syntax verification; not an approval of data/rights evidence"
+    },
+    {
+      "path": "forge/config/imc_125m_math_generation.json",
+      "bytes": 405,
+      "lines": 15,
+      "sha256": "aa9fc5ff32d603d7b5634ef0330fda718ae674c05493e58c9d4bb026e378aa1a",
+      "inspection": "full-file JSON syntax verification; not an approval of data/rights evidence"
+    },
+    {
+      "path": "forge/config/imc_125m_production_sources.json",
+      "bytes": 1603,
+      "lines": 65,
+      "sha256": "887475f097bb5646171a2c7e1d89ab84440de42b46993a5b0abd8954e7cbdc56",
+      "inspection": "full-file JSON syntax verification; not an approval of data/rights evidence"
+    },
+    {
+      "path": "forge/config/imc_125m_recipe.json",
+      "bytes": 1167,
+      "lines": 53,
+      "sha256": "c68e6b220a3f184fdb43ced1f0f0b843768a1e94b97ccca80f409f1d231fa32d",
+      "inspection": "full-file JSON syntax verification; not an approval of data/rights evidence"
+    },
+    {
+      "path": "forge/config/imc_125m_trajectory_generation.json",
+      "bytes": 590,
+      "lines": 21,
+      "sha256": "90a34c5e02ab063e5742432f64fa8138dc5dbccdc035eb7fc9bcb0d9558d76a3",
+      "inspection": "full-file JSON syntax verification; not an approval of data/rights evidence"
+    },
+    {
+      "path": "forge/config/wiki_en_topics.json",
+      "bytes": 2163,
+      "lines": 98,
+      "sha256": "d381db2d52a75b418223cba2c13c3601459198871d69c735f346ea9473179fae",
+      "inspection": "full-file JSON syntax verification; not an approval of data/rights evidence"
+    },
+    {
+      "path": "forge/corpus_inventory.py",
+      "bytes": 26392,
+      "lines": 664,
+      "sha256": "1db15a63e45099299c8e927842341e980877058de164c6fe5fd61940e16fd07e",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "_load_json",
+        "load_lane_rules",
+        "classify_path",
+        "_source_inputs",
+        "_stats",
+        "_count_tokens",
+        "_token_interval",
+        "_public_stats",
+        "build_inventory",
+        "main"
+      ],
+      "purpose": "Build a deterministic, rights-aware inventory for the IMC-125M curriculum."
+    },
+    {
+      "path": "forge/corpus_source_lock.py",
+      "bytes": 5126,
+      "lines": 131,
+      "sha256": "872ccedaeb95f8b28c14f7f95d6b8c6cf15c97977bde172baf7dc1333ddb8dde",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "_require_hf_revision",
+        "_identity_hash",
+        "build_source_lock",
+        "validate_source_lock",
+        "load_source_lock",
+        "resolve_huggingface_revisions",
+        "main"
+      ],
+      "purpose": "Immutable Hugging Face source revision locks for production corpus builds."
+    },
+    {
+      "path": "forge/corpus_strategy.py",
+      "bytes": 4779,
+      "lines": 138,
+      "sha256": "1e4b8d89e4733ffa7805fde3aa2a63b41cd270f58e4d6a8f96224d5b4adab72a",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "assess_strategy",
+        "load_strategy",
+        "main"
+      ],
+      "purpose": "Validate the canonical source-selection policy without granting rights."
+    },
+    {
+      "path": "forge/cpython_licensed_tree_source.py",
+      "bytes": 5954,
+      "lines": 176,
+      "sha256": "db3d39858a0ef67b277829cb4feefe94cdb0057bf216c652442c15adf2230d89",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "_manifest_hash",
+        "_evidence_file",
+        "build_cpython_manifest",
+        "main"
+      ],
+      "purpose": "Build a CPython candidate manifest using root LICENSE plus committed SBOM."
+    },
+    {
+      "path": "forge/cpython_sbom.py",
+      "bytes": 3566,
+      "lines": 94,
+      "sha256": "186193aa5960ef422f95700f5f535abe4e07bae978fcf2332eb0b782a454892d",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "_safe_relative",
+        "_normalized_sbom_sha256",
+        "load_exclusions"
+      ],
+      "purpose": "Parse CPython's committed source SBOM as a third-party exclusion set."
+    },
+    {
+      "path": "forge/curate_corpus.py",
+      "bytes": 19514,
+      "lines": 519,
+      "sha256": "2a53d6fdbc48bd9f8e1f7c45c67f20f26c338b88df14e9c74833af1f7c93ec55",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "_load_json",
+        "_load_source_manifest",
+        "validation_side",
+        "_ShardWriter",
+        "curate",
+        "main"
+      ],
+      "purpose": "Create the trainable corpus from cleaned raw source shards."
+    },
+    {
+      "path": "forge/curated_lane_shards.py",
+      "bytes": 7802,
+      "lines": 214,
+      "sha256": "9136802f79e5c5b87cfd310d9c2fbcd7deb5b8d1ebfe786d370b4b7c6e1e4217",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "_Writer",
+        "_load_curated",
+        "split_curated_lanes",
+        "main"
+      ],
+      "purpose": "Split a lane-annotated curated corpus into content-addressed lane shards."
+    },
+    {
+      "path": "forge/curriculum_stream.py",
+      "bytes": 12365,
+      "lines": 305,
+      "sha256": "530e8d86bf899a0d6a8fdc980a878d46f33ffb684329600ef265922c0ebb16b0",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "_identity_hash",
+        "load_curriculum",
+        "allocate_token_budget",
+        "_compatible_lane_inputs",
+        "build_curriculum_stream",
+        "validate_curriculum_stream",
+        "main"
+      ],
+      "purpose": "Materialize an exact-token curriculum stream from canonical lane streams."
+    },
+    {
+      "path": "forge/data_audit.py",
+      "bytes": 9671,
+      "lines": 282,
+      "sha256": "e0eb1e1f7639e8162cffea1f835683a58d3fd8a9cfb4611165bf48996af51778",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "normalize_text",
+        "document_sha256",
+        "word_tokens",
+        "shingle_hashes",
+        "_strings",
+        "benchmark_shingles",
+        "_iter_jsonl_documents",
+        "audit",
+        "main"
+      ],
+      "purpose": "Deterministic corpus audit: exact deduplication and benchmark contamination."
+    },
+    {
+      "path": "forge/data_contract.py",
+      "bytes": 3377,
+      "lines": 105,
+      "sha256": "99acd5170bc7a125dd03698baa01ec97b3ae81adedd1ecf9482d6e8a3f5f4528",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "sha256_file",
+        "canonical_json_bytes",
+        "canonical_json_sha256",
+        "atomic_write_json",
+        "require_lower_sha256",
+        "load_rights_registry",
+        "require_approved_rights"
+      ],
+      "purpose": "Shared immutable-data contracts for the Ilaria Forge."
+    },
+    {
+      "path": "forge/dataset_manifest.py",
+      "bytes": 20633,
+      "lines": 521,
+      "sha256": "351cb07aa109933ab675cf2a9eb04c194d698e189dd272456fba4682452a86c5",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "_load_json",
+        "_validate_curated",
+        "_validate_audit",
+        "_validate_stream",
+        "_validate_source_eligibility",
+        "build_dataset_manifest",
+        "validate_dataset_manifest_file",
+        "main"
+      ],
+      "purpose": "Build the immutable training dataset manifest from the curated corpus."
+    },
+    {
+      "path": "forge/encode_curated_lanes.py",
+      "bytes": 6195,
+      "lines": 122,
+      "sha256": "cd45975256561d866a2a1b5b499128752ab35f4e345569799c86599d311b060f",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "_load_lane_manifest",
+        "encode_lane_shards",
+        "main"
+      ],
+      "purpose": "Encode curated lane shards with one frozen IlariaLex tokenizer."
+    },
+    {
+      "path": "forge/first_party_attestation.py",
+      "bytes": 10949,
+      "lines": 268,
+      "sha256": "af0d101e93caa4fd8a34b15305ff8f50aa81a8bf7c55af52dd41ae3503a4b339",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "_identity_hash",
+        "validate_attestation_packet",
+        "attestation_scope_sha256",
+        "inspect_attestation",
+        "match_attested_file",
+        "validate_attestation",
+        "evaluate_source_attestation",
+        "build_attestation_template",
+        "main"
+      ],
+      "purpose": "Content-addressed ownership/provenance attestation for first-party corpus lanes."
+    },
+    {
+      "path": "forge/first_party_contract_corpus.py",
+      "bytes": 4913,
+      "lines": 140,
+      "sha256": "256640881dd843a3fbef4bc5961deebae376ba62949ca63ed5a27ba4cf50d812",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "build_candidate_corpus",
+        "main"
+      ],
+      "purpose": "Materialize attested first-party protocol/contracts as candidate corpus data."
+    },
+    {
+      "path": "forge/freeze_eval_benchmarks.py",
+      "bytes": 10265,
+      "lines": 308,
+      "sha256": "b4cc2109b82de98ce22cdf5f98253dd05ae54fdfee61d3d05487a25a8cbac827",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "_write_jsonl",
+        "_human_eval",
+        "_gsm8k",
+        "_truthfulqa",
+        "_arc",
+        "build_continual_regression",
+        "freeze_benchmarks",
+        "main"
+      ],
+      "purpose": "Freeze external/internal IMC-125M evaluation sets into auditable JSONL."
+    },
+    {
+      "path": "forge/git_source_checkout.py",
+      "bytes": 4812,
+      "lines": 156,
+      "sha256": "66c75edc0022c3d80c6354f5da24f15d0904ca841af7e97af2c9c11599a8fa0a",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "_run_git",
+        "checkout_locked_source",
+        "main"
+      ],
+      "purpose": "Materialize an immutable Git source lock entry without executing repo code."
+    },
+    {
+      "path": "forge/git_source_lock.py",
+      "bytes": 4991,
+      "lines": 140,
+      "sha256": "f3135e2171b9d3daa5ca52bdb44ae13da239e9d84f0013e32a859c5704a8d6c3",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "_identity_hash",
+        "_require_commit",
+        "_require_https_url",
+        "build_lock",
+        "validate_lock",
+        "load_lock",
+        "resolve_remote",
+        "main"
+      ],
+      "purpose": "Immutable Git source locks for external technical corpus candidates."
+    },
+    {
+      "path": "forge/go_license_reference.py",
+      "bytes": 1102,
+      "lines": 36,
+      "sha256": "3d2150d6539572944e048f65c57d88e953757224f047c5f939f496418027c12d",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "has_go_root_license_reference"
+      ],
+      "purpose": "Validate Go-project files that explicitly reference the repository LICENSE."
+    },
+    {
+      "path": "forge/go_licensed_tree_source.py",
+      "bytes": 5351,
+      "lines": 162,
+      "sha256": "df314e2561c48036d6c6f57f5cd1f38734c82fa1bab2f48842f6441d809a28df",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "_manifest_hash",
+        "build_go_manifest",
+        "main"
+      ],
+      "purpose": "Build a fail-closed Go corpus manifest from explicit root-LICENSE notices."
+    },
+    {
+      "path": "forge/gpu_preflight.py",
+      "bytes": 4653,
+      "lines": 125,
+      "sha256": "9c2c7a64d4d54b2fe480e935610abd8c74d3b08035dc25f704ac44e31ef040d2",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "probe_torch_cuda",
+        "assess_gpu_report",
+        "main"
+      ],
+      "purpose": "Fail-closed CUDA hardware probe for serious IMC training launches."
+    },
+    {
+      "path": "forge/hf_tokenizer.py",
+      "bytes": 14557,
+      "lines": 451,
+      "sha256": "0a0d30734a9c2c1ecb635e8f599506ad69ceeb3f6325433008a0e9a23282a3b7",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "protocol_tokens",
+        "_hf",
+        "build_tokenizer",
+        "_validate_layout",
+        "train",
+        "export_ilaria",
+        "_load_contract",
+        "load",
+        "tokenizer_sha256",
+        "stream_dtype",
+        "encode_jsonl",
+        "main"
+      ],
+      "purpose": "IlariaLex byte-level BPE tokenizer."
+    },
+    {
+      "path": "forge/holdout.py",
+      "bytes": 1501,
+      "lines": 40,
+      "sha256": "f5639716dc183b64d7ab577f930acb83177dc556080e5c1f3d9d329b80af52b1",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "sample_key",
+        "is_validation",
+        "partition_samples"
+      ],
+      "purpose": "Content-based partitions shared by training and evaluation (no dependencies)."
+    },
+    {
+      "path": "forge/imc_125m_launch.py",
+      "bytes": 12069,
+      "lines": 300,
+      "sha256": "55da039966202265934de8612fe7f05954e7b60e89de5c34c9990c7c225fb70d",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "_identity_hash",
+        "_require_nonempty_paths",
+        "build_launch_manifest",
+        "validate_launch_manifest",
+        "main"
+      ],
+      "purpose": "Content-addressed launch manifests for reproducible IMC-125M bootstrap runs."
+    },
+    {
+      "path": "forge/imc_125m_preflight.py",
+      "bytes": 7291,
+      "lines": 188,
+      "sha256": "090ccd6d12740c5c8c310e7067b52324f6f9c84e148cfe48f62b5c0004b553ad",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "_require_int",
+        "build_readiness_report",
+        "validate_imc_125m_readiness",
+        "main"
+      ],
+      "purpose": "Fail-closed readiness gate for the first serious IMC-125M run."
+    },
+    {
+      "path": "forge/imc_125m_promotion_evidence.py",
+      "bytes": 7415,
+      "lines": 180,
+      "sha256": "b3ef513bf3a5868e01a6a9d3d4cdbac81f42214f044dcff776f15246bf5890f2",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "_identity_hash",
+        "validate_eval_result",
+        "load_eval_result",
+        "_expected_runs",
+        "build_promotion_evidence",
+        "main"
+      ],
+      "purpose": "Integrity/completeness gate for IMC-125M promotion evidence."
+    },
+    {
+      "path": "forge/imc_125m_recipe.py",
+      "bytes": 5490,
+      "lines": 130,
+      "sha256": "52a8f9bb92de5adb207adfda3e83730654dd4c961d284916d031cd44896da2a8",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "load_recipe",
+        "resolve_execution",
+        "main"
+      ],
+      "purpose": "Validate and resolve the hardware-independent IMC-125M bootstrap recipe."
+    },
+    {
+      "path": "forge/imc_model.py",
+      "bytes": 11868,
+      "lines": 281,
+      "sha256": "235bb86838afb8d467df2f4963efb588fa2cc0be9f80e434e020ca1451a92e45",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "_ternarize",
+        "_weight_quant",
+        "_act_quant",
+        "linear",
+        "ImcConfig",
+        "RMSNorm",
+        "rope",
+        "_mat",
+        "Attention",
+        "FeedForward",
+        "Block",
+        "_ce_sum",
+        "ImcTransformer",
+        "save_imc",
+        "load_imc"
+      ],
+      "purpose": "imc_model.py — IMC (Ilaria MicroCortex), the from-scratch Ilaria architecture."
+    },
+    {
+      "path": "forge/licensed_tree_corpus.py",
+      "bytes": 5486,
+      "lines": 161,
+      "sha256": "96b5817361fde8622acc66b8ca9b4854f3ed5fb885c8484d2309dd2a179bd8e8",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "build_raw_corpus",
+        "main"
+      ],
+      "purpose": "Convert a validated licensed-tree candidate into canonical raw corpus shards."
+    },
+    {
+      "path": "forge/licensed_tree_sample.py",
+      "bytes": 5611,
+      "lines": 171,
+      "sha256": "0b80217a1b2872b51043edbf8140cd0a3592d28a7f694dfd09c4ff76be8194de",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "_utf8_prefix",
+        "_build_sample_from_manifest",
+        "build_sample",
+        "build_sample_set",
+        "main"
+      ],
+      "purpose": "Deterministically derive tokenizer/corpus samples from a licensed-tree manifest."
+    },
+    {
+      "path": "forge/licensed_tree_source.py",
+      "bytes": 16479,
+      "lines": 425,
+      "sha256": "a22ba0622ecf86653cd2d52ff65b390c31417406a00fca593ef53b1342f91046",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "_manifest_hash",
+        "detect_spdx",
+        "spdx_expression_is_allowed",
+        "contains_strong_secret_marker",
+        "inspect_file",
+        "build_manifest",
+        "validate_manifest",
+        "main"
+      ],
+      "purpose": "Build an auditable text/code corpus candidate from per-file SPDX licenses."
+    },
+    {
+      "path": "forge/model_manifest.py",
+      "bytes": 8243,
+      "lines": 225,
+      "sha256": "7ead0cd367095296121591024b2d9494af881903f51a8de50f0baad1a1f4a99e",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "sha256_file",
+        "canonical_json_bytes",
+        "_validate_tokenizer_identity",
+        "load_tokenizer_identity",
+        "build_manifest",
+        "validate_architecture_manifest_file",
+        "write_manifest",
+        "main"
+      ],
+      "purpose": "Deterministic IMC architecture/model manifest."
+    },
+    {
+      "path": "forge/pce_replay.py",
+      "bytes": 6874,
+      "lines": 193,
+      "sha256": "f343bddb7b1d4be4d97b1a9c41f291b440e2321eea5b7299ad4493de1a974089",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "ReplayDecision",
+        "_require_sha256",
+        "_require_text",
+        "_require_identifier",
+        "_digest_payload",
+        "artifact_sha256",
+        "validate_replay_artifact",
+        "load_replay_artifact",
+        "load_replay_artifact_dir"
+      ],
+      "purpose": "Validated bridge from signed Go PCE artifacts into Forge replay inputs."
+    },
+    {
+      "path": "forge/pce_transfer_v2.py",
+      "bytes": 31197,
+      "lines": 932,
+      "sha256": "de5e5bde5feb8fe118f204fc4ff3063b3281e180b92ec7f1c4e31b0e1a5c0f6b",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "encode",
+        "load_jsonl",
+        "load_skills",
+        "load_anchors",
+        "make_model",
+        "skill_token",
+        "anchor_token",
+        "action_loss",
+        "action_logits",
+        "replay_action_loss",
+        "replay_loss_from_logits",
+        "bind_verified_replays",
+        "skill_train_prompt",
+        "skill_eval_prompt",
+        "skill_key_probe",
+        "anchor_train_prompt",
+        "anchor_eval_prompt",
+        "evaluate_items",
+        "pretrain_anchors",
+        "sleep_one_cell",
+        "run",
+        "main"
+      ],
+      "purpose": "PCE Transfer v2: train/validation/test + Collective Sleep + anti-forgetting."
+    },
+    {
+      "path": "forge/pce_transfer_v2_gate.py",
+      "bytes": 4721,
+      "lines": 140,
+      "sha256": "9a1105e8c75609d39c27e96dc6b200d726641be411bd4e4282fbf684e27e672a",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "load_results",
+        "evaluate_gate",
+        "main"
+      ],
+      "purpose": "Promotion gate for the frozen PCE Transfer v2 experiment."
+    },
+    {
+      "path": "forge/pce_transfer_v3.py",
+      "bytes": 13336,
+      "lines": 417,
+      "sha256": "b3978ac3356a3b76e7a7d43e5250e498ed514935f31494b873a9d5931dca7e90",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "sha256",
+        "load_rows",
+        "load_benchmark",
+        "skill_train_prompt",
+        "skill_val_prompt",
+        "validation_metrics",
+        "sleep_cell",
+        "run",
+        "main"
+      ],
+      "purpose": "PCE Transfer v3 tuning harness."
+    },
+    {
+      "path": "forge/pce_transfer_v3_gate.py",
+      "bytes": 5093,
+      "lines": 150,
+      "sha256": "25358a7ebd848f0296d7477fb3cb333bd0fa998be201967a7b46d59da66c7b5f",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "sha256",
+        "load_policy",
+        "load_results",
+        "evaluate_gate",
+        "main"
+      ],
+      "purpose": "Validation-only promotion gate for sealed PCE Transfer v3."
+    },
+    {
+      "path": "forge/prepare_corpus.py",
+      "bytes": 34376,
+      "lines": 893,
+      "sha256": "eabd6d142570b5a2c091dfe1b04791ec594037b25cd291b330fef310f814e136",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "validate_tokenizer_sample_rights",
+        "scrub_pii",
+        "clean_text",
+        "chunk_paragraphs",
+        "_load",
+        "_clean_reasoning_text",
+        "_openmath_reasoning_cot_from",
+        "_openmath_reasoning_cot",
+        "_openscience_reasoning_2_from",
+        "_openscience_reasoning_2",
+        "_opencode_reasoning_split0_from",
+        "_opencode_reasoning_split0",
+        "_docs",
+        "_docs_from",
+        "_wiki_from_rows",
+        "_wiki",
+        "Source",
+        "texts",
+        "stream_tinystories",
+        "stream_wiki_ro",
+        "manifest_path",
+        "_load_manifest",
+        "_save_manifest",
+        "_source_identity",
+        "_pipeline_identity",
+        "_upgrade_manifest",
+        "resume_plan",
+        "write_shards",
+        "write_tokenizer_sample",
+        "_parse_max",
+        "main"
+      ],
+      "purpose": "prepare_corpus.py — download, clean and shard training corpora for Ilaria."
+    },
+    {
+      "path": "forge/production_attribution.py",
+      "bytes": 6172,
+      "lines": 144,
+      "sha256": "73f369b5769d7e2c4ec37371da271c7280a88862a27d9171895bc9040c5afb97",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "_identity_hash",
+        "_revision_from_manifest",
+        "_expected_revision",
+        "build_attribution",
+        "render_markdown",
+        "_parse_source",
+        "main"
+      ],
+      "purpose": "Build content-addressed attribution/provenance evidence for production sources."
+    },
+    {
+      "path": "forge/production_bootstrap.py",
+      "bytes": 5742,
+      "lines": 142,
+      "sha256": "0ab3db6da3161ca6c5b40ed3b12f3d4acad6d105a69b09596e342fbeab6faced",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "_identity",
+        "load_reviewed_bundle",
+        "assess_bootstrap",
+        "main"
+      ],
+      "purpose": "Fail-closed preflight for the post-review IMC-125M production build."
+    },
+    {
+      "path": "forge/production_readiness.py",
+      "bytes": 15937,
+      "lines": 424,
+      "sha256": "2882ccc8c4f6ae36fc08eb6b20e61465ef2bd3f9e0cd90db45b018a91edf0b34",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "assess_rights",
+        "assess_artifact",
+        "assess_first_party_attestation",
+        "assess_trajectory_quality",
+        "assess_math_quality",
+        "build_report",
+        "main"
+      ],
+      "purpose": "Read-only readiness report for IlariaLex -> dataset -> IMC-125M production."
+    },
+    {
+      "path": "forge/production_review_decision.py",
+      "bytes": 17166,
+      "lines": 429,
+      "sha256": "3ff97f7eec29b8beab4ca9d8cd99130983969013e0249200b91d9cfa4e88d202",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "_identity_hash",
+        "load_review_packet",
+        "build_decision_template",
+        "load_decision",
+        "validate_decision",
+        "_write_reviewed_attestation",
+        "prepare_reviewed_bundle",
+        "rehash_decision",
+        "main"
+      ],
+      "purpose": "Explicit human-review decisions for the IMC-125M production data gate."
+    },
+    {
+      "path": "forge/production_review_packet.py",
+      "bytes": 11841,
+      "lines": 304,
+      "sha256": "21976e9f2b76681ea4a9f182d6f2aa4ca205c7665a1eb8c6bdc8ea2e96dc3f70",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "_identity_hash",
+        "_source_revision",
+        "build_review_packet",
+        "render_markdown",
+        "main"
+      ],
+      "purpose": "Build a deterministic human-review packet for IMC-125M production data."
+    },
+    {
+      "path": "forge/production_source_plan.py",
+      "bytes": 9416,
+      "lines": 229,
+      "sha256": "dfcead6e7f014d294c9286f531ada82dd674038f77afb06329d5a1f887c86265",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "_identity_hash",
+        "load_inventory",
+        "load_plan",
+        "assess_plan",
+        "main"
+      ],
+      "purpose": "Validate the content-addressed IMC-125M production source selection."
+    },
+    {
+      "path": "forge/production_tokenizer_pipeline.py",
+      "bytes": 11849,
+      "lines": 269,
+      "sha256": "42bf6f89334047a0bd837f077772afd161f05c8f63ca7e0678992a3d6e22f39b",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "_load_json",
+        "_iter_source_text",
+        "_safe",
+        "_write_external_sample",
+        "build_pipeline",
+        "_mapping",
+        "main"
+      ],
+      "purpose": "Materialize and freeze the production IlariaLex tokenizer sample."
+    },
+    {
+      "path": "forge/rights_evidence.py",
+      "bytes": 8226,
+      "lines": 174,
+      "sha256": "7d19dac738587ed14d276bec5b14448db8cf6bf1e76e8c65ca3d501cef635bad",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "_identity_hash",
+        "load_and_validate_evidence",
+        "require_approved_evidence",
+        "main"
+      ],
+      "purpose": "Validate rights-review evidence against the immutable corpus source lock."
+    },
+    {
+      "path": "forge/rights_review_decision.py",
+      "bytes": 6681,
+      "lines": 149,
+      "sha256": "411d9003cdd8f296770461072a038e74557f13306941a00d287a3867f41d0a82",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "_decision_hash",
+        "validate_decision_packet",
+        "apply_decision_packet",
+        "main"
+      ],
+      "purpose": "Validate and apply explicit human rights-review decisions without self-approval."
+    },
+    {
+      "path": "forge/rust_license_metadata.py",
+      "bytes": 6611,
+      "lines": 174,
+      "sha256": "377b1c8c1283d4162295ad8e818a9e02d90a1b124d90bd8e3474b2cfac528b33",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "_relative_path",
+        "_join",
+        "_license_spdx",
+        "_set_rule",
+        "build_rules",
+        "load_rules",
+        "resolve_spdx"
+      ],
+      "purpose": "Parse Rust's committed REUSE license metadata without executing repo code."
+    },
+    {
+      "path": "forge/rust_licensed_tree_source.py",
+      "bytes": 5628,
+      "lines": 171,
+      "sha256": "aa7f175f731d0809c570c9dd1fcb9849d23406b947e0b76ba2c106f0efd579cf",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "_manifest_hash",
+        "build_rust_manifest",
+        "main"
+      ],
+      "purpose": "Build a licensed-tree manifest from Rust's committed REUSE metadata."
+    },
+    {
+      "path": "forge/swypforge/__init__.py",
+      "bytes": 0,
+      "lines": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [],
+      "purpose": ""
+    },
+    {
+      "path": "forge/swypforge/build_tasks.py",
+      "bytes": 24668,
+      "lines": 366,
+      "sha256": "dadb19889b5ff3a638fd37eabeaf9ebfa43f2056329bb50f387f7fa3e61fcc67",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "tokens",
+        "compile_pred",
+        "table",
+        "I",
+        "fact",
+        "fib",
+        "build",
+        "render",
+        "main"
+      ],
+      "purpose": "Builds swyp/examples/swyp/tasks/tasks.jsonl: 60 Swyp contract tasks with reference solutions."
+    },
+    {
+      "path": "forge/swypforge/test_build_tasks.py",
+      "bytes": 1409,
+      "lines": 31,
+      "sha256": "eb8a28796cdad054e379034e30a0c768b57d215d7a84841aaf2f4530e3e6584d",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "BuildTasksTests"
+      ],
+      "purpose": ""
+    },
+    {
+      "path": "forge/test_build_colab_bundle.py",
+      "bytes": 1935,
+      "lines": 51,
+      "sha256": "99f98e0255b9dc2dd039eed6d49c0bc4597a9a38a63e1ab8e7662b3646286942",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "sha256",
+        "test_bundle_is_deterministic_and_content_addressed"
+      ],
+      "purpose": ""
+    },
+    {
+      "path": "forge/test_build_genesis_streams.py",
+      "bytes": 4205,
+      "lines": 92,
+      "sha256": "31dce3bdc58f929d7de059023551814db48df7d4ce9a583713d8add80de93be0",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "_encoded_manifest",
+        "test_build_genesis_streams_materializes_both_curriculum_splits",
+        "test_build_genesis_streams_rejects_changed_encoded_lineage_before_publishing"
+      ],
+      "purpose": ""
+    },
+    {
+      "path": "forge/test_collective_sleep.py",
+      "bytes": 3573,
+      "lines": 133,
+      "sha256": "8953bd2c212c3bd31b281240fa1bc7b912e748aa358e2992b5e42e676e4180a5",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "Tiny",
+        "test_sleep_restores_best_validation_checkpoint",
+        "test_sleep_rejects_candidate_that_forgets_anchors",
+        "test_sleep_fails_closed_on_nonfinite_validation",
+        "test_policy_rejects_invalid_values",
+        "test_sleep_restores_last_accepted_weights_after_failure"
+      ],
+      "purpose": ""
+    },
+    {
+      "path": "forge/test_concat_streams.py",
+      "bytes": 5608,
+      "lines": 155,
+      "sha256": "00023251b0c55ac92db2d957233cc14654b104c55fe77b07ef706990c0109e43",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "_write_shard",
+        "ConcatTests"
+      ],
+      "purpose": "Tests for canonical token-stream concatenation."
+    },
+    {
+      "path": "forge/test_corpus_inventory.py",
+      "bytes": 16575,
+      "lines": 521,
+      "sha256": "68b170c70e671659a4faad4874e9eea96fe437936da6a37068e955c6a3c23861",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "_sha",
+        "_write_curriculum",
+        "_write_rules",
+        "_write_rights",
+        "_write_source",
+        "test_classification_is_exclusive_and_defaulted",
+        "test_inventory_deduplicates_globally_and_keeps_rights_separate",
+        "test_inventory_is_input_order_deterministic",
+        "test_manifest_hash_drift_fails_closed",
+        "test_inventory_rejects_shard_path_escape",
+        "test_inventory_rejects_invalid_shard_index",
+        "test_lane_rules_reject_ambiguous_patterns",
+        "test_unsigned_first_party_source_is_candidate_only",
+        "test_signed_first_party_source_becomes_approved"
+      ],
+      "purpose": ""
+    },
+    {
+      "path": "forge/test_corpus_source_lock.py",
+      "bytes": 1365,
+      "lines": 50,
+      "sha256": "2b987c7007f4447220083b0e1569c675650608e7a105d602f6119ec337cc03f1",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "Spec",
+        "revisions",
+        "test_source_lock_is_deterministic_and_valid",
+        "test_source_lock_rejects_provider_drift",
+        "test_source_lock_rejects_non_sha_revision",
+        "test_source_lock_file_round_trip"
+      ],
+      "purpose": ""
+    },
+    {
+      "path": "forge/test_corpus_strategy.py",
+      "bytes": 3639,
+      "lines": 92,
+      "sha256": "d2fd5ca293248eac589bf847610116a58404a00662ccdd89463c24ee0f6c023d",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "test_canonical_strategy_has_every_required_lane",
+        "test_strategy_rejects_auto_approved_candidate",
+        "test_strategy_requires_one_preferred_candidate_per_lane",
+        "test_strategy_readiness_blocks_unreviewed_preferred_sources",
+        "test_valid_first_party_attestation_satisfies_tools_protocol_status_only",
+        "test_trajectory_attestation_satisfies_both_trajectory_lanes_only",
+        "test_preferred_apache_nuttx_requires_git_lock"
+      ],
+      "purpose": ""
+    },
+    {
+      "path": "forge/test_cpython_sbom.py",
+      "bytes": 4209,
+      "lines": 124,
+      "sha256": "0ee99eae73456e5ba148317818e27af123036ec059ea649f3135927b413b7f98",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "_normalized_sha256",
+        "_tree",
+        "test_cpython_sbom_exclusions_verify_normalized_checksum",
+        "test_cpython_manifest_excludes_every_sbom_file",
+        "test_cpython_manifest_detects_sbom_drift",
+        "test_cpython_sbom_rejects_path_escape",
+        "test_cpython_sbom_detects_excluded_file_drift"
+      ],
+      "purpose": ""
+    },
+    {
+      "path": "forge/test_curate_corpus.py",
+      "bytes": 8687,
+      "lines": 277,
+      "sha256": "d819b65332ae7df1f7b0dffa42b6795da78c75826486fd183591fae680d68e87",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "source_fixture",
+        "rights_fixture",
+        "first_party_fixture",
+        "test_split_is_content_deterministic",
+        "test_curate_removes_duplicates_and_benchmark_leakage",
+        "test_curate_is_deterministic_across_input_order",
+        "test_curate_rejects_unapproved_source",
+        "test_curate_accepts_attested_first_party_source",
+        "test_curate_rejects_unsigned_first_party_source"
+      ],
+      "purpose": ""
+    },
+    {
+      "path": "forge/test_curated_lane_shards.py",
+      "bytes": 4919,
+      "lines": 159,
+      "sha256": "4e7e4b1a783bdfde13e8b4cb4ae2d3d17b2b1d664b0710067d0f780310724120",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "_source",
+        "_rights",
+        "_lane_rules",
+        "test_curated_lane_split_preserves_deterministic_classification",
+        "test_lane_split_rejects_curated_corpus_without_lane_rules"
+      ],
+      "purpose": ""
+    },
+    {
+      "path": "forge/test_curriculum_stream.py",
+      "bytes": 4828,
+      "lines": 142,
+      "sha256": "3120e2e3da39ff18e38447b5fb4fe2063eb59d61b195cf2163f3d9a138888146",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "write_stream",
+        "curriculum_path",
+        "test_canonical_curriculum_is_exact_100_percent",
+        "test_token_allocator_is_exact_for_arbitrary_total",
+        "test_curriculum_stream_materializes_exact_mix_and_hash",
+        "test_curriculum_stream_rejects_insufficient_lane",
+        "test_curriculum_stream_rejects_tokenizer_drift",
+        "test_zero_weight_lane_rejects_accidental_input"
+      ],
+      "purpose": ""
+    },
+    {
+      "path": "forge/test_data_audit.py",
+      "bytes": 2613,
+      "lines": 85,
+      "sha256": "21876c9a3eb62da68e2ed9d3b14148ba8417cf3dd875990a704002999c09654f",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "write_jsonl",
+        "test_normalization_makes_exact_dedup_unicode_and_case_stable",
+        "test_audit_detects_duplicates_without_raw_text",
+        "test_audit_detects_hashed_benchmark_contamination",
+        "test_clean_corpus_passes_and_is_deterministic"
+      ],
+      "purpose": ""
+    },
+    {
+      "path": "forge/test_data_contract.py",
+      "bytes": 657,
+      "lines": 18,
+      "sha256": "3ede137feda419f1fa10a569ddd64f7aebc3a48d3c8bb0b1bb61eaaa39c12b20",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "test_sha256_contract_rejects_nonhex_and_whitespace",
+        "test_sha256_contract_accepts_exactly_32_bytes_of_lowercase_hex"
+      ],
+      "purpose": "Malformed content identities fail before an artifact can enter the pipeline."
+    },
+    {
+      "path": "forge/test_dataset_manifest.py",
+      "bytes": 13168,
+      "lines": 391,
+      "sha256": "aabdc4c31f456d5d7d23ac928403ee6eb011a675600b2f4c1bcc8bfaf248e4e1",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "fixture",
+        "build",
+        "make_first_party",
+        "test_manifest_pins_curated_audit_rights_and_both_streams",
+        "test_manifest_rejects_unapproved_rights",
+        "test_manifest_accepts_attested_first_party_and_offline_validation",
+        "test_manifest_rejects_failed_post_curation_audit",
+        "test_manifest_rejects_curated_shard_tampering",
+        "test_manifest_rejects_validation_tokenizer_mismatch",
+        "test_manifest_rejects_train_validation_curriculum_presence_mismatch",
+        "test_file_validator_reconstructs_every_artifact",
+        "test_file_validator_detects_rights_registry_change"
+      ],
+      "purpose": ""
+    },
+    {
+      "path": "forge/test_encode_curated_lanes.py",
+      "bytes": 2532,
+      "lines": 72,
+      "sha256": "1712d4eda96d6a5cb41b2d547111f91a81e8b3cac7cc9962d6900848ba46bafd",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "_tokenizer",
+        "_lanes",
+        "test_encode_curated_lanes_preserves_documents_and_hashes",
+        "test_encode_curated_lanes_rejects_tampered_input"
+      ],
+      "purpose": ""
+    },
+    {
+      "path": "forge/test_first_party_attestation.py",
+      "bytes": 3173,
+      "lines": 83,
+      "sha256": "8966e58fd7b090a83b9b1b4eb9e8095bb67f5169681f858777751d8515ef4f36",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "test_template_is_unsigned_and_pins_file_hashes",
+        "test_validation_requires_explicit_ownership_attestation",
+        "test_signed_manual_attestation_detects_file_tampering",
+        "test_attested_file_match_accepts_content_addressed_copy",
+        "test_attested_file_match_rejects_unattested_content"
+      ],
+      "purpose": ""
+    },
+    {
+      "path": "forge/test_first_party_contract_corpus.py",
+      "bytes": 2502,
+      "lines": 74,
+      "sha256": "79dd3101f87e60fef132e10460692d71046f3abfbfb9c4d418d629e9f8e9666c",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "_fixture",
+        "test_build_candidate_corpus_is_bound_to_unsigned_attestation",
+        "test_build_candidate_corpus_rejects_workspace_drift",
+        "test_build_candidate_corpus_refuses_overwrite"
+      ],
+      "purpose": ""
+    },
+    {
+      "path": "forge/test_freeze_eval_benchmarks.py",
+      "bytes": 2743,
+      "lines": 90,
+      "sha256": "0a0070f6f7360d122fbb18c259f374727bccc9b1235286dc2238dbbd7d3cb5ce",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "test_continual_regression_is_deterministic_and_unique",
+        "test_freeze_benchmarks_normalizes_all_inputs"
+      ],
+      "purpose": ""
+    },
+    {
+      "path": "forge/test_git_source_checkout.py",
+      "bytes": 3611,
+      "lines": 115,
+      "sha256": "75a8f098324d970525841632ea77371fd4955f4c5928ca530feec1684d500143",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "lock_fixture",
+        "fake_runner_factory",
+        "test_checkout_uses_locked_commit_and_never_initializes_submodules",
+        "test_checkout_rejects_nonempty_destination_before_git",
+        "test_checkout_fails_closed_on_commit_mismatch_and_removes_partial_tree",
+        "test_checkout_fails_closed_on_remote_mismatch",
+        "test_checkout_propagates_custom_command_timeout"
+      ],
+      "purpose": ""
+    },
+    {
+      "path": "forge/test_git_source_lock.py",
+      "bytes": 1178,
+      "lines": 45,
+      "sha256": "e0aad2b9f95466481ba1c077ebec0b02344f0d98cac5adf031b03510cef6c6af",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "entries",
+        "test_git_source_lock_is_deterministic_and_valid",
+        "test_git_source_lock_rejects_mutable_ref_as_commit",
+        "test_git_source_lock_rejects_non_https_remote",
+        "test_git_source_lock_detects_identity_tampering"
+      ],
+      "purpose": ""
+    },
+    {
+      "path": "forge/test_go_license_reference.py",
+      "bytes": 2991,
+      "lines": 84,
+      "sha256": "45447bbfb7660c2eed77020a99d3ce3be1a2cd2f1b5f89f88d964c1489595f93",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "_tree",
+        "test_go_notice_requires_copyright_and_license_reference",
+        "test_go_manifest_is_fail_closed_on_files_without_notice",
+        "test_go_manifest_detects_notice_drift",
+        "test_go_manifest_detects_root_license_drift"
+      ],
+      "purpose": ""
+    },
+    {
+      "path": "forge/test_gpu_preflight.py",
+      "bytes": 3005,
+      "lines": 92,
+      "sha256": "10670af082064915e161502bb916eb3ef70bc959eadaf3df58518eca2bc1b6a0",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "report",
+        "test_h100_like_device_passes_serious_single_gpu_gate",
+        "test_cpu_only_runtime_fails_closed",
+        "test_insufficient_multi_gpu_inventory_fails",
+        "test_low_vram_or_capability_fails",
+        "test_bf16_requirement_is_optional_but_enforceable",
+        "test_gpu_name_requirement_is_fail_closed",
+        "test_invalid_world_size_rejected"
+      ],
+      "purpose": ""
+    },
+    {
+      "path": "forge/test_hf_tokenizer.py",
+      "bytes": 6107,
+      "lines": 149,
+      "sha256": "347c6553a4e4e15233106a4b12f867b6486bb9641df871c06424e72cf09f0a51",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "IlariaLexTests"
+      ],
+      "purpose": "Tests for the canonical IlariaLex tokenizer contract."
+    },
+    {
+      "path": "forge/test_holdout.py",
+      "bytes": 1434,
+      "lines": 29,
+      "sha256": "dd66bf5f29bb3cc014a73fb678ec7aa031866b440414aa2bc6d1ec42d20f3bab",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "HoldoutTests"
+      ],
+      "purpose": ""
+    },
+    {
+      "path": "forge/test_imc_125m_launch.py",
+      "bytes": 6278,
+      "lines": 202,
+      "sha256": "0c0f1ad7e41ec61036f7eec50f51e6330bd8c592bf2c6223cdb384af92c55bc6",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "recipe",
+        "readiness",
+        "paths",
+        "test_single_gpu_ternary_launch_is_exact_and_content_addressed",
+        "test_multi_gpu_control_launch_uses_torchrun_without_ternary",
+        "test_launch_rejects_seed_outside_locked_experiment",
+        "test_launch_rejects_failed_preflight",
+        "test_launch_rejects_curriculum_drift",
+        "test_launch_manifest_detects_tampering",
+        "test_resume_launch_pins_checkpoint_hash_and_pause_without_changing_horizon",
+        "test_resume_launch_rejects_unpinned_checkpoint"
+      ],
+      "purpose": ""
+    },
+    {
+      "path": "forge/test_imc_125m_preflight.py",
+      "bytes": 4922,
+      "lines": 147,
+      "sha256": "9f6e720d2d35dd6f31d2dd526df84264402ee90034c55fa73b73e9a77b4e65f5",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "manifests",
+        "test_preflight_accepts_exact_imc_125m_contract",
+        "test_preflight_rejects_smoke_corpus_as_serious_run",
+        "test_preflight_rejects_tokenizer_identity_drift",
+        "test_preflight_rejects_rights_registry_drift",
+        "test_preflight_rejects_protocol_identity_drift",
+        "test_preflight_accepts_git_only_source_lock",
+        "test_preflight_rejects_unpinned_sources",
+        "test_preflight_rejects_unlocked_tokenizer_sample",
+        "test_preflight_rejects_missing_curriculum",
+        "test_preflight_rejects_curriculum_weight_drift"
+      ],
+      "purpose": ""
+    },
+    {
+      "path": "forge/test_imc_125m_promotion_evidence.py",
+      "bytes": 5422,
+      "lines": 164,
+      "sha256": "d1154e8d5414cabee6224033d2c8a28e4f773bcc6b5b10678a8d830bca446b9c",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "recipe",
+        "readiness",
+        "paths",
+        "launches",
+        "eval_result",
+        "complete_results",
+        "test_complete_passing_matrix_is_ready_for_promotion_review",
+        "test_failed_evaluation_blocks_review_without_hiding_evidence",
+        "test_missing_evaluation_fails_closed",
+        "test_missing_locked_run_fails_closed",
+        "test_eval_result_rejects_nonfinite_metric_and_tampering"
+      ],
+      "purpose": ""
+    },
+    {
+      "path": "forge/test_imc_125m_recipe.py",
+      "bytes": 1381,
+      "lines": 39,
+      "sha256": "12ea2399e8dc4bf1c757a0c4abc1a51657c833fb2a80731cb04acaf37fd4e0bb",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "test_canonical_recipe_is_valid_and_exact",
+        "test_single_worker_execution_preserves_global_batch",
+        "test_multi_worker_execution_preserves_global_batch",
+        "test_unrepresentable_hardware_batch_fails_closed"
+      ],
+      "purpose": ""
+    },
+    {
+      "path": "forge/test_imc_model.py",
+      "bytes": 16079,
+      "lines": 403,
+      "sha256": "1fcf98470153cddab8eb2404e25a7b771283144c347a0b167749285fd0c5a83c",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "tiny",
+        "test_presets_hit_their_size_with_a_65536_vocab",
+        "test_imc_1b_matches_the_spec",
+        "test_config_rejects_invalid_dimensions_and_numerical_contract",
+        "test_param_count_formula_matches_the_module",
+        "test_rmsnorm_mixed_precision_keeps_fp32_master_weight",
+        "test_grouped_query_attention_shapes_and_no_biases",
+        "test_forward_is_causal",
+        "test_learns_a_pattern",
+        "test_save_and_load_give_identical_logits",
+        "test_ternary_changes_the_function_and_config_round_trips",
+        "test_generate_greedy_stops_at_eos",
+        "test_target_token_budget_resolves_global_step_horizon",
+        "test_distributed_env_validates_rank_contract",
+        "test_distributed_env_rejects_invalid_values",
+        "test_trainer_runs_resumes_and_exports_ternary_imc",
+        "test_chunked_loss_equals_full_cross_entropy_with_same_gradients",
+        "test_chunked_loss_rejects_invalid_chunk_size",
+        "test_chunked_loss_rejects_target_shape_mismatch",
+        "test_chunked_evaluation_matches_full_loss_without_requesting_dense_logits",
+        "_tiny_stream",
+        "test_two_process_ddp_with_chunked_loss_trains_and_saves_once",
+        "test_two_process_ddp_resume_preserves_every_rank_rng_and_exact_training",
+        "test_trainer_rejects_training_stream_hash_mismatch"
+      ],
+      "purpose": "IMC (Ilaria MicroCortex) model: GQA, RMSNorm, bias-free, optional ternary."
+    },
+    {
+      "path": "forge/test_licensed_tree_corpus.py",
+      "bytes": 4023,
+      "lines": 126,
+      "sha256": "c0607b9f4285dc315045cf645999206a20380d02c21a51d48051ef31eef0a94d",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "fixture",
+        "test_adapter_emits_canonical_raw_source_manifest",
+        "test_adapter_rejects_non_utf8_source_instead_of_silently_mutating_it",
+        "test_curation_remains_the_rights_gate"
+      ],
+      "purpose": ""
+    },
+    {
+      "path": "forge/test_licensed_tree_sample.py",
+      "bytes": 3172,
+      "lines": 99,
+      "sha256": "d503e91a79d2b2a8111e23e1e24ae64742cb8b793e2f1690bf70229cba8e11a3",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "fixture",
+        "test_sample_is_deterministic_for_prefixes",
+        "test_sample_respects_prefix_and_byte_cap",
+        "test_utf8_prefix_never_splits_a_multibyte_character",
+        "test_sample_set_builds_multiple_lanes_from_one_manifest",
+        "test_sample_round_robins_prefixes_before_byte_cap"
+      ],
+      "purpose": ""
+    },
+    {
+      "path": "forge/test_licensed_tree_source.py",
+      "bytes": 5741,
+      "lines": 157,
+      "sha256": "5dc7afb168fb58f106c3d103ef3bcb2f4198056cab2018ff9861530aaeaaa94f",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "test_manifest_includes_only_allowlisted_spdx_files",
+        "test_manifest_round_trip_detects_tampering",
+        "test_manifest_rejects_tree_without_allowlisted_files",
+        "test_manifest_excludes_agent_instruction_files",
+        "test_manifest_excludes_strong_secret_markers",
+        "test_spdx_parser_preserves_full_expression_and_accepts_safe_dual_license",
+        "test_spdx_parser_rejects_mixed_restrictive_expression",
+        "test_spdx_parser_rejects_with_exception_until_explicitly_modeled",
+        "test_manifest_rejects_ambiguous_multiple_spdx_lines",
+        "test_manifest_rejects_symlinks"
+      ],
+      "purpose": ""
+    },
+    {
+      "path": "forge/test_model_manifest.py",
+      "bytes": 5829,
+      "lines": 188,
+      "sha256": "09f65519761d648c14dd93026a3da439dc56f253f9c81575be238753c2bdad18",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "tokenizer_identity",
+        "manifest",
+        "test_imc_1b_manifest_is_exact_and_deterministic",
+        "test_architecture_change_changes_hash",
+        "test_manifest_write_is_stable",
+        "test_model_manifest_rejects_tokenizer_eos_drift",
+        "test_load_tokenizer_identity_pins_canonical_layout",
+        "test_load_tokenizer_identity_rejects_noncanonical_vocab",
+        "test_load_tokenizer_identity_rejects_protocol_layout_drift",
+        "test_architecture_validator_rejects_semantic_tampering_even_with_recomputed_identity",
+        "test_architecture_validator_accepts_reconstructed_contract",
+        "test_architecture_manifest_rejects_incorrect_preset_label"
+      ],
+      "purpose": ""
+    },
+    {
+      "path": "forge/test_pce_replay.py",
+      "bytes": 4420,
+      "lines": 131,
+      "sha256": "a3c46636db3ed690c02fed2c7081586ff853edcb92861a604aae852e64626433",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "artifact",
+        "test_valid_artifact_becomes_collective_sleep_state_action",
+        "test_artifact_tampering_fails_closed",
+        "test_post_action_marker_is_rejected_even_with_recomputed_hash",
+        "test_schema_is_exact",
+        "test_hash_uses_utf8_byte_lengths",
+        "test_replay_identifier_validation_matches_go_protocol",
+        "test_replay_rejects_whitespace_in_content_hash_even_if_identity_is_recomputed",
+        "test_content_addressed_directory_loads_valid_artifacts",
+        "test_content_addressed_directory_rejects_wrong_filename",
+        "test_content_addressed_directory_rejects_duplicate_capsule"
+      ],
+      "purpose": ""
+    },
+    {
+      "path": "forge/test_pce_transfer_v2_data.py",
+      "bytes": 4624,
+      "lines": 129,
+      "sha256": "f489af49577e1010d8b7e9db282481b989da0ef4a1180d81c367630a9a0fe55e",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "rows",
+        "sha256",
+        "test_v2_skill_dataset_is_frozen_and_disjoint",
+        "test_v2_anchor_dataset_is_frozen_and_disjoint",
+        "test_skill_and_anchor_keys_do_not_overlap",
+        "test_frozen_manifest_matches_benchmark_bytes",
+        "test_replay_views_are_state_only_and_do_not_leak_results",
+        "_signed_replay_artifact_for",
+        "test_signed_replay_artifact_is_bound_into_collective_sleep_input",
+        "test_signed_replay_binding_rejects_domain_action_mismatch"
+      ],
+      "purpose": ""
+    },
+    {
+      "path": "forge/test_pce_transfer_v2_gate.py",
+      "bytes": 1394,
+      "lines": 48,
+      "sha256": "86fc133687b75f7a3cae2feecff392c6b37c11facb876cd1d9af9fc9aa42d2bd",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "result",
+        "test_gate_passes_healthy_multiseed_results",
+        "test_gate_rejects_negative_nll_seed",
+        "test_gate_rejects_forgetting",
+        "test_gate_requires_early_stop"
+      ],
+      "purpose": ""
+    },
+    {
+      "path": "forge/test_pce_transfer_v3_data.py",
+      "bytes": 2085,
+      "lines": 56,
+      "sha256": "49fcf0dc045c524f27cb92644d245adf9a1a5496086f9f3ad0cf41dd30f55b86",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "sha256",
+        "rows",
+        "test_v3_manifest_pins_all_frozen_artifacts",
+        "test_v3_trainval_has_two_distinct_validation_views",
+        "test_v3_test_is_physically_separate_and_id_aligned",
+        "test_tuner_source_has_no_sealed_test_filename"
+      ],
+      "purpose": ""
+    },
+    {
+      "path": "forge/test_prepare_corpus.py",
+      "bytes": 16613,
+      "lines": 357,
+      "sha256": "30d889bd16ad77fe27d69dce2d94916b55b6e402aca5ed5281270fd79fe99f76",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "ScrubPiiTests",
+        "CleanTextTests",
+        "ChunkTests",
+        "ShardWriterTests",
+        "TokenizerSampleTests",
+        "SourceRegistryTests"
+      ],
+      "purpose": "Unit tests for forge/prepare_corpus.py (stdlib unittest; no network)."
+    },
+    {
+      "path": "forge/test_production_attribution.py",
+      "bytes": 2058,
+      "lines": 46,
+      "sha256": "fa919126634b908c1ff8ab0821d08d54e16efd98d0ffcf72f4a2e7a5622bc01b",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "_packet",
+        "_manifests",
+        "test_attribution_binds_exact_revisions",
+        "test_attribution_rejects_revision_drift"
+      ],
+      "purpose": ""
+    },
+    {
+      "path": "forge/test_production_readiness.py",
+      "bytes": 3367,
+      "lines": 109,
+      "sha256": "8b6cfcdcb7f20e22177aa26533db308c21ff3ededfd6ad57b99eede728307b20",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "test_rights_readiness_reports_review_required_sources",
+        "test_rights_readiness_accepts_closed_approval",
+        "test_rights_readiness_reports_missing_required_registry_source",
+        "test_first_party_attestation_reports_io_failure",
+        "test_canonical_trajectory_quality_recomputes_exactly",
+        "test_trajectory_quality_rejects_report_drift"
+      ],
+      "purpose": ""
+    },
+    {
+      "path": "forge/test_production_review_decision.py",
+      "bytes": 4468,
+      "lines": 124,
+      "sha256": "98e26ec6e037f588a6507b1f97bd20ac27ef433f2c3011a6e3b13dd3f4f7e1f5",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "canonical_packet",
+        "approved_fixture_decision",
+        "pending_attestation_fixture",
+        "test_pending_template_is_content_addressed_and_incomplete",
+        "test_complete_approval_requires_explicit_resolution_of_every_obligation",
+        "test_decision_rejects_review_packet_drift",
+        "test_complete_approved_decision_materializes_separate_valid_bundle"
+      ],
+      "purpose": ""
+    },
+    {
+      "path": "forge/test_production_review_packet.py",
+      "bytes": 4323,
+      "lines": 115,
+      "sha256": "7bc67860380b69f9ecfe2d825f86c3b793b90a05849c31315471ccf6d3803126",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "fixture_attestations",
+        "canonical_packet",
+        "test_canonical_review_packet_reflects_reviewed_state_without_auto_approval",
+        "test_review_packet_binds_exact_source_revisions_and_attestation_scopes",
+        "test_review_packet_rejects_wrong_first_party_set",
+        "test_review_markdown_surfaces_current_decision_state"
+      ],
+      "purpose": ""
+    },
+    {
+      "path": "forge/test_production_source_plan.py",
+      "bytes": 2276,
+      "lines": 61,
+      "sha256": "9afd6fc8d453989c9edd6b4ea3ae162592212545ae61d80107804f709a3e8e48",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "test_canonical_production_source_plan_has_conservative_headroom",
+        "test_plan_rejects_os_selection_without_required_headroom",
+        "test_plan_detects_inventory_identity_drift"
+      ],
+      "purpose": ""
+    },
+    {
+      "path": "forge/test_rights_evidence.py",
+      "bytes": 5410,
+      "lines": 144,
+      "sha256": "5083ee98bee940a7b3a72d6dcd55325e190cb235c910817d14bca68aa5a079e9",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "fixture",
+        "test_rights_evidence_validates_against_lock_and_registry",
+        "test_rights_evidence_rejects_revision_drift",
+        "test_rights_evidence_rejects_registry_source_drift",
+        "test_registry_approval_requires_closed_approved_evidence",
+        "test_canonical_rights_evidence_and_source_locks_validate_together"
+      ],
+      "purpose": ""
+    },
+    {
+      "path": "forge/test_rights_review_decision.py",
+      "bytes": 3307,
+      "lines": 86,
+      "sha256": "789a2c740281e65ae50ed0da3da3b1a93b52edb023733527adffcd6125ad4e5d",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "fixture",
+        "test_approved_decision_must_resolve_every_pinned_obligation",
+        "test_apply_approved_decision_updates_registry_and_evidence_hash",
+        "test_decision_packet_is_bound_to_current_evidence_hash"
+      ],
+      "purpose": ""
+    },
+    {
+      "path": "forge/test_rust_license_metadata.py",
+      "bytes": 5162,
+      "lines": 143,
+      "sha256": "e239d594c68e4ede5c13a135b7277fed8b07c65ae01d7bf3165a14d110d3108c",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "_metadata",
+        "_write_tree",
+        "test_rules_use_most_specific_file_and_directory_override",
+        "test_rust_manifest_uses_metadata_without_inline_spdx",
+        "test_rust_manifest_detects_metadata_drift",
+        "test_rust_metadata_rejects_conflicting_rules",
+        "test_rust_metadata_rejects_path_escape"
+      ],
+      "purpose": ""
+    },
+    {
+      "path": "forge/test_tokenizer_candidate_sample.py",
+      "bytes": 2285,
+      "lines": 58,
+      "sha256": "9ae51c78fe8d6a158d16bc8f5915f05538baa01d9d5deda605461c16c231170e",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "_source",
+        "test_candidate_sample_is_balanced_content_addressed_and_text_only",
+        "test_candidate_sample_rejects_tampered_shard"
+      ],
+      "purpose": ""
+    },
+    {
+      "path": "forge/test_tokenizer_coverage.py",
+      "bytes": 5457,
+      "lines": 156,
+      "sha256": "9750b24c05729a539c63e66a62a0db0a505cfbc026e453345e184fddd62b5a2c",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "approved_rights",
+        "fixture_entries",
+        "test_coverage_manifest_is_deterministic_and_validates",
+        "test_coverage_manifest_rejects_missing_category",
+        "test_coverage_manifest_rejects_unapproved_source",
+        "test_coverage_manifest_detects_input_tampering",
+        "_signed_attestation",
+        "test_coverage_manifest_accepts_attested_first_party_copy",
+        "test_coverage_manifest_rejects_unsigned_first_party"
+      ],
+      "purpose": ""
+    },
+    {
+      "path": "forge/test_tokenizer_freeze.py",
+      "bytes": 12209,
+      "lines": 348,
+      "sha256": "8ef3cb667879c1d2ec6f8c9ca7d004ebeb2c5a77fa46f3fd200622289b326295",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "rights_fixture",
+        "sample_fixture",
+        "tokenizer_fixture",
+        "test_sample_manifest_is_deterministic_and_validates",
+        "test_sample_manifest_rejects_missing_required_coverage",
+        "test_sample_manifest_rejects_unapproved_rights",
+        "test_sample_manifest_detects_input_tampering",
+        "test_freeze_manifest_pins_tokenizer_sample_and_rights",
+        "test_freeze_manifest_detects_tokenizer_tampering",
+        "test_sample_and_freeze_pin_exact_source_lock",
+        "test_sample_and_freeze_pin_hf_and_git_source_locks",
+        "test_first_party_provenance_flows_through_coverage_sample_and_freeze"
+      ],
+      "purpose": ""
+    },
+    {
+      "path": "forge/test_tool_data.py",
+      "bytes": 3111,
+      "lines": 67,
+      "sha256": "c995be488eb9ee984d835daa856790e8214ecc7f448cc87c0a4775f4dc6d5194",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "row",
+        "ToolDataTests"
+      ],
+      "purpose": ""
+    },
+    {
+      "path": "forge/test_verified_math_corpus.py",
+      "bytes": 2935,
+      "lines": 81,
+      "sha256": "56fa5b77d88abcd30930cdef3557c04e362219b167f6db874afc9541971f6059",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "test_verified_math_rows_are_deterministic_and_diverse",
+        "test_canonical_quality_gate_recomputes",
+        "test_small_candidate_is_bound_to_unsigned_attestation"
+      ],
+      "purpose": ""
+    },
+    {
+      "path": "forge/test_verified_trajectory_corpus.py",
+      "bytes": 4465,
+      "lines": 128,
+      "sha256": "ef0a7258734be6ae1aebe2f0804df5d232a912499cd2c4ac6ffa01ce1aaf7549",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "_fixture",
+        "test_quality_gate_covers_all_families_without_duplicates",
+        "test_verified_trajectory_corpus_is_deterministic_and_manifested",
+        "test_verified_trajectory_resume_is_idempotent"
+      ],
+      "purpose": ""
+    },
+    {
+      "path": "forge/test_wiki_candidate_corpus.py",
+      "bytes": 3979,
+      "lines": 116,
+      "sha256": "799d4af57132db3912daaafdd30f6207897820088397e095afd67db31bf3e61e",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "policy_path",
+        "article",
+        "test_topic_policy_classifies_high_signal_titles_and_general_fallback",
+        "test_ambiguous_topic_evidence_falls_back_to_general",
+        "test_article_chunks_preserve_provenance_and_lane_path",
+        "test_writer_is_content_addressed_and_resumable",
+        "test_writer_detects_shard_tampering"
+      ],
+      "purpose": ""
+    },
+    {
+      "path": "forge/tokenizer_candidate_sample.py",
+      "bytes": 7259,
+      "lines": 179,
+      "sha256": "1573a10b4e04c44f1a447d149810df003811b98ee46dba06117ffe874f0bb91c",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "_manifest_hash",
+        "_load_source_manifest",
+        "_iter_text",
+        "build_candidate_sample",
+        "_parse_input",
+        "main"
+      ],
+      "purpose": "Build a deterministic, content-addressed tokenizer candidate sample."
+    },
+    {
+      "path": "forge/tokenizer_coverage.py",
+      "bytes": 13203,
+      "lines": 310,
+      "sha256": "1c2658e5a40b919f1ed3c21f982093d6c39256109d358123326a1f1f7ec44b28",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "_identity_hash",
+        "build_coverage_manifest",
+        "validate_coverage_manifest",
+        "_parse_entry",
+        "main"
+      ],
+      "purpose": "Content-addressed coverage evidence for production IlariaLex samples."
+    },
+    {
+      "path": "forge/tokenizer_freeze.py",
+      "bytes": 29463,
+      "lines": 683,
+      "sha256": "e1f084758d4092a99f831a4b2c5ff1e874aefd3ae0e7152f82fbef85831252a2",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "_identity_hash",
+        "build_sample_manifest",
+        "validate_sample_manifest",
+        "build_freeze_manifest",
+        "validate_freeze_manifest",
+        "main"
+      ],
+      "purpose": "Reproducible, rights-gated IlariaLex production freeze manifests."
+    },
+    {
+      "path": "forge/tool_data.py",
+      "bytes": 4570,
+      "lines": 89,
+      "sha256": "757665542e531c9e9aad2da8f4c023d324f29c5d9bc8cf6faa7c6c4255e8a6cd",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "load_trajectories",
+        "task_key",
+        "validate_splits",
+        "encode_trajectory"
+      ],
+      "purpose": "Validated multilingual tool trajectories; the first release trains English."
+    },
+    {
+      "path": "forge/train_ilaria.py",
+      "bytes": 31680,
+      "lines": 683,
+      "sha256": "3983a95cfe0843d39278fd8c791d2ba57804cecdd2b9e536d2b8101d94b7a621",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "load_stream",
+        "batch_windows",
+        "lr_at",
+        "steps_for_target_tokens",
+        "distributed_env",
+        "param_groups",
+        "split_stream",
+        "validate_stream_compatibility",
+        "validate_training_args",
+        "evaluate",
+        "main"
+      ],
+      "purpose": "train_ilaria.py — the forge: pretrain an Ilaria brain in PyTorch and"
+    },
+    {
+      "path": "forge/training_state.py",
+      "bytes": 5248,
+      "lines": 124,
+      "sha256": "a6f75be748760c26a05c04f96dcdd0fb91a33207375d8a01f99a49479ef4d0f4",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "file_sha256",
+        "capture_rng",
+        "restore_rng",
+        "training_signature",
+        "make_checkpoint",
+        "restore_checkpoint",
+        "initialize_weights"
+      ],
+      "purpose": "Versioned, weights-only-loadable training state. Not a cross-platform bitwise guarantee."
+    },
+    {
+      "path": "forge/verified_math_corpus.py",
+      "bytes": 30605,
+      "lines": 716,
+      "sha256": "c75021fec0810b6d1571858043c35a0c5143d0aa191398c87a5818abd0ffff0e",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "_u64",
+        "_pick",
+        "_nonzero",
+        "_frac",
+        "_explain",
+        "_case",
+        "_row",
+        "load_config",
+        "evaluate_quality",
+        "_identities",
+        "write_corpus",
+        "main"
+      ],
+      "purpose": "Deterministic verifier-backed first-party mathematics corpus for IMC Genesis."
+    },
+    {
+      "path": "forge/verified_trajectory_corpus.py",
+      "bytes": 38397,
+      "lines": 956,
+      "sha256": "59b54021cf82a399081f462a48604b6c772348ef89f89e279dcb8c31919df80f",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "_u64",
+        "_evidence_hash",
+        "_assert_protocol_text",
+        "_agent_case",
+        "_agent_row",
+        "_world_case",
+        "_world_row",
+        "load_generation_config",
+        "evaluate_quality",
+        "_pipeline_identity",
+        "_verify_existing",
+        "write_candidate_corpus",
+        "main"
+      ],
+      "purpose": "Deterministic verifier-backed first-party trajectories for IMC Genesis."
+    },
+    {
+      "path": "forge/wiki_candidate_corpus.py",
+      "bytes": 14399,
+      "lines": 392,
+      "sha256": "a0af910131ddd636a189f188b9331ab25a9a6af9ef1b950ea5ea6df5f07d708f",
+      "inspection": "full-file AST parse and source surface inventory; behavioral review limited to report coverage",
+      "definitions": [
+        "_identity_hash",
+        "_normalize_match_text",
+        "_normalize_terms",
+        "load_topic_policy",
+        "_hits",
+        "classify_article",
+        "article_chunks",
+        "_verify_existing_manifest",
+        "write_candidate_corpus",
+        "main"
+      ],
+      "purpose": "Build an auditable English-Wikipedia candidate corpus with topic lanes."
+    },
+    {
+      "path": "runtime/connectome/connectome.go",
+      "bytes": 6955,
+      "lines": 235,
+      "sha256": "32cd8a6f334dc3835fba020ec07d9b6c99373c9a8ff7e58893752a48e7c7f5f9",
+      "inspection": "full-file source inventory; Go build/test/vet or canonical Swyp contract verification"
+    },
+    {
+      "path": "runtime/connectome/connectome_test.go",
+      "bytes": 2508,
+      "lines": 94,
+      "sha256": "27eb36f0bd020c27ceb962eab97de5d7ded09beeb29ad6733debf3a0e2412c5c",
+      "inspection": "full-file source inventory; Go build/test/vet or canonical Swyp contract verification"
+    },
+    {
+      "path": "runtime/integration/myriad_test.go",
+      "bytes": 3446,
+      "lines": 110,
+      "sha256": "f1900878cebbda3e01865121eefaf79bcfa8f8b1cf06c579cc2526edd5f938a4",
+      "inspection": "full-file source inventory; Go build/test/vet or canonical Swyp contract verification"
+    },
+    {
+      "path": "runtime/pce/capsule.go",
+      "bytes": 8430,
+      "lines": 266,
+      "sha256": "e83e532b3c553f12fb05617436e64ec0254647b02c2d2ca638b412520b9300a8",
+      "inspection": "full-file source inventory; Go build/test/vet or canonical Swyp contract verification"
+    },
+    {
+      "path": "runtime/pce/capsule_test.go",
+      "bytes": 3441,
+      "lines": 122,
+      "sha256": "ee41243779236dba9138dcd2e1db43d2a5b2e043f7775b431d449fff43a67f78",
+      "inspection": "full-file source inventory; Go build/test/vet or canonical Swyp contract verification"
+    },
+    {
+      "path": "runtime/pce/replay_artifact.go",
+      "bytes": 4912,
+      "lines": 153,
+      "sha256": "b254d4f3f7d053226c00d79d4526ad4b372a40c05479d8295b9c486ef7e39dd2",
+      "inspection": "full-file source inventory; Go build/test/vet or canonical Swyp contract verification"
+    },
+    {
+      "path": "runtime/pce/replay_artifact_test.go",
+      "bytes": 5752,
+      "lines": 181,
+      "sha256": "e364d46d0e62ac39555b274eafc07a0e2ce1e0e43baeaf8179182f00a7e12fc6",
+      "inspection": "full-file source inventory; Go build/test/vet or canonical Swyp contract verification"
+    },
+    {
+      "path": "runtime/protocol/contract.go",
+      "bytes": 2387,
+      "lines": 94,
+      "sha256": "37beb66a35b59a4dafca23d14c2f6009be5534b31b542837782debe0cb8e83ff",
+      "inspection": "full-file source inventory; Go build/test/vet or canonical Swyp contract verification"
+    },
+    {
+      "path": "runtime/protocol/contract_test.go",
+      "bytes": 1104,
+      "lines": 41,
+      "sha256": "8fe5c1194c6efef6ac02519efa35a7c452894cd155597513a3c82ba564cb18bd",
+      "inspection": "full-file source inventory; Go build/test/vet or canonical Swyp contract verification"
+    },
+    {
+      "path": "runtime/router/router.go",
+      "bytes": 1539,
+      "lines": 72,
+      "sha256": "65ea3357a004741c095b7374c5b8b4c0b8b4b37069752820ee1d39ba2aca813f",
+      "inspection": "full-file source inventory; Go build/test/vet or canonical Swyp contract verification"
+    },
+    {
+      "path": "runtime/router/router_test.go",
+      "bytes": 2184,
+      "lines": 81,
+      "sha256": "f7c9e884ff04c7377d6eb9374e5eb91b7f3be1575cd1ed452dc46a523831aefe",
+      "inspection": "full-file source inventory; Go build/test/vet or canonical Swyp contract verification"
+    },
+    {
+      "path": "runtime/world/world.go",
+      "bytes": 2169,
+      "lines": 79,
+      "sha256": "4cd8a1dac0375654575454f29ac43d333abe8c36fec045213ec1ddd9bf4b7c85",
+      "inspection": "full-file source inventory; Go build/test/vet or canonical Swyp contract verification"
+    },
+    {
+      "path": "runtime/world/world_test.go",
+      "bytes": 1522,
+      "lines": 70,
+      "sha256": "1a5e3114d5d2e0722645a97430fe91986088012214cd5a476d37617cfa7aa84e",
+      "inspection": "full-file source inventory; Go build/test/vet or canonical Swyp contract verification"
+    },
+    {
+      "path": "internal/runtimeguard/atomicfile.go",
+      "bytes": 1321,
+      "lines": 48,
+      "sha256": "1fb56adec2e67ce850dc3b55e93efd8333204b4dac2f9eba67a0510c37e42812",
+      "inspection": "full-file source inventory; Go build/test/vet or canonical Swyp contract verification"
+    },
+    {
+      "path": "internal/runtimeguard/atomicfile_test.go",
+      "bytes": 1886,
+      "lines": 81,
+      "sha256": "4eb547c74a393711bfe82dbe7a7025f12feabf151317356cfdcd288c07bc8ded",
+      "inspection": "full-file source inventory; Go build/test/vet or canonical Swyp contract verification"
+    },
+    {
+      "path": "internal/runtimeguard/runtimeguard.go",
+      "bytes": 1919,
+      "lines": 84,
+      "sha256": "24941c238dae27d639e0d9a665e524d8a754a15dcadd5e28a768f30a5ae33dd9",
+      "inspection": "full-file source inventory; Go build/test/vet or canonical Swyp contract verification"
+    },
+    {
+      "path": "internal/runtimeguard/runtimeguard_test.go",
+      "bytes": 2278,
+      "lines": 78,
+      "sha256": "a274d031c703a9ef6359ee325cee049e2b982beeb235798f1b218a3535b8419c",
+      "inspection": "full-file source inventory; Go build/test/vet or canonical Swyp contract verification"
+    },
+    {
+      "path": "cmd/corpus-audit/main.go",
+      "bytes": 8161,
+      "lines": 324,
+      "sha256": "eec6f73dc045ddad8e0071b4c8b0697a7f2bf1dfc227700773f9dc2aa80385ae",
+      "inspection": "full-file source inventory; Go build/test/vet or canonical Swyp contract verification"
+    },
+    {
+      "path": "cmd/corpus-convert/main.go",
+      "bytes": 3973,
+      "lines": 149,
+      "sha256": "1e2b95192d54c4918a6d95f9453b8bd7833cc5b7ac4e2f4b4012bc3cf100c9d1",
+      "inspection": "full-file source inventory; Go build/test/vet or canonical Swyp contract verification"
+    },
+    {
+      "path": "generated/myriad/types_gen.go",
+      "bytes": 7440,
+      "lines": 154,
+      "sha256": "113d8cc2813b433d0c0a8edb7ed0cea26af1c5bc6891d0f3369cb0ce5c71fc9f",
+      "inspection": "full-file source inventory; Go build/test/vet or canonical Swyp contract verification"
+    },
+    {
+      "path": "specs/myriad.manifest.json",
+      "bytes": 14857,
+      "lines": 716,
+      "sha256": "7ebbfdbf6e52080eb2f27865f8c1817435b75516ffe701c836f79cc6095c9310",
+      "inspection": "full-file JSON syntax verification; not an approval of data/rights evidence"
+    },
+    {
+      "path": "specs/myriad.swyp",
+      "bytes": 6407,
+      "lines": 243,
+      "sha256": "e3bcb8d254cbc508f282b605230184034955517509f0b770d4fca47bbd4adf47",
+      "inspection": "full-file source inventory; Go build/test/vet or canonical Swyp contract verification"
+    }
+  ],
+  "excluded": [
+    "data/**",
+    "model weights",
+    "generated binaries",
+    "bench corpus/tokenizer samples",
+    "account or entitlement probes",
+    "secrets/private/user data"
+  ]
+}

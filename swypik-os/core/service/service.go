@@ -11,9 +11,12 @@ import (
 	"os"
 	"runtime"
 	"strings"
+	"sync"
+	"time"
 
 	"swypik-os/core/agent"
 	"swypik-os/core/network"
+	resourcepolicy "swypik-os/core/resource"
 	"swypik-os/core/search"
 )
 
@@ -21,6 +24,34 @@ type Service struct {
 	Agent     *agent.Manager
 	Search    *search.Engine
 	Workspace string
+
+	statusMu      sync.Mutex
+	networkStatus network.Status
+	networkAt     time.Time
+}
+
+func (s *Service) networkSnapshot(ctx context.Context) (network.Status, error) {
+	policy := resourcepolicy.Default()
+	ttl := 2 * policy.StatusPollInterval
+	if ttl < 5*time.Second {
+		ttl = 5 * time.Second
+	}
+	if ttl > 30*time.Second {
+		ttl = 30 * time.Second
+	}
+	now := time.Now()
+	s.statusMu.Lock()
+	defer s.statusMu.Unlock()
+	if !s.networkAt.IsZero() && now.Sub(s.networkAt) < ttl {
+		return s.networkStatus, nil
+	}
+	n, err := network.Inspect(ctx)
+	if err != nil {
+		return n, err
+	}
+	s.networkStatus = n
+	s.networkAt = now
+	return n, nil
 }
 
 func SearchTool(e *search.Engine) agent.Tool {
@@ -98,19 +129,19 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	switch r.URL.Path {
 	case "/v1/status":
-		n, err := network.Inspect(r.Context())
+		n, err := s.networkSnapshot(r.Context())
 		if err != nil {
 			http.Error(w, "network inventory unavailable", 503)
 			return
 		}
 		send(struct {
-			OS      string         `json:"os"`
-			UID     int            `json:"uid"`
-			Network network.Status `json:"network"`
-			Indexed int            `json:"indexed"`
-			Run     *agent.Run     `json:"run"`
-			Mode    string         `json:"mode"`
-		}{runtime.GOOS, os.Getuid(), n, s.Search.Count(), s.Agent.Snapshot(), "native_pre_alpha_read_only_agent"}, nil)
+			OS      string           `json:"os"`
+			UID     int              `json:"uid"`
+			Network network.Status   `json:"network"`
+			Indexed int              `json:"indexed"`
+			Run     *agent.RunStatus `json:"run"`
+			Mode    string           `json:"mode"`
+		}{runtime.GOOS, os.Getuid(), n, s.Search.Count(), s.Agent.StatusSnapshot(), "native_pre_alpha_read_only_agent"}, nil)
 	case "/v1/search":
 		v, err := s.Search.Search(r.URL.Query().Get("q"))
 		send(v, err)

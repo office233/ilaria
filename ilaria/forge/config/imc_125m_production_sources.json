@@ -1,0 +1,65 @@
+{
+  "curriculum_sha256": "3ac9c6e0a36e85151e543dfbff09c8ea319b1566b6dd77d981cab8c8f34a4432",
+  "first_party_sources": [
+    "first_party_contracts",
+    "first_party_trajectories"
+  ],
+  "format": "imc-125m-production-source-plan-v1",
+  "inventory_sha256": "b90cb45f4e8269a19673c7116f28974b4aee31f23b8a2eedd80ede354694db69",
+  "lanes": {
+    "agent_tool_trajectories": [
+      "first_party_trajectories"
+    ],
+    "code": [
+      "opencode_reasoning_split0"
+    ],
+    "general_knowledge": [
+      "wiki_en"
+    ],
+    "mathematics": [
+      "openmath_reasoning_cot"
+    ],
+    "os_hardware_drivers_standards": [
+      "apache_nuttx",
+      "freebsd_licensed_tree",
+      "freertos_kernel",
+      "zephyr"
+    ],
+    "romanian_multilingual": [],
+    "science_technical_reasoning": [
+      "openscience_reasoning_2"
+    ],
+    "world_device_trajectories": [
+      "first_party_trajectories"
+    ]
+  },
+  "minimum_headroom_ppm": 20000,
+  "plan_sha256": "dd1306ab5ace5021aa77e4a1c934b3a88659d2e6c122cf12d9241e6a09984fdf",
+  "tokenizer_coverage": {
+    "code": [
+      "opencode_reasoning_split0"
+    ],
+    "english": [
+      "wiki_en"
+    ],
+    "hardware": [
+      "apache_nuttx",
+      "freebsd_licensed_tree",
+      "freertos_kernel",
+      "zephyr"
+    ],
+    "math_science": [
+      "openmath_reasoning_cot",
+      "openscience_reasoning_2"
+    ],
+    "os_drivers": [
+      "apache_nuttx",
+      "freebsd_licensed_tree",
+      "freertos_kernel",
+      "zephyr"
+    ],
+    "tools_protocol": [
+      "first_party_contracts"
+    ]
+  }
+}

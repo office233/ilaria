@@ -25,10 +25,7 @@ func coreCommand(kind string, args []string, out io.Writer) (err error) {
 		if err == nil || emitted {
 			return
 		}
-		var d *coreir.Diagnostic
-		if !errors.As(err, &d) {
-			d = &coreir.Diagnostic{Code: "invalid_input", Message: err.Error()}
-		}
+		d := compilerDiagnostic(err)
 		writeErr := json.NewEncoder(out).Encode(struct {
 			Version    int                `json:"version"`
 			Status     string             `json:"status"`
@@ -42,6 +39,7 @@ func coreCommand(kind string, args []string, out io.Writer) (err error) {
 	flags.SetOutput(io.Discard)
 	entry := "main"
 	steps := 100000
+	profile := "safe"
 	output := ""
 	contractPath := ""
 	timeout := 5 * time.Second
@@ -54,6 +52,9 @@ func coreCommand(kind string, args []string, out io.Writer) (err error) {
 	} else {
 		flags.IntVar(&steps, "steps", 100000, "host per-run core instruction bound")
 		flags.DurationVar(&timeout, "timeout", 5*time.Second, "execution deadline, 1ms..60s")
+		if kind == "core-run" || kind == "core-exec" {
+			flags.StringVar(&profile, "profile", "safe", "embedded execution profile: safe, fast or turbo")
+		}
 	}
 	if kind == "verify" {
 		flags.StringVar(&contractPath, "contract", "", "contract JSON file")
@@ -69,6 +70,9 @@ func coreCommand(kind string, args []string, out io.Writer) (err error) {
 	}
 	if steps < 1 || steps > coreir.MaxFuel || timeout < time.Millisecond || timeout > time.Minute {
 		return fmt.Errorf("steps must be 1..1000000 and timeout 1ms..60s")
+	}
+	if profile != "safe" && profile != "fast" && profile != "turbo" {
+		return fmt.Errorf("unknown embedded profile %q; expected safe, fast or turbo", profile)
 	}
 	var contract coreir.Contract
 	var contractData []byte
@@ -171,7 +175,14 @@ func coreCommand(kind string, args []string, out io.Writer) (err error) {
 			return err
 		}
 	}
-	r, err := e.Run(ctx, entry, values, steps)
+	var r coreir.RunResult
+	if profile == "turbo" {
+		r, err = e.RunTurbo(ctx, entry, values, steps)
+	} else if profile == "fast" {
+		r, err = e.RunFast(ctx, entry, values, steps)
+	} else {
+		r, err = e.Run(ctx, entry, values, steps)
+	}
 	if err != nil {
 		return err
 	}
@@ -179,9 +190,10 @@ func coreCommand(kind string, args []string, out io.Writer) (err error) {
 	return json.NewEncoder(out).Encode(struct {
 		Version      int              `json:"version"`
 		Status       string           `json:"status"`
+		Profile      string           `json:"profile"`
 		Entry        string           `json:"entry"`
 		Result       coreir.RunResult `json:"result"`
 		IRSHA256     string           `json:"ir_sha256"`
 		SourceSHA256 string           `json:"source_sha256,omitempty"`
-	}{1, "ok", entry, r, irHash, sourceHash})
+	}{1, "ok", profile, entry, r, irHash, sourceHash})
 }

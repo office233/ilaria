@@ -1,0 +1,124 @@
+# ============================================================================
+# Swypik — rolul DATA: Postgres 16 (pgvector) + Redis 7
+# ============================================================================
+#   docker compose -p swypik-data -f infra/azure/compose/data.yml \
+#     --env-file /opt/swypik/env/data.env up -d
+# data.env (root/dev 600) conține DOAR: DATA_BIND_IP, POSTGRES_DB/USER/PASSWORD,
+# REDIS_PASSWORD (+ opțional tuning PG_*).
+#
+# Porturile se leagă pe IP-ul PRIVAT al nodului (nu 0.0.0.0): pe Azure NSG-ul
+# subnetului data mai filtrează o dată (5432/6379 doar din web+worker). Pe Hetzner: firewall-ul Hetzner + rețeaua privată.
+#
+# Reglaje implicite pentru 16 GiB RAM (Standard_E2as_v5 sau D4as_v5 / Hetzner CCX23);
+# la un VM mai mare se schimbă doar PG_* în data.env (docs/infra/scaling.md).
+# FĂRĂ montarea migrărilor în docker-entrypoint-initdb.d: baza vine din
+# pg_dump + infra/azure/deploy.sh aplică migrările noi (o singură dată).
+# ============================================================================
+
+name: swypik-data
+
+services:
+
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: swypik-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB lipseste din data.env}
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER lipseste din data.env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD lipseste din data.env}
+    ports:
+      - "${DATA_BIND_IP:?DATA_BIND_IP lipseste}:5432:5432"
+    volumes:
+      - swypik_postgres_data:/var/lib/postgresql/data
+    shm_size: ${PG_SHM_SIZE:-2g}
+    command:
+      - postgres
+      - -c
+      - shared_buffers=${PG_SHARED_BUFFERS:-3GB}
+      - -c
+      - effective_cache_size=${PG_EFFECTIVE_CACHE_SIZE:-8GB}
+      - -c
+      - work_mem=${PG_WORK_MEM:-16MB}
+      - -c
+      - maintenance_work_mem=${PG_MAINTENANCE_WORK_MEM:-512MB}
+      - -c
+      - max_connections=${PG_MAX_CONNECTIONS:-300}
+      - -c
+      - wal_buffers=16MB
+      - -c
+      - min_wal_size=1GB
+      - -c
+      - max_wal_size=4GB
+      - -c
+      - checkpoint_completion_target=0.9
+      - -c
+      - random_page_cost=1.1
+      - -c
+      - effective_io_concurrency=200
+      - -c
+      - max_worker_processes=${PG_MAX_WORKER_PROCESSES:-4}
+      - -c
+      - max_parallel_workers=${PG_MAX_PARALLEL_WORKERS:-2}
+      - -c
+      - max_parallel_workers_per_gather=1
+      - -c
+      - shared_preload_libraries=pg_stat_statements
+      - -c
+      - pg_stat_statements.track=top
+      - -c
+      - log_min_duration_statement=1000
+      - -c
+      - idle_in_transaction_session_timeout=300000
+      - -c
+      - password_encryption=scram-sha-256
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    # 16 GiB total: PG 9 + Redis 1.5 → restul pentru OS/page cache.
+    mem_limit: ${PG_MEM_LIMIT:-9g}
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: swypik-redis
+    # Pe rețea → parolă obligatorie. Coada video (Redis Streams, consumer group
+    # video-workers) + rate limit + cache. AOF pentru a nu pierde job-urile.
+    command:
+      - redis-server
+      - --requirepass
+      - ${REDIS_PASSWORD:?REDIS_PASSWORD lipseste din data.env}
+      - --appendonly
+      - "yes"
+      - --appendfsync
+      - everysec
+      - --maxmemory
+      - ${REDIS_MAXMEMORY:-1gb}
+      # volatile-lru: se evacuează doar cheile cu TTL (cache, rate limit);
+      # stream-ul cozii video nu are TTL → nu e evacuat niciodată.
+      # (WSL folosea allkeys-lru, care putea șterge coada sub presiune.)
+      - --maxmemory-policy
+      - ${REDIS_MAXMEMORY_POLICY:-volatile-lru}
+    ports:
+      - "${DATA_BIND_IP:?DATA_BIND_IP lipseste}:6379:6379"
+    volumes:
+      - swypik_redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" --no-auth-warning ping | grep -q PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    mem_limit: ${REDIS_MEM_LIMIT:-1536m}
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+
+
+volumes:
+  swypik_postgres_data:
+  swypik_redis_data:

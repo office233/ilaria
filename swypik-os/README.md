@@ -48,41 +48,39 @@ It never closes other running SwypikOS sessions.
 
 ## Run with Ilaria
 
-SwypikOS now lives inside the Ilaria repository, next to Ilaria. From the Ilaria root:
+SwypikOS and Ilaria are sibling products in the Nexus workspace. From the
+workspace root:
 
 ```powershell
-powershell -File swypik-os\scripts\start-with-ilaria.ps1        # CUDA when nvidia-smi is present
-powershell -File swypik-os\scripts\start-with-ilaria.ps1 -Cpu   # CPU only (much slower)
+powershell -File swypik-os\scripts\start-with-ilaria.ps1 -IlariaURL http://127.0.0.1:8091
 ```
 
-The script builds `cmd/ilaria-serve` and the desktop, loads the BitNet model from
-`data/forge/bitnet-2b4t/` with its tokenizer from `data/pretrained/bitnet-b1.58-2B-4T/`, waits for
-`GET /health`, opens SwypikOS connected to `http://127.0.0.1:8091`, and stops the service when the
-window closes. Measured on a GTX 1660 Ti: first reply ~10 s (GPU warm-up), then ~1 s; 3.3 GB VRAM.
-On CPU a reply can exceed the service's 2-minute limit.
-
-Current model limits (BitNet 2B, not yet trained on SwypikOS trajectories): good English chat,
-weak Romanian, and in agent mode it can claim a task is done without calling a tool. The agent
-still shows every step and runs nothing without approval.
+The script builds only the native desktop, validates its configuration, and
+connects it to the explicitly selected, already running Ilaria service. It does
+not load weights, start a missing server or assume a pretrained model family.
+Ilaria's canonical model is IMC, trained from scratch; model quality and GPU
+readiness require separate measured gates. Missing services fail explicitly.
+The agent shows every step and runs nothing without approval.
 
 ## Windows desktop: what works
 
-Six tabs (Ctrl+1…6), a native input field with paste, history (↑/↓) and IME, and
+Seven tabs (Home plus Ctrl+1…6), a native input field with paste, history (↑/↓) and IME, and
 word-wrapped, scrollable, DPI-aware rendering:
 
 | Tab | What it does |
 | --- | --- |
+| Acasă | Open the six functional tabs, start a conversation or choose a workspace action. |
 | Chat | Conversation with the configured Ilaria service. No service, no answer: errors are shown, never simulated. |
 | Agent | Give a goal. Ilaria plans one step at a time using `workspace.read/write/edit/list`, `process.run` and `search.query`. **Every step is shown and needs approval** (F8 approve, F9 deny; a prompt must be visible for 500 ms first). Edits require the file hash from a prior read, so stale content is never overwritten. Runs are checkpointed and survive restarts (`/resume`). |
 | Căutare | Your own search engine: BM25F ranking, Romanian/Hungarian diacritic folding, prefix matching and snippets. `/index [dir]` indexes local text and code files; `/crawl URL [pages]` indexes a site after confirmation, honouring robots.txt and blocking private addresses. No Google, Bing or DuckDuckGo. |
 | Fișiere | Browse and preview files inside the workspace. |
-| Calcul | Detected NVIDIA GPUs and your consent for future Ilaria training contribution. No work runs yet; see [the design](docs/ILARIA_COMPUTE.md). |
-| Setări | `/ilaria https://…` switches the Ilaria endpoint, `/test` checks it, `/workspace DIR` selects the workspace. |
+| Calcul | Detected NVIDIA GPUs and your consent for future Ilaria training contribution. No work runs yet; see [the design](../ramasite/docs/swypik-os/ILARIA_COMPUTE.md). |
+| Setări | `/ilaria https://…` switches the Ilaria endpoint, `/test` checks it, `/workspace DIR` saves the workspace for the next restart. |
 
 Connect Ilaria (for example the Azure deployment) as described in
-[docs/ILARIA_INTEGRATION.md](docs/ILARIA_INTEGRATION.md). Approved commands run
+[docs/ILARIA_INTEGRATION.md](../ramasite/docs/swypik-os/ILARIA_INTEGRATION.md). Approved commands run
 with your permissions inside a Windows Job Object; that is lifecycle control,
-not a sandbox. See [Windows architecture and limitations](docs/WINDOWS_DESKTOP.md).
+not a sandbox. See [Windows architecture and limitations](../ramasite/docs/swypik-os/WINDOWS_DESKTOP.md).
 
 ## Separate Linux OS prototype
 
@@ -171,7 +169,8 @@ Every tool then needs a fresh approval. Original deadlines and budgets remain.
 An interrupted tool with an unrecorded outcome cannot be resumed automatically.
 This stores only the last run, not a multi-run history; starting a new run replaces
 it. State is plaintext with restricted permissions, not encrypted. The RAM-only
-ISO still loses state at VM reboot. See [recovery design](docs/AGENT_RECOVERY.md).
+ISO still loses state at VM reboot. A separate agent-recovery design document
+is not included in this checkout.
 
 ## Linux: verification
 
@@ -206,6 +205,22 @@ Several older modules remain prototypes, including simulated distributed compute
 rewards and hardware synthesis. They do not supply real drivers, a bootloader or
 model training. The simulated installer now fails instead of reporting success.
 Older documents describe different migration stages; this README and
-[Windows desktop design](docs/WINDOWS_DESKTOP.md) define the current EXE target.
-For the separate Linux track, see [native OS design](docs/NATIVE_OS.md),
-[search limits](docs/OWN_SEARCH.md) and [repository audit](docs/NATIVE_AUDIT.md).
+[Windows desktop design](../ramasite/docs/swypik-os/WINDOWS_DESKTOP.md) define the current EXE target.
+For the separate Linux track, see [native OS design](../ramasite/docs/swypik-os/NATIVE_OS.md),
+[search limits](../ramasite/docs/swypik-os/OWN_SEARCH.md) and [repository audit](../ramasite/docs/swypik-os/NATIVE_AUDIT.md).
+
+## Durable plan supervisor
+
+`cmd/plan-supervisor` is the Windows/Linux headless reference path for complete
+Swyp plans: immutable IR, exact host scopes, durable cumulative budgets,
+independent persistent Ilaria verification and Control Kernel commit. It uses
+the existing resource governor and reports measured process CPU/RSS. It does
+not yet replace the native UI's agent path or implement automatic recovery.
+See the [supervisor v1 milestone](../ramasite/docs/workspace/milestones/supervisor-v1.md) for host
+configuration, the trusted JSONL service interface, measurements and limits.
+
+```powershell
+go build ./cmd/plan-supervisor
+# From the Nexus repository root:
+./ramasite/scripts/verify-supervisor.ps1
+```

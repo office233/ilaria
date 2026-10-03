@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "plan_id": "sha256:8f5f6131f9e3c132ee7d95c1b801629e3d5355bfe6bf1179fa3e4fd51290cdef",
+  "hir_version": 1,
+  "entry": "main",
+  "effect_version": 1,
+  "effects": ["foreign.call"],
+  "required_capabilities": [
+    {"name": "native_math", "effect": "foreign.call"}
+  ],
+  "foreign_calls": [
+    {
+      "call_id": "main:foreign:0",
+      "caller": "main",
+      "target": "c_add",
+      "abi": "C",
+      "abi_version": "swyp-c64-v1",
+      "symbol": "c_add",
+      "effect": "foreign.call",
+      "capability": {"name": "native_math", "effect": "foreign.call"},
+      "params": [
+        {"kind": "primitive", "name": "i64"},
+        {"kind": "primitive", "name": "i64"}
+      ],
+      "result": {"kind": "primitive", "name": "i64"},
+      "param_abi": [
+        {"kind": "i64", "size": 8, "align": 8},
+        {"kind": "i64", "size": 8, "align": 8}
+      ],
+      "result_abi": {"kind": "i64", "size": 8, "align": 8},
+      "location": {}
+    }
+  ]
+}

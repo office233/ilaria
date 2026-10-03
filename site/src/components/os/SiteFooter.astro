@@ -1,0 +1,63 @@
+---
+import Brand from "../Brand.astro";
+import { modules } from "../../data/modules";
+
+const year = new Date().getFullYear();
+const featured = ["go", "food", "stays", "movies", "music", "news", "messenger", "seller-portal"]
+  .map((s) => modules.find((m) => m.slug === s)!)
+  .filter(Boolean);
+---
+<footer class="footer">
+  <div class="shell foot glass">
+    <div class="foot-brand">
+      <Brand />
+      <p>The super-app, the mind and the machine — one European stack, from the feed to the kernel.</p>
+      <span class="eu"><i class="live-dot"></i>Designed and built in Europe</span>
+    </div>
+    <div class="col">
+      <h4>Ecosystem</h4>
+      <a href="/swypik/">Swypik</a>
+      <a href="/ilaria/">Ilaria</a>
+      <a href="/os/">SwypikOS</a>
+      <a href="/swyp/">Swyp</a>
+      <a href="/nexus/">Nexus</a>
+    </div>
+    <div class="col">
+      <h4>Swypik</h4>
+      {featured.map((m) => <a href={`/swypik/${m.slug}/`}>{m.name}</a>)}
+      <a href="/swypik/" class="all">All modules →</a>
+    </div>
+    <div class="col">
+      <h4>Company</h4>
+      <a href="/investors/">Investors</a>
+      <a href="/#early-access">Early access</a>
+      <a href="/contact/">Contact</a>
+      <a href="/privacy/">Privacy</a>
+      <a href="/terms/">Terms</a>
+    </div>
+    <div class="legal">
+      <span>© {year} Swypik Technology. All rights reserved.</span>
+      <span>Status labels reflect the state of the code, not marketing targets. Roadmap subject to change.</span>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .footer { padding: 3rem 0 2rem; }
+  .foot {
+    display: grid; grid-template-columns: 1.5fr repeat(3, 1fr); gap: 2rem;
+    padding: clamp(1.6rem, 3vw, 2.6rem); border-radius: 28px;
+  }
+  .foot-brand p { max-width: 34ch; margin: 1rem 0; color: var(--muted); line-height: 1.6; font-size: .92rem; }
+  .eu { display: inline-flex; align-items: center; gap: .5rem; color: var(--eyebrow); font-size: .78rem; font-weight: 600; }
+  .col { display: grid; align-content: start; gap: .55rem; }
+  .col h4 { margin: 0 0 .35rem; color: var(--eyebrow); font-size: .7rem; letter-spacing: .18em; text-transform: uppercase; }
+  .col a { color: var(--ink-2); font-size: .9rem; font-weight: 500; transition: color .18s ease; }
+  .col a:hover { color: var(--brand); }
+  .col .all { color: var(--brand); font-weight: 650; }
+  .legal {
+    grid-column: 1 / -1; display: flex; flex-wrap: wrap; justify-content: space-between; gap: .6rem;
+    padding-top: 1.4rem; border-top: 1px solid var(--line); color: var(--soft); font-size: .76rem;
+  }
+  @media (max-width: 860px) { .foot { grid-template-columns: 1fr 1fr; } .foot-brand { grid-column: 1 / -1; } }
+</style>

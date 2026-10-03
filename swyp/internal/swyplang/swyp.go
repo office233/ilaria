@@ -10,6 +10,8 @@ import (
 	"text/scanner"
 	"time"
 	"unicode"
+
+	"swyp-lang/internal/sourcefront"
 )
 
 type token struct {
@@ -20,9 +22,23 @@ type expr struct {
 	kind, name string
 	value      any
 	args       []*expr
+	fields     []exprField
+	arms       []exprArm
+	variant    string
 	pos        scanner.Position
 	depth      int    // AST height, independent of parser recursion depth.
 	lexeme     string // Original numeric token, retained for exact core i64 literals.
+}
+type exprField struct {
+	name  string
+	value *expr
+	pos   scanner.Position
+}
+type exprArm struct {
+	variant string
+	binding string
+	value   *expr
+	pos     scanner.Position
 }
 type stmt struct {
 	annotation  string // Available only in ParseCore mode.
@@ -36,11 +52,36 @@ type function struct {
 	body        []*stmt
 	annotations []string
 	result      string
+	borrowFrom  string
 	pos         scanner.Position
+}
+type structDecl struct {
+	name   string
+	fields []structField
+	pos    scanner.Position
+}
+type structField struct {
+	name     string
+	typeName string
+	pos      scanner.Position
+}
+type enumDecl struct {
+	name     string
+	variants []enumVariant
+	pos      scanner.Position
+}
+type enumVariant struct {
+	name    string
+	payload string
+	pos     scanner.Position
 }
 type Program struct {
 	functions map[string]function
+	structs   map[string]structDecl
+	enums     map[string]enumDecl
 	core      bool // Opt-in parser mode; legacy backends must reject it.
+	module    string
+	uses      []string
 }
 type parser struct {
 	core      bool
@@ -56,26 +97,47 @@ func failure(pos scanner.Position, format string, args ...any) error {
 
 // Parse checks syntax and declarations without executing the program.
 func Parse(filename, source string) (*Program, error) {
-	return parseSource(filename, source, false)
+	return parseSource(filename, source, false, true)
 }
 
 // ParseCore enables explicit i64/f64 and typed locals for the opt-in core pipeline.
 func ParseCore(filename, source string) (*Program, error) {
-	return parseSource(filename, source, true)
+	return parseSource(filename, source, true, true)
 }
 
-func parseSource(filename, source string, core bool) (program *Program, err error) {
+// ParseModule parses a compatibility-surface library module. Unlike Parse it
+// does not require an executable fn main(); callers still get the same syntax
+// and declaration validation for every function that is present.
+func ParseModule(filename, source string) (*Program, error) {
+	return parseSource(filename, source, false, false)
+}
+
+// ParseCoreModule parses a Core-surface library module without requiring an
+// executable entrypoint. Native/run/build commands intentionally keep using
+// ParseCore so entry programs remain fail-closed when main is absent.
+func ParseCoreModule(filename, source string) (*Program, error) {
+	return parseSource(filename, source, true, false)
+}
+
+func parseSource(filename, source string, core, requireMain bool) (program *Program, err error) {
 	if len(source) > 1_048_576 {
-		return nil, fmt.Errorf("%s: source exceeds 1 MiB limit", filename)
+		return nil, diagnosticForFile(DiagnosticSourceTooLarge, filename, "source exceeds 1 MiB limit")
+	}
+	preamble, parseBody, preambleErr := sourcefront.ParsePreamble(filename, source)
+	if preambleErr != nil {
+		if e, ok := preambleErr.(*sourcefront.Error); ok {
+			return nil, diagnosticAt(DiagnosticModulePreamble, e.Position, "%s", e.Message)
+		}
+		return nil, preambleErr
 	}
 	var s scanner.Scanner
-	s.Init(strings.NewReader(source))
+	s.Init(strings.NewReader(parseBody))
 	s.Filename = filename
 	s.Mode = scanner.ScanIdents | scanner.ScanInts | scanner.ScanFloats | scanner.ScanStrings | scanner.ScanComments | scanner.SkipComments
 	var lexical error
 	s.Error = func(s *scanner.Scanner, message string) {
 		if lexical == nil {
-			lexical = failure(s.Position, "%s", message)
+			lexical = diagnosticAt(DiagnosticLexicalError, s.Position, "%s", message)
 		}
 	}
 	p := &parser{core: core}
@@ -96,15 +158,74 @@ func parseSource(filename, source string, core bool) (program *Program, err erro
 			}
 		}
 	}()
-	program = &Program{functions: map[string]function{}, core: core}
+	program = &Program{functions: map[string]function{}, structs: map[string]structDecl{}, enums: map[string]enumDecl{}, core: core, module: preamble.Module, uses: append([]string(nil), preamble.Uses...)}
 	for p.peek() != "<eof>" {
+		if p.core && p.peek() == "struct" {
+			p.at++
+			name := p.identifier()
+			if _, exists := program.structs[name]; exists || program.enums[name].name != "" {
+				p.badCode(DiagnosticInvalidType, "duplicate nominal type %q", name)
+			}
+			d := structDecl{name: name, pos: p.tokens[p.at-1].pos}
+			p.expect("{")
+			seen := map[string]bool{}
+			for p.peek() != "}" {
+				fieldPos := p.tokens[p.at].pos
+				field := p.identifier()
+				if seen[field] {
+					p.badCode(DiagnosticDuplicateVariable, "duplicate struct field %q", field)
+				}
+				seen[field] = true
+				p.expect(":")
+				typ := p.typeName(false)
+				p.expect(";")
+				d.fields = append(d.fields, structField{name: field, typeName: typ, pos: fieldPos})
+			}
+			p.expect("}")
+			if len(d.fields) == 0 {
+				p.badCode(DiagnosticInvalidType, "struct %s must contain at least one field", name)
+			}
+			program.structs[name] = d
+			continue
+		}
+		if p.core && p.peek() == "enum" {
+			p.at++
+			name := p.identifier()
+			if _, exists := program.enums[name]; exists || program.structs[name].name != "" {
+				p.badCode(DiagnosticInvalidType, "duplicate nominal type %q", name)
+			}
+			d := enumDecl{name: name, pos: p.tokens[p.at-1].pos}
+			p.expect("{")
+			seen := map[string]bool{}
+			for p.peek() != "}" {
+				variantPos := p.tokens[p.at].pos
+				variant := p.identifier()
+				if seen[variant] {
+					p.badCode(DiagnosticInvalidType, "duplicate enum variant %q", variant)
+				}
+				seen[variant] = true
+				payload := ""
+				if p.take("(") {
+					payload = p.typeName(false)
+					p.expect(")")
+				}
+				p.expect(";")
+				d.variants = append(d.variants, enumVariant{name: variant, payload: payload, pos: variantPos})
+			}
+			p.expect("}")
+			if len(d.variants) == 0 {
+				p.badCode(DiagnosticInvalidType, "enum %s must contain at least one variant", name)
+			}
+			program.enums[name] = d
+			continue
+		}
 		p.expect("fn")
 		name := p.identifier()
-		if name == "print" || name == "arg" || name == "clock" {
-			p.bad("%s is a reserved built-in", name)
+		if name == "print" || name == "eprint" || name == "arg" || name == "clock" || (p.core && (name == "some" || name == "none" || name == "ok" || name == "err" || name == "drop" || name == "defer_drop" || name == "store" || name == "vec_len" || name == "vec_capacity" || name == "vec_push")) {
+			p.badCode(DiagnosticReservedIdentifier, "%s is a reserved built-in", name)
 		}
 		if _, exists := program.functions[name]; exists {
-			p.bad("duplicate function %q", name)
+			p.badCode(DiagnosticDuplicateFunction, "duplicate function %q", name)
 		}
 		p.expect("(")
 		f := function{pos: p.tokens[p.at-1].pos}
@@ -113,7 +234,7 @@ func parseSource(filename, source string, core bool) (program *Program, err erro
 			for {
 				n := p.identifier()
 				if seen[n] {
-					p.bad("duplicate parameter %q", n)
+					p.badCode(DiagnosticDuplicateParameter, "duplicate parameter %q", n)
 				}
 				seen[n] = true
 				f.params = append(f.params, n)
@@ -132,28 +253,143 @@ func parseSource(filename, source string, core bool) (program *Program, err erro
 			p.expect(">")
 			f.result = p.typeName(true)
 		}
+		if p.core && p.take("borrows") {
+			f.borrowFrom = p.identifier()
+			if !seen[f.borrowFrom] {
+				p.badCode(DiagnosticInvalidType, "borrow lifetime source %q is not a function parameter", f.borrowFrom)
+			}
+		}
 		f.body = p.functionBody(f.result != "" && f.result != "void")
 		program.functions[name] = f
 	}
-	main, ok := program.functions["main"]
-	if !ok {
-		p.bad("missing fn main()")
+	if p.core {
+		if typeErr := validateProgramTypeNames(program); typeErr != nil {
+			return nil, typeErr
+		}
 	}
-	if len(main.params) != 0 {
-		p.bad("main must have no parameters")
+	if requireMain {
+		main, ok := program.functions["main"]
+		if !ok {
+			p.badCode(DiagnosticMissingMain, "missing fn main()")
+		}
+		if len(main.params) != 0 {
+			p.badCode(DiagnosticInvalidMain, "main must have no parameters")
+		}
 	}
 	return program, nil
 }
+
+// ModuleName returns the optional namespace declared by the shared Swyp source
+// preamble. Empty means the source is an unqualified compatibility module.
+func (p *Program) ModuleName() string {
+	if p == nil {
+		return ""
+	}
+	return p.module
+}
+
+// Uses returns a detached ordered list of logical module dependencies. Import
+// resolution is intentionally a separate compiler stage; parsing never performs
+// ambient filesystem or network access.
+func (p *Program) Uses() []string {
+	if p == nil {
+		return nil
+	}
+	return append([]string(nil), p.uses...)
+}
 func (p *parser) typeName(allowVoid bool) string {
+	p.enter()
+	defer func() { p.depth-- }()
 	name := p.peek()
-	if name != "number" && name != "bool" && name != "string" && !(allowVoid && name == "void") && !(p.core && (name == "i64" || name == "f64")) {
-		p.bad("expected type number, bool, or string")
+	if name != "number" && name != "bool" && name != "string" && !(allowVoid && name == "void") && !(p.core && (coreHIRScalarType(name) || coreHIRGenericType(name) || sourceTypeIdentifier(name))) {
+		p.badCode(DiagnosticInvalidType, "expected type name, got %q", name)
 	}
 	p.at++
-	return name
+	if p.core && sourceTypeIdentifier(name) && !coreHIRScalarType(name) && !coreHIRGenericType(name) {
+		for p.take(".") {
+			name += "." + p.identifier()
+		}
+		return name
+	}
+	if !p.core || !coreHIRGenericType(name) {
+		return name
+	}
+	p.expect("<")
+	switch name {
+	case "array":
+		element := p.typeName(false)
+		p.expect(",")
+		lengthToken := p.peek()
+		lengthText := strings.ReplaceAll(lengthToken, "_", "")
+		length, err := strconv.ParseUint(lengthText, 10, 64)
+		if err != nil {
+			p.badCode(DiagnosticInvalidType, "array length must be an unsigned decimal integer, got %q", lengthToken)
+		}
+		p.at++
+		p.expect(">")
+		return fmt.Sprintf("array<%s,%d>", element, length)
+	case "result":
+		okType := p.typeName(false)
+		p.expect(",")
+		errType := p.typeName(false)
+		p.expect(">")
+		return fmt.Sprintf("result<%s,%s>", okType, errType)
+	case "tuple":
+		var elements []string
+		for {
+			elements = append(elements, p.typeName(false))
+			if p.take(">") {
+				break
+			}
+			p.expect(",")
+		}
+		return "tuple<" + strings.Join(elements, ",") + ">"
+	default:
+		arg := p.typeName(false)
+		p.expect(">")
+		return name + "<" + arg + ">"
+	}
 }
-func (p *parser) peek() string           { return p.tokens[p.at].text }
-func (p *parser) bad(f string, a ...any) { panic(failure(p.tokens[p.at].pos, f, a...)) }
+
+func sourceTypeIdentifier(name string) bool {
+	if name == "" || name == "<eof>" {
+		return false
+	}
+	for i, r := range name {
+		if r == '_' || unicode.IsLetter(r) || (i > 0 && unicode.IsDigit(r)) {
+			continue
+		}
+		return false
+	}
+	return true
+}
+
+func coreHIRScalarType(name string) bool {
+	switch name {
+	case "i8", "i16", "i32", "i64", "i128",
+		"u8", "u16", "u32", "u64", "u128",
+		"f16", "bf16", "f32", "f64", "finite32", "finite64", "ieee64", "bytes":
+		return true
+	default:
+		return false
+	}
+}
+
+func coreHIRGenericType(name string) bool {
+	switch name {
+	case "array", "slice", "vec", "option", "result", "tuple", "opaque", "ref", "mutref":
+		return true
+	default:
+		return false
+	}
+}
+func (p *parser) peek() string { return p.tokens[p.at].text }
+func (p *parser) bad(f string, a ...any) {
+	p.badCode(DiagnosticParseError, f, a...)
+}
+func (p *parser) badCode(code, f string, a ...any) {
+	panic(diagnosticAt(code, p.tokens[p.at].pos, f, a...))
+}
 func (p *parser) take(s string) bool {
 	if p.peek() == s {
 		p.at++
@@ -161,21 +397,32 @@ func (p *parser) take(s string) bool {
 	}
 	return false
 }
+func (p *parser) takeDoubleColon() bool {
+	if p.at+1 >= len(p.tokens) || p.tokens[p.at].text != ":" || p.tokens[p.at+1].text != ":" {
+		return false
+	}
+	first, second := p.tokens[p.at], p.tokens[p.at+1]
+	if second.pos.Offset != first.pos.Offset+len(first.text) {
+		return false
+	}
+	p.at += 2
+	return true
+}
 func (p *parser) expect(s string) {
 	if !p.take(s) {
-		p.bad("expected %q, got %q", s, p.peek())
+		p.badCode(DiagnosticUnexpectedToken, "expected %q, got %q", s, p.peek())
 	}
 }
 func (p *parser) identifier() string {
 	t := p.peek()
 	for i, c := range t {
 		if c != '_' && !unicode.IsLetter(c) && !(i > 0 && unicode.IsDigit(c)) {
-			p.bad("expected identifier, got %q", t)
+			p.badCode(DiagnosticExpectedIdentifier, "expected identifier, got %q", t)
 		}
 	}
 	switch t {
-	case "fn", "let", "if", "else", "while", "return", "true", "false":
-		p.bad("reserved word %q cannot be an identifier", t)
+	case "fn", "let", "if", "else", "while", "return", "true", "false", "new", "match", "struct", "enum", "mut":
+		p.badCode(DiagnosticReservedIdentifier, "reserved word %q cannot be an identifier", t)
 	}
 	p.at++
 	return t
@@ -187,7 +434,7 @@ func (p *parser) block() []*stmt {
 	var body []*stmt
 	for p.peek() != "}" {
 		if p.peek() == "<eof>" {
-			p.bad("expected closing brace")
+			p.badCode(DiagnosticUnexpectedToken, "expected closing brace")
 		}
 		body = append(body, p.statement())
 	}
@@ -253,7 +500,7 @@ func (p *parser) statement() *stmt {
 		}
 		p.tailDepth = saved
 		if p.tailUsed != used && (s.other == nil || p.peek() != "}") {
-			p.bad("a bare result expression is only allowed at the end of a function or of both branches of its final if/else")
+			p.badCode(DiagnosticParseError, "a bare result expression is only allowed at the end of a function or of both branches of its final if/else")
 		}
 	case p.take("while"):
 		s.kind = "while"
@@ -281,25 +528,56 @@ func (p *parser) statement() *stmt {
 
 var precedence = map[string]int{"||": 1, "&&": 2, "==": 3, "!=": 3, "<": 4, "<=": 4, ">": 4, ">=": 4, "+": 5, "-": 5, "*": 6, "/": 6, "%": 6}
 
+var corePrecedence = map[string]int{
+	"||": 1,
+	"&&": 2,
+	"|":  3,
+	"^":  4,
+	"&":  5,
+	"==": 6, "!=": 6,
+	"<": 7, "<=": 7, ">": 7, ">=": 7,
+	"<<": 8, ">>": 8,
+	"+": 9, "-": 9,
+	"*": 10, "/": 10, "%": 10,
+}
+
 func (p *parser) enter() {
 	p.depth++
 	if p.depth > 256 {
-		p.bad("syntax nesting limit exceeded")
+		p.badCode(DiagnosticSyntaxNestingLimit, "syntax nesting limit exceeded")
 	}
 }
 func (p *parser) operator() (string, int) {
+	table := precedence
+	if p.core {
+		table = corePrecedence
+	}
 	t := p.peek()
 	if p.at+1 < len(p.tokens) {
 		next := p.tokens[p.at+1]
 		current := p.tokens[p.at]
 		if next.pos.Offset == current.pos.Offset+len(t) {
 			pair := t + next.text
-			if _, ok := precedence[pair]; ok {
+			if _, ok := table[pair]; ok {
 				return pair, 2
 			}
 		}
 	}
 	return t, 1
+}
+func (p *parser) precedence(op string) (int, bool) {
+	if p.core {
+		v, ok := corePrecedence[op]
+		return v, ok
+	}
+	v, ok := precedence[op]
+	return v, ok
+}
+func (p *parser) unaryPrecedence() int {
+	if p.core {
+		return 11
+	}
+	return 7
 }
 func (p *parser) expression(min int) *expr {
 	p.enter()
@@ -308,9 +586,17 @@ func (p *parser) expression(min int) *expr {
 	var e *expr
 	switch {
 	case p.take("-"):
-		e = &expr{kind: "unary", name: "-", args: []*expr{p.expression(7)}, pos: t.pos}
+		e = &expr{kind: "unary", name: "-", args: []*expr{p.expression(p.unaryPrecedence())}, pos: t.pos}
 	case p.take("!"):
-		e = &expr{kind: "unary", name: "!", args: []*expr{p.expression(7)}, pos: t.pos}
+		e = &expr{kind: "unary", name: "!", args: []*expr{p.expression(p.unaryPrecedence())}, pos: t.pos}
+	case p.core && p.take("&"):
+		mode := "shared"
+		if p.take("mut") {
+			mode = "mut"
+		}
+		e = &expr{kind: "borrow", name: mode, args: []*expr{p.expression(p.unaryPrecedence())}, pos: t.pos}
+	case p.core && p.take("*"):
+		e = &expr{kind: "deref", args: []*expr{p.expression(p.unaryPrecedence())}, pos: t.pos}
 	case p.take("("):
 		e = p.expression(0)
 		p.expect(")")
@@ -318,11 +604,77 @@ func (p *parser) expression(min int) *expr {
 		e = &expr{kind: "literal", value: true, pos: t.pos}
 	case p.take("false"):
 		e = &expr{kind: "literal", value: false, pos: t.pos}
+	case p.take("["):
+		e = &expr{kind: "array", pos: t.pos}
+		if p.peek() != "]" {
+			for {
+				e.args = append(e.args, p.expression(0))
+				if !p.take(",") {
+					break
+				}
+			}
+		}
+		p.expect("]")
+	case p.core && p.take("match"):
+		scrutinee := p.expression(0)
+		p.expect("{")
+		e = &expr{kind: "match", args: []*expr{scrutinee}, pos: t.pos}
+		seen := map[string]bool{}
+		for p.peek() != "}" {
+			armPos := p.tokens[p.at].pos
+			variant := p.identifier()
+			if seen[variant] {
+				p.badCode(DiagnosticParseError, "duplicate match arm %q", variant)
+			}
+			seen[variant] = true
+			binding := ""
+			if p.take("(") {
+				binding = p.identifier()
+				p.expect(")")
+			}
+			p.expect("=")
+			p.expect(">")
+			value := p.expression(0)
+			e.arms = append(e.arms, exprArm{variant: variant, binding: binding, value: value, pos: armPos})
+			if !p.take(",") && p.peek() != "}" {
+				p.badCode(DiagnosticUnexpectedToken, "expected comma or closing brace after match arm")
+			}
+		}
+		p.expect("}")
+	case p.core && p.take("new"):
+		constructorPos := t.pos
+		typeName := p.identifier()
+		for p.take(".") {
+			typeName += "." + p.identifier()
+		}
+		p.expect("{")
+		e = &expr{kind: "struct", name: typeName, pos: constructorPos}
+		seen := map[string]bool{}
+		if p.peek() != "}" {
+			for {
+				fieldPos := p.tokens[p.at].pos
+				fieldName := p.identifier()
+				if seen[fieldName] {
+					p.badCode(DiagnosticDuplicateVariable, "duplicate struct field initializer %q", fieldName)
+				}
+				seen[fieldName] = true
+				p.expect(":")
+				fieldValue := p.expression(0)
+				e.fields = append(e.fields, exprField{name: fieldName, value: fieldValue, pos: fieldPos})
+				if !p.take(",") {
+					break
+				}
+				if p.peek() == "}" {
+					break
+				}
+			}
+		}
+		p.expect("}")
 	default:
 		if strings.HasPrefix(t.text, "\"") {
 			v, err := strconv.Unquote(t.text)
 			if err != nil {
-				p.bad("invalid string")
+				p.badCode(DiagnosticInvalidLiteral, "invalid string")
 			}
 			p.at++
 			e = &expr{kind: "literal", value: v, pos: t.pos}
@@ -330,10 +682,27 @@ func (p *parser) expression(min int) *expr {
 			p.at++
 			e = &expr{kind: "literal", value: v, lexeme: t.text, pos: t.pos}
 		} else {
-			name := p.identifier()
-			e = &expr{kind: "variable", name: name, pos: t.pos}
-			if p.take("(") {
-				e.kind = "call"
+			parts := []string{p.identifier()}
+			positions := []scanner.Position{t.pos}
+			for p.take(".") {
+				positions = append(positions, p.tokens[p.at].pos)
+				parts = append(parts, p.identifier())
+			}
+			if p.core && p.takeDoubleColon() {
+				variantPos := p.tokens[p.at].pos
+				variant := p.identifier()
+				e = &expr{kind: "enum", name: strings.Join(parts, "."), variant: variant, pos: variantPos}
+				if p.take("(") {
+					if p.peek() != ")" {
+						e.args = append(e.args, p.expression(0))
+						if p.take(",") {
+							p.badCode(DiagnosticArityMismatch, "enum variant constructor accepts at most one payload")
+						}
+					}
+					p.expect(")")
+				}
+			} else if p.take("(") {
+				e = &expr{kind: "call", name: strings.Join(parts, "."), pos: t.pos}
 				if p.peek() != ")" {
 					for {
 						e.args = append(e.args, p.expression(0))
@@ -343,13 +712,42 @@ func (p *parser) expression(min int) *expr {
 					}
 				}
 				p.expect(")")
+			} else if p.core && len(parts) > 1 {
+				e = &expr{kind: "variable", name: parts[0], pos: positions[0]}
+				for i := 1; i < len(parts); i++ {
+					e = boundedExpression(&expr{kind: "field", name: parts[i], args: []*expr{e}, pos: positions[i]})
+				}
+			} else {
+				e = &expr{kind: "variable", name: strings.Join(parts, "."), pos: t.pos}
 			}
 		}
 	}
 	e = boundedExpression(e)
+	for p.core {
+		if p.take("[") {
+			indexPos := p.tokens[p.at-1].pos
+			first := p.expression(0)
+			if p.take(":") {
+				end := p.expression(0)
+				p.expect("]")
+				e = boundedExpression(&expr{kind: "slice", args: []*expr{e, first, end}, pos: indexPos})
+			} else {
+				p.expect("]")
+				e = boundedExpression(&expr{kind: "index", args: []*expr{e, first}, pos: indexPos})
+			}
+			continue
+		}
+		if p.take(".") {
+			fieldPos := p.tokens[p.at].pos
+			fieldName := p.identifier()
+			e = boundedExpression(&expr{kind: "field", name: fieldName, args: []*expr{e}, pos: fieldPos})
+			continue
+		}
+		break
+	}
 	for {
 		op, n := p.operator()
-		prec, ok := precedence[op]
+		prec, ok := p.precedence(op)
 		if !ok || prec < min {
 			break
 		}
@@ -369,8 +767,18 @@ func boundedExpression(e *expr) *expr {
 			e.depth = depth
 		}
 	}
+	for _, field := range e.fields {
+		if depth := field.value.depth + 1; depth > e.depth {
+			e.depth = depth
+		}
+	}
+	for _, arm := range e.arms {
+		if depth := arm.value.depth + 1; depth > e.depth {
+			e.depth = depth
+		}
+	}
 	if e.depth > 256 {
-		panic(failure(e.pos, "expression nesting limit exceeded"))
+		panic(diagnosticAt(DiagnosticSyntaxNestingLimit, e.pos, "expression nesting limit exceeded"))
 	}
 	return e
 }
@@ -392,6 +800,7 @@ func (s *scope) find(name string) (*scope, bool) {
 type runtime struct {
 	program      *Program
 	out          io.Writer
+	errOut       io.Writer
 	steps, depth int
 	args         []float64
 	started      time.Time
@@ -402,6 +811,10 @@ func (p *Program) Run(out io.Writer, budget int) (err error) {
 	return p.RunArgs(out, budget, nil)
 }
 func (p *Program) RunArgs(out io.Writer, budget int, args []float64) (err error) {
+	return p.RunArgsIO(out, out, budget, args)
+}
+
+func (p *Program) RunArgsIO(out, errOut io.Writer, budget int, args []float64) (err error) {
 	if p.core {
 		return fmt.Errorf("core source requires the CoreIR execution pipeline")
 	}
@@ -422,7 +835,7 @@ func (p *Program) RunArgs(out io.Writer, budget int, args []float64) (err error)
 			return fmt.Errorf("arguments must be finite numbers")
 		}
 	}
-	r := &runtime{program: p, out: out, steps: budget, args: args, started: time.Now()}
+	r := &runtime{program: p, out: out, errOut: errOut, steps: budget, args: args, started: time.Now()}
 	r.call("main", nil, scanner.Position{Filename: "<entry>"})
 	return nil
 }
@@ -453,6 +866,12 @@ func (r *runtime) call(name string, args []any, pos scanner.Position) any {
 	if name == "print" {
 		if _, err := fmt.Fprintln(r.out, args...); err != nil {
 			panic(failure(pos, "output failed: %v", err))
+		}
+		return nil
+	}
+	if name == "eprint" {
+		if _, err := fmt.Fprintln(r.errOut, args...); err != nil {
+			panic(failure(pos, "error output failed: %v", err))
 		}
 		return nil
 	}

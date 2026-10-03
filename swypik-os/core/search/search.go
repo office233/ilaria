@@ -19,6 +19,8 @@ import (
 	"sync"
 	"time"
 	"unicode/utf8"
+
+	resourcepolicy "swypik-os/core/resource"
 )
 
 const (
@@ -64,20 +66,38 @@ type record struct {
 }
 
 type Engine struct {
-	mu       sync.RWMutex
-	crawlMu  sync.Mutex
-	path     string
-	log      *os.File
-	logBytes int64
-	docs     map[string]Document
-	postings map[string]map[string]posting
-	titleLen map[string]int
-	bodyLen  map[string]int
-	sumTitle int
-	sumBody  int
-	vocab    []string // sorted; rebuilt lazily for prefix queries
-	vocabOK  bool
-	warnings []string
+	mu               sync.RWMutex
+	crawlMu          sync.Mutex
+	closed           bool
+	path             string
+	log              *os.File
+	logBytes         int64
+	docs             map[string]Document
+	postings         map[string]map[string]posting
+	titleLen         map[string]int
+	bodyLen          map[string]int
+	sumTitle         int
+	sumBody          int
+	vocab            []string // sorted; rebuilt lazily for prefix queries
+	vocabOK          bool
+	warnings         []string
+	maxDocuments     int
+	maxTextBytes     int
+	profileTruncated bool
+}
+
+func (e *Engine) activeTextLimit() int {
+	if e.maxTextBytes <= 0 || e.maxTextBytes > MaxTextBytes {
+		return MaxTextBytes
+	}
+	return e.maxTextBytes
+}
+
+func (e *Engine) activeDocumentLimit() int {
+	if e.maxDocuments <= 0 || e.maxDocuments > MaxDocuments {
+		return MaxDocuments
+	}
+	return e.maxDocuments
 }
 
 // NewEngine returns an in-memory index (tests and ephemeral sessions).
@@ -87,7 +107,16 @@ func NewEngine() *Engine {
 }
 
 func newEngine(path string) *Engine {
-	return &Engine{path: path, docs: map[string]Document{}, postings: map[string]map[string]posting{}, titleLen: map[string]int{}, bodyLen: map[string]int{}}
+	policy := resourcepolicy.Default()
+	return &Engine{
+		path:         path,
+		docs:         map[string]Document{},
+		postings:     map[string]map[string]posting{},
+		titleLen:     map[string]int{},
+		bodyLen:      map[string]int{},
+		maxDocuments: policy.SearchMaxDocuments,
+		maxTextBytes: policy.SearchMaxTextBytes,
+	}
 }
 
 // Open loads an append-only JSONL index. A torn final line (power loss during
@@ -110,7 +139,13 @@ func Open(path string) (*Engine, error) {
 	for _, d := range e.docs {
 		live += len(d.Text) + len(d.Title) + 256
 	}
-	if rewrite || e.logBytes > int64(2*live)+(1<<20) {
+	if e.profileTruncated {
+		e.warnings = append(e.warnings, fmt.Sprintf(
+			"index: resource profile loaded at most %d documents with %d bytes of text each; on-disk index was preserved",
+			e.maxDocuments, e.maxTextBytes,
+		))
+	}
+	if rewrite || (!e.profileTruncated && e.logBytes > int64(2*live)+(1<<20)) {
 		if err := e.compactLocked(); err != nil {
 			return nil, err
 		}
@@ -196,6 +231,9 @@ func (e *Engine) applyLine(line []byte) error {
 	if err := d.Decode(&rec); err != nil {
 		return err
 	}
+	if err := d.Decode(new(json.RawMessage)); err != io.EOF {
+		return fmt.Errorf("record must contain exactly one JSON object")
+	}
 	switch rec.Op {
 	case "put":
 		if rec.Doc == nil {
@@ -205,10 +243,18 @@ func (e *Engine) applyLine(line []byte) error {
 			e.warnings = append(e.warnings, "index: skipped invalid document "+rec.Doc.URL)
 			return nil
 		}
-		if _, exists := e.docs[rec.Doc.URL]; !exists && len(e.docs) >= MaxDocuments {
-			return fmt.Errorf("document limit exceeded")
+		maxDocuments := e.activeDocumentLimit()
+		if _, exists := e.docs[rec.Doc.URL]; !exists && len(e.docs) >= maxDocuments {
+			e.profileTruncated = true
+			return nil
 		}
-		e.putLocked(*rec.Doc)
+		doc := *rec.Doc
+		maxTextBytes := e.activeTextLimit()
+		if len(doc.Text) > maxTextBytes {
+			doc.Text = clip(doc.Text, maxTextBytes)
+			e.profileTruncated = true
+		}
+		e.putLocked(doc)
 	case "del":
 		e.removeLocked(rec.URL)
 	default:
@@ -304,6 +350,7 @@ func (e *Engine) compactLocked() error {
 func (e *Engine) Close() error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
+	e.closed = true
 	if e.log == nil {
 		return nil
 	}
@@ -376,15 +423,19 @@ func (e *Engine) removeLocked(id string) bool {
 	if !ok {
 		return false
 	}
-	for _, t := range append(tokenize(d.Title), tokenize(d.Text)...) {
-		if m := e.postings[t]; m != nil {
-			delete(m, id)
-			if len(m) == 0 {
-				delete(e.postings, t)
-				e.vocabOK = false
+	removeTerms := func(terms []string) {
+		for _, t := range terms {
+			if m := e.postings[t]; m != nil {
+				delete(m, id)
+				if len(m) == 0 {
+					delete(e.postings, t)
+					e.vocabOK = false
+				}
 			}
 		}
 	}
+	removeTerms(tokenize(d.Title))
+	removeTerms(tokenize(d.Text))
 	e.sumTitle -= e.titleLen[id]
 	e.sumBody -= e.bodyLen[id]
 	delete(e.titleLen, id)
@@ -399,21 +450,35 @@ func (e *Engine) Upsert(doc Document) error {
 	return err
 }
 
-// UpsertMany appends documents with one fsync. Unchanged documents (same URL,
-// title and content hash) are skipped. It returns the number written.
+// UpsertMany appends documents with one fsync. The last occurrence of each URL
+// wins. Unchanged documents (same title, text and non-empty hash) are skipped.
+// It returns the number of distinct documents written and leaves docs unchanged.
 func (e *Engine) UpsertMany(docs []Document) (int, error) {
-	for _, d := range docs {
-		if err := validDocument(d); err != nil {
-			return 0, fmt.Errorf("%s: %w", d.URL, err)
+	docs = append([]Document(nil), docs...)
+	last := make(map[string]int, len(docs))
+	maxTextBytes := e.activeTextLimit()
+	for i := range docs {
+		if len(docs[i].Text) > maxTextBytes {
+			docs[i].Text = clip(docs[i].Text, maxTextBytes)
 		}
+		if err := validDocument(docs[i]); err != nil {
+			return 0, fmt.Errorf("%s: %w", docs[i].URL, err)
+		}
+		last[docs[i].URL] = i
 	}
 	e.mu.Lock()
 	defer e.mu.Unlock()
+	if e.closed {
+		return 0, fmt.Errorf("search index is closed")
+	}
 	var changed []Document
 	added := 0
-	for _, d := range docs {
+	for i, d := range docs {
+		if last[d.URL] != i {
+			continue
+		}
 		old, exists := e.docs[d.URL]
-		if exists && old.SHA256 == d.SHA256 && old.Title == d.Title && d.SHA256 != "" {
+		if exists && old.SHA256 == d.SHA256 && old.Title == d.Title && old.Text == d.Text && d.SHA256 != "" {
 			continue
 		}
 		if !exists {
@@ -421,8 +486,9 @@ func (e *Engine) UpsertMany(docs []Document) (int, error) {
 		}
 		changed = append(changed, d)
 	}
-	if len(e.docs)+added > MaxDocuments {
-		return 0, fmt.Errorf("index document limit (%d) reached", MaxDocuments)
+	maxDocuments := e.activeDocumentLimit()
+	if len(e.docs)+added > maxDocuments {
+		return 0, fmt.Errorf("index document limit (%d) reached", maxDocuments)
 	}
 	if len(changed) == 0 {
 		return 0, nil
@@ -447,6 +513,9 @@ func (e *Engine) UpsertMany(docs []Document) (int, error) {
 func (e *Engine) Delete(raw string) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
+	if e.closed {
+		return fmt.Errorf("search index is closed")
+	}
 	if _, ok := e.docs[raw]; !ok {
 		return nil
 	}
@@ -473,7 +542,7 @@ func (e *Engine) Count() int {
 func (e *Engine) URLs(prefix string) []string {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
-	var out []string
+	out := make([]string, 0, min(len(e.docs), 256))
 	for u := range e.docs {
 		if strings.HasPrefix(u, prefix) {
 			out = append(out, u)
@@ -493,7 +562,7 @@ func (e *Engine) prefixTerms(prefix string) []string {
 		e.vocabOK = true
 	}
 	i := sort.SearchStrings(e.vocab, prefix)
-	var out []string
+	out := make([]string, 0, 32)
 	for ; i < len(e.vocab) && strings.HasPrefix(e.vocab[i], prefix) && len(out) < 32; i++ {
 		if e.vocab[i] != prefix {
 			out = append(out, e.vocab[i])

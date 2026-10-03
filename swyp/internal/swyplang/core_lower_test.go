@@ -47,6 +47,9 @@ func TestCoreSourceNumericAndControlFlow(t *testing.T) {
 		{"nested bool", `fn f(x:i64)->bool{return (x==0 || 10/x>0) && !(x<0);} fn main(){}`, "0", "true", coreir.I64},
 		{"early returns", `fn f(x:i64)->i64{if x<0 {return -x;}else{return x;}} fn main(){}`, "-9", "9", coreir.I64},
 		{"f64 division", `fn f(x:f64)->f64{return x/2;} fn main(){}`, "5", "2.5", coreir.F64},
+		{"ieee64 division", `fn f(x:ieee64)->ieee64{return x/2;} fn main(){}`, "5", "2.5", coreir.IEEE64},
+		{"u64 wrap", `fn f(x:u64)->u64{return x+1;} fn main(){}`, "18446744073709551615", "0", coreir.U64},
+		{"u64 bitwise precedence", `fn f(x:u64)->u64{return x&255|1<<8;} fn main(){}`, "511", "511", coreir.U64},
 		{"legacy number", `fn f(x:number)->number{return x/2;} fn main(){print(f(arg(0)));}`, "5", "2.5", coreir.F64},
 		{"negative zero", `fn f(x:f64)->f64{return -0;} fn main(){}`, "1", "-0", coreir.F64},
 		{"cross type equality", `fn f(x:number)->bool{return x==true;} fn main(){}`, "1", "false", coreir.F64},
@@ -72,9 +75,7 @@ func TestCoreSourceRejectsInvalidAndImpure(t *testing.T) {
 		`fn f(x:i64)->i64{return 9223372036854775808;} fn main(){}`,
 		`fn f(x:i64)->i64{if x>0{return x;}} fn main(){}`,
 		`fn f(x:i64)->i64{return x;let y=missing;} fn main(){}`,
-		`fn f(x:i64)->i64{return x;clock();} fn main(){}`,
 		`fn g()->number{return clock();} fn f(x:i64)->i64{g();return x;} fn main(){}`,
-		`fn f(x:i64)->i64{print(x);return x;} fn main(){}`,
 		`fn f(x)->number{return x;} fn main(){}`,
 		`fn f(x:i64)->i64{if x>0{let y:i64=1;}return y;} fn main(){}`,
 	} {
@@ -84,6 +85,484 @@ func TestCoreSourceRejectsInvalidAndImpure(t *testing.T) {
 		}
 		if _, err = p.CoreIR("f"); err == nil {
 			t.Fatalf("accepted %s", source)
+		}
+	}
+}
+
+func TestCoreSourceLowersPrintAsExplicitEffect(t *testing.T) {
+	p, err := ParseCore("effect.swyp", `
+fn helper(x:i64)->i64{print(x);return x;}
+fn f(x:i64)->i64{return helper(x);}
+fn main(){}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	m, err := p.CoreIR("f")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(m.Functions) != 2 {
+		t.Fatalf("functions=%d", len(m.Functions))
+	}
+	for _, f := range m.Functions {
+		if f.EffectVersion != coreir.EffectVersion || len(f.Effects) != 1 || f.Effects[0] != coreir.EffectIOStdout {
+			t.Fatalf("%s effects=%v version=%d", f.Name, f.Effects, f.EffectVersion)
+		}
+		if len(f.RequiredCapabilities) != 1 || f.RequiredCapabilities[0].Name != "stdout_write" || f.RequiredCapabilities[0].Effect != coreir.EffectIOStdout {
+			t.Fatalf("%s caps=%v", f.Name, f.RequiredCapabilities)
+		}
+	}
+	helper := m.Functions[0]
+	if helper.Name != "f" {
+		helper = m.Functions[1]
+	}
+	if helper.Name == "f" {
+		// Sorted source lowering places f before helper. Pick helper explicitly.
+		for _, candidate := range m.Functions {
+			if candidate.Name == "helper" {
+				helper = candidate
+			}
+		}
+	}
+	found := false
+	for _, block := range helper.Blocks {
+		for _, ins := range block.Instructions {
+			if ins.Op == "io.stdout" {
+				found = true
+				if ins.Dest != -1 || len(ins.Args) != 1 || !ins.MayTrap {
+					t.Fatalf("stdout instruction=%+v", ins)
+				}
+			}
+		}
+	}
+	if !found {
+		t.Fatal("io.stdout instruction missing")
+	}
+	e, err := coreir.Prepare(m)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := e.Run(context.Background(), "f", []coreir.Value{coreir.Int(7)}, 100); err == nil || !strings.Contains(err.Error(), "effectful_program") {
+		t.Fatalf("effectful Core execution was not broker-gated: %v", err)
+	}
+}
+
+func TestCoreSourcePrintRequiresOneScalar(t *testing.T) {
+	p, err := ParseCore("print.swyp", `fn f(x:i64)->i64{print(x,x);return x;} fn main(){}`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := p.CoreIR("f"); err == nil || !strings.Contains(err.Error(), "exactly one scalar") {
+		t.Fatalf("multi-arg Core print was not rejected: %v", err)
+	}
+}
+
+func TestCoreSourceLowersEprintAsStderrEffect(t *testing.T) {
+	p, err := ParseCore("stderr.swyp", `fn f(x:i64)->i64{eprint(x);return x;} fn main(){}`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	m, err := p.CoreIR("f")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(m.Functions) != 1 {
+		t.Fatalf("functions=%d", len(m.Functions))
+	}
+	f := m.Functions[0]
+	if len(f.Effects) != 1 || f.Effects[0] != coreir.EffectIOStderr {
+		t.Fatalf("effects=%v", f.Effects)
+	}
+	if len(f.RequiredCapabilities) != 1 || f.RequiredCapabilities[0].Name != "stderr_write" || f.RequiredCapabilities[0].Effect != coreir.EffectIOStderr {
+		t.Fatalf("caps=%v", f.RequiredCapabilities)
+	}
+	found := false
+	for _, block := range f.Blocks {
+		for _, ins := range block.Instructions {
+			if ins.Op == "io.stderr" {
+				found = true
+			}
+		}
+	}
+	if !found {
+		t.Fatal("io.stderr instruction missing")
+	}
+}
+
+func TestCoreSourceLowersClockAsCapabilityGatedEffect(t *testing.T) {
+	p, err := ParseCore("clock.swyp", `fn now()->u64{return clock();} fn main(){}`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	m, err := p.CoreIR("now")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(m.Functions) != 1 {
+		t.Fatalf("functions=%d", len(m.Functions))
+	}
+	f := m.Functions[0]
+	if f.Result != coreir.U64 || len(f.Effects) != 1 || f.Effects[0] != coreir.EffectClockRead {
+		t.Fatalf("result=%s effects=%v", f.Result, f.Effects)
+	}
+	if len(f.RequiredCapabilities) != 1 || f.RequiredCapabilities[0].Name != "clock_read" || f.RequiredCapabilities[0].Effect != coreir.EffectClockRead {
+		t.Fatalf("capabilities=%+v", f.RequiredCapabilities)
+	}
+	found := false
+	for _, block := range f.Blocks {
+		for _, ins := range block.Instructions {
+			if ins.Op == "clock.read" {
+				found = true
+				if ins.Dest < 0 || len(ins.Args) != 0 || !ins.MayTrap || f.Slots[ins.Dest] != coreir.U64 {
+					t.Fatalf("clock instruction=%+v slots=%v", ins, f.Slots)
+				}
+			}
+		}
+	}
+	if !found {
+		t.Fatal("clock.read instruction missing")
+	}
+}
+
+func TestCoreSourceLowersRandomAsCapabilityGatedEffect(t *testing.T) {
+	p, err := ParseCore("rng.swyp", `fn sample()->u64{return random();} fn main(){}`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	m, err := p.CoreIR("sample")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(m.Functions) != 1 {
+		t.Fatalf("functions=%d", len(m.Functions))
+	}
+	f := m.Functions[0]
+	if f.Result != coreir.U64 || len(f.Effects) != 1 || f.Effects[0] != coreir.EffectRNGSample {
+		t.Fatalf("result=%s effects=%v", f.Result, f.Effects)
+	}
+	if len(f.RequiredCapabilities) != 1 || f.RequiredCapabilities[0].Name != "rng_sample" || f.RequiredCapabilities[0].Effect != coreir.EffectRNGSample {
+		t.Fatalf("capabilities=%+v", f.RequiredCapabilities)
+	}
+	found := false
+	for _, block := range f.Blocks {
+		for _, ins := range block.Instructions {
+			if ins.Op == "rng.sample" {
+				found = true
+				if ins.Dest < 0 || len(ins.Args) != 0 || !ins.MayTrap || f.Slots[ins.Dest] != coreir.U64 {
+					t.Fatalf("rng instruction=%+v slots=%v", ins, f.Slots)
+				}
+			}
+		}
+	}
+	if !found {
+		t.Fatal("rng.sample instruction missing")
+	}
+}
+
+func TestCoreSourceLowersOpaqueBytesTransport(t *testing.T) {
+	p, err := ParseCore("bytes.swyp", `fn id(x:bytes)->bytes{return x;} fn main(){}`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	m, err := p.CoreIR("id")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(m.Functions) != 1 {
+		t.Fatalf("functions=%d", len(m.Functions))
+	}
+	f := m.Functions[0]
+	if len(f.Params) != 1 || f.Params[0].Type != coreir.Bytes || f.Result != coreir.Bytes {
+		t.Fatalf("params=%v result=%s", f.Params, f.Result)
+	}
+}
+
+func TestCoreSourceLowersWriteFileEffect(t *testing.T) {
+	p, err := ParseCore("fs-write.swyp", `
+fn save()->i64 {
+  write_file("swyp-test.txt", "hello");
+  return 7;
+}
+fn main(){}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	m, err := p.CoreIR("save")
+	if err != nil {
+		t.Fatal(err)
+	}
+	f := m.Functions[0]
+	if len(f.Effects) != 1 || f.Effects[0] != coreir.EffectFSWrite {
+		t.Fatalf("effects=%v", f.Effects)
+	}
+	if len(f.RequiredCapabilities) != 1 || f.RequiredCapabilities[0].Name != "workspace_write" || f.RequiredCapabilities[0].Effect != coreir.EffectFSWrite {
+		t.Fatalf("capabilities=%v", f.RequiredCapabilities)
+	}
+	found := false
+	for _, block := range f.Blocks {
+		for _, ins := range block.Instructions {
+			if ins.Op == "fs.write" {
+				found = true
+				if len(ins.Args) != 2 || f.Slots[ins.Args[0]] != coreir.Bytes || f.Slots[ins.Args[1]] != coreir.Bytes || ins.Dest != -1 || !ins.MayTrap {
+					t.Fatalf("fs.write=%+v slots=%v", ins, f.Slots)
+				}
+			}
+		}
+	}
+	if !found {
+		t.Fatal("fs.write instruction missing")
+	}
+}
+
+func TestCoreSourceLowersReadFileEffect(t *testing.T) {
+	p, err := ParseCore("fs-read.swyp", `
+fn load()->bytes {
+  return read_file("swyp-test.txt");
+}
+fn main(){}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	m, err := p.CoreIR("load")
+	if err != nil {
+		t.Fatal(err)
+	}
+	f := m.Functions[0]
+	if len(f.Effects) != 1 || f.Effects[0] != coreir.EffectFSRead {
+		t.Fatalf("effects=%v", f.Effects)
+	}
+	if len(f.RequiredCapabilities) != 1 || f.RequiredCapabilities[0].Name != "workspace_read" || f.RequiredCapabilities[0].Effect != coreir.EffectFSRead {
+		t.Fatalf("capabilities=%v", f.RequiredCapabilities)
+	}
+	found := false
+	for _, block := range f.Blocks {
+		for _, ins := range block.Instructions {
+			if ins.Op == "fs.read" {
+				found = true
+				if len(ins.Args) != 1 || f.Slots[ins.Args[0]] != coreir.Bytes || ins.Dest < 0 || f.Slots[ins.Dest] != coreir.Bytes || !ins.MayTrap {
+					t.Fatalf("fs.read=%+v slots=%v", ins, f.Slots)
+				}
+			}
+		}
+	}
+	if !found {
+		t.Fatal("fs.read instruction missing")
+	}
+}
+
+func TestCoreSourceLowersTCPConnectEffect(t *testing.T) {
+	p, err := ParseCore("net-connect.swyp", `fn ping(port:u64)->bool{return tcp_connect("127.0.0.1",port);} fn main(){}`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	m, err := p.CoreIR("ping")
+	if err != nil {
+		t.Fatal(err)
+	}
+	f := m.Functions[0]
+	if len(f.Effects) != 1 || f.Effects[0] != coreir.EffectNetConnect {
+		t.Fatalf("effects=%v", f.Effects)
+	}
+	if len(f.RequiredCapabilities) != 1 || f.RequiredCapabilities[0].Name != "network_connect" || f.RequiredCapabilities[0].Effect != coreir.EffectNetConnect {
+		t.Fatalf("capabilities=%v", f.RequiredCapabilities)
+	}
+	found := false
+	for _, block := range f.Blocks {
+		for _, ins := range block.Instructions {
+			if ins.Op == "net.connect" {
+				found = true
+				if len(ins.Args) != 2 || f.Slots[ins.Args[0]] != coreir.Bytes || f.Slots[ins.Args[1]] != coreir.U64 || ins.Dest < 0 || f.Slots[ins.Dest] != coreir.Bool || !ins.MayTrap {
+					t.Fatalf("net.connect=%+v slots=%v", ins, f.Slots)
+				}
+			}
+		}
+	}
+	if !found {
+		t.Fatal("net.connect instruction missing")
+	}
+}
+
+func TestCoreSourceLowersHTTPFetchEffect(t *testing.T) {
+	p, err := ParseCore("net-fetch.swyp", `fn load(port:u64)->bytes{return http_fetch("127.0.0.1",port,"/health");} fn main(){}`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	m, err := p.CoreIR("load")
+	if err != nil {
+		t.Fatal(err)
+	}
+	f := m.Functions[0]
+	if len(f.Effects) != 1 || f.Effects[0] != coreir.EffectNetFetch {
+		t.Fatalf("effects=%v", f.Effects)
+	}
+	if len(f.RequiredCapabilities) != 1 || f.RequiredCapabilities[0].Name != "network_fetch" || f.RequiredCapabilities[0].Effect != coreir.EffectNetFetch {
+		t.Fatalf("capabilities=%v", f.RequiredCapabilities)
+	}
+	found := false
+	for _, block := range f.Blocks {
+		for _, ins := range block.Instructions {
+			if ins.Op == "net.fetch" {
+				found = true
+				if len(ins.Args) != 3 || f.Slots[ins.Args[0]] != coreir.Bytes || f.Slots[ins.Args[1]] != coreir.U64 || f.Slots[ins.Args[2]] != coreir.Bytes || ins.Dest < 0 || f.Slots[ins.Dest] != coreir.Bytes || !ins.MayTrap {
+					t.Fatalf("net.fetch=%+v slots=%v", ins, f.Slots)
+				}
+			}
+		}
+	}
+	if !found {
+		t.Fatal("net.fetch instruction missing")
+	}
+}
+
+func TestCoreSourceLowersProcessExecEffect(t *testing.T) {
+	p, err := ParseCore("process-exec.swyp", `fn run()->u64{return process_exec("tool.exe",2,"one","two","","");} fn main(){}`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	m, err := p.CoreIR("run")
+	if err != nil {
+		t.Fatal(err)
+	}
+	f := m.Functions[0]
+	if len(f.Effects) != 1 || f.Effects[0] != coreir.EffectProcessExec {
+		t.Fatalf("effects=%v", f.Effects)
+	}
+	if len(f.RequiredCapabilities) != 1 || f.RequiredCapabilities[0].Name != "process_exec" || f.RequiredCapabilities[0].Effect != coreir.EffectProcessExec {
+		t.Fatalf("capabilities=%v", f.RequiredCapabilities)
+	}
+	found := false
+	for _, block := range f.Blocks {
+		for _, ins := range block.Instructions {
+			if ins.Op != "process.exec" {
+				continue
+			}
+			found = true
+			if len(ins.Args) != 6 || f.Slots[ins.Args[0]] != coreir.Bytes || f.Slots[ins.Args[1]] != coreir.U64 || ins.Dest < 0 || f.Slots[ins.Dest] != coreir.U64 || !ins.MayTrap {
+				t.Fatalf("process.exec=%+v slots=%v", ins, f.Slots)
+			}
+			for _, arg := range ins.Args[2:] {
+				if f.Slots[arg] != coreir.Bytes {
+					t.Fatalf("process.exec argv slot type=%s", f.Slots[arg])
+				}
+			}
+		}
+	}
+	if !found {
+		t.Fatal("process.exec instruction missing")
+	}
+}
+
+func TestCoreSourceInternsStringLiteralsIntoReadOnlyByteArena(t *testing.T) {
+	p, err := ParseCore("bytes-literal.swyp", `
+fn choose(c:bool)->bytes {
+  if c { return "hello"; }
+  return "hello";
+}
+fn main(){}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	m, err := p.CoreIR("choose")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(m.Data) != "hello" {
+		t.Fatalf("arena=%q", m.Data)
+	}
+	if len(m.Functions) != 1 {
+		t.Fatalf("functions=%d", len(m.Functions))
+	}
+	var descriptors []string
+	for _, block := range m.Functions[0].Blocks {
+		for _, ins := range block.Instructions {
+			if ins.Op == "const" && ins.Constant != nil && ins.Constant.Type == coreir.Bytes {
+				descriptors = append(descriptors, ins.Constant.Value)
+			}
+		}
+	}
+	if len(descriptors) != 2 || descriptors[0] != descriptors[1] {
+		t.Fatalf("descriptors=%v", descriptors)
+	}
+	e, err := coreir.Prepare(m)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, cond := range []bool{true, false} {
+		result, err := e.Run(context.Background(), "choose", []coreir.Value{coreir.Boolean(cond)}, 100)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got, err := e.ResolveBytes(result.Value)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if string(got) != "hello" {
+			t.Fatalf("cond=%v resolved=%q", cond, got)
+		}
+	}
+}
+
+func TestCoreBytesLenAndGetAcrossExecutionModes(t *testing.T) {
+	p, err := ParseCore("bytes-access.swyp", `
+fn length()->u64{return bytes_len("hello");}
+fn second()->u64{return bytes_get("abc",1);}
+fn oob()->u64{return bytes_get("abc",3);}
+fn main(){}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, tc := range []struct {
+		entry string
+		want  uint64
+	}{
+		{"length", 5},
+		{"second", uint64('b')},
+	} {
+		m, err := p.CoreIR(tc.entry)
+		if err != nil {
+			t.Fatalf("%s lowering: %v", tc.entry, err)
+		}
+		e, err := coreir.Prepare(m)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for mode, run := range map[string]func(context.Context, string, []coreir.Value, int) (coreir.RunResult, error){
+			"run":   e.Run,
+			"fast":  e.RunFast,
+			"turbo": e.RunTurbo,
+		} {
+			result, err := run(context.Background(), tc.entry, nil, 100)
+			if err != nil {
+				t.Fatalf("%s/%s: %v", tc.entry, mode, err)
+			}
+			got, ok := result.Value.Uint64()
+			if !ok || got != tc.want {
+				t.Fatalf("%s/%s got=%v want=%d", tc.entry, mode, result.Value, tc.want)
+			}
+		}
+	}
+
+	m, err := p.CoreIR("oob")
+	if err != nil {
+		t.Fatal(err)
+	}
+	e, err := coreir.Prepare(m)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for mode, run := range map[string]func(context.Context, string, []coreir.Value, int) (coreir.RunResult, error){
+		"run":   e.Run,
+		"fast":  e.RunFast,
+		"turbo": e.RunTurbo,
+	} {
+		_, err := run(context.Background(), "oob", nil, 100)
+		if err == nil || !strings.Contains(err.Error(), "bounds") {
+			t.Fatalf("%s oob err=%v", mode, err)
 		}
 	}
 }

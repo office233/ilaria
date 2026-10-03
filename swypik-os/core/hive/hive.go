@@ -4,11 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"sort"
 	"sync"
 	"time"
 
 	"swypik-os/core/evidence"
+	resourcepolicy "swypik-os/core/resource"
 )
 
 // ErrNoTransport reports that this build has no peer transport (no QUIC, no
@@ -41,27 +41,30 @@ type MeshNode struct {
 
 // ComputeTask represents an offloaded neural inference or computer vision workload.
 type ComputeTask struct {
-	ID             string        `json:"id"`
-	Description    string        `json:"description"`
-	ModelName      string        `json:"model_name"`
-	Payload        []byte        `json:"payload"`
-	Priority       int           `json:"priority"`
-	AssignedNodeID string        `json:"assigned_node_id"`
-	Status         string        `json:"status"`
-	Result         string        `json:"result"`
-	ExecutionTime  time.Duration `json:"execution_time"`
+	ID             string         `json:"id"`
+	Description    string         `json:"description"`
+	ModelName      string         `json:"model_name"`
+	Payload        []byte         `json:"payload"`
+	Priority       int            `json:"priority"`
+	AssignedNodeID string         `json:"assigned_node_id"`
+	Status         string         `json:"status"`
+	Result         string         `json:"result"`
+	ExecutionTime  time.Duration  `json:"execution_time"`
 	Evidence       evidence.Level `json:"evidence"`
 }
 
 // HiveMind keeps peer records and picks an offload target. Without a
 // transport it can only make routing decisions; it cannot run remote work.
 type HiveMind struct {
-	mu           sync.RWMutex
-	localNodeID  string
-	localRole    MeshNodeRole
-	peers        map[string]*MeshNode
-	tasks        map[string]*ComputeTask
-	totalTasks   int64
+	mu          sync.RWMutex
+	localNodeID string
+	localRole   MeshNodeRole
+	peers       map[string]*MeshNode
+	tasks       map[string]*ComputeTask
+	taskOrder   []string
+	totalTasks  int64
+	maxPeers    int
+	maxTasks    int
 }
 
 // NewHiveMind initializes the distributed hive mind orchestrator.
@@ -69,11 +72,15 @@ func NewHiveMind(localID string, role MeshNodeRole) *HiveMind {
 	if localID == "" {
 		localID = "swypik_node_local"
 	}
+	policy := resourcepolicy.Default()
 	return &HiveMind{
 		localNodeID: localID,
 		localRole:   role,
-		peers:       make(map[string]*MeshNode),
-		tasks:       make(map[string]*ComputeTask),
+		peers:       make(map[string]*MeshNode, min(policy.MaxResidentPeers, 64)),
+		tasks:       make(map[string]*ComputeTask, min(policy.MaxHiveTasks, 64)),
+		taskOrder:   make([]string, 0, policy.MaxHiveTasks),
+		maxPeers:    policy.MaxResidentPeers,
+		maxTasks:    policy.MaxHiveTasks,
 	}
 }
 
@@ -83,8 +90,21 @@ func (h *HiveMind) RegisterPeer(peer *MeshNode) {
 	}
 	h.mu.Lock()
 	defer h.mu.Unlock()
+	if _, exists := h.peers[peer.ID]; !exists && len(h.peers) >= h.maxPeers {
+		oldestID := ""
+		var oldest time.Time
+		for id, candidate := range h.peers {
+			if oldestID == "" || candidate.LastSeen.Before(oldest) {
+				oldestID, oldest = id, candidate.LastSeen
+			}
+		}
+		if oldestID != "" {
+			delete(h.peers, oldestID)
+		}
+	}
 	peer.LastSeen = time.Now()
-	h.peers[peer.ID] = peer
+	cp := *peer
+	h.peers[peer.ID] = &cp
 }
 
 // SelectBestOffloadNode selects the peer with the highest available compute power and lowest thermal/battery penalty.
@@ -139,20 +159,21 @@ func (h *HiveMind) OffloadTask(ctx context.Context, task *ComputeTask) (*Compute
 	task.Evidence = evidence.Simulated
 	task.Result = fmt.Sprintf("Routed to %s [%s] on paper only; no transport exists, so nothing was sent and no inference ran.", peer.Name, peer.Role)
 	h.totalTasks++
-	h.tasks[task.ID] = task
-	if len(h.tasks) > 500 {
-		keys := make([]string, 0, len(h.tasks))
-		for k := range h.tasks {
-			keys = append(keys, k)
+	if _, exists := h.tasks[task.ID]; !exists {
+		if len(h.taskOrder) >= h.maxTasks {
+			oldest := h.taskOrder[0]
+			delete(h.tasks, oldest)
+			copy(h.taskOrder, h.taskOrder[1:])
+			h.taskOrder = h.taskOrder[:len(h.taskOrder)-1]
 		}
-		sort.Strings(keys)
-		for _, k := range keys {
-			delete(h.tasks, k)
-			if len(h.tasks) <= 500 {
-				break
-			}
-		}
+		h.taskOrder = append(h.taskOrder, task.ID)
 	}
+	// Keep resident task history metadata-only. Payloads may be model inputs,
+	// frames or activation shards and can be very large; retaining them after
+	// routing would let background history dominate RAM on edge devices.
+	stored := *task
+	stored.Payload = nil
+	h.tasks[task.ID] = &stored
 	h.mu.Unlock()
 
 	return task, ErrNoTransport

@@ -1,0 +1,366 @@
+{
+  "curriculum_sha256": "3ac9c6e0a36e85151e543dfbff09c8ea319b1566b6dd77d981cab8c8f34a4432",
+  "decision_summary": {
+    "auto_approval_performed": false,
+    "external_pending": [
+      "apache_nuttx",
+      "freebsd_licensed_tree",
+      "freertos_kernel",
+      "opencode_reasoning_split0",
+      "openmath_reasoning_cot",
+      "openscience_reasoning_2",
+      "wiki_en",
+      "zephyr"
+    ],
+    "first_party_pending": [
+      "first_party_contracts",
+      "first_party_trajectories"
+    ]
+  },
+  "external_sources": {
+    "apache_nuttx": {
+      "commercial_use_approved": false,
+      "declared_license": "Apache-2.0 or Apache-2.0-compatible per repository policy, filtered per-file by SPDX",
+      "evidence_review_state": "EVIDENCE_COLLECTED",
+      "evidence_urls": [
+        "https://github.com/apache/nuttx/blob/master/LICENSE",
+        "https://github.com/apache/nuttx",
+        "https://nuttx.apache.org/docs/latest/introduction/resources.html"
+      ],
+      "human_decision_required": true,
+      "lane_contributions": {
+        "os_hardware_drivers_standards": {
+          "documents": 18156,
+          "estimated_tokens_max": 65423695,
+          "estimated_tokens_min": 52342587,
+          "text_bytes": 209297722
+        }
+      },
+      "review_ref": "",
+      "revision": {
+        "commit": "4295024832a0f70820156d2a7e6e09d68897e91f",
+        "kind": "git",
+        "ref": "master",
+        "url": "https://github.com/apache/nuttx.git"
+      },
+      "rights_status": "REVIEW_REQUIRED",
+      "unresolved_obligations": [
+        "ingest only per-file SPDX expressions allowed by the corpus policy",
+        "review Apache-2.0 attribution and NOTICE handling for corpus artifacts and model documentation",
+        "retain exact repository revision and per-file provenance for every accepted file"
+      ]
+    },
+    "freebsd_licensed_tree": {
+      "commercial_use_approved": false,
+      "declared_license": "BSD-2-Clause collection with file-level exceptions",
+      "evidence_review_state": "EVIDENCE_COLLECTED",
+      "evidence_urls": [
+        "https://github.com/freebsd/freebsd-src",
+        "https://github.com/freebsd/freebsd-doc/blob/main/documentation/content/en/articles/license-guide/_index.adoc"
+      ],
+      "human_decision_required": true,
+      "lane_contributions": {
+        "os_hardware_drivers_standards": {
+          "documents": 11741,
+          "estimated_tokens_max": 55797389,
+          "estimated_tokens_min": 44640259,
+          "text_bytes": 178514071
+        }
+      },
+      "review_ref": "",
+      "revision": {
+        "commit": "52b2056849e4f77581594b9ca21ac3feb60429c3",
+        "kind": "git",
+        "ref": "main",
+        "url": "https://github.com/freebsd/freebsd-src.git"
+      },
+      "rights_status": "REVIEW_REQUIRED",
+      "unresolved_obligations": [
+        "apply per-file SPDX allowlist and exclude cddl/contrib/other non-allowlisted material",
+        "retain file-level provenance and applicable copyright/license notices"
+      ]
+    },
+    "freertos_kernel": {
+      "commercial_use_approved": false,
+      "declared_license": "MIT",
+      "evidence_review_state": "EVIDENCE_COLLECTED",
+      "evidence_urls": [
+        "https://github.com/FreeRTOS/FreeRTOS-Kernel/blob/main/include/FreeRTOS.h"
+      ],
+      "human_decision_required": true,
+      "lane_contributions": {
+        "os_hardware_drivers_standards": {
+          "documents": 636,
+          "estimated_tokens_max": 4437439,
+          "estimated_tokens_min": 3550079,
+          "text_bytes": 14197769
+        }
+      },
+      "review_ref": "",
+      "revision": {
+        "commit": "8be86d4a24fd4091f8f4192018423ab590f408db",
+        "kind": "git",
+        "ref": "main",
+        "url": "https://github.com/FreeRTOS/FreeRTOS-Kernel.git"
+      },
+      "rights_status": "REVIEW_REQUIRED",
+      "unresolved_obligations": [
+        "retain MIT copyright/license notice in attribution records",
+        "keep acquisition scoped to the FreeRTOS-Kernel repository and separately review submodules or external ports"
+      ]
+    },
+    "opencode_reasoning_split0": {
+      "commercial_use_approved": false,
+      "declared_license": "CC-BY-4.0 with per-row CC-BY-4.0/Apache-2.0/MIT allowlist",
+      "evidence_review_state": "EVIDENCE_COLLECTED",
+      "evidence_urls": [
+        "https://huggingface.co/datasets/nvidia/OpenCodeReasoning/blob/20a1ca19c0d050fe9057fc08339d6b370ec1c67a/README.md",
+        "https://creativecommons.org/licenses/by/4.0/"
+      ],
+      "human_decision_required": true,
+      "lane_contributions": {
+        "code": {
+          "documents": 119972,
+          "estimated_tokens_max": 288689441,
+          "estimated_tokens_min": 230975547,
+          "text_bytes": 923422299
+        }
+      },
+      "review_ref": "",
+      "revision": {
+        "config": "split_0",
+        "kind": "huggingface",
+        "provider": "nvidia/OpenCodeReasoning",
+        "revision": "20a1ca19c0d050fe9057fc08339d6b370ec1c67a"
+      },
+      "rights_status": "REVIEW_REQUIRED",
+      "unresolved_obligations": [
+        "retain per-row license provenance and attribution for accepted samples",
+        "restrict ingestion to rows whose embedded license is CC-BY-4.0, Apache-2.0 or MIT",
+        "review upstream competitive-programming problem provenance before production eligibility"
+      ]
+    },
+    "openmath_reasoning_cot": {
+      "commercial_use_approved": false,
+      "declared_license": "CC-BY-4.0",
+      "evidence_review_state": "EVIDENCE_COLLECTED",
+      "evidence_urls": [
+        "https://huggingface.co/datasets/nvidia/OpenMathReasoning/blob/d3d08664755704f422af97d43a7ff0ded4bd95df/README.md",
+        "https://creativecommons.org/licenses/by/4.0/"
+      ],
+      "human_decision_required": true,
+      "lane_contributions": {
+        "mathematics": {
+          "documents": 99996,
+          "estimated_tokens_max": 242988764,
+          "estimated_tokens_min": 194411011,
+          "text_bytes": 777244057
+        }
+      },
+      "review_ref": "",
+      "revision": {
+        "config": null,
+        "kind": "huggingface",
+        "provider": "nvidia/OpenMathReasoning",
+        "revision": "d3d08664755704f422af97d43a7ff0ded4bd95df"
+      },
+      "rights_status": "REVIEW_REQUIRED",
+      "unresolved_obligations": [
+        "retain attribution and exact NVIDIA dataset revision/provenance for accepted rows",
+        "review attribution and pass-through rights for underlying AoPS/MATH problem content before production eligibility"
+      ]
+    },
+    "openscience_reasoning_2": {
+      "commercial_use_approved": false,
+      "declared_license": "CC-BY-4.0",
+      "evidence_review_state": "EVIDENCE_COLLECTED",
+      "evidence_urls": [
+        "https://huggingface.co/datasets/nvidia/OpenScienceReasoning-2/blob/174b02c9cdf231f220765b2a1d5ece4550921894/README.md",
+        "https://creativecommons.org/licenses/by/4.0/"
+      ],
+      "human_decision_required": true,
+      "lane_contributions": {
+        "science_technical_reasoning": {
+          "documents": 80000,
+          "estimated_tokens_max": 195409043,
+          "estimated_tokens_min": 156343234,
+          "text_bytes": 625052935
+        }
+      },
+      "review_ref": "",
+      "revision": {
+        "config": null,
+        "kind": "huggingface",
+        "provider": "nvidia/OpenScienceReasoning-2",
+        "revision": "174b02c9cdf231f220765b2a1d5ece4550921894"
+      },
+      "rights_status": "REVIEW_REQUIRED",
+      "unresolved_obligations": [
+        "retain CC-BY-4.0 attribution and exact NVIDIA dataset revision/provenance for accepted rows"
+      ]
+    },
+    "wiki_en": {
+      "commercial_use_approved": false,
+      "declared_license": "CC-BY-SA-3.0 + GFDL (dataset card)",
+      "evidence_review_state": "EVIDENCE_COLLECTED",
+      "evidence_urls": [
+        "https://huggingface.co/datasets/wikimedia/wikipedia/blob/main/README.md",
+        "https://foundation.wikimedia.org/wiki/Legal:Wikimedia_Developer_App_Guidelines",
+        "https://foundation.wikimedia.org/wiki/Terms_of_Use"
+      ],
+      "human_decision_required": true,
+      "lane_contributions": {
+        "general_knowledge": {
+          "documents": 1178149,
+          "estimated_tokens_max": 437592550,
+          "estimated_tokens_min": 350309670,
+          "text_bytes": 1396526081
+        },
+        "mathematics": {
+          "documents": 5599,
+          "estimated_tokens_max": 2263765,
+          "estimated_tokens_min": 1812132,
+          "text_bytes": 7226131
+        },
+        "science_technical_reasoning": {
+          "documents": 14636,
+          "estimated_tokens_max": 6268276,
+          "estimated_tokens_min": 5017548,
+          "text_bytes": 20011646
+        }
+      },
+      "review_ref": "",
+      "revision": {
+        "config": "20231101.en",
+        "kind": "huggingface",
+        "provider": "wikimedia/wikipedia",
+        "revision": "b04c8d1ceb2f5cd4588862100d08de323dccfbaa"
+      },
+      "rights_status": "REVIEW_REQUIRED",
+      "unresolved_obligations": [
+        "define attribution path to article authors/source history",
+        "review share-alike implications for redistributed derived corpus artifacts",
+        "retain provenance needed to satisfy reuse obligations"
+      ]
+    },
+    "zephyr": {
+      "commercial_use_approved": false,
+      "declared_license": "Apache-2.0",
+      "evidence_review_state": "EVIDENCE_COLLECTED",
+      "evidence_urls": [
+        "https://docs.zephyrproject.org/latest/LICENSING.html",
+        "https://docs.zephyrproject.org/latest/contribute/guidelines.html",
+        "https://github.com/zephyrproject-rtos/zephyr/blob/main/LICENSE"
+      ],
+      "human_decision_required": true,
+      "lane_contributions": {
+        "code": {
+          "documents": 55,
+          "estimated_tokens_max": 204078,
+          "estimated_tokens_min": 163273,
+          "text_bytes": 652871
+        },
+        "os_hardware_drivers_standards": {
+          "documents": 13362,
+          "estimated_tokens_max": 32600379,
+          "estimated_tokens_min": 26082976,
+          "text_bytes": 104278454
+        }
+      },
+      "review_ref": "",
+      "revision": {
+        "commit": "f0bdf59a0b7d1b4dadbec339662d764cba78138a",
+        "kind": "git",
+        "ref": "main",
+        "url": "https://github.com/zephyrproject-rtos/zephyr.git"
+      },
+      "rights_status": "REVIEW_REQUIRED",
+      "unresolved_obligations": [
+        "ingest only per-file SPDX/REUSE entries allowed by the corpus policy",
+        "review Apache-2.0 attribution and NOTICE handling for corpus artifacts and model documentation",
+        "retain exact repository revision and per-file provenance for every accepted file"
+      ]
+    }
+  },
+  "first_party_sources": {
+    "first_party_contracts": {
+      "attestation_scope_sha256": "0f136c85e91a0523bd85261dcac28903b6503ec078f4e187a2fe663360f4e111",
+      "attestation_sha256": "e70c709bced17a5a7da0fd07f3636e66a02df06041968a8a433fe0e49531f6ad",
+      "attested_by": "",
+      "filename": "first_party_tools_protocol.attestation.json",
+      "files": [
+        {
+          "path": "runtime/connectome/connectome.go",
+          "sha256": "32cd8a6f334dc3835fba020ec07d9b6c99373c9a8ff7e58893752a48e7c7f5f9"
+        },
+        {
+          "path": "runtime/pce/capsule.go",
+          "sha256": "e83e532b3c553f12fb05617436e64ec0254647b02c2d2ca638b412520b9300a8"
+        },
+        {
+          "path": "runtime/pce/replay_artifact.go",
+          "sha256": "aff1dbfd78cf4086746e6586f6cc2b5a2347dce80b04b5d696f64b2080cd6f0f"
+        },
+        {
+          "path": "runtime/protocol/contract.go",
+          "sha256": "37beb66a35b59a4dafca23d14c2f6009be5534b31b542837782debe0cb8e83ff"
+        },
+        {
+          "path": "runtime/router/router.go",
+          "sha256": "65ea3357a004741c095b7374c5b8b4c0b8b4b37069752820ee1d39ba2aca813f"
+        },
+        {
+          "path": "runtime/world/world.go",
+          "sha256": "4cd8a1dac0375654575454f29ac43d333abe8c36fec045213ec1ddd9bf4b7c85"
+        },
+        {
+          "path": "specs/myriad.swyp",
+          "sha256": "e3bcb8d254cbc508f282b605230184034955517509f0b770d4fca47bbd4adf47"
+        }
+      ],
+      "human_decision_required": true,
+      "ownership_attested": false,
+      "review_ref": ""
+    },
+    "first_party_trajectories": {
+      "attestation_scope_sha256": "bcb8d1191f62f150ca2d3970c83afd5ba0294231119868a224a06c85ec9cb7bd",
+      "attestation_sha256": "8bd361bbd0fafbe68200939e57f425517b81a127dd9d42abcdfd51cfb18f203e",
+      "attested_by": "",
+      "filename": "first_party_trajectories.attestation.json",
+      "files": [
+        {
+          "path": "forge/config/imc_125m_trajectory_generation.json",
+          "sha256": "90a34c5e02ab063e5742432f64fa8138dc5dbccdc035eb7fc9bcb0d9558d76a3"
+        },
+        {
+          "path": "forge/data_contract.py",
+          "sha256": "95449cb67c712d4889fcb688431ee3f9c2cd151536765b9f212377bc954ae53c"
+        },
+        {
+          "path": "forge/first_party_attestation.py",
+          "sha256": "af0d101e93caa4fd8a34b15305ff8f50aa81a8bf7c55af52dd41ae3503a4b339"
+        },
+        {
+          "path": "forge/hf_tokenizer.py",
+          "sha256": "0a0d30734a9c2c1ecb635e8f599506ad69ceeb3f6325433008a0e9a23282a3b7"
+        },
+        {
+          "path": "forge/verified_trajectory_corpus.py",
+          "sha256": "59b54021cf82a399081f462a48604b6c772348ef89f89e279dcb8c31919df80f"
+        }
+      ],
+      "human_decision_required": true,
+      "ownership_attested": false,
+      "review_ref": ""
+    }
+  },
+  "format": "imc-125m-production-review-packet-v1",
+  "git_source_lock_file_sha256": "11f8549f9345d7b730bd75a72a8de8f1ab603d625dd834b15cd17d46912d11d1",
+  "inventory_sha256": "b90cb45f4e8269a19673c7116f28974b4aee31f23b8a2eedd80ede354694db69",
+  "policy": "human-rights-and-ownership-review-required-v1",
+  "review_packet_sha256": "21cb5fe4ea956009259aff668a0c09c1dd1aede0a9aa0a48a542ee59670c1639",
+  "rights_evidence_sha256": "a5cf89282a2613ea6034f7cd658b525745c37765f4fe81f3adb68fa14f55ac2e",
+  "rights_registry_sha256": "8f350ec8ddb3f0b7ed7f3e7b204800d7f242534cf5110d609fb3225c9002e845",
+  "source_lock_file_sha256": "3b8c52863b3bc4712730ea4dd37d190835574468b53d8e06fea74afb46b343d6",
+  "source_plan_sha256": "dd1306ab5ace5021aa77e4a1c934b3a88659d2e6c122cf12d9241e6a09984fdf"
+}

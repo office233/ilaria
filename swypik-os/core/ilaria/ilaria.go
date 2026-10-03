@@ -9,6 +9,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	resourcepolicy "swypik-os/core/resource"
 )
 
 // Message is one conversational turn kept in local memory.
@@ -19,20 +21,24 @@ type Message struct {
 	Timestamp string `json:"timestamp"`
 }
 
-const maxHistory = 100
-
 // Engine serializes turns to one Backend and records only successful exchanges.
 type Engine struct {
-	mu       sync.RWMutex
-	turnGate chan struct{}
-	backend  Backend
-	messages []Message
+	mu         sync.RWMutex
+	turnGate   chan struct{}
+	backend    Backend
+	messages   []Message
+	maxHistory int
 }
 
 // NewEngine returns an engine with no backend. Requests fail explicitly until
 // SetBackend supplies a configured service; nothing is simulated.
 func NewEngine() *Engine {
-	return &Engine{turnGate: make(chan struct{}, 1)}
+	maxHistory := resourcepolicy.Default().MaxChatHistoryMessages
+	return &Engine{
+		turnGate:   make(chan struct{}, 1),
+		messages:   make([]Message, 0, min(maxHistory, 20)),
+		maxHistory: maxHistory,
+	}
 }
 
 // SetBackend replaces the service after any in-flight turn finishes.
@@ -75,12 +81,21 @@ func (e *Engine) ProcessPromptContext(ctx context.Context, prompt string) (strin
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	now := time.Now()
+	maxHistory := e.maxHistory
+	if maxHistory < 2 {
+		maxHistory = 2
+	}
+	if len(e.messages) > maxHistory-2 {
+		drop := len(e.messages) - (maxHistory - 2)
+		copy(e.messages, e.messages[drop:])
+		for i := len(e.messages) - drop; i < len(e.messages); i++ {
+			e.messages[i] = Message{}
+		}
+		e.messages = e.messages[:len(e.messages)-drop]
+	}
 	e.messages = append(e.messages,
 		Message{ID: fmt.Sprintf("msg_%d", now.UnixNano()), Sender: "user", Text: prompt, Timestamp: now.Format("15:04")},
 		Message{ID: fmt.Sprintf("msg_%d", now.UnixNano()+1), Sender: "ilaria", Text: reply, Timestamp: now.Format("15:04")})
-	if len(e.messages) > maxHistory {
-		e.messages = append([]Message(nil), e.messages[len(e.messages)-maxHistory:]...)
-	}
 	return reply, nil
 }
 

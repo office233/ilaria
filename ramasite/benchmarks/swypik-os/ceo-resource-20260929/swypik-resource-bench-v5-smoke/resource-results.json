@@ -1,0 +1,52 @@
+﻿{
+    "schema_version":  1,
+    "measured_utc":  "2026-09-30T07:11:33.3710633Z",
+    "executable":  "E:\\CEO\\swypik-resource-bench-v5-smoke\\SwypikOS-resource.exe",
+    "executable_sha256":  "1C6D638EFBEC84BC860E716198DEEE0FF5025EF3650E9A0CF7CCDD1DF876AF33",
+    "built_for_benchmark":  true,
+    "git_revision":  "a5a8175",
+    "git_dirty":  true,
+    "logical_processors":  8,
+    "startup_seconds":  1,
+    "idle_seconds":  1,
+    "sample_interval_ms":  100,
+    "profiles":  [
+                     "balanced"
+                 ],
+    "runs_per_profile":  1,
+    "summary":  [
+                    {
+                        "profile":  "balanced",
+                        "runs":  1,
+                        "median_startup_peak_working_set_mb":  23.191,
+                        "max_startup_peak_working_set_mb":  23.191,
+                        "median_startup_peak_private_mb":  49.457,
+                        "median_window_ready_ms":  88,
+                        "median_steady_working_set_mb":  29.611,
+                        "median_steady_private_mb":  54.874,
+                        "median_idle_cpu_percent":  1.0681,
+                        "median_threads":  11,
+                        "median_handles":  192
+                    }
+                ],
+    "runs":  [
+                 {
+                     "run":  1,
+                     "sequence":  1,
+                     "profile":  "balanced",
+                     "window_ready_ms":  88,
+                     "startup_peak_working_set_mb":  23.191,
+                     "startup_peak_private_mb":  49.457,
+                     "startup_peak_threads":  11,
+                     "startup_peak_handles":  192,
+                     "steady_avg_working_set_mb":  29.611,
+                     "steady_peak_working_set_mb":  32.027,
+                     "steady_avg_private_mb":  54.874,
+                     "steady_peak_private_mb":  56.93,
+                     "steady_idle_cpu_percent":  1.0681,
+                     "steady_avg_threads":  11,
+                     "steady_avg_handles":  192,
+                     "samples":  "E:\\CEO\\swypik-resource-bench-v5-smoke\\run-01-balanced\\samples.json"
+                 }
+             ]
+}

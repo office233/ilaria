@@ -1,0 +1,82 @@
+{
+  "authorisedMonthlyUSD": 500,
+  "stopAtUTC": "2026-10-01T22:30:00Z",
+  "plannedHostShutdownAtUTC": "2026-10-01T23:00:00Z",
+  "monthFrom": 1790802000000,
+  "baselineUSD": 18.226321600000002,
+  "batchCapUSD": 30,
+  "monthStopUSD": 400,
+  "ids": [
+    "ses_f0946e6f9ffeafZCr1RvKTqjCM",
+    "ses_f0946e6e4ffevvNlcDV2MrUyDl",
+    "ses_f0946e6daffeLpjGmJl2E9phNo",
+    "ses_f0946e6cfffe1yUqybTpG7pUb0",
+    "ses_f074f4c81ffegFv1b6Z1qrwpkd"
+  ],
+  "costSource": "OpenCode local session stats; provider invoice is separate",
+  "clientPath": "C:\\Users\\abel\\AppData\\Local\\Temp\\nexus-opencode-client-guarded-20261001.mjs",
+  "currentCostUSD": 24.860822899999985,
+  "batchCostUSD": 6.634501299999982,
+  "deploymentTPM": 323000,
+  "maxConcurrentModelJobs": 2,
+  "parallelismAuthorisation": "2026-10-02 user explicitly answered Da, maximum 2 for disjoint H200 preparation agents, preserving USD30 batch/USD400 monthly stop caps; historical initial2 authorization retained in coordinator.",
+  "concurrencyReason": "Fresh explicit two-child authorization; keep compact context and fall back to one if Azure rate limiting is observed. Historical 323000TPM and old rate-limit evidence do not prove fresh parallel throughput.",
+  "checkedAt": "2026-10-01T18:22:53.015Z",
+  "sessions": [
+    {
+      "id": "ses_f0946e6f9ffeafZCr1RvKTqjCM",
+      "outcome": "failed",
+      "permissions": [],
+      "lastIdleAt": 1790857419484,
+      "lastPromptAt": 1790857203567
+    },
+    {
+      "id": "ses_f0946e6e4ffevvNlcDV2MrUyDl",
+      "outcome": "failed",
+      "permissions": [],
+      "lastIdleAt": 1790845830534,
+      "lastPromptAt": 1790845721190
+    },
+    {
+      "id": "ses_f0946e6daffeLpjGmJl2E9phNo",
+      "outcome": "failed",
+      "permissions": [],
+      "lastIdleAt": 1790875618959,
+      "lastPromptAt": 1790873554690
+    },
+    {
+      "id": "ses_f0946e6cfffe1yUqybTpG7pUb0",
+      "outcome": "succeeded",
+      "permissions": [],
+      "lastIdleAt": 1790853797934,
+      "lastPromptAt": 1790853718559
+    },
+    {
+      "id": "ses_f074f4c81ffegFv1b6Z1qrwpkd",
+      "outcome": "succeeded",
+      "permissions": [],
+      "lastIdleAt": 1790878948377,
+      "lastPromptAt": 1790878896188
+    }
+  ],
+  "guardReady": false,
+  "guardPID": 15836,
+  "costCheckedAtUTC": "2026-10-02T04:32:32.751Z",
+  "latestCostReadbackReceipt": "E:\\nexus-training\\evidence\\opencode-cost-readback-20261002\\cost-readback.json",
+  "lastGuardPIDObserved": 15836,
+  "lastGuardPIDPresent": false,
+  "lastGuardObservationAtUTC": "2026-10-02T04:29:14Z",
+  "currentRecoveryBatch": {
+    "rootSessionID": "ses_f04db0959ffdbxyIL5KrMmDi6O",
+    "stopAtUTC": "2026-10-02T06:55:41.277Z",
+    "guardianStatePath": "C:/Users/abel/AppData/Local/Temp/2/opencode/nexus-h200-recovery-20261002/agent-budget-state.json",
+    "guardianPIDObserved": 13244,
+    "guardianReadyAtObservation": true,
+    "checkedAtUTC": "2026-10-02T06:12:47.889Z",
+    "currentLocalMonthlyCostUSD": 27.073751999999992,
+    "currentLocalBatchCostUSD": 8.84743039999999,
+    "maxConcurrentPaidChildren": 2,
+    "noCloudAllocationAuthorization": true,
+    "coordinationReceipt": "E:/nexus-training/evidence/h200-recovery-coordination-20261002/current-authorization.json"
+  }
+}

@@ -1,0 +1,74 @@
+[
+  {
+    "worktree": "E:\\nexus-worktrees\\opencode-driver-conformance",
+    "path": "swypik-os/ui/engine/fonts/OFL.txt",
+    "source": "main-public-tracked-asset",
+    "sha256": "05831CFB0B8FBBB02633F7C8968684F43A3B25CB9EA7E45DB10B24078DDB922F"
+  },
+  {
+    "worktree": "E:\\nexus-worktrees\\opencode-driver-conformance",
+    "path": "swypik-os/ui/engine/fonts/PlusJakartaSans-Bold.ttf",
+    "source": "main-public-tracked-asset",
+    "sha256": "5F5342EF76862B5B5365D1DFF1A667629DFA484E388DD602552F647219C3870F"
+  },
+  {
+    "worktree": "E:\\nexus-worktrees\\opencode-driver-conformance",
+    "path": "swypik-os/ui/engine/fonts/PlusJakartaSans-ExtraBold.ttf",
+    "source": "main-public-tracked-asset",
+    "sha256": "7D60D21B5DEC501C77437E80AABD539F1D7A7B0AC7D4ADA361D4D42ABC7C55EA"
+  },
+  {
+    "worktree": "E:\\nexus-worktrees\\opencode-driver-conformance",
+    "path": "swypik-os/ui/engine/fonts/PlusJakartaSans-Medium.ttf",
+    "source": "main-public-tracked-asset",
+    "sha256": "C77BAB757D7402EC6D9341D5F7DDAAFB2474E17026792697BA4624C7DC89CAF7"
+  },
+  {
+    "worktree": "E:\\nexus-worktrees\\opencode-driver-conformance",
+    "path": "swypik-os/ui/engine/fonts/PlusJakartaSans-Regular.ttf",
+    "source": "main-public-tracked-asset",
+    "sha256": "BD6276D4060E3B1EBC45047469E0BB86B08F301BA681CDF1CEB6245EA10478D2"
+  },
+  {
+    "worktree": "E:\\nexus-worktrees\\opencode-driver-conformance",
+    "path": "swypik-os/ui/engine/fonts/PlusJakartaSans-SemiBold.ttf",
+    "source": "main-public-tracked-asset",
+    "sha256": "65DBCEDB6596A41C30869729EB31CB57D1F5EDFE365684314BBA8A1994EAA4CB"
+  },
+  {
+    "worktree": "E:\\nexus-worktrees\\opencode-cleanup-matrix",
+    "path": "swypik-os/ui/engine/fonts/OFL.txt",
+    "source": "main-public-tracked-asset",
+    "sha256": "05831CFB0B8FBBB02633F7C8968684F43A3B25CB9EA7E45DB10B24078DDB922F"
+  },
+  {
+    "worktree": "E:\\nexus-worktrees\\opencode-cleanup-matrix",
+    "path": "swypik-os/ui/engine/fonts/PlusJakartaSans-Bold.ttf",
+    "source": "main-public-tracked-asset",
+    "sha256": "5F5342EF76862B5B5365D1DFF1A667629DFA484E388DD602552F647219C3870F"
+  },
+  {
+    "worktree": "E:\\nexus-worktrees\\opencode-cleanup-matrix",
+    "path": "swypik-os/ui/engine/fonts/PlusJakartaSans-ExtraBold.ttf",
+    "source": "main-public-tracked-asset",
+    "sha256": "7D60D21B5DEC501C77437E80AABD539F1D7A7B0AC7D4ADA361D4D42ABC7C55EA"
+  },
+  {
+    "worktree": "E:\\nexus-worktrees\\opencode-cleanup-matrix",
+    "path": "swypik-os/ui/engine/fonts/PlusJakartaSans-Medium.ttf",
+    "source": "main-public-tracked-asset",
+    "sha256": "C77BAB757D7402EC6D9341D5F7DDAAFB2474E17026792697BA4624C7DC89CAF7"
+  },
+  {
+    "worktree": "E:\\nexus-worktrees\\opencode-cleanup-matrix",
+    "path": "swypik-os/ui/engine/fonts/PlusJakartaSans-Regular.ttf",
+    "source": "main-public-tracked-asset",
+    "sha256": "BD6276D4060E3B1EBC45047469E0BB86B08F301BA681CDF1CEB6245EA10478D2"
+  },
+  {
+    "worktree": "E:\\nexus-worktrees\\opencode-cleanup-matrix",
+    "path": "swypik-os/ui/engine/fonts/PlusJakartaSans-SemiBold.ttf",
+    "source": "main-public-tracked-asset",
+    "sha256": "65DBCEDB6596A41C30869729EB31CB57D1F5EDFE365684314BBA8A1994EAA4CB"
+  }
+]

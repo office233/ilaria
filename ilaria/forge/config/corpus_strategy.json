@@ -1,0 +1,184 @@
+{
+  "format": "ilaria-corpus-strategy-v1",
+  "policy": "prefer-auditable-low-rights-ambiguity-v1",
+  "lanes": {
+    "general_english": [
+      {
+        "source": "wiki_en",
+        "role": "preferred_external",
+        "status": "ELIGIBLE",
+        "reason": "production-selected English source; rights registry/evidence review is APPROVED with no unresolved obligations and exact revision locking"
+      },
+      {
+        "source": "fineweb_edu",
+        "role": "optional_scale_fallback",
+        "status": "REVIEW_REQUIRED",
+        "reason": "large educational web corpus; database license does not independently clear underlying pages"
+      }
+    ],
+    "code": [
+      {
+        "source": "zephyr",
+        "role": "supplement",
+        "status": "ELIGIBLE",
+        "reason": "exact-revision upstream source with pervasive SPDX/REUSE metadata; ingest only per-file allowlisted code/docs"
+      },
+      {
+        "source": "golang_go",
+        "role": "supplement",
+        "status": "MANUAL_SOURCE_REQUIRED",
+        "reason": "BSD-3-Clause repository-level licensing; requires a dedicated exception-aware classifier before ingestion"
+      },
+      {
+        "source": "python_cpython",
+        "role": "supplement",
+        "status": "MANUAL_SOURCE_REQUIRED",
+        "reason": "PSF-licensed upstream source pinned to an exact commit; other-license subtrees require file-level filtering"
+      },
+      {
+        "source": "rust_lang",
+        "role": "supplement",
+        "status": "MANUAL_SOURCE_REQUIRED",
+        "reason": "Apache-2.0 OR MIT upstream source with license-metadata.json; ingest only file-level allowlisted material"
+      },
+      {
+        "source": "opencode_reasoning_split0",
+        "role": "preferred",
+        "status": "ELIGIBLE",
+        "reason": "production-selected code source; exact revision plus approved rights/evidence and per-row CC-BY-4.0/Apache-2.0/MIT allowlist"
+      },
+      {
+        "source": "the_stack_v2",
+        "role": "not_default",
+        "status": "REVIEW_REQUIRED",
+        "reason": "mixed original licenses, gated access and additional dataset terms"
+      }
+    ],
+    "math_science": [
+      {
+        "source": "first_party_math",
+        "role": "not_default",
+        "status": "OWNERSHIP_ATTESTATION_REQUIRED",
+        "reason": "deterministic verifier-backed first-party mathematics generated entirely from exact programmatic constructions, with no external problem text or model-generated content"
+      },
+      {
+        "source": "openmath_reasoning_cot",
+        "role": "preferred",
+        "status": "ELIGIBLE",
+        "reason": "production-selected mathematics source; rights registry/evidence review is APPROVED with no unresolved obligations at the pinned revision"
+      },
+      {
+        "source": "wiki_en",
+        "role": "supplement",
+        "status": "REVIEW_REQUIRED",
+        "reason": "topic-filtered, provenance-preserving subset after attribution/share-alike review"
+      },
+      {
+        "source": "openscience_reasoning_2",
+        "role": "supplement",
+        "status": "ELIGIBLE",
+        "reason": "production-selected science supplement; rights registry/evidence review is APPROVED with no unresolved obligations at the pinned revision"
+      },
+      {
+        "source": "openstax_physics_ccby",
+        "role": "supplement",
+        "status": "MANUAL_SOURCE_REQUIRED",
+        "reason": "specific Physics edition declares CC-BY-4.0; requires exact edition/snapshot lock and attribution before eligibility"
+      }
+    ],
+    "os_drivers": [
+      {
+        "source": "zephyr",
+        "role": "preferred",
+        "status": "ELIGIBLE",
+        "reason": "Apache-2.0 RTOS with SPDX/REUSE licensing; ingest only files passing per-file SPDX allowlist"
+      },
+      {
+        "source": "freebsd_licensed_tree",
+        "role": "supplement",
+        "status": "ELIGIBLE",
+        "reason": "BSD-oriented OS source; ingest only files passing per-file SPDX allowlist"
+      },
+      {
+        "source": "freertos_kernel",
+        "role": "supplement",
+        "status": "ELIGIBLE",
+        "reason": "MIT-licensed FreeRTOS kernel pinned to an exact commit; keep acquisition scoped to the kernel repository"
+      },
+      {
+        "source": "apache_nuttx",
+        "role": "supplement",
+        "status": "ELIGIBLE",
+        "reason": "Apache NuttX RTOS pinned to an exact commit; ingest only per-file SPDX-allowlisted OS, architecture and driver material"
+      }
+    ],
+    "hardware": [
+      {
+        "source": "zephyr",
+        "role": "preferred",
+        "status": "ELIGIBLE",
+        "reason": "large driver/board/devicetree corpus filtered per-file by SPDX and exact revision"
+      },
+      {
+        "source": "freebsd_licensed_tree",
+        "role": "supplement",
+        "status": "ELIGIBLE",
+        "reason": "additional driver and hardware-facing source filtered per-file by SPDX and revision"
+      },
+      {
+        "source": "freertos_kernel",
+        "role": "supplement",
+        "status": "ELIGIBLE",
+        "reason": "MIT-licensed embedded-kernel source pinned to an exact commit"
+      },
+      {
+        "source": "apache_nuttx",
+        "role": "supplement",
+        "status": "ELIGIBLE",
+        "reason": "Apache NuttX architecture, board and driver corpus filtered per-file by SPDX at an exact revision"
+      }
+    ],
+    "tools_protocol": [
+      {
+        "source": "first_party_contracts",
+        "role": "preferred",
+        "status": "OWNERSHIP_ATTESTATION_REQUIRED",
+        "reason": "project-native Swyp/Myriad/tool contracts once ownership/provenance is explicitly attested"
+      },
+      {
+        "source": "golang_go",
+        "role": "supplement",
+        "status": "MANUAL_SOURCE_REQUIRED",
+        "reason": "language/toolchain/runtime interfaces from a BSD-3-Clause upstream tree pinned to an exact commit"
+      },
+      {
+        "source": "zephyr",
+        "role": "supplement",
+        "status": "MANUAL_SOURCE_REQUIRED",
+        "reason": "device/tool protocols from an exact Zephyr revision filtered through SPDX/REUSE"
+      }
+    ],
+    "agent_tool_trajectories": [
+      {
+        "source": "first_party_trajectories",
+        "role": "preferred",
+        "status": "OWNERSHIP_ATTESTATION_REQUIRED",
+        "reason": "deterministic verifier-backed first-party tool trajectories generated from content-addressed project code and configuration"
+      }
+    ],
+    "world_device_trajectories": [
+      {
+        "source": "first_party_trajectories",
+        "role": "preferred",
+        "status": "OWNERSHIP_ATTESTATION_REQUIRED",
+        "reason": "deterministic nonpersonal device/world trajectories with explicit simulator verification and provenance"
+      }
+    ]
+  },
+  "excluded_by_default": [
+    {
+      "source": "openstax_default_library",
+      "reason": "excluded by default: current OpenStax reuse terms are noncommercial and current Physics attribution terms explicitly require prior written permission for LLM/generative-AI ingestion; reconsider only with exact-edition rights evidence and explicit permission"
+    }
+  ]
+}

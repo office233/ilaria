@@ -44,10 +44,7 @@ func synthContractCommand(output, specPath string, timeout time.Duration, flags 
 		if err == nil || emitted {
 			return
 		}
-		var d *coreir.Diagnostic
-		if !errors.As(err, &d) {
-			d = &coreir.Diagnostic{Code: "invalid_input", Message: err.Error()}
-		}
+		d := compilerDiagnostic(err)
 		writeErr := json.NewEncoder(out).Encode(struct {
 			Version    int                `json:"version"`
 			Status     string             `json:"status"`

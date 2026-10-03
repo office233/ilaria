@@ -1,0 +1,38 @@
+---
+import { confirmedBackers } from "../data/backers";
+
+interface Props { page?: "ilaria" | "os"; variant?: "strip" | "large"; title?: string }
+const { page, variant = "strip", title = "Backed by" } = Astro.props;
+const list = confirmedBackers(page);
+---
+{list.length > 0 && (
+  <section class:list={["backers", `backers-${variant}`]} aria-label={title}>
+    <div class="shell">
+      <p class="eyebrow">{title}</p>
+      <ul>
+        {list.map((b) => (
+          <li class="glass">
+            {b.href ? (
+              <a href={b.href} target="_blank" rel="noopener"><img src={b.logo} alt={b.logoAlt} loading="lazy" /></a>
+            ) : (
+              <img src={b.logo} alt={b.logoAlt} loading="lazy" />
+            )}
+            <p>{b.caption}</p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+)}
+
+<style>
+  .backers { padding: 2.5rem 0; }
+  .backers .eyebrow { display: flex; justify-content: center; margin: 0 0 1.2rem; }
+  ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; }
+  li { display: grid; justify-items: center; gap: .9rem; padding: 1.4rem 1.2rem; border-radius: 20px; text-align: center; }
+  /* Official marks are shown as supplied: no recolouring, generous clear space. */
+  img { height: 52px; width: auto; max-width: 100%; object-fit: contain; }
+  li p { margin: 0; color: var(--muted); font-size: .8rem; line-height: 1.5; }
+  .backers-large img { height: 72px; }
+  .backers-large li { padding: 2rem 1.5rem; }
+</style>

@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"syscall"
-	"unsafe"
 )
 
 // SwypikInstaller writes the 1-click launcher. It never reads, moves or
@@ -18,19 +16,18 @@ type SwypikInstaller struct {
 	DownloadsDir string
 }
 
-func NewInstaller() *SwypikInstaller {
-	userProfile := os.Getenv("USERPROFILE")
+func NewInstaller() (*SwypikInstaller, error) {
+	userProfile, err := os.UserHomeDir()
+	if err != nil {
+		return nil, fmt.Errorf("resolve user profile: %w", err)
+	}
 	if userProfile == "" {
-		if home, err := os.UserHomeDir(); err == nil && home != "" {
-			userProfile = home
-		} else {
-			userProfile = "C:\\Users\\Default"
-		}
+		return nil, fmt.Errorf("resolve user profile: empty path")
 	}
 
 	executable, err := os.Executable()
 	if err != nil {
-		panic(fmt.Errorf("locate installer: %w", err))
+		return nil, fmt.Errorf("locate installer: %w", err)
 	}
 	installDir := filepath.Dir(executable)
 	if filepath.Base(installDir) == "bin" {
@@ -43,7 +40,7 @@ func NewInstaller() *SwypikInstaller {
 		DesktopDir:   filepath.Join(userProfile, "Desktop"),
 		DocumentsDir: filepath.Join(userProfile, "Documents"),
 		DownloadsDir: filepath.Join(userProfile, "Downloads"),
-	}
+	}, nil
 }
 
 // DescribeUserDataScope states which user folders the installer leaves alone.
@@ -75,21 +72,16 @@ func (i *SwypikInstaller) CreateLauncherShortcut() error {
 	return nil
 }
 
-// ShowSuccessDialog displays a native Windows MessageBox.
-func ShowSuccessDialog(msg, title string) {
-	user32 := syscall.NewLazyDLL("user32.dll")
-	messageBoxW := user32.NewProc("MessageBoxW")
-	t, _ := syscall.UTF16PtrFromString(title)
-	m, _ := syscall.UTF16PtrFromString(msg)
-	messageBoxW.Call(0, uintptr(unsafe.Pointer(m)), uintptr(unsafe.Pointer(t)), 0x00000040)
-}
-
 func main() {
 	fmt.Println("==========================================================")
 	fmt.Println("        SWYPIKOS 1-CLICK LAUNCHER INSTALLER (WINDOWS)     ")
 	fmt.Println("==========================================================")
 
-	installer := NewInstaller()
+	installer, err := NewInstaller()
+	if err != nil {
+		fmt.Printf("[ERROR] Installation failed: %v\n", err)
+		os.Exit(1)
+	}
 	installer.DescribeUserDataScope()
 
 	if err := installer.CreateLauncherShortcut(); err != nil {

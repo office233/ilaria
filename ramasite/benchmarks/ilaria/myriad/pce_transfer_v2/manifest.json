@@ -1,0 +1,9 @@
+{
+  "anchor_count": 8,
+  "anchors_sha256": "8dddb46fbfeb34db2ee41f4f214dc5ef33a23c5064b16c72f5674f24516dde89",
+  "benchmark": "pce-transfer-v2",
+  "schema_version": 1,
+  "status": "frozen-after-recovery",
+  "task_count": 12,
+  "tasks_sha256": "b2917f3fd51fc4650687a92f8bb12cafbf59a149cdeb6ea3e92ade2359e25953"
+}

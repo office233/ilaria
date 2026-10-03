@@ -1,0 +1,14 @@
+{
+  "byte_level": true,
+  "documents": 10000,
+  "dtype": "uint16",
+  "eos_id": 61440,
+  "format": "ilaria-token-stream-v1",
+  "protocol_start_id": 61440,
+  "stream_sha256": "4fd13f3063d72a6d968ad59aeb3cf0c81ff46d2a673d46ebc4e2224d1ac400e5",
+  "tokenizer": "ilarialex.dev.json",
+  "tokenizer_format": "ilarialex-v1",
+  "tokenizer_sha256": "cf99e239ddf3adf23fffdd4c07325cacce7d3ee836f41721520c379fa2274e40",
+  "tokens": 1169450,
+  "vocab_size": 65536
+}

@@ -1,0 +1,14 @@
+{
+  "observedAtUTC": "2026-10-03T08:32:14.340Z",
+  "actualActiveCount": 0,
+  "localMonthlyCostUSD": 40.42847169999997,
+  "localBatchCostUSD": 0,
+  "guardianPID": 8460,
+  "guardianReady": true,
+  "sessionID": "ses_eff1d50daffeZIZF9K8o6UiRmi",
+  "model": {
+    "id": "gpt-6.1-sol",
+    "providerID": "azure"
+  },
+  "stopAtUTC": "2026-10-03T09:00:18.739Z"
+}

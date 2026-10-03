@@ -1,7 +1,0 @@
-region "Cell 22 output":
-      - generic "Show/hide output":
-        - button "Show/hide output"
-      - generic "Code cell output actions":
-        - button "Code cell output actions"
-      - iframe:
-        - generic: "VERIFIED: aligned v4, 150 steps, 420 finite tensors, encoding and lineage confirmed Validation: {'en': 0.17983549796527115} { \"checkpoint.pt\": \"557358ac6b1d771d597e3997a1b890339b17ce02f480f13503bbf0263d61853e\", \"adapter-step150.json\": \"87d62745d1d3b9870d9ac1acd7e8c89b0e9315899646761958a3f30fe206e481\", \"adapter-step150.safetensors\": \"b368303a7bf659a6bc76e4e5ec8a1b5f5c728d80f4f9bfea62de31dd6f81c966\" }"

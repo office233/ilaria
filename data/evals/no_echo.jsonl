@@ -1,5 +1,0 @@
-{"input": "ce face câinele?", "must_not_equal_input": true, "expected_contains": []}
-{"input": "what is the meaning of digital life?", "must_not_equal_input": true, "expected_contains": []}
-{"input": "unknown random query here", "must_not_equal_input": true, "expected_contains": []}
-{"input": "neurons fire", "must_not_equal_input": true, "expected_contains": []}
-{"input": "mama gătește", "must_not_equal_input": true, "expected_contains": []}

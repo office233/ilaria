@@ -20,6 +20,7 @@ import (
 	"swypik-os/core/agent"
 	"swypik-os/core/compute"
 	"swypik-os/core/ilaria"
+	resourcepolicy "swypik-os/core/resource"
 	"swypik-os/core/search"
 	"swypik-os/internal/safepath"
 )
@@ -139,27 +140,41 @@ type pending struct {
 }
 
 type Controller struct {
-	mu        sync.Mutex
-	d         Deps
-	tab       Tab
-	logs      [TabCount][]Block
-	results   []Block // current search results
-	filesDir  string  // workspace-relative, "" = root
-	filesList []Block // cached listing; refreshed on navigation, not per paint
-	preview   *Block
-	compute   *compute.Status
-	busy      bool
-	busyLabel string
-	cancel    context.CancelFunc
-	pending   *pending
-	chatOpen  bool
-	chatBusy  bool
-	history   []string
-	histPos   int
+	mu           sync.Mutex
+	d            Deps
+	tab          Tab
+	logs         [TabCount][]Block
+	results      []Block // current search results
+	filesDir     string  // workspace-relative, "" = root
+	filesList    []Block // cached listing; refreshed on navigation, not per paint
+	preview      *Block
+	compute      *compute.Status
+	busy         bool
+	busyLabel    string
+	cancel       context.CancelFunc
+	pending      *pending
+	chatOpen     bool
+	chatBusy     bool
+	history      []string
+	histPos      int
+	maxHistory   int
+	maxLogBlocks int
 }
 
 func New(d Deps) *Controller {
-	c := &Controller{d: d, tab: TabHome}
+	policy := resourcepolicy.Default()
+	maxHistory := policy.MaxChatHistoryMessages
+	if maxHistory < 20 {
+		maxHistory = 20
+	}
+	maxLogs := maxHistory * 4
+	if maxLogs < 80 {
+		maxLogs = 80
+	}
+	if maxLogs > 400 {
+		maxLogs = 400
+	}
+	c := &Controller{d: d, tab: TabHome, maxHistory: maxHistory, maxLogBlocks: maxLogs}
 	c.logs[TabSearch] = []Block{{Kind: KindInfo, Body: "Motorul tău de căutare: niciun Google, Bing sau DuckDuckGo. /index adaugă fișierele din workspace, /crawl https://site/ adaugă un site (cu confirmare)."}}
 	return c
 }
@@ -172,9 +187,31 @@ func (c *Controller) notify() {
 
 func (c *Controller) addLocked(tab Tab, b Block) {
 	c.logs[tab] = append(c.logs[tab], b)
-	if len(c.logs[tab]) > 400 {
-		c.logs[tab] = append([]Block(nil), c.logs[tab][len(c.logs[tab])-400:]...)
+	limit := c.maxLogBlocks
+	if limit <= 0 {
+		limit = 400
 	}
+	if len(c.logs[tab]) > limit {
+		// Reuse the existing backing array instead of allocating a fresh
+		// slice on every overflow. Once warm, UI logs stay bounded without heap
+		// growth from retention trimming.
+		copy(c.logs[tab], c.logs[tab][len(c.logs[tab])-limit:])
+		c.logs[tab] = c.logs[tab][:limit]
+	}
+}
+
+func (c *Controller) addHistoryLocked(text string) {
+	maxHistory := c.maxHistory
+	if maxHistory <= 0 {
+		maxHistory = 100
+	}
+	if len(c.history) < maxHistory {
+		c.history = append(c.history, text)
+	} else {
+		copy(c.history, c.history[1:])
+		c.history[maxHistory-1] = text
+	}
+	c.histPos = len(c.history)
 }
 
 func (c *Controller) add(tab Tab, b Block) {
@@ -263,11 +300,7 @@ func (c *Controller) Submit(text string) {
 	}
 	c.mu.Lock()
 	if !strings.HasPrefix(text, "/refresh") {
-		c.history = append(c.history, text)
-		if len(c.history) > 100 {
-			c.history = c.history[1:]
-		}
-		c.histPos = len(c.history)
+		c.addHistoryLocked(text)
 	}
 	tab := c.tab
 	cmd, arg := text, ""
@@ -358,8 +391,7 @@ func (c *Controller) SubmitChat(text string) {
 		return
 	}
 	c.mu.Lock()
-	c.history = append(c.history, text)
-	c.histPos = len(c.history)
+	c.addHistoryLocked(text)
 	cmd := ""
 	if strings.HasPrefix(text, "/") {
 		cmd = strings.ToLower(strings.Fields(text)[0])
@@ -877,8 +909,10 @@ func (c *Controller) View() View {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	v := View{Tab: c.tab, Busy: c.busy, BusyLabel: c.busyLabel, Live: c.busy}
-	v.Chat = append([]Block(nil), c.logs[TabChat]...)
 	v.ChatOpen = c.chatOpen || c.tab == TabChat
+	if v.ChatOpen {
+		v.Chat = cloneBlocks(c.logs[TabChat])
+	}
 	v.ChatBusy = c.busy && c.busyLabel == "Ilaria răspunde"
 	host := c.d.Settings.IlariaURL
 	if i := strings.Index(host, "://"); i >= 0 {
@@ -891,17 +925,17 @@ func (c *Controller) View() View {
 		v.Eyebrow, v.Title, v.Subtitle = "UN ECOSISTEM. POSIBILITĂȚILE TALE.", "Universul tău Swypik", "Aplicațiile tale, workspace-ul tău, Ilaria. Împreună."
 		v.Placeholder = "Întreab-o pe Ilaria sau mergi oriunde…"
 		v.Tiles = c.homeTilesLocked()
-		v.Blocks = append([]Block(nil), c.logs[TabHome]...)
+		v.Blocks = cloneBlocks(c.logs[TabHome])
 	case TabChat:
 		v.Eyebrow, v.Title, v.Subtitle = "ILARIA · ASISTENT", "Conversație", "/new începe o conversație nouă."
 		v.Placeholder = "Scrie un mesaj pentru Ilaria…"
 		v.Empty = "Cu ce lucrăm astăzi?"
-		v.Blocks = append([]Block(nil), c.logs[TabChat]...)
+		v.Blocks = v.Chat
 	case TabAgent:
 		v.Eyebrow, v.Title, v.Subtitle = "AGENT · CU APROBAREA TA", "Agent", "Citește, editează și rulează în workspace. Fiecare pas îți cere aprobarea: F8 aprobă, F9 refuză."
 		v.Placeholder = "Descrie ce trebuie făcut (de ex.: rulează testele și repară ce pică)…"
 		v.Empty = "Ce construim astăzi?"
-		v.Blocks = append(runBlocks(run), c.logs[TabAgent]...)
+		v.Blocks = concatBlocks(runBlocks(run), c.logs[TabAgent])
 		if run != nil && (run.Status == "planning" || run.Status == "executing" || run.Status == "awaiting_approval") {
 			v.Live = true
 		}
@@ -913,25 +947,47 @@ func (c *Controller) View() View {
 		v.Eyebrow, v.Title, v.Subtitle = "MOTORUL TĂU DE CĂUTARE", "Căutare", "Web și fișiere locale, într-un index care îți aparține. Fără Google, Bing sau DuckDuckGo."
 		v.Placeholder = "Caută… (/index, /crawl URL)"
 		// Results first; the latest notes (index/crawl reports) below them.
-		v.Blocks = append(append([]Block(nil), c.results...), c.logs[TabSearch]...)
+		v.Blocks = concatBlocks(c.results, c.logs[TabSearch])
 	case TabFiles:
 		v.Eyebrow, v.Title, v.Subtitle = "WORKSPACE", "Fișiere", c.d.Workspace
 		v.Placeholder = "Deschide o cale relativă sau .. pentru dosarul părinte"
-		v.Blocks = append(c.filesBlocksLocked(), c.logs[TabFiles]...)
+		v.Blocks = concatBlocks(c.filesBlocksLocked(), c.logs[TabFiles])
 	case TabCompute:
 		v.Eyebrow, v.Title, v.Subtitle = "CALCUL · ILARIA", "Calcul", "GPU-urile acestui dispozitiv și contribuția ta la antrenarea Ilaria."
 		v.Placeholder = "/on, /off, /coordinator URL, /refresh"
-		v.Blocks = append(c.computeBlocksLocked(), c.logs[TabCompute]...)
+		v.Blocks = concatBlocks(c.computeBlocksLocked(), c.logs[TabCompute])
 	case TabSettings:
 		v.Eyebrow, v.Title, v.Subtitle = "SISTEM", "Setări", "Serviciul Ilaria, workspace-ul și indexul."
 		v.Placeholder = "/ilaria https://…, /test, /workspace DOSAR"
-		v.Blocks = append(c.settingsBlocksLocked(), c.logs[TabSettings]...)
+		v.Blocks = concatBlocks(c.settingsBlocksLocked(), c.logs[TabSettings])
 	}
 	if c.pending != nil {
 		p := c.pending.prompt
 		v.Prompt = &p
 	}
 	return v
+}
+
+func cloneBlocks(in []Block) []Block {
+	if len(in) == 0 {
+		return nil
+	}
+	out := make([]Block, len(in))
+	copy(out, in)
+	return out
+}
+
+func concatBlocks(a, b []Block) []Block {
+	if len(a) == 0 {
+		return cloneBlocks(b)
+	}
+	if len(b) == 0 {
+		return cloneBlocks(a)
+	}
+	out := make([]Block, 0, len(a)+len(b))
+	out = append(out, a...)
+	out = append(out, b...)
+	return out
 }
 
 // runBlocks renders an agent run as a transcript.
@@ -1007,42 +1063,59 @@ func clipLines(s string, max int) string {
 	return strings.Join(lines[:max], "\n") + fmt.Sprintf("\n… (+%d linii)", len(lines)-max)
 }
 
+const (
+	maxApprovalContentPreviewLines = 40
+	maxApprovalDiffPreviewLines    = 20
+	maxApprovalGenericTextBytes    = 1500
+)
+
 // DescribeApproval turns a tool call into a human title and preview.
 func DescribeApproval(tool string, raw json.RawMessage) (string, string) {
-	var a map[string]interface{}
-	_ = json.Unmarshal(raw, &a)
-	str := func(k string) string { s, _ := a[k].(string); return s }
 	switch tool {
 	case "workspace.read":
-		return "Citește " + str("path"), ""
+		var a agent.ReadArgs
+		_ = json.Unmarshal(raw, &a)
+		return "Citește " + a.Path, ""
 	case "workspace.list":
-		p := str("path")
+		var a agent.ListArgs
+		_ = json.Unmarshal(raw, &a)
+		p := a.Path
 		if p == "" {
 			p = "."
 		}
 		return "Listează " + p, ""
 	case "workspace.write":
-		title := "Suprascrie " + str("path")
-		if str("expected_sha256") == "" {
-			title = "Creează " + str("path")
+		var a agent.WriteArgs
+		_ = json.Unmarshal(raw, &a)
+		title := "Suprascrie " + a.Path
+		if a.ExpectedSHA256 == "" {
+			title = "Creează " + a.Path
 		}
-		return title, clipLines(str("content"), 40)
+		return title, clipLines(a.Content, maxApprovalContentPreviewLines)
 	case "workspace.edit":
+		var a agent.EditArgs
+		_ = json.Unmarshal(raw, &a)
 		var b strings.Builder
-		for _, l := range strings.Split(clipLines(str("old"), 20), "\n") {
+		for _, l := range strings.Split(clipLines(a.Old, maxApprovalDiffPreviewLines), "\n") {
 			b.WriteString("- " + l + "\n")
 		}
-		for _, l := range strings.Split(clipLines(str("new"), 20), "\n") {
+		for _, l := range strings.Split(clipLines(a.New, maxApprovalDiffPreviewLines), "\n") {
 			b.WriteString("+ " + l + "\n")
 		}
-		return "Editează " + str("path"), strings.TrimRight(b.String(), "\n")
+		return "Editează " + a.Path, strings.TrimRight(b.String(), "\n")
 	case "process.run":
-		return "Rulează o comandă în workspace", str("command")
+		var a agent.RunArgs
+		_ = json.Unmarshal(raw, &a)
+		return "Rulează o comandă în workspace", a.Command
 	case "search.query":
-		return "Caută în index: " + str("query"), ""
+		var a agent.SearchArgs
+		_ = json.Unmarshal(raw, &a)
+		return "Caută în index: " + a.Query, ""
 	case "network.interfaces":
 		return "Citește adaptoarele de rețea", ""
 	}
+	var a map[string]interface{}
+	_ = json.Unmarshal(raw, &a)
 	pretty, _ := json.MarshalIndent(a, "", "  ")
-	return tool, clipText(string(pretty), 1500)
+	return tool, clipText(string(pretty), maxApprovalGenericTextBytes)
 }

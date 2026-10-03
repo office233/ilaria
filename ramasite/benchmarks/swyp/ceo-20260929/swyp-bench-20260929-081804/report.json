@@ -1,0 +1,142 @@
+{
+  "started_utc": "2026-09-29T05:18:05.838309+00:00",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "cpu": "Intel64 Family 6 Model 158 Stepping 13, GenuineIntel",
+  "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+  "repetitions": 3,
+  "cases": [
+    {
+      "name": "i64-prime-count",
+      "argument": "150000",
+      "results": [
+        {
+          "implementation": "swyp-core-safe",
+          "result": "13848",
+          "median_wall_ms": 69.77110001025721,
+          "min_wall_ms": 63.93219999154098,
+          "max_wall_ms": 73.5084000043571,
+          "samples_ms": [
+            63.93219999154098,
+            69.77110001025721,
+            73.5084000043571
+          ]
+        },
+        {
+          "implementation": "swyp-core-fast",
+          "result": "13848",
+          "median_wall_ms": 62.43009999161586,
+          "min_wall_ms": 48.46340001677163,
+          "max_wall_ms": 87.95119999558665,
+          "samples_ms": [
+            48.46340001677163,
+            62.43009999161586,
+            87.95119999558665
+          ]
+        },
+        {
+          "implementation": "swyp-core-fast-native-lto",
+          "result": "13848",
+          "median_wall_ms": 50.286300014704466,
+          "min_wall_ms": 48.6498000100255,
+          "max_wall_ms": 55.882499989820644,
+          "samples_ms": [
+            48.6498000100255,
+            55.882499989820644,
+            50.286300014704466
+          ]
+        },
+        {
+          "implementation": "c-o3",
+          "result": "13848",
+          "median_wall_ms": 131.80800000554882,
+          "min_wall_ms": 129.86359998467378,
+          "max_wall_ms": 163.70930001721717,
+          "samples_ms": [
+            163.70930001721717,
+            131.80800000554882,
+            129.86359998467378
+          ]
+        }
+      ]
+    },
+    {
+      "name": "finite-f64-mandelbrot",
+      "argument": "320",
+      "results": [
+        {
+          "implementation": "swyp-core-safe",
+          "result": "1113822",
+          "median_wall_ms": 39.79439998511225,
+          "min_wall_ms": 37.49170000082813,
+          "max_wall_ms": 45.040199998766184,
+          "samples_ms": [
+            37.49170000082813,
+            45.040199998766184,
+            39.79439998511225
+          ]
+        },
+        {
+          "implementation": "swyp-core-fast",
+          "result": "1113822",
+          "median_wall_ms": 58.94739998620935,
+          "min_wall_ms": 56.14430000423454,
+          "max_wall_ms": 66.06979999924079,
+          "samples_ms": [
+            58.94739998620935,
+            56.14430000423454,
+            66.06979999924079
+          ]
+        },
+        {
+          "implementation": "swyp-core-fast-native-lto",
+          "result": "1113822",
+          "median_wall_ms": 35.25360001367517,
+          "min_wall_ms": 33.670400007395074,
+          "max_wall_ms": 35.43249997892417,
+          "samples_ms": [
+            35.43249997892417,
+            35.25360001367517,
+            33.670400007395074
+          ]
+        },
+        {
+          "implementation": "swyp-core-ieee64-fast",
+          "result": "1113822",
+          "median_wall_ms": 16.335099993739277,
+          "min_wall_ms": 15.80120000289753,
+          "max_wall_ms": 28.481600020313635,
+          "samples_ms": [
+            16.335099993739277,
+            28.481600020313635,
+            15.80120000289753
+          ]
+        },
+        {
+          "implementation": "swyp-core-ieee64-fast-native-lto",
+          "result": "1113822",
+          "median_wall_ms": 24.503900000127032,
+          "min_wall_ms": 18.039499991573393,
+          "max_wall_ms": 26.146599993808195,
+          "samples_ms": [
+            24.503900000127032,
+            18.039499991573393,
+            26.146599993808195
+          ]
+        },
+        {
+          "implementation": "c-o3",
+          "result": "1113822",
+          "median_wall_ms": 33.29909997410141,
+          "min_wall_ms": 14.91519997944124,
+          "max_wall_ms": 40.45919998316094,
+          "samples_ms": [
+            14.91519997944124,
+            33.29909997410141,
+            40.45919998316094
+          ]
+        }
+      ]
+    }
+  ],
+  "finished_utc": "2026-09-29T05:18:16.844541+00:00"
+}

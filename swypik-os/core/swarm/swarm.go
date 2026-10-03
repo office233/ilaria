@@ -2,8 +2,6 @@ package swarm
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -14,8 +12,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"swypik-os/core/federated"
 	"swypik-os/core/hal"
+	"swypik-os/core/imcnetwork"
+	resourcepolicy "swypik-os/core/resource"
 )
 
 type SwarmConfig struct {
@@ -27,47 +26,93 @@ type SwarmConfig struct {
 }
 
 type Status struct {
-	Enabled        bool    `json:"enabled"`
-	TasksCompleted int64   `json:"tasks_completed"`
-	CoinsEarned    float64 `json:"coins_earned"`
-	LocalTflops    float64 `json:"local_tflops"`
-	MeshNodes      int     `json:"mesh_nodes"`
-	LatencyMs      int     `json:"latency_ms"`
-	RealHashRate   float64 `json:"real_hashrate_khs"`
-	HasGPU         bool    `json:"has_gpu"`
-	GPUModel       string  `json:"gpu_model"`
-	CUDAVersion    string  `json:"cuda_version"`
-	VRAMMB         int     `json:"vram_mb"`
+	Enabled            bool                            `json:"enabled"`
+	TasksCompleted     int64                           `json:"tasks_completed"`
+	LocalTflops        float64                         `json:"local_tflops"`
+	MeshNodes          int                             `json:"mesh_nodes"`
+	LatencyMs          int                             `json:"latency_ms"`
+	HasGPU             bool                            `json:"has_gpu"`
+	GPUModel           string                          `json:"gpu_model"`
+	CUDAVersion        string                          `json:"cuda_version"`
+	VRAMMB             int                             `json:"vram_mb"`
+	ResourceBudget     resourcepolicy.BackgroundBudget `json:"resource_budget"`
+	ResourceAuditError string                          `json:"resource_audit_error,omitempty"`
+	StateError         string                          `json:"state_error,omitempty"`
+	HardwareError      string                          `json:"hardware_error,omitempty"`
+}
+
+type adaptiveSignalSource struct {
+	base    resourcepolicy.SignalSource
+	thermal func() (int, bool)
+}
+
+func (s adaptiveSignalSource) Sample(ctx context.Context) (resourcepolicy.RuntimeSignals, error) {
+	signals, err := s.base.Sample(ctx)
+	if err != nil {
+		return resourcepolicy.RuntimeSignals{}, err
+	}
+	if s.thermal != nil {
+		if temperature, ok := s.thermal(); ok {
+			signals.ThermalCelsius = temperature
+		}
+	}
+	return signals, nil
+}
+
+func systemSignalSource(hasGPU bool) resourcepolicy.SignalSource {
+	base := resourcepolicy.SystemSignalSource{}
+	if !hasGPU {
+		return base
+	}
+	driver := hal.NewCUDADriver()
+	if err := driver.Init(); err != nil {
+		return base
+	}
+	return adaptiveSignalSource{
+		base: base,
+		thermal: func() (int, bool) {
+			telemetry, err := driver.GetTelemetry()
+			if err != nil || telemetry == nil || telemetry.TemperatureC == 0 {
+				return 0, false
+			}
+			return int(telemetry.TemperatureC), true
+		},
+	}
 }
 
 type Daemon struct {
 	mu              sync.RWMutex
 	enabled         atomic.Bool
+	stopped         atomic.Bool
 	trainingEnabled bool
 	maxGPUPercent   float64
 	tasksCompleted  int64
-	coinsEarned     float64
 	stopChan        chan struct{}
 	stopOnce        sync.Once
 	workerDone      chan struct{}
 	stateDir        string
-	rewardPerTflop  float64
 	nodeID          string
-	totalHashes     int64
-	realHashRate    float64
 	localTflops     float64
 	hasGPU          bool
 	gpuModel        string
 	cudaVersion     string
 	vramMB          int
-	trainer         *federated.LocalTrainer
+	governor        *resourcepolicy.Governor
+	governorCancel  context.CancelFunc
+	governorDone    chan struct{}
+	policy          resourcepolicy.Policy
+	signalSource    resourcepolicy.SignalSource
+	stateError      string
+	hardwareError   string
+	verifiedRounds  imcnetwork.RoundRunner
 }
 
 func NewDaemon(args ...SwarmConfig) *Daemon {
 	cfg := config.Get()
 	enabled := cfg.SwarmEnabled
-	trainingEnabled := true
-	maxGPUPercent := 35.0
+	trainingEnabled := config.GetBool("SWYPIK_SWARM_TRAINING_ENABLED", false)
+	policy := resourcepolicy.Default()
+	maxGPUPercent := float64(policy.MaxBackgroundGPUPercent)
 
 	for _, override := range args {
 		enabled = override.Enabled
@@ -77,113 +122,151 @@ func NewDaemon(args ...SwarmConfig) *Daemon {
 		}
 	}
 
-	// Auto-detect physical hardware compute capabilities via HAL
-	halMgr := hal.NewManager()
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-	defer cancel()
-	_, _ = halMgr.Scan(ctx)
-
-	hasGPU, gpuModel, vram, tflops, cudaVer := halMgr.GetGPUComputeCapability()
+	var hasGPU bool
+	var gpuModel, cudaVer string
+	var hardwareError string
+	var vram int
 	localTflops := 0.0
-	if hasGPU && tflops > 0 {
-		localTflops = tflops
+	if enabled && trainingEnabled {
+		// Hardware inventory is lazy with respect to the feature. A device that
+		// does not contribute compute should not pay startup latency for GPU probes.
+		halMgr := hal.NewManager()
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		_, scanErr := halMgr.Scan(ctx)
+		cancel()
+		if scanErr != nil {
+			hardwareError = scanErr.Error()
+		} else {
+			hasGPU, gpuModel, vram, _, cudaVer = halMgr.GetGPUComputeCapability()
+		}
 	}
 
 	d := &Daemon{
 		trainingEnabled: trainingEnabled,
 		maxGPUPercent:   maxGPUPercent,
 		tasksCompleted:  0,
-		coinsEarned:     0.0,
 		stopChan:        make(chan struct{}),
 		workerDone:      make(chan struct{}),
 		stateDir:        config.GetString("SWYPIK_STATE_DIR", filepath.Join(cfg.WorkspaceDir, "data")),
-		rewardPerTflop:  cfg.RewardPerTflop,
 		nodeID:          cfg.NodeID,
 		localTflops:     localTflops,
 		hasGPU:          hasGPU,
 		gpuModel:        gpuModel,
 		cudaVersion:     cudaVer,
 		vramMB:          vram,
-		trainer:         federated.NewLocalTrainer(cfg.NodeID, maxGPUPercent),
+		governor:        resourcepolicy.NewGovernor(policy),
+		policy:          policy,
+		signalSource:    systemSignalSource(hasGPU),
+		hardwareError:   hardwareError,
 	}
-	if err := d.LoadState(d.stateDir); os.IsNotExist(err) && os.Getenv("SWYPIK_STATE_DIR") == "" {
-		_ = d.LoadState(cfg.WorkspaceDir)
+	if err := d.LoadState(d.stateDir); err != nil {
+		if os.IsNotExist(err) && os.Getenv("SWYPIK_STATE_DIR") == "" {
+			if fallbackErr := d.LoadState(cfg.WorkspaceDir); fallbackErr != nil && !os.IsNotExist(fallbackErr) {
+				d.stateError = fallbackErr.Error()
+			}
+		} else if !os.IsNotExist(err) {
+			d.stateError = err.Error()
+		}
 	}
 	d.enabled.Store(enabled)
+	if enabled && trainingEnabled {
+		d.startGovernorMonitor()
+	}
 	d.startWorker()
 	return d
 }
 
-// ExecuteTrainingMicroBatch runs the local training simulator. Rewards are local estimates.
-func (d *Daemon) ExecuteTrainingMicroBatch(roundID int) (*federated.WeightDelta, float64, error) {
-	if !d.enabled.Load() || !d.trainingEnabled {
-		return nil, 0, fmt.Errorf("training disabled")
-	}
-	select {
-	case <-d.stopChan:
-		return nil, 0, fmt.Errorf("daemon stopped")
-	default:
-	}
+func (d *Daemon) startGovernorMonitor() {
 	d.mu.Lock()
-	if d.trainer == nil {
-		d.trainer = federated.NewLocalTrainer(d.nodeID, d.maxGPUPercent)
+	if d.stopped.Load() || d.governorCancel != nil || !d.trainingEnabled {
+		d.mu.Unlock()
+		return
 	}
-	trainer := d.trainer
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct{})
+	d.governorCancel = cancel
+	d.governorDone = done
+	interval := d.policy.StatusPollInterval
+	governor := d.governor
+	source := d.signalSource
 	d.mu.Unlock()
+	go func() {
+		defer close(done)
+		_ = resourcepolicy.WatchGovernor(ctx, governor, source, interval)
+	}()
+}
 
-	delta, err := trainer.ComputeMicroBatch(roundID, "transformer.lora_a", 32)
-	if err != nil {
-		return nil, 0, err
-	}
-
-	reward := delta.TFLOPSComputed * d.rewardPerTflop
+func (d *Daemon) stopGovernorMonitor() {
 	d.mu.Lock()
-	d.coinsEarned += reward
-	d.tasksCompleted++
+	cancel := d.governorCancel
+	done := d.governorDone
+	d.governorCancel = nil
+	d.governorDone = nil
 	d.mu.Unlock()
+	if cancel != nil {
+		cancel()
+	}
+	if done != nil {
+		<-done
+	}
+}
 
-	return delta, reward, nil
+// ExecuteVerifiedRound accepts only the injected typed real-round path; no
+// float conversion, self-reported TFLOPS reward or simulator fallback.
+func (d *Daemon) SetVerifiedRoundAdapter(adapter imcnetwork.RoundRunner) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	d.verifiedRounds = adapter
+}
+
+// NewVerifiedRoundDaemon composes only public injected resource/round authority;
+// no hardware scan, state loading, wallet/reward or simulator is initialized.
+func NewVerifiedRoundDaemon(policy resourcepolicy.Policy) *Daemon {
+	d := &Daemon{trainingEnabled: true, stopChan: make(chan struct{}), workerDone: make(chan struct{}), governor: resourcepolicy.NewGovernor(policy), policy: policy}
+	d.enabled.Store(true)
+	d.startWorker()
+	return d
+}
+func (d *Daemon) ExecuteVerifiedRound(ctx context.Context, issued imcnetwork.IssuedRound) (imcnetwork.VerifiedReceipt, error) {
+	if ctx == nil || d.stopped.Load() || !d.enabled.Load() {
+		return imcnetwork.VerifiedReceipt{}, fmt.Errorf("disabled/stopped/context unavailable")
+	}
+	d.mu.RLock()
+	adapter := d.verifiedRounds
+	enabled := d.trainingEnabled
+	d.mu.RUnlock()
+	if !enabled || adapter == nil {
+		return imcnetwork.VerifiedReceipt{}, fmt.Errorf("explicit verified training opt-in/adapter required")
+	}
+	var receipt imcnetwork.VerifiedReceipt
+	workCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	go func() {
+		select {
+		case <-d.stopChan:
+			cancel()
+		case <-workCtx.Done():
+		}
+	}()
+	err := d.governor.Run(workCtx, func(ctx context.Context) error { var e error; receipt, e = adapter.RunRound(ctx, issued); return e })
+	if err == nil && receipt.Accepted && receipt.Applied {
+		d.mu.Lock()
+		d.tasksCompleted++
+		d.mu.Unlock()
+	}
+	return receipt, err
 }
 
 func (d *Daemon) startWorker() {
 	go func() {
 		defer close(d.workerDone)
-		var nonce uint64 = 0
-		buf := make([]byte, 32)
-		binary.LittleEndian.PutUint64(buf[0:8], uint64(time.Now().UnixNano()))
-
-		ticker := time.NewTicker(2 * time.Second)
-		defer ticker.Stop()
-
-		var hashesInInterval int64 = 0
-
-		for {
-			select {
-			case <-d.stopChan:
-				return
-			case <-ticker.C:
-				if d.enabled.Load() {
-					d.mu.Lock()
-					d.realHashRate = float64(atomic.LoadInt64(&hashesInInterval)) / 2000.0
-					d.mu.Unlock()
-				}
-				atomic.StoreInt64(&hashesInInterval, 0)
-			default:
-				if d.enabled.Load() {
-					for i := 0; i < 64; i++ {
-						binary.LittleEndian.PutUint64(buf[8:16], nonce)
-						sha256.Sum256(buf)
-						nonce++
-						atomic.AddInt64(&d.totalHashes, 1)
-						atomic.AddInt64(&hashesInInterval, 1)
-					}
-					// Controlled backoff to maintain low CPU overhead (sub-5%)
-					time.Sleep(10 * time.Millisecond)
-				} else {
-					time.Sleep(100 * time.Millisecond)
-				}
-			}
-		}
+		// Idle means truly idle. Older prototypes burned CPU continuously hashing
+		// synthetic buffers merely to display a "hashrate". That work contributed
+		// nothing to Ilaria training and caused needless wakeups on every device.
+		// Real compute is initiated explicitly through ExecuteTrainingMicroBatch
+		// (and future signed Compute Fabric jobs), so the background worker can
+		// remain parked until shutdown.
+		<-d.stopChan
 	}()
 }
 
@@ -191,10 +274,31 @@ func (d *Daemon) IsEnabled() bool {
 	return d.enabled.Load()
 }
 
+// SetResourceTransitionSink attaches OS-level resource authority/auditing.
+// The caller owns the sink lifecycle (for example a Control Kernel journal);
+// Swarm never creates or closes that authority implicitly.
+func (d *Daemon) SetResourceTransitionSink(sink resourcepolicy.TransitionSink) error {
+	if d == nil {
+		return fmt.Errorf("swarm daemon is nil")
+	}
+	if d.stopped.Load() {
+		return fmt.Errorf("daemon stopped")
+	}
+	return d.governor.SetTransitionSink(sink)
+}
+
 func (d *Daemon) Toggle() {
+	if d.stopped.Load() {
+		return
+	}
 	for {
 		old := d.enabled.Load()
 		if d.enabled.CompareAndSwap(old, !old) {
+			if old {
+				d.stopGovernorMonitor()
+			} else {
+				d.startGovernorMonitor()
+			}
 			return
 		}
 	}
@@ -202,9 +306,15 @@ func (d *Daemon) Toggle() {
 
 func (d *Daemon) Stop() {
 	d.stopOnce.Do(func() {
+		d.stopped.Store(true)
+		d.stopGovernorMonitor()
 		close(d.stopChan)
 		<-d.workerDone
-		_ = d.SaveState(d.stateDir)
+		if err := d.SaveState(d.stateDir); err != nil {
+			d.mu.Lock()
+			d.stateError = err.Error()
+			d.mu.Unlock()
+		}
 	})
 }
 
@@ -221,31 +331,27 @@ func (d *Daemon) LoadState(dir string) error {
 		return err
 	}
 	var s struct {
-		TasksCompleted int64   `json:"tasks_completed"`
-		CoinsEarned    float64 `json:"coins_earned"`
+		TasksCompleted int64 `json:"tasks_completed"`
 	}
 	if err := json.Unmarshal(data, &s); err != nil {
 		return err
 	}
 	d.mu.Lock()
 	d.tasksCompleted = s.TasksCompleted
-	d.coinsEarned = s.CoinsEarned
 	d.mu.Unlock()
 	return nil
 }
 
 func (d *Daemon) SaveState(dir string) error {
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0700); err != nil {
 		return err
 	}
 	path := filepath.Join(dir, "swarm_state.json")
 	d.mu.RLock()
 	s := struct {
-		TasksCompleted int64   `json:"tasks_completed"`
-		CoinsEarned    float64 `json:"coins_earned"`
+		TasksCompleted int64 `json:"tasks_completed"`
 	}{
 		TasksCompleted: d.tasksCompleted,
-		CoinsEarned:    d.coinsEarned,
 	}
 	d.mu.RUnlock()
 	data, err := json.MarshalIndent(s, "", "  ")
@@ -257,18 +363,23 @@ func (d *Daemon) SaveState(dir string) error {
 
 func (d *Daemon) GetStatus() Status {
 	d.mu.RLock()
-	defer d.mu.RUnlock()
-	return Status{
+	status := Status{
 		Enabled:        d.enabled.Load(),
 		TasksCompleted: d.tasksCompleted,
-		CoinsEarned:    d.coinsEarned,
 		LocalTflops:    d.localTflops,
 		MeshNodes:      0,
 		LatencyMs:      0,
-		RealHashRate:   d.realHashRate,
 		HasGPU:         d.hasGPU,
 		GPUModel:       d.gpuModel,
 		CUDAVersion:    d.cudaVersion,
 		VRAMMB:         d.vramMB,
+		StateError:     d.stateError,
+		HardwareError:  d.hardwareError,
 	}
+	d.mu.RUnlock()
+	status.ResourceBudget = d.governor.Budget()
+	if err := d.governor.AuditError(); err != nil {
+		status.ResourceAuditError = err.Error()
+	}
+	return status
 }

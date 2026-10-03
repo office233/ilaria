@@ -1,0 +1,34 @@
+{
+  "authorisedMonthlyUSD": 500,
+  "monthStopUSD": 400,
+  "batchCapUSD": 30,
+  "maxConcurrentModelJobs": 1,
+  "monthFrom": 1790802000000,
+  "baselineUSD": 40.42847169999997,
+  "ids": [
+    "ses_eff1d50daffeZIZF9K8o6UiRmi"
+  ],
+  "stopAtUTC": "2026-10-03T09:00:18.739Z",
+  "guardReady": false,
+  "costSource": "OpenCode local monthly stats, not provider invoice",
+  "model": {
+    "id": "gpt-6.1-sol",
+    "providerID": "azure"
+  },
+  "directory": "E:\\nexus-worktrees\\ilaria-eurohpc-mn5-20261003",
+  "ownership": "exclusive nine approved HPC files and this coordination directory; timeout does not release ownership",
+  "guardPID": 8460,
+  "clientPath": "C:\\Users\\abel\\AppData\\Local\\Temp\\nexus-opencode-client-guarded-20261001.mjs",
+  "currentCostUSD": 41.39747809999997,
+  "batchCostUSD": 0.9690064000000049,
+  "checkedAt": "2026-10-03T08:50:18.534Z",
+  "sessions": [
+    {
+      "id": "ses_eff1d50daffeZIZF9K8o6UiRmi",
+      "outcome": "succeeded",
+      "permissions": [],
+      "lastIdleAt": 1791017391611,
+      "lastPromptAt": 1791016335367
+    }
+  ]
+}

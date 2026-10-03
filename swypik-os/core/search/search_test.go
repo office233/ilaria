@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/netip"
@@ -12,6 +13,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
+	"unicode/utf8"
 
 	"golang.org/x/text/encoding/charmap"
 )
@@ -376,6 +379,85 @@ func TestIndexDirectory(t *testing.T) {
 	rep, err = e.IndexDirectory(context.Background(), root, 0)
 	if err != nil || rep.Indexed != 0 || rep.Removed != 1 || e.Count() != 1 {
 		t.Fatalf("%+v %v count=%d", rep, err, e.Count())
+	}
+}
+
+func TestCompactLocalTextIsBoundedAndUnicodeSafe(t *testing.T) {
+	input := []byte("  salut\n\t lume   Țară  ")
+	if got := compactLocalText(input, 1024); got != "salut lume Țară" {
+		t.Fatalf("compact=%q", got)
+	}
+	got := compactLocalText([]byte("ăăă  bb"), 5)
+	if !utf8.ValidString(got) || len(got) > 5 {
+		t.Fatalf("bounded UTF-8 compact=%q bytes=%d", got, len(got))
+	}
+}
+
+func TestEngineAppliesResourceTextAndDocumentCaps(t *testing.T) {
+	e := NewEngine()
+	e.maxTextBytes = 16
+	e.maxDocuments = 2
+	long := strings.Repeat("ab ", 20)
+	for i := 0; i < 2; i++ {
+		u := fmt.Sprintf("https://example.org/%d", i)
+		if err := e.Upsert(Document{URL: u, Title: "t", Text: long, SHA256: fmt.Sprintf("%064d", i+1)}); err != nil {
+			t.Fatal(err)
+		}
+		if got := len(e.docs[u].Text); got > 16 {
+			t.Fatalf("stored text bytes=%d want <=16", got)
+		}
+	}
+	if err := e.Upsert(Document{
+		URL: "https://example.org/3", Title: "t", Text: "third",
+		SHA256: strings.Repeat("f", 64),
+	}); err == nil || !strings.Contains(err.Error(), "document limit (2)") {
+		t.Fatalf("third upsert err=%v", err)
+	}
+}
+
+func TestReplayHonorsMemoryProfileWithoutRewritingIndex(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "index.jsonl")
+	t.Setenv("SWYPIK_RESOURCE_PROFILE", "performance")
+	writer := mustOpen(t, path)
+	for i := 0; i < 3; i++ {
+		if err := writer.Upsert(Document{
+			URL:       fmt.Sprintf("https://example.org/%d", i),
+			Title:     "title",
+			Text:      strings.Repeat("abcdefgh ", 4),
+			FetchedAt: time.Unix(int64(i+1), 0).UTC(),
+			SHA256:    fmt.Sprintf("%064d", i+1),
+		}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := writer.Close(); err != nil {
+		t.Fatal(err)
+	}
+	before, err := os.Stat(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	e := newEngine(path)
+	e.maxDocuments = 2
+	e.maxTextBytes = 8
+	if _, err := e.replay(); err != nil {
+		t.Fatal(err)
+	}
+	if len(e.docs) != 2 || !e.profileTruncated {
+		t.Fatalf("docs=%d truncated=%v", len(e.docs), e.profileTruncated)
+	}
+	for _, doc := range e.docs {
+		if len(doc.Text) > 8 {
+			t.Fatalf("replayed text bytes=%d", len(doc.Text))
+		}
+	}
+	after, err := os.Stat(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if before.Size() != after.Size() {
+		t.Fatalf("bounded replay rewrote index: before=%d after=%d", before.Size(), after.Size())
 	}
 }
 

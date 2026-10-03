@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "plan_id": "sha256:90f399762c288f976ad4f5fae93f0466fb43f2e46bbe63f494720e5c05ba0e9e",
+  "hir_version": 1,
+  "entry": "main",
+  "effect_version": 1,
+  "effects": ["foreign.call"],
+  "required_capabilities": [
+    {"name": "hw_mmio_write", "effect": "foreign.call"}
+  ],
+  "foreign_calls": [
+    {
+      "call_id": "main:foreign:0",
+      "caller": "main",
+      "target": "swyp_mmio_write",
+      "abi": "C",
+      "abi_version": "swyp-c64-v1",
+      "symbol": "swyp_mmio_write",
+      "effect": "foreign.call",
+      "capability": {"name": "hw_mmio_write", "effect": "foreign.call"},
+      "params": [
+        {"kind": "primitive", "name": "u64"},
+        {"kind": "primitive", "name": "u64"}
+      ],
+      "result": {"kind": "primitive", "name": "void"},
+      "param_abi": [
+        {"kind": "u64", "size": 8, "align": 8},
+        {"kind": "u64", "size": 8, "align": 8}
+      ],
+      "result_abi": {"kind": "void", "size": 0, "align": 1},
+      "location": {}
+    }
+  ]
+}

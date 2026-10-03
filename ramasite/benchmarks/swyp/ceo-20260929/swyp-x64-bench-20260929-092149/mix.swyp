@@ -1,0 +1,11 @@
+﻿fn mix(x:i64,y:i64)->i64 {
+  let a:i64=x+y;
+  let b:i64=a*3;
+  let c:i64=b-y;
+  let d:i64=c+17;
+  let e:i64=d*5;
+  let f:i64=e-x;
+  let g:i64=f+11;
+  return g;
+}
+fn main(){}

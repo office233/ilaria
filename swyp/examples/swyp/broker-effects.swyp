@@ -1,0 +1,10 @@
+fn now() -> u64 {
+    return clock();
+}
+
+fn read_size() -> u64 {
+    let content: bytes = read_file("input.txt");
+    return bytes_len(content);
+}
+
+fn main() {}

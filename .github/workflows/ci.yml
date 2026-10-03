@@ -7,11 +7,39 @@ on:
     branches: [main]
   workflow_dispatch:
 
-jobs:
-  validate:
-    name: Validate Ilaria
-    runs-on: ubuntu-latest
+# Product gates must not accidentally use modules from the local workspace.
+env:
+  GOWORK: 'off'
 
+permissions:
+  contents: read
+
+jobs:
+  public-checkout:
+    name: Verify Public Checkout Inputs
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
+      - name: Verify required public checkout inputs
+        shell: pwsh
+        run: ./ramasite/scripts/verify-public-checkout.ps1
+
+      - name: Verify tracked repository organization
+        run: python ramasite/scripts/verify-repository-layout.py
+  ilaria:
+    name: Validate Ilaria
+    needs: public-checkout
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
@@ -19,38 +47,256 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # v5.0.2
         with:
-          # Sursa de adevăr e go.mod (directiva `go 1.26.2`). Folosind
-          # go-version-file evităm drift-ul între CI și dezvoltatori.
-          go-version-file: 'go.mod'
-          cache: true
+          go-version-file: 'ilaria/go.mod'
+          cache: false
 
       - name: Go vet
+        working-directory: ilaria
         run: go vet ./...
 
       - name: Go test
+        working-directory: ilaria
         run: go test -count=1 -timeout 180s ./...
 
-      - name: Fuzz UnmarshalTernaryLayer smoke
-        run: go test -run=^$ -fuzz=FuzzUnmarshalTernaryLayer -fuzztime=15s ./cortex
-
-      - name: Fuzz LoadSemanticMemory smoke
-        run: go test -run=^$ -fuzz=FuzzLoadSemanticMemory -fuzztime=15s ./cortex
-
-      - name: Fuzz FractalCortexLoadMetadata smoke
-        run: go test -run=^$ -fuzz=FuzzFractalCortexLoadMetadata -fuzztime=15s ./cortex
+      - name: Validate relocated Ilaria benchmarks
+        working-directory: ramasite/benchmarks/ilaria
+        run: |
+          go vet ./...
+          go test -count=1 -timeout 180s ./...
 
       - name: Build all commands
+        working-directory: ilaria
         run: go build ./cmd/...
 
-#      - name: Vulnerability check  # disabled for CI stability
-#        run: go run golang.org/x/vuln/cmd/govulncheck@v1.3.0 ./...
-#
-#      - name: Static analysis  # disabled for CI stability
-#        run: go run honnef.co/go/tools/cmd/staticcheck@v0.6.1 ./...
-#
-#      - name: Security scan  # disabled for CI stability
-#        run: go run github.com/securego/gosec/v2/cmd/gosec@v2.22.4 -exclude=G115,G104 -quiet ./...
-#        continue-on-error: true
+      - name: Race detector
+        if: matrix.os == 'ubuntu-latest'
+        working-directory: ilaria
+        run: go test -race -count=1 -timeout 180s ./...
 
-      - name: Build with WebGPU tag (compile-only)
-        run: go build -tags webgpu ./cortex/compute/...
+  ilaria-forge:
+    name: Validate Ilaria Forge (Python)
+    needs: public-checkout
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: '3.12'
+
+      - name: Install forge test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch==2.14.0
+          python -m pip install numpy==2.5.3 tokenizers==0.23.2 pytest==9.1.1
+          python -m pip install pandas==3.0.6 pyarrow==25.0.1
+
+      - name: Forge tests
+        working-directory: ilaria
+        run: python -m pytest -q forge
+
+  swyp:
+    name: Validate Swyp Lang
+    needs: public-checkout
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
+      - name: Set up Go
+        uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # v5.0.2
+        with:
+          go-version-file: 'swyp/go.mod'
+          cache: false
+
+      - name: Go vet
+        working-directory: swyp
+        run: go vet ./...
+
+      # Runs the native runtime parity corpus for Linux AArch64 executables under
+      # user-mode emulation; Linux x86-64 ELF/PIE run natively in the same test.
+      - name: Install qemu-user for AArch64 runtime parity
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends qemu-user
+
+      - name: Go test with AArch64 runtime parity
+        if: matrix.os == 'ubuntu-latest'
+        env:
+          SWYP_QEMU_AARCH64: /usr/bin/qemu-aarch64
+        working-directory: swyp
+        run: go test -count=1 ./...
+
+      - name: Go test
+        if: matrix.os == 'windows-latest'
+        working-directory: swyp
+        run: go test -count=1 ./...
+
+      - name: Build all commands
+        working-directory: swyp
+        run: go build ./cmd/...
+
+      - name: Race detector
+        if: matrix.os == 'ubuntu-latest'
+        working-directory: swyp
+        run: go test -race -count=1 -timeout 180s ./...
+
+      - name: Core IR and source fuzz smoke
+        if: matrix.os == 'ubuntu-latest'
+        working-directory: swyp
+        run: |
+          go test ./internal/coreir -run '^$' -fuzz '^FuzzCoreIRDecode$' -fuzztime=10s -parallel=2
+          go test ./internal/swyplang -run '^$' -fuzz '^FuzzCoreLower$' -fuzztime=10s -parallel=2
+
+  swypik-os:
+    name: Validate SwypikOS
+    needs: public-checkout
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
+      - name: Set up Go
+        uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # v5.0.2
+        with:
+          go-version-file: 'swypik-os/go.mod'
+          cache: true
+          cache-dependency-path: swypik-os/go.sum
+
+      - name: Go vet
+        working-directory: swypik-os
+        run: go vet ./...
+
+      - name: Go test
+        working-directory: swypik-os
+        run: go test -count=1 -timeout 180s ./...
+
+      - name: Build all commands
+        working-directory: swypik-os
+        run: go build ./cmd/...
+
+      - name: Resource benchmark readiness regressions
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: ./ramasite/benchmarks/swypik-os/scripts/test-benchmark-resources.ps1
+
+      - name: Race detector
+        if: matrix.os == 'ubuntu-latest'
+        working-directory: swypik-os
+        run: go test -race -count=1 -timeout 180s ./...
+
+  native-kernel:
+    name: Validate Native Kernel Host Contracts
+    needs: public-checkout
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
+      - name: Compile and run first-party C and assembly tests
+        shell: pwsh
+        run: ./swypik-os/kernel/test-host.ps1 -Compiler /usr/bin/gcc
+
+  effects:
+    name: Validate Broker Effects Integration
+    needs: public-checkout
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
+      - name: Set up Go
+        uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # v5.0.2
+        with:
+          go-version-file: 'ilaria/go.mod'
+          cache: false
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: '3.12'
+
+      - name: Run independent CLI integration and refusal cases
+        shell: pwsh
+        run: ./ramasite/scripts/verify-effects.ps1
+
+  supervisor:
+    name: Validate Durable Plan Supervisor
+    needs: public-checkout
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
+      - name: Set up Go
+        uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # v5.0.2
+        with:
+          go-version-file: 'ilaria/go.mod'
+          cache: false
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: '3.12'
+
+      - name: Run complete plans and restart/budget/refusal cases (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: ./ramasite/scripts/verify-supervisor.ps1
+
+      - name: Run real delegated cgroup supervisor cases (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        shell: bash
+        run: bash ./ramasite/scripts/with-delegated-cgroup.sh bash ./ramasite/scripts/verify-supervisor.sh
+
+      - name: Run delegated cgroup backend tests (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        shell: bash
+        run: bash ./ramasite/scripts/with-delegated-cgroup.sh bash -lc 'cd swypik-os && go test -count=1 -timeout 60s ./internal/planprocess -run "^TestLinux"'
+
+      - name: Benchmark smoke (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: ./ramasite/benchmarks/workspace/benchmark-supervisor.ps1 -Samples 5
+
+      - name: Benchmark smoke with delegated cgroup (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        shell: bash
+        run: bash ./ramasite/scripts/with-delegated-cgroup.sh bash ./ramasite/benchmarks/workspace/benchmark-supervisor.sh 5
+
+  contracts:
+    name: Validate Cross-Product Swyp Contracts
+    needs: [ilaria, ilaria-forge, swyp, swypik-os, native-kernel, effects, supervisor, public-checkout]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
+      - name: Set up Go
+        uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # v5.0.2
+        with:
+          go-version-file: 'swyp/go.mod'
+          cache: false
+
+      - name: Validate generated manifests and Go DTOs
+        shell: pwsh
+        run: ./ramasite/scripts/verify-contracts.ps1

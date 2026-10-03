@@ -1,0 +1,20 @@
+{
+  "observedAtUTC": "2026-10-03T09:07:13.919Z",
+  "sessionID": "ses_efefd4501fferUawxbD82VAav2",
+  "guardianPID": 12124,
+  "guardianReady": true,
+  "actualActiveCount": 0,
+  "localMonthlyCostUSD": 41.39747809999997,
+  "localBatchCostUSD": 0,
+  "baseline": "25b7c65d39955ae221f9e9e368458038103fcd27",
+  "worktree": "E:\\nexus-worktrees\\ilaria-eurohpc-mn5-correction-20261003",
+  "currentPins": 24,
+  "copiedPins": 7,
+  "frozenPins": 3,
+  "MainClaimCollisions": 0,
+  "model": {
+    "id": "gpt-6.1-sol",
+    "providerID": "azure"
+  },
+  "stopAtUTC": "2026-10-03T09:35:18.829Z"
+}

@@ -1,0 +1,28 @@
+﻿[
+    {
+        "Profile":  "balanced",
+        "WorkingSetMB":  67.54,
+        "PrivateMB":  58.36,
+        "WSDeltaMB":  3.61,
+        "PrivateDeltaMB":  1.37,
+        "IdleCPUPercent":  0.971,
+        "Threads":  14,
+        "ThreadDelta":  0,
+        "Handles":  249,
+        "HandleDelta":  28,
+        "BinaryMB":  8.83
+    },
+    {
+        "Profile":  "phone",
+        "WorkingSetMB":  4.02,
+        "PrivateMB":  49.37,
+        "WSDeltaMB":  0.12,
+        "PrivateDeltaMB":  0,
+        "IdleCPUPercent":  0,
+        "Threads":  14,
+        "ThreadDelta":  0,
+        "Handles":  241,
+        "HandleDelta":  0,
+        "BinaryMB":  8.83
+    }
+]

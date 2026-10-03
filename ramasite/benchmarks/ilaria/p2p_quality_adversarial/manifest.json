@@ -1,0 +1,16 @@
+{
+  "schema": "ilaria-p2p-quality-adversarial-v1",
+  "scope": "synthetic quality-gate behavior only",
+  "canonical_sources": {
+    "ilaria/runtime/isxprobe/peer.py": "bf9071be748c1bdc7c1682188a8e0e03fd76f01f85fd40c35dce7081a8ae3ff4",
+    "ilaria/forge/imc_model.py": "650f4cad06d80760a03fa4396bb2cce27364bd596b8002f39ec02d595205274c",
+    "ilaria/forge/collective_sleep.py": "a43157ba87f64499c2283db99beee803af44ade2bdb780705f611df05d684dc2"
+  },
+  "limits": {
+    "synthetic_tokens": 16,
+    "max_model_parameters": 100000,
+    "torch_threads": 1,
+    "max_steps_per_training_call": 16,
+    "max_runtime_seconds": 600
+  }
+}

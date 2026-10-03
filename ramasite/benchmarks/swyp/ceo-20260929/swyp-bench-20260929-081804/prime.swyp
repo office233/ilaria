@@ -1,0 +1,19 @@
+
+fn prime(n:i64)->bool {
+  let d:i64=2;
+  while d*d<=n {
+    if n%d==0 { return false; }
+    d=d+1;
+  }
+  return true;
+}
+fn count_primes(limit:i64)->i64 {
+  let n:i64=2;
+  let count:i64=0;
+  while n<=limit {
+    if prime(n) { count=count+1; }
+    n=n+1;
+  }
+  return count;
+}
+fn main(){}

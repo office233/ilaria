@@ -68,8 +68,6 @@ func NewSynthesizer(cacheDir string) *Synthesizer {
 		}
 	}
 
-	_ = os.MkdirAll(cacheDir, 0755)
-
 	return &Synthesizer{
 		cacheDir: cacheDir,
 		drivers:  make(map[string]*SynthesizedDriver),
@@ -126,7 +124,9 @@ func (s *Synthesizer) SynthesizeDriver(dev *hal.DiscoveredDevice) (*SynthesizedD
 	}
 
 	safeFileName := strings.NewReplacer("/", "_", "\\", "_", ":", "_").Replace(dev.ID)
-	if err := os.WriteFile(filepath.Join(s.cacheDir, safeFileName+".go"), []byte(src), 0644); err != nil {
+	if err := os.MkdirAll(s.cacheDir, 0700); err != nil {
+		driver.Metrics["cached_to_disk"] = "false: " + err.Error()
+	} else if err := os.WriteFile(filepath.Join(s.cacheDir, safeFileName+".go"), []byte(src), 0600); err != nil {
 		driver.Metrics["cached_to_disk"] = "false: " + err.Error()
 	} else {
 		driver.Metrics["cached_to_disk"] = "true"
@@ -161,8 +161,8 @@ func (s *Synthesizer) generateDriverSource(dev *hal.DiscoveredDevice) (string, [
 	var code strings.Builder
 	const structName = "DeviceController"
 
-	fmt.Fprintf(&code, "// UNVERIFIED DRIVER CANDIDATE for %s\n", dev.Name)
-	fmt.Fprintf(&code, "// Bus: %s | Protocol: %s\n", dev.Bus, dev.Protocol)
+	fmt.Fprintf(&code, "// UNVERIFIED DRIVER CANDIDATE for %s\n", generatedCommentText(dev.Name))
+	fmt.Fprintf(&code, "// Bus: %s | Protocol: %s\n", generatedCommentText(string(dev.Bus)), generatedCommentText(dev.Protocol))
 	code.WriteString("// Syntax-checked only: never compiled, loaded or run against hardware.\n")
 	code.WriteString("// It has no bus transport; every device operation returns errNoTransport.\n\n")
 	fmt.Fprintf(&code, "package %s\n\n", pkgName)
@@ -204,6 +204,15 @@ func (s *Synthesizer) generateDriverSource(dev *hal.DiscoveredDevice) (string, [
 	method("Close", "() error", "\treturn nil\n")
 
 	return code.String(), funcs, nil
+}
+
+func generatedCommentText(value string) string {
+	return strings.Map(func(r rune) rune {
+		if r == '\r' || r == '\n' || r == '\u2028' || r == '\u2029' || r < 0x20 || r == 0x7f {
+			return ' '
+		}
+		return r
+	}, value)
 }
 
 // GetDriver returns a synthesized driver candidate.

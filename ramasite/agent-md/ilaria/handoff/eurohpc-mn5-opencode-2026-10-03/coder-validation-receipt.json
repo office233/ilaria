@@ -1,0 +1,52 @@
+{
+  "format": "eurohpc-coder-test-receipt-v1",
+  "observedAtUTC": "2026-10-03T08:54:27.941Z",
+  "sessionID": "ses_eff1d50daffeZIZF9K8o6UiRmi",
+  "origin": "OpenCode owned session tool outputs; no independent suite rerun",
+  "checks": [
+    {
+      "messageID": "msg_100f4398d001QE0IGfxpvPVfTx",
+      "status": "completed",
+      "input": {
+        "command": "$env:GIT_OPTIONAL_LOCKS = '0'\ngit diff --check\nif ($LASTEXITCODE -ne 0) { throw 'git diff --check failed' }\n$paths = @('ilaria/forge/eurohpc/__init__.py','ilaria/forge/eurohpc/contract.py','ilaria/forge/eurohpc/prepare.py','ilaria/forge/eurohpc/node.py','ilaria/forge/eurohpc/mn5.example.json','ilaria/forge/test_eurohpc.py','ramasite/docs/ilaria/runbooks/EUROHPC_MN5_IMC.md','ramasite/agent-md/ilaria/handoff/eurohpc-mn5-opencode-2026-10-03/HANDOFF_OPENCODE.md')\nforeach ($p in $paths) { git diff --no-index --check -- /dev/null $p; if ($LASTEXITCODE -gt 1) { throw \"Whitespace error: $p\" } }\n$b = Get-Content 'ramasite/agent-md/ilaria/handoff/eurohpc-mn5-opencode-2026-10-03/BASELINE.json' -Raw | ConvertFrom-Json\nforeach ($f in $b.files) { $h = (Get-FileHash -LiteralPath $f.path -Algorithm SHA256).Hash.ToLower(); if ($h -ne $f.sha256 -or (Get-Item -LiteralPath $f.path).Length -ne $f.bytes) { throw \"Pin mismatch: $($f.path)\" } }\nWrite-Output 'Final checks: 24 pins unchanged; all 8 claimed new files whitespace-clean'\ngit status --short\ngit rev-parse HEAD\n[DateTime]::UtcNow.ToString('o')",
+        "timeout": 120000
+      },
+      "metadata": {
+        "status": "completed",
+        "truncated": false,
+        "exit": 0
+      },
+      "text": "Final checks: 24 pins unchanged; all 8 claimed new files whitespace-clean\r\n?? ilaria/forge/eurohpc/\n?? ilaria/forge/test_eurohpc.py\n?? ramasite/agent-md/ilaria/handoff/eurohpc-mn5-opencode-2026-10-03/\n?? ramasite/docs/ilaria/runbooks/EUROHPC_MN5_IMC.md\n3790d965826a9273017e5eca67e7f5d4727c4edb\n2026-10-03T08:49:39.8900585Z\r\n"
+    },
+    {
+      "messageID": "msg_100f32177001LOd79867OM7TFM",
+      "status": "completed",
+      "input": {
+        "command": "python -B -m pytest -q -ra -p no:cacheprovider forge/test_eurohpc.py forge/test_imc_125m_launch.py --basetemp 'C:/Users/abel/AppData/Local/Temp/2/opencode/mn5-adapter-tests-accepted-20261003'",
+        "workdir": "E:\\nexus-worktrees\\ilaria-eurohpc-mn5-20261003\\ilaria",
+        "timeout": 120000
+      },
+      "metadata": {
+        "status": "completed",
+        "truncated": false,
+        "exit": 0
+      },
+      "text": "........................................................................ [ 64%]\r\n.......................................                                  [100%]\r\n111 passed in 3.60s\r\n"
+    },
+    {
+      "messageID": "msg_100f1c2aa0011hEN2qCB4Pg9hJ",
+      "status": "completed",
+      "input": {
+        "command": "python -B -m pytest -q -p no:cacheprovider forge/test_eurohpc.py forge/test_imc_125m_launch.py --basetemp 'C:/Users/abel/AppData/Local/Temp/2/opencode/mn5-adapter-tests-reviewed-20261003'",
+        "workdir": "E:\\nexus-worktrees\\ilaria-eurohpc-mn5-20261003\\ilaria",
+        "timeout": 120000
+      },
+      "metadata": {
+        "status": "completed",
+        "truncated": false,
+        "exit": 0
+      },
+      "text": "........................................................................ [ 65%]\r\n......................................                                   [100%]\r\n110 passed in 3.11s\r\n"
+    }
+  ]
+}

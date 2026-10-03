@@ -1,0 +1,91 @@
+{
+  "format": "eurohpc-correction-exclusive-claims-v1",
+  "worktree": "E:\\nexus-worktrees\\ilaria-eurohpc-mn5-correction-20261003",
+  "baseline": "25b7c65d39955ae221f9e9e368458038103fcd27",
+  "editable": [
+    "ilaria/forge/eurohpc/contract.py",
+    "ilaria/forge/eurohpc/prepare.py",
+    "ilaria/forge/test_eurohpc.py",
+    "ramasite/docs/ilaria/runbooks/EUROHPC_MN5_IMC.md"
+  ],
+  "frozen": [
+    {
+      "path": "ilaria/forge/eurohpc/__init__.py",
+      "sha256": "c3ffccbabb01078cd1f573f4023f7f4ca76e9209577ba02c8fe2d14d2ac80204",
+      "bytes": 126,
+      "editableInCorrection": false,
+      "frozenInCorrection": true
+    },
+    {
+      "path": "ilaria/forge/eurohpc/node.py",
+      "sha256": "8367492ccd3323f5888e46e4166303c1251d0b131271a514ab232d53cde2b0f4",
+      "bytes": 4766,
+      "editableInCorrection": false,
+      "frozenInCorrection": true
+    },
+    {
+      "path": "ilaria/forge/eurohpc/mn5.example.json",
+      "sha256": "9d6722e624bca2ad445ccad1d19df8edd07a0a1d9da3a66269ba63c4186f8087",
+      "bytes": 2346,
+      "editableInCorrection": false,
+      "frozenInCorrection": true
+    }
+  ],
+  "allInitialReservations": [
+    "ilaria/forge/eurohpc/__init__.py",
+    "ilaria/forge/eurohpc/contract.py",
+    "ilaria/forge/eurohpc/prepare.py",
+    "ilaria/forge/eurohpc/runtime.py",
+    "ilaria/forge/eurohpc/node.py",
+    "ilaria/forge/eurohpc/hardware.py",
+    "ilaria/forge/eurohpc/mn5.example.json",
+    "ilaria/forge/test_eurohpc.py",
+    "ramasite/docs/ilaria/runbooks/EUROHPC_MN5_IMC.md"
+  ],
+  "forbiddenUnusedNewFiles": [
+    "ilaria/forge/eurohpc/runtime.py",
+    "ilaria/forge/eurohpc/hardware.py"
+  ],
+  "coordinationPrefix": "ramasite/agent-md/ilaria/handoff/eurohpc-mn5-opencode-correction-20261003/",
+  "mainClaimsAbsent": [
+    {
+      "path": "ilaria/forge/eurohpc/__init__.py",
+      "absent": true
+    },
+    {
+      "path": "ilaria/forge/eurohpc/contract.py",
+      "absent": true
+    },
+    {
+      "path": "ilaria/forge/eurohpc/prepare.py",
+      "absent": true
+    },
+    {
+      "path": "ilaria/forge/eurohpc/runtime.py",
+      "absent": true
+    },
+    {
+      "path": "ilaria/forge/eurohpc/node.py",
+      "absent": true
+    },
+    {
+      "path": "ilaria/forge/eurohpc/hardware.py",
+      "absent": true
+    },
+    {
+      "path": "ilaria/forge/eurohpc/mn5.example.json",
+      "absent": true
+    },
+    {
+      "path": "ilaria/forge/test_eurohpc.py",
+      "absent": true
+    },
+    {
+      "path": "ramasite/docs/ilaria/runbooks/EUROHPC_MN5_IMC.md",
+      "absent": true
+    }
+  ],
+  "sourceEditsAuthorizedOnlyToOpenCodeAfterRootDispatchDecision": true,
+  "dispatchAuthorized": false,
+  "scopeReleased": false
+}

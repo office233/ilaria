@@ -1,0 +1,34 @@
+{
+  "Rules": [
+    {
+      "ID": "delete-raw-videos-after-30d",
+      "Status": "Enabled",
+      "Filter": {
+        "Prefix": "videos/raw/"
+      },
+      "Expiration": {
+        "Days": 30
+      }
+    },
+    {
+      "ID": "delete-csv-imports-after-7d",
+      "Status": "Enabled",
+      "Filter": {
+        "Prefix": "imports/csv/"
+      },
+      "Expiration": {
+        "Days": 7
+      }
+    },
+    {
+      "ID": "delete-system-exports-after-90d",
+      "Status": "Enabled",
+      "Filter": {
+        "Prefix": "system/exports/"
+      },
+      "Expiration": {
+        "Days": 90
+      }
+    }
+  ]
+}

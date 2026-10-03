@@ -1,2 +1,0 @@
-This is a fixture file for the ilaria-chat tools_eval.jsonl evaluation.
-The magic word is PINEAPPLE-42.

@@ -1,0 +1,32 @@
+# Toate fișierele text se stochează și se scot cu LF, indiferent de OS.
+#
+# 2026-09-21: 225 de fișiere (.ts/.tsx/.sql/.mjs/.yml, unități systemd
+# .service/.timer și chiar acest fișier) au ajuns în git cu CRLF după o sesiune
+# de editare pe Windows. Un `.sql` sau `.service` cu CRLF se comportă diferit
+# pe Linux, iar diff-urile deveneau ilizibile (fiecare linie „modificată").
+# Regula de mai jos normalizează la LF; excepțiile Windows sunt listate la final.
+* text=auto eol=lf
+
+# Scripturile shell trebuie să aibă terminații LF, indiferent de sistemul pe
+# care sunt editate. Un `.sh` comis cu CRLF nu rulează în Linux: bash citește
+# `\r` ca parte din comandă și dă `syntax error near unexpected token $'{\r'`.
+#
+# S-a întâmplat deja: `scripts/diag/test-deployment.sh` a fost comis din Windows
+# cu CRLF și era neexecutabil de la bun început — descoperit abia pe 19 august,
+# la o verificare de sintaxă, nu în timpul utilizării.
+#
+# Verificat înainte de adăugare: 0 din cele 100 de `.sh` din repo au CRLF
+# stocat în git, deci regula asta nu renormalizează nimic acum. E pur
+# preventivă.
+*.sh text eol=lf
+
+# Aceeași logică pentru fișierele executate de shell sau de un runtime POSIX.
+*.bash text eol=lf
+Dockerfile* text eol=lf
+*.yml  text eol=lf
+*.yaml text eol=lf
+
+# Fișierele Windows rămân CRLF.
+*.ps1 text eol=crlf
+*.cmd text eol=crlf
+*.bat text eol=crlf

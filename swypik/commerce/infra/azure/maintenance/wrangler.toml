@@ -1,0 +1,11 @@
+# Worker de mentenanță pentru cutover. NU rămâne activ: se publică la începutul
+# ferestrei și se șterge la final (`npx wrangler delete --name swypik-maintenance`).
+name = "swypik-maintenance"
+main = "worker.js"
+compatibility_date = "2026-09-01"
+workers_dev = false
+
+routes = [
+  { pattern = "swypik.com/*", zone_name = "swypik.com" },
+  { pattern = "*.swypik.com/*", zone_name = "swypik.com" },
+]

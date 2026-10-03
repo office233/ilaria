@@ -1,0 +1,93 @@
+component ControlKernel {
+    capability task.create;
+    capability task.lease;
+    capability evidence.record;
+    state graph: DurableTaskGraph;
+    invariant "executor identity is authenticated and security-bound";
+    invariant "side effects require explicit capabilities";
+    invariant "uncertain effects are never blindly replayed";
+}
+
+record ResourcePolicy {
+    field profile: string;
+    field device_class: string;
+    field max_background_cpu_percent: u64;
+    field max_background_gpu_percent: u64;
+    field max_background_workers: u64;
+    field status_poll_ms: u64;
+    field search_max_files: u64;
+    field search_max_documents: u64;
+    field search_max_text_bytes: u64;
+    field max_graph_checkpoints: u64;
+    field memory_limit_mb: u64;
+    field gc_percent: u64;
+    field max_training_delta_params: u64;
+    field max_pending_deltas: u64;
+    field max_chat_history_messages: u64;
+    field max_document_bytes: u64;
+    field max_app_catalog_entries: u64;
+    field max_resident_peers: u64;
+    field max_hive_tasks: u64;
+    field p2p_inspection_queue: u64;
+    field p2p_inspection_payload_max: u64;
+}
+
+record ResourceState {
+    field profile: string;
+    field device_class: string;
+    field base_background_cpu_percent: u64;
+    field base_background_gpu_percent: u64;
+    field base_background_workers: u64;
+    field max_background_cpu_percent: u64;
+    field max_background_gpu_percent: u64;
+    field max_background_workers: u64;
+    field paused: bool;
+    field preempt: bool;
+    field reasons: string_list;
+    field revision: u64;
+    field observed_at_unix_ms: i64;
+}
+
+component ResourceGovernor {
+    capability resource.enforce;
+    state policy: ResourcePolicy;
+    state runtime: ResourceState;
+    invariant "foreground responsiveness has priority over background work";
+    invariant "background worker count is bounded";
+    invariant "disabled compute performs no synthetic work";
+    invariant "search and checkpoint retention remain bounded";
+    invariant "runtime resource state never exceeds the selected base envelope";
+}
+
+record EffectEvidence {
+    field task_id: string;
+    field node_id: string;
+    field attempt_id: string;
+    field executor_id: string;
+    field capability_id: string;
+    field effect: string;
+    field status: string;
+    field observed_hash: string;
+    field epoch: u64;
+    field occurred_at_unix_ms: i64;
+    field details: string_map;
+}
+
+effect ExecuteEffect {
+    capability effect.execute;
+    requires "capability token is valid for the requested effect";
+    ensures "evidence records the observed outcome or uncertainty";
+}
+
+task VerifiedEffect {
+    capability effect.execute;
+    effect control.execute;
+    verify EffectEvidencePolicy;
+    timeout_seconds 300;
+}
+
+verify EffectEvidencePolicy {
+    check authenticated_executor;
+    check capability_scope;
+    check postcondition_evidence;
+}

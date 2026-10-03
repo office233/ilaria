@@ -1,0 +1,39 @@
+{
+  "appId": "com.swypik.app",
+  "appName": "Swypik",
+  "webDir": "../public",
+  "bundledWebRuntime": false,
+  "server": {
+    "url": "https://swypik.com",
+    "cleartext": false,
+    "allowNavigation": [
+      "swypik.com",
+      "*.swypik.com"
+    ]
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 1800,
+      "backgroundColor": "#0D0D0D",
+      "showSpinner": false,
+      "androidSplashResourceName": "splash"
+    },
+    "StatusBar": {
+      "style": "DARK",
+      "backgroundColor": "#000000"
+    },
+    "PushNotifications": {
+      "presentationOptions": [
+        "badge",
+        "sound",
+        "alert"
+      ]
+    },
+    "Camera": {
+      "presentationStyle": "fullscreen"
+    },
+    "Geolocation": {
+      "accuracy": "high"
+    }
+  }
+}

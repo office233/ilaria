@@ -2,9 +2,11 @@ package docs
 
 import (
 	"fmt"
-	"strings"
 	"sync"
 	"time"
+	"unicode"
+
+	resourcepolicy "swypik-os/core/resource"
 )
 
 // Document represents an AI-assisted text document.
@@ -18,44 +20,46 @@ type Document struct {
 
 // Manager coordinates document editing and intelligent synthesis.
 type Manager struct {
-	mu   sync.RWMutex
-	docs map[string]*Document
+	mu               sync.RWMutex
+	docs             map[string]*Document
+	maxDocumentBytes int
 }
 
 // NewManager creates an initialized AI Docs manager.
 func NewManager() *Manager {
-	m := &Manager{
-		docs: make(map[string]*Document),
+	return &Manager{
+		docs:             make(map[string]*Document),
+		maxDocumentBytes: resourcepolicy.Default().MaxDocumentBytes,
 	}
-	m.seedDefaultDoc()
-	return m
 }
 
-func (m *Manager) seedDefaultDoc() {
-	content := `# SwypikOS Native Executive Report
-Author: Abel Varga — Founder
-Date: ` + time.Now().Format("02 January 2006") + `
-
-## 1. Executive Summary
-SwypikOS delivers a sovereign, pure-native operating environment built directly in Go and GPU shaders.
-All legacy web bloatware has been permanently excised.
-
-## 2. Key Objectives
-- Sub-50ms instant boot latency.
-- Memory footprint under 30MB RAM.
-- Autonomous cognitive execution via Ilaria AI.
-`
+// CreateDocument stores caller-supplied content and returns an owned snapshot.
+// A new manager never invents user documents, authors or performance claims.
+func (m *Manager) CreateDocument(id, title, content string) (*Document, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if id == "" || title == "" {
+		return nil, fmt.Errorf("document id and title are required")
+	}
+	if _, exists := m.docs[id]; exists {
+		return nil, fmt.Errorf("document already exists: %s", id)
+	}
+	if len(content) > m.maxDocumentBytes {
+		return nil, fmt.Errorf("document size limit (%d bytes) reached", m.maxDocumentBytes)
+	}
 	doc := &Document{
-		ID:        "doc_welcome",
-		Title:     "SwypikOS Executive Report",
+		ID:        id,
+		Title:     title,
 		Content:   content,
-		WordCount: len(strings.Fields(content)),
-		UpdatedAt: time.Now(),
+		WordCount: countWords(content),
+		UpdatedAt: time.Now().UTC(),
 	}
 	m.docs[doc.ID] = doc
+	copy := *doc
+	return &copy, nil
 }
 
-// GetDocument returns a document by ID.
+// GetDocument returns an owned snapshot, not mutable manager state.
 func (m *Manager) GetDocument(id string) (*Document, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -64,7 +68,8 @@ func (m *Manager) GetDocument(id string) (*Document, error) {
 	if !exists {
 		return nil, fmt.Errorf("document not found: %s", id)
 	}
-	return doc, nil
+	copy := *doc
+	return &copy, nil
 }
 
 // AppendText appends text to a document and recalculates metrics.
@@ -77,8 +82,30 @@ func (m *Manager) AppendText(id string, text string) error {
 		return fmt.Errorf("document not found: %s", id)
 	}
 
+	if len(text) >= m.maxDocumentBytes-len(doc.Content) {
+		return fmt.Errorf("document size limit (%d bytes) reached", m.maxDocumentBytes)
+	}
 	doc.Content += "\n" + text
-	doc.WordCount = len(strings.Fields(doc.Content))
-	doc.UpdatedAt = time.Now()
+	// Append always inserts a newline, so word boundaries cannot merge across
+	// the old/new content boundary. Count only the new text instead of rescanning
+	// the entire resident document on every edit.
+	doc.WordCount += countWords(text)
+	doc.UpdatedAt = time.Now().UTC()
 	return nil
+}
+
+func countWords(s string) int {
+	count := 0
+	inWord := false
+	for _, r := range s {
+		if unicode.IsSpace(r) {
+			inWord = false
+			continue
+		}
+		if !inWord {
+			count++
+			inWord = true
+		}
+	}
+	return count
 }

@@ -1,0 +1,27 @@
+{
+  "evaluations": {
+    "calibration": [
+      "bench/imc_125m_eval_frozen/general_truthfulqa.jsonl",
+      "bench/imc_125m_eval_frozen/science_arc_challenge.jsonl"
+    ],
+    "code": [
+      "bench/imc_125m_eval_frozen/code_humaneval.jsonl"
+    ],
+    "continual_learning_regression": [
+      "bench/imc_125m_eval_frozen/continual_regression.jsonl"
+    ],
+    "general": [
+      "bench/imc_125m_eval_frozen/general_truthfulqa.jsonl"
+    ],
+    "math_science": [
+      "bench/imc_125m_eval_frozen/math_gsm8k.jsonl",
+      "bench/imc_125m_eval_frozen/science_arc_challenge.jsonl"
+    ],
+    "pce_transfer": [
+      "bench/myriad/pce_transfer_v3/anchors_test.jsonl",
+      "bench/myriad/pce_transfer_v3/skills_test.jsonl"
+    ]
+  },
+  "format": "imc-125m-benchmark-exclusion-plan-v1",
+  "plan_sha256": "12d6d27a43bf48d806bda458fccf238b6494c5f045425994bec1b29f04be4010"
+}

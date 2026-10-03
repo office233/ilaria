@@ -1,0 +1,151 @@
+{
+  "schema_version": 1,
+  "observedAtUTC": "2026-10-03T08:41:02.0338963Z",
+  "scope": "Authorized relevant Gmail and EuroHPC/BSC browser UI only; public official documentation",
+  "authorizedWorkAccountIdentityConfirmedInUI": true,
+  "fastLaneAward": {
+    "proposalID": "EHPC-AIF-2026FL01-1157",
+    "state": "AWARDED_VERIFIED_FROM_EMAIL",
+    "gpuHours": 12000,
+    "resource": "MareNostrum 5 ACC",
+    "durationMonths": 3,
+    "evidence": {
+      "subject": "EuroHPC AI Factory Fast Lane call - proposal No. EHPC-AIF-2026FL01-1157 - Final Results",
+      "sender": "no-reply@eurohpc-ju.europa.eu",
+      "receivedDate": "2026-10-02",
+      "rawMailRetained": false
+    },
+    "startDate": null,
+    "endDate": null,
+    "startEndPendingFromAIFactory": true,
+    "onboardingFormalitiesPendingFromAIFactory": true,
+    "awardEmailNextSteps": [
+      "AI Factory will send start/end dates and onboarding instructions in the next days",
+      "check junk before contacting support if its email has not arrived",
+      "initiate user-account creation immediately",
+      "start using awarded resources within the first month of allocation",
+      "extensions beyond original allocation duration are not granted",
+      "final report required after project completion"
+    ],
+    "portal": {
+      "publicURL": "https://access.eurohpc-ju.europa.eu/",
+      "authenticatedUIObserved": true,
+      "applicationIDMatched": true,
+      "acceptedAssignmentObserved": true,
+      "technicalAssessmentReadOnly": true,
+      "codesSuitable": true,
+      "codesInstalled": false,
+      "workplanFeasible": true,
+      "numericAllocationField": "UI tooling redacted this field; award amount is verified by email"
+    }
+  },
+  "federationInvitation": {
+    "sender": "no-reply@my-eurohpc.eu",
+    "receivedDate": "2026-10-02",
+    "projectID": "EHPC-AIF-2026FL01-1157",
+    "role": "PI",
+    "expiryLiteral": "30.10.2026 13:23",
+    "expiryTimezone": "NOT_SPECIFIED_IN_EMAIL",
+    "acceptancePerformedByAgent": false,
+    "activationURLRetained": false,
+    "stepsFromEmail": [
+      "user opens own invitation in mailbox",
+      "EFP Allocations login",
+      "Sign in with MyAccessID",
+      "registration/MFA/identity verification if required for this account"
+    ],
+    "officialRegistrationGuide": "https://docs.my-eurohpc.eu/getting-access/register/",
+    "currentPublicGuide": [
+      "requires EFP registration before services",
+      "MyAccessID via institution or Guest IdP when institution unavailable",
+      "MFA registration and verification",
+      "identity verification currently uses valid NFC passport with ReadID Ready",
+      "policy acceptance and identity/MFA remain human actions"
+    ],
+    "helpdesk": "helpdesk@my-eurohpc.eu"
+  },
+  "largeScaleApplication": {
+    "proposalID": "EHPC-AIF-2026LS17-045",
+    "receivedDate": "2026-10-02",
+    "evidenceSubject": "EuroHPC AI Factory Large Scale call - Submission of proposal No. EHPC-AIF-2026LS17-045 - Administrative Check results",
+    "administrativeCheck": "PASSED_NO_INCONSISTENCIES",
+    "nextStages": [
+      "AI Factory Technical Assessment",
+      "Industry Innovation Group Evaluation"
+    ],
+    "awardConfirmed": false,
+    "userDeclaredGPUHours": 64000,
+    "userDeclaredResource": "Leonardo",
+    "resourceAndAmountNotConfirmedByThisAdministrativeEmail": true
+  },
+  "bscMailSearch": {
+    "query": "in:anywhere {from:bsc.es from:my-eurohpc.eu from:eurohpc-ju.europa.eu}",
+    "relevantResultCount": 4,
+    "fromBscEsFoundInThisScopedSearch": false,
+    "conclusionLimit": "No BSC message found within this exact sender-scoped all-folders search; not an absolute claim that no BSC email exists",
+    "otherRelevantResult": "Introduction to the EuroHPC Federation Platform webinar invitation; subject/snippet only, no registration performed"
+  },
+  "officialContacts": {
+    "awardQuestions": "aif.access@eurohpc-ju.europa.eu",
+    "bscEuroHPCSupport": "eurohpc_support@bsc.es",
+    "federationHelpdesk": "helpdesk@my-eurohpc.eu"
+  },
+  "publicMN5OperationalFacts": {
+    "loginHosts": [
+      "alogin1.bsc.es",
+      "alogin2.bsc.es"
+    ],
+    "transferHosts": [
+      "transfer1.bsc.es",
+      "transfer2.bsc.es",
+      "transfer3.bsc.es",
+      "transfer4.bsc.es"
+    ],
+    "scheduler": "Slurm",
+    "requiredJobSelectors": [
+      "assigned account",
+      "assigned QoS"
+    ],
+    "publicEuroHPCExampleQoS": "acc_ehpc",
+    "publicEuroHPCExamplePartition": "acc",
+    "publicEuroHPCWalltimeMaximum": "72h; project entitlement must be confirmed separately",
+    "storageClasses": [
+      "/gpfs/home",
+      "/gpfs/projects",
+      "/gpfs/scratch",
+      "/scratch/tmp"
+    ],
+    "projectUsernameAccountQoSPathsQuotasDates": "NOT_YET_VERIFIED_FOR_AWARDED_PROJECT",
+    "hpcPortalURL": "https://hpcportal.bsc.es/",
+    "hpcPortalAndSSHAccountsAreSeparate": true
+  },
+  "readiness": {
+    "localPreparationCanContinue": true,
+    "localPreparationScope": "offline code/configuration/test preparation with explicit placeholders; no HPC allocation, uploads or remote launch",
+    "remoteHPCExecutionReady": false,
+    "missing": [
+      "human invitation acceptance and EFP identity/MFA completion when required",
+      "BSC project/user provisioning and SSH access",
+      "allocation start/end",
+      "assigned Slurm account/QoS and storage paths/quotas"
+    ]
+  },
+  "mutations": {
+    "emailSent": false,
+    "formsSubmitted": false,
+    "invitationsAccepted": false,
+    "termsAccepted": false,
+    "accountsCreated": false,
+    "credentialsChanged": false,
+    "jobsAllocated": false,
+    "gitOrProductModified": false
+  },
+  "publicSources": [
+    "https://docs.my-eurohpc.eu/getting-access/register/",
+    "https://www.bsc.es/supportkc/FAQ/",
+    "https://www.bsc.es/supportkc/docs-utilities/hpc_portal/",
+    "https://www.bsc.es/supportkc/docs/MareNostrum5/logins/",
+    "https://www.bsc.es/supportkc/docs/MareNostrum5/slurm/",
+    "https://www.eurohpc-ju.europa.eu/fast-lane-access-ai-factories_en"
+  ]
+}

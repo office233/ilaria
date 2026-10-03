@@ -1,0 +1,5 @@
+boto3>=1.34,<2
+psycopg[binary]>=3.1,<4
+psycopg_pool>=3.2,<4
+redis>=5,<7
+pytest>=8,<10

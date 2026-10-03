@@ -1,0 +1,90 @@
+{
+  "format": "eurohpc-opencode-stop-v1",
+  "observedAtUTC": "2026-10-03T08:56:37.3037511Z",
+  "state": "STOPPED_LOCAL_LOT_REVIEW_REQUIRED",
+  "sessionID": "ses_eff1d50daffeZIZF9K8o6UiRmi",
+  "inboxID": "msg_100e4795d001mp4LTvKQuOondK",
+  "model": {
+    "id": "gpt-6.1-sol",
+    "providerID": "azure",
+    "variant": "default"
+  },
+  "worktree": "E:\\nexus-worktrees\\ilaria-eurohpc-mn5-20261003",
+  "baseline": "3790d965826a9273017e5eca67e7f5d4727c4edb",
+  "outcome": "succeeded",
+  "modelStopAtUTC": "2026-10-03T08:49:51.6110000Z",
+  "actualActiveCount": 0,
+  "pendingPermissions": 0,
+  "guardian": {
+    "pid": 8460,
+    "present": false,
+    "ready": false,
+    "stateLastCheckedUTC": "2026-10-03T08:50:18.534Z",
+    "stopBehavior": "normal completed exit after owned session success; absolute deadline/budget/error fail-closed controls were armed",
+    "deadlineUTC": "2026-10-03T09:00:18.739Z",
+    "stdoutReceipt": "guardian.stdout.log",
+    "stderrReceipt": "guardian.stderr.log"
+  },
+  "cost": {
+    "freshAtUTC": "2026-10-03T08:53:48.21Z",
+    "localMonthlyUSD": 41.39747809999997,
+    "localBatchUSD": 0.9690064000000049,
+    "sessionUSD": 0.9690064000000004,
+    "baselineUSD": 40.42847169999997,
+    "source": "fresh OpenCode local monthly session stats; provider invoice unavailable",
+    "limits": {
+      "monthlyUSD": 500,
+      "monthlyStopUSD": 400,
+      "batchUSD": 30,
+      "maxModelJobs": 1,
+      "deadlineUTC": "2026-10-03T09:00:18.739Z"
+    }
+  },
+  "integrity": {
+    "pinMatches": 24,
+    "pinTotal": 24,
+    "approvedClaimCount": 9,
+    "effectiveFileCount": 7,
+    "existingTrackedChanges": [],
+    "outsideOwnedScope": [],
+    "claimsOriginalAndCopyMatch": true,
+    "handoffSHA256": "e3279111e99af18e137b04e63fee941047839bcfdecf8fecb31b3bae442e326d",
+    "handoffCopyMatches": true,
+    "sourceReceipt": "STOP_SOURCE_INTEGRITY.json",
+    "legacyWorktree": {
+      "path": "C:\\Users\\abel\\.codex\\worktrees\\ilaria-eurohpc-mn5\\nexus",
+      "head": "3790d965826a9273017e5eca67e7f5d4727c4edb",
+      "status": [],
+      "preserved": true
+    }
+  },
+  "coderValidation": {
+    "testCount": 111,
+    "seconds": 3.6,
+    "affectedSuite": "forge/test_eurohpc.py forge/test_imc_125m_launch.py",
+    "exit": 0,
+    "shellSyntax": "Bash parser PASS per coder evidence",
+    "diffCheck": "tracked and claimed-untracked checks PASS per coder evidence",
+    "receipt": "coder-validation-receipt.json",
+    "independentRerunPerformed": false
+  },
+  "mainCompatibility": {
+    "head": "d6498ac2ea51e1c8184480d635a050da99676706",
+    "mainPinsMatched": 23,
+    "trainerExpectedSHA256": "568494437fd3eb419ee502f5d9e352b9828ffd6ca494e5741d29dc4a2aa4a4ed",
+    "trainerActualSHA256": "f5e748bb3e5676f747bc8fcbd5cb2e0853e0b9e5406d76e69c89364b957afbdc",
+    "integrationApproved": false,
+    "reviewFinding": "Strict training schema cannot represent current first-party attestation/root; baseline launcher resume does not supply current required --resume-sha256. Independent final finding/reproduction pending.",
+    "sourceSyncOrRebasePerformed": false
+  },
+  "execution": "UNCONDITIONALLY_REFUSED",
+  "scopeOwnershipReleased": false,
+  "additionalModelJobStarted": false,
+  "nextStep": "Independent review final findings, then scoped correction proposal decision; no Main integration or new dispatch authorized now",
+  "authIncident": {
+    "category": "API default-model metadata unexpectedly bundled an apiKey field and was emitted once in tool output",
+    "valuesPersistedInReceipts": false,
+    "credentialsUsedCopiedOrChanged": false,
+    "humanAlertHandledByRoot": true
+  }
+}

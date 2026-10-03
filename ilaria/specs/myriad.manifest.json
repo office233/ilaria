@@ -1,0 +1,998 @@
+{
+  "version": 1,
+  "declarations": [
+    {
+      "kind": "model",
+      "name": "IMC1B",
+      "properties": {
+        "architecture": "ilaria-microcortex-v1",
+        "compute": "rgba32",
+        "storage": "tritpack20",
+        "tokenizer": "ilarialex-65k",
+        "weights": "ternary"
+      }
+    },
+    {
+      "kind": "record",
+      "name": "CorticalRequest",
+      "fields": [
+        {
+          "name": "protocol_version",
+          "type": "u64"
+        },
+        {
+          "name": "task_id",
+          "type": "string"
+        },
+        {
+          "name": "parent_task_id",
+          "type": "string"
+        },
+        {
+          "name": "initiator",
+          "type": "string"
+        },
+        {
+          "name": "language",
+          "type": "string"
+        },
+        {
+          "name": "modality",
+          "type": "string"
+        },
+        {
+          "name": "goal",
+          "type": "string"
+        },
+        {
+          "name": "privacy_class",
+          "type": "string"
+        },
+        {
+          "name": "domain_signature",
+          "type": "string"
+        },
+        {
+          "name": "evidence_refs",
+          "type": "string_list"
+        },
+        {
+          "name": "hippocampus_refs",
+          "type": "string_list"
+        },
+        {
+          "name": "working_memory_summary",
+          "type": "string"
+        },
+        {
+          "name": "tool_observations",
+          "type": "string_list"
+        },
+        {
+          "name": "constraints",
+          "type": "string_list"
+        },
+        {
+          "name": "desired_output_schema",
+          "type": "string"
+        },
+        {
+          "name": "deadline_unix_ms",
+          "type": "i64"
+        },
+        {
+          "name": "compute_budget",
+          "type": "u64"
+        },
+        {
+          "name": "confidence_requirement",
+          "type": "u64"
+        },
+        {
+          "name": "requested_role",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "kind": "record",
+      "name": "CorticalResponse",
+      "fields": [
+        {
+          "name": "protocol_version",
+          "type": "u64"
+        },
+        {
+          "name": "task_id",
+          "type": "string"
+        },
+        {
+          "name": "expert_id",
+          "type": "string"
+        },
+        {
+          "name": "expert_version",
+          "type": "string"
+        },
+        {
+          "name": "hypothesis",
+          "type": "string"
+        },
+        {
+          "name": "claims",
+          "type": "string_list"
+        },
+        {
+          "name": "evidence_refs",
+          "type": "string_list"
+        },
+        {
+          "name": "contradictions",
+          "type": "string_list"
+        },
+        {
+          "name": "uncertainty_ppm",
+          "type": "u64"
+        },
+        {
+          "name": "confidence_ppm",
+          "type": "u64"
+        },
+        {
+          "name": "next_expert_suggestions",
+          "type": "string_list"
+        },
+        {
+          "name": "verification_requirements",
+          "type": "string_list"
+        },
+        {
+          "name": "proposed_swyp_plan",
+          "type": "string"
+        },
+        {
+          "name": "latent_summary",
+          "type": "string"
+        },
+        {
+          "name": "compute_cost",
+          "type": "u64"
+        },
+        {
+          "name": "runtime_metrics",
+          "type": "string_map"
+        }
+      ]
+    },
+    {
+      "kind": "record",
+      "name": "ExpertGenome",
+      "fields": [
+        {
+          "name": "expert_id",
+          "type": "string"
+        },
+        {
+          "name": "architecture_version",
+          "type": "string"
+        },
+        {
+          "name": "parameter_count",
+          "type": "u64"
+        },
+        {
+          "name": "tokenizer_hash",
+          "type": "string"
+        },
+        {
+          "name": "genesis_checkpoint_hash",
+          "type": "string"
+        },
+        {
+          "name": "weights_hash",
+          "type": "string"
+        },
+        {
+          "name": "genesis_seed",
+          "type": "u64"
+        },
+        {
+          "name": "specialty_ontology_id",
+          "type": "string"
+        },
+        {
+          "name": "curriculum_manifest_hash",
+          "type": "string"
+        },
+        {
+          "name": "training_recipe_hash",
+          "type": "string"
+        },
+        {
+          "name": "synaptic_growth_policy",
+          "type": "string"
+        },
+        {
+          "name": "context_policy",
+          "type": "string"
+        },
+        {
+          "name": "protocol_version",
+          "type": "u64"
+        },
+        {
+          "name": "trust_role",
+          "type": "string"
+        },
+        {
+          "name": "parent_expert_ids",
+          "type": "string_list"
+        }
+      ]
+    },
+    {
+      "kind": "record",
+      "name": "WorldEvent",
+      "fields": [
+        {
+          "name": "protocol_version",
+          "type": "u64"
+        },
+        {
+          "name": "event_id",
+          "type": "string"
+        },
+        {
+          "name": "timestamp_delta_ms",
+          "type": "i64"
+        },
+        {
+          "name": "device_class",
+          "type": "string"
+        },
+        {
+          "name": "device_model_hash",
+          "type": "string"
+        },
+        {
+          "name": "source_namespace",
+          "type": "string"
+        },
+        {
+          "name": "observation_type",
+          "type": "string"
+        },
+        {
+          "name": "features",
+          "type": "string_map"
+        },
+        {
+          "name": "previous_action",
+          "type": "string"
+        },
+        {
+          "name": "action",
+          "type": "string"
+        },
+        {
+          "name": "result",
+          "type": "string"
+        },
+        {
+          "name": "verifier",
+          "type": "string"
+        },
+        {
+          "name": "confidence_ppm",
+          "type": "u64"
+        },
+        {
+          "name": "privacy_class",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "kind": "record",
+      "name": "ExperienceCapsule",
+      "fields": [
+        {
+          "name": "protocol_version",
+          "type": "u64"
+        },
+        {
+          "name": "capsule_id",
+          "type": "string"
+        },
+        {
+          "name": "source_cell_id",
+          "type": "string"
+        },
+        {
+          "name": "source_expert_id",
+          "type": "string"
+        },
+        {
+          "name": "ancestry_hash",
+          "type": "string"
+        },
+        {
+          "name": "domain",
+          "type": "string"
+        },
+        {
+          "name": "observation_schema",
+          "type": "string"
+        },
+        {
+          "name": "world_event_hash",
+          "type": "string"
+        },
+        {
+          "name": "abstract_state",
+          "type": "string"
+        },
+        {
+          "name": "action_or_hypothesis",
+          "type": "string"
+        },
+        {
+          "name": "result",
+          "type": "string"
+        },
+        {
+          "name": "reward_ppm",
+          "type": "u64"
+        },
+        {
+          "name": "verifier_type",
+          "type": "string"
+        },
+        {
+          "name": "verifier_evidence_hash",
+          "type": "string"
+        },
+        {
+          "name": "privacy_class",
+          "type": "string"
+        },
+        {
+          "name": "provenance_refs",
+          "type": "string_list"
+        },
+        {
+          "name": "replay_recipe",
+          "type": "string"
+        },
+        {
+          "name": "parameter_delta_hash",
+          "type": "string"
+        },
+        {
+          "name": "created_unix_ms",
+          "type": "i64"
+        },
+        {
+          "name": "signer_key_id",
+          "type": "string"
+        },
+        {
+          "name": "signature",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "kind": "record",
+      "name": "ReplayExample",
+      "fields": [
+        {
+          "name": "protocol_version",
+          "type": "u64"
+        },
+        {
+          "name": "capsule_hash",
+          "type": "string"
+        },
+        {
+          "name": "ancestry_hash",
+          "type": "string"
+        },
+        {
+          "name": "domain",
+          "type": "string"
+        },
+        {
+          "name": "prompt",
+          "type": "string"
+        },
+        {
+          "name": "target",
+          "type": "string"
+        },
+        {
+          "name": "verifier_evidence_hash",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "kind": "record",
+      "name": "IMCLocalProbeEnvelope",
+      "fields": [
+        {
+          "name": "protocol_version",
+          "type": "u64"
+        },
+        {
+          "name": "expert_id",
+          "type": "string"
+        },
+        {
+          "name": "peer_id",
+          "type": "string"
+        },
+        {
+          "name": "round_id",
+          "type": "string"
+        },
+        {
+          "name": "model_config_hash",
+          "type": "string"
+        },
+        {
+          "name": "genesis_checkpoint_hash",
+          "type": "string"
+        },
+        {
+          "name": "parameter_delta_hash",
+          "type": "string"
+        },
+        {
+          "name": "curriculum_manifest_hash",
+          "type": "string"
+        },
+        {
+          "name": "training_recipe_hash",
+          "type": "string"
+        },
+        {
+          "name": "consent_epoch",
+          "type": "u64"
+        },
+        {
+          "name": "lease_fence",
+          "type": "u64"
+        },
+        {
+          "name": "nonce",
+          "type": "string"
+        },
+        {
+          "name": "deadline_unix_ms",
+          "type": "i64"
+        },
+        {
+          "name": "payload_bytes",
+          "type": "u64"
+        },
+        {
+          "name": "payload_base64",
+          "type": "string"
+        },
+        {
+          "name": "tensor_layout_json",
+          "type": "string"
+        },
+        {
+          "name": "model_config_json",
+          "type": "string"
+        },
+        {
+          "name": "recipe_json",
+          "type": "string"
+        },
+        {
+          "name": "signed_canonical_base64",
+          "type": "string"
+        },
+        {
+          "name": "signer_key_id",
+          "type": "string"
+        },
+        {
+          "name": "signature",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "kind": "record",
+      "name": "PCEReplayArtifact",
+      "fields": [
+        {
+          "name": "format",
+          "type": "string"
+        },
+        {
+          "name": "protocol_version",
+          "type": "u64"
+        },
+        {
+          "name": "artifact_sha256",
+          "type": "string"
+        },
+        {
+          "name": "capsule_hash",
+          "type": "string"
+        },
+        {
+          "name": "ancestry_hash",
+          "type": "string"
+        },
+        {
+          "name": "domain",
+          "type": "string"
+        },
+        {
+          "name": "decision_prompt",
+          "type": "string"
+        },
+        {
+          "name": "action_target",
+          "type": "string"
+        },
+        {
+          "name": "verifier_evidence_hash",
+          "type": "string"
+        },
+        {
+          "name": "signer_key_id",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "kind": "record",
+      "name": "IMCNetworkRoundJob",
+      "fields": [
+        {
+          "name": "protocol_version",
+          "type": "u64"
+        },
+        {
+          "name": "issuer_id",
+          "type": "string"
+        },
+        {
+          "name": "expert_id",
+          "type": "string"
+        },
+        {
+          "name": "session_id",
+          "type": "string"
+        },
+        {
+          "name": "round_sequence",
+          "type": "u64"
+        },
+        {
+          "name": "round_id",
+          "type": "string"
+        },
+        {
+          "name": "genesis_checkpoint_hash",
+          "type": "string"
+        },
+        {
+          "name": "current_parent_checkpoint_hash",
+          "type": "string"
+        },
+        {
+          "name": "lineage_hash",
+          "type": "string"
+        },
+        {
+          "name": "model_config_hash",
+          "type": "string"
+        },
+        {
+          "name": "curriculum_manifest_hash",
+          "type": "string"
+        },
+        {
+          "name": "dataset_scope",
+          "type": "string"
+        },
+        {
+          "name": "authorized_purpose",
+          "type": "string"
+        },
+        {
+          "name": "training_recipe_hash",
+          "type": "string"
+        },
+        {
+          "name": "proposer_id",
+          "type": "string"
+        },
+        {
+          "name": "recipe_json",
+          "type": "string"
+        },
+        {
+          "name": "evaluator_id",
+          "type": "string"
+        },
+        {
+          "name": "proposer_key_hash",
+          "type": "string"
+        },
+        {
+          "name": "evaluator_key_hash",
+          "type": "string"
+        },
+        {
+          "name": "nonce",
+          "type": "string"
+        },
+        {
+          "name": "consent_epoch",
+          "type": "u64"
+        },
+        {
+          "name": "lease_fence",
+          "type": "u64"
+        },
+        {
+          "name": "deadline_unix_ms",
+          "type": "i64"
+        }
+      ]
+    },
+    {
+      "kind": "record",
+      "name": "IMCNetworkRoundReceipt",
+      "fields": [
+        {
+          "name": "protocol_version",
+          "type": "u64"
+        },
+        {
+          "name": "issuer_id",
+          "type": "string"
+        },
+        {
+          "name": "evaluator_id",
+          "type": "string"
+        },
+        {
+          "name": "session_id",
+          "type": "string"
+        },
+        {
+          "name": "round_id",
+          "type": "string"
+        },
+        {
+          "name": "round_sequence",
+          "type": "u64"
+        },
+        {
+          "name": "issued_job_hash",
+          "type": "string"
+        },
+        {
+          "name": "current_parent_checkpoint_hash",
+          "type": "string"
+        },
+        {
+          "name": "candidate_checkpoint_hash",
+          "type": "string"
+        },
+        {
+          "name": "parameter_delta_hash",
+          "type": "string"
+        },
+        {
+          "name": "accepted",
+          "type": "bool"
+        },
+        {
+          "name": "training_recipe_hash",
+          "type": "string"
+        },
+        {
+          "name": "model_config_hash",
+          "type": "string"
+        },
+        {
+          "name": "genesis_checkpoint_hash",
+          "type": "string"
+        },
+        {
+          "name": "lineage_hash",
+          "type": "string"
+        },
+        {
+          "name": "consent_epoch",
+          "type": "u64"
+        },
+        {
+          "name": "lease_fence",
+          "type": "u64"
+        },
+        {
+          "name": "nonce",
+          "type": "string"
+        },
+        {
+          "name": "deadline_unix_ms",
+          "type": "i64"
+        },
+        {
+          "name": "before_metrics_json",
+          "type": "string"
+        },
+        {
+          "name": "candidate_metrics_json",
+          "type": "string"
+        },
+        {
+          "name": "active_metrics_json",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "kind": "record",
+      "name": "ConnectomeEdge",
+      "fields": [
+        {
+          "name": "protocol_version",
+          "type": "u64"
+        },
+        {
+          "name": "source_expert_id",
+          "type": "string"
+        },
+        {
+          "name": "target_expert_id",
+          "type": "string"
+        },
+        {
+          "name": "domain_signature",
+          "type": "string"
+        },
+        {
+          "name": "successful_handoffs",
+          "type": "u64"
+        },
+        {
+          "name": "failed_handoffs",
+          "type": "u64"
+        },
+        {
+          "name": "verified_gain_ppm",
+          "type": "u64"
+        },
+        {
+          "name": "latency_micros",
+          "type": "u64"
+        },
+        {
+          "name": "compute_cost",
+          "type": "u64"
+        },
+        {
+          "name": "last_expert_version",
+          "type": "string"
+        },
+        {
+          "name": "trust_ppm",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "kind": "record",
+      "name": "SynapseObservation",
+      "fields": [
+        {
+          "name": "protocol_version",
+          "type": "u64"
+        },
+        {
+          "name": "source_expert_id",
+          "type": "string"
+        },
+        {
+          "name": "target_expert_id",
+          "type": "string"
+        },
+        {
+          "name": "domain_signature",
+          "type": "string"
+        },
+        {
+          "name": "verified_success",
+          "type": "bool"
+        },
+        {
+          "name": "verified_gain_ppm",
+          "type": "u64"
+        },
+        {
+          "name": "latency_micros",
+          "type": "u64"
+        },
+        {
+          "name": "compute_cost",
+          "type": "u64"
+        },
+        {
+          "name": "target_expert_version",
+          "type": "string"
+        },
+        {
+          "name": "verifier_evidence_ref",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "kind": "expert",
+      "name": "ThalamusRouter",
+      "base": "IMC1B",
+      "properties": {
+        "benchmark": "myriad-router-v1",
+        "specialty": "cognition.routing"
+      }
+    },
+    {
+      "kind": "expert",
+      "name": "GeneralCortex",
+      "base": "IMC1B",
+      "properties": {
+        "benchmark": "myriad-general-v1",
+        "specialty": "cognition.general"
+      }
+    },
+    {
+      "kind": "expert",
+      "name": "CodeCortex",
+      "base": "IMC1B",
+      "properties": {
+        "benchmark": "myriad-code-v1",
+        "specialty": "cognition.code"
+      }
+    },
+    {
+      "kind": "expert",
+      "name": "ReasoningCortex",
+      "base": "IMC1B",
+      "properties": {
+        "benchmark": "myriad-reasoning-v1",
+        "specialty": "cognition.reasoning"
+      }
+    },
+    {
+      "kind": "expert",
+      "name": "DeviceCortex",
+      "base": "IMC1B",
+      "properties": {
+        "benchmark": "myriad-device-v1",
+        "specialty": "cognition.device"
+      }
+    },
+    {
+      "kind": "dataset",
+      "name": "MyriadCuratedV1",
+      "requires": [
+        "provenance",
+        "commercial_compatible"
+      ],
+      "forbids": [
+        "secrets",
+        "user_private_data",
+        "benchmark_leak"
+      ]
+    },
+    {
+      "kind": "train",
+      "name": "ThalamusRouter",
+      "dataset": "MyriadCuratedV1",
+      "properties": {
+        "cohort": 512,
+        "local_steps": 128,
+        "optimizer": "isx"
+      }
+    },
+    {
+      "kind": "train",
+      "name": "GeneralCortex",
+      "dataset": "MyriadCuratedV1",
+      "properties": {
+        "cohort": 1024,
+        "local_steps": 128,
+        "optimizer": "isx"
+      }
+    },
+    {
+      "kind": "train",
+      "name": "CodeCortex",
+      "dataset": "MyriadCuratedV1",
+      "properties": {
+        "cohort": 1024,
+        "local_steps": 128,
+        "optimizer": "isx"
+      }
+    },
+    {
+      "kind": "train",
+      "name": "ReasoningCortex",
+      "dataset": "MyriadCuratedV1",
+      "properties": {
+        "cohort": 1024,
+        "local_steps": 128,
+        "optimizer": "isx"
+      }
+    },
+    {
+      "kind": "train",
+      "name": "DeviceCortex",
+      "dataset": "MyriadCuratedV1",
+      "properties": {
+        "cohort": 1024,
+        "local_steps": 128,
+        "optimizer": "isx"
+      }
+    },
+    {
+      "kind": "component",
+      "name": "Hippocampus",
+      "capabilities": [
+        "memory.read",
+        "memory.write"
+      ],
+      "states": [
+        {
+          "name": "episodes",
+          "type": "EpisodicStore"
+        }
+      ],
+      "invariants": [
+        "personal episodic memory remains local by default",
+        "global training has no implicit access to personal memory"
+      ]
+    },
+    {
+      "kind": "component",
+      "name": "CorticalConnectome",
+      "capabilities": [
+        "registry.read",
+        "connectome.write_verified"
+      ],
+      "states": [
+        {
+          "name": "edges",
+          "type": "InterCortexSynapses"
+        }
+      ],
+      "invariants": [
+        "only verifier-backed outcomes may strengthen inter-cortex edges"
+      ]
+    },
+    {
+      "kind": "verify",
+      "name": "ExpertPromotion",
+      "checks": [
+        "specialty_benchmark",
+        "frozen_regression",
+        "calibration",
+        "provenance",
+        "no_private_training_data"
+      ]
+    }
+  ]
+}

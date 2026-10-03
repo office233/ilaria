@@ -34,22 +34,26 @@ type Witness struct {
 	Postcondition int          `json:"postcondition"`
 }
 type Verification struct {
-	Version        int           `json:"version"`
-	Status         string        `json:"status"`
-	Method         string        `json:"method"`
-	Entry          string        `json:"entry"`
-	DomainSize     string        `json:"domain_size,omitempty"`
-	Exhaustive     bool          `json:"exhaustive"`
-	CasesExamined  int           `json:"cases_examined"`
-	CasesChecked   int           `json:"cases_checked"`
-	CasesSkipped   int           `json:"cases_skipped"`
-	StepsConsumed  int           `json:"steps_consumed"`
-	Budgets        VerifyOptions `json:"budgets"`
-	Reason         string        `json:"reason,omitempty"`
-	Witness        *Witness      `json:"witness,omitempty"`
-	SourceSHA256   string        `json:"source_sha256,omitempty"`
-	IRSHA256       string        `json:"ir_sha256,omitempty"`
-	ContractSHA256 string        `json:"contract_sha256,omitempty"`
+	Version              int                     `json:"version"`
+	Status               string                  `json:"status"`
+	Method               string                  `json:"method"`
+	Entry                string                  `json:"entry"`
+	Purity               string                  `json:"purity,omitempty"`
+	EffectVersion        int                     `json:"effect_version,omitempty"`
+	Effects              []string                `json:"effects,omitempty"`
+	RequiredCapabilities []CapabilityRequirement `json:"required_capabilities,omitempty"`
+	DomainSize           string                  `json:"domain_size,omitempty"`
+	Exhaustive           bool                    `json:"exhaustive"`
+	CasesExamined        int                     `json:"cases_examined"`
+	CasesChecked         int                     `json:"cases_checked"`
+	CasesSkipped         int                     `json:"cases_skipped"`
+	StepsConsumed        int                     `json:"steps_consumed"`
+	Budgets              VerifyOptions           `json:"budgets"`
+	Reason               string                  `json:"reason,omitempty"`
+	Witness              *Witness                `json:"witness,omitempty"`
+	SourceSHA256         string                  `json:"source_sha256,omitempty"`
+	IRSHA256             string                  `json:"ir_sha256,omitempty"`
+	ContractSHA256       string                  `json:"contract_sha256,omitempty"`
 }
 
 // Verify is bounded testing, not an SMT proof. "exhaustive" means all tuples in
@@ -60,9 +64,22 @@ func Verify(ctx context.Context, e *Executable, c Contract, options VerifyOption
 	if ctx == nil || options.MaxCases < 1 || options.MaxCases > MaxCases || options.FuelPerCase < 1 || options.FuelPerCase > MaxFuel || options.TotalFuel < 1 || options.TotalFuel > MaxTotalFuel {
 		return r, diagnostic("invalid_budget", "verification host budgets out of range")
 	}
+	semantics, err := e.Semantics(c.Entry)
+	if err != nil {
+		return r, err
+	}
+	r.Purity = semantics.Purity
+	r.EffectVersion = semantics.EffectVersion
+	r.Effects = append([]string(nil), semantics.Effects...)
+	r.RequiredCapabilities = append([]CapabilityRequirement(nil), semantics.RequiredCapabilities...)
 	bounds, err := c.validate(e)
 	if err != nil {
 		return r, err
+	}
+	if semantics.Purity != "pure" {
+		r.Method = "effect-contract-validation"
+		r.Reason = "effectful_execution_not_supported"
+		return r, nil
 	}
 	if r.Budgets.FuelPerCase > c.MaxSteps {
 		r.Budgets.FuelPerCase = c.MaxSteps
@@ -70,11 +87,19 @@ func Verify(ctx context.Context, e *Executable, c Contract, options VerifyOption
 	allInteger := true
 	total := big.NewInt(1)
 	for _, b := range bounds {
-		if b.low.typ != I64 {
+		if b.low.typ != I64 && b.low.typ != U64 {
 			allInteger = false
 			continue
 		}
-		width := new(big.Int).Sub(big.NewInt(b.high.i), big.NewInt(b.low.i))
+		var low, high *big.Int
+		if b.low.typ == I64 {
+			low = big.NewInt(b.low.i)
+			high = big.NewInt(b.high.i)
+		} else {
+			low = new(big.Int).SetUint64(b.low.u)
+			high = new(big.Int).SetUint64(b.high.u)
+		}
+		width := new(big.Int).Sub(high, low)
 		width.Add(width, big.NewInt(1))
 		total.Mul(total, width)
 	}
@@ -227,6 +252,12 @@ func enumeratedCase(bounds []interval, index int) []Value {
 	values := make([]Value, len(bounds))
 	for i := len(bounds) - 1; i >= 0; i-- {
 		// This path is used only after proving that the entire product <= 10000.
+		if bounds[i].low.typ == U64 {
+			width := bounds[i].high.u - bounds[i].low.u + 1
+			values[i] = Uint(bounds[i].low.u + uint64(index%int(width)))
+			index /= int(width)
+			continue
+		}
 		width := int(bounds[i].high.i - bounds[i].low.i + 1)
 		values[i] = Int(bounds[i].low.i + int64(index%width))
 		index /= width
@@ -239,6 +270,11 @@ func middle(b interval) Value {
 		z.Quo(z, big.NewInt(2))
 		return Int(z.Int64())
 	}
+	if b.low.typ == U64 {
+		z := new(big.Int).Add(new(big.Int).SetUint64(b.low.u), new(big.Int).SetUint64(b.high.u))
+		z.Quo(z, big.NewInt(2))
+		return Uint(z.Uint64())
+	}
 	x := b.low.f/2 + b.high.f/2
 	// Halving subnormals can underflow; never sample outside the declared interval.
 	if x < b.low.f {
@@ -247,7 +283,7 @@ func middle(b interval) Value {
 	if x > b.high.f {
 		return b.high
 	}
-	return Value{typ: F64, f: x}
+	return Value{typ: b.low.typ, f: x}
 }
 func within(v Value, b interval) bool {
 	lo, _ := Apply("le", b.low, v)
@@ -281,8 +317,12 @@ func sampledCase(bounds []interval, index int, rng *rand.Rand) []Value {
 		case 2, 3, 4:
 			k := int64(which - 3)
 			v = Int(k)
-			if b.low.typ == F64 {
-				v = Value{typ: F64, f: float64(k)}
+			if b.low.typ == U64 {
+				if k >= 0 {
+					v = Uint(uint64(k))
+				}
+			} else if b.low.typ != I64 {
+				v = Value{typ: b.low.typ, f: float64(k)}
 			}
 		}
 		if within(v, b) {
@@ -298,6 +338,13 @@ func sampledCase(bounds []interval, index int, rng *rand.Rand) []Value {
 				offset %= width
 			}
 			values[i] = Int(int64(uint64(b.low.i) + offset))
+		} else if b.low.typ == U64 {
+			width := b.high.u - b.low.u + 1
+			offset := rng.Uint64()
+			if width != 0 {
+				offset %= width
+			}
+			values[i] = Uint(b.low.u + offset)
 		} else {
 			t := rng.Float64()
 			x := float64(b.low.f*(1-t)) + float64(b.high.f*t)
@@ -308,7 +355,7 @@ func sampledCase(bounds []interval, index int, rng *rand.Rand) []Value {
 			} else if x > b.high.f {
 				values[i] = b.high
 			} else {
-				values[i] = Value{typ: F64, f: x}
+				values[i] = Value{typ: b.low.typ, f: x}
 			}
 		}
 	}

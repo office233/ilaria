@@ -1,0 +1,97 @@
+{
+  "artifacts": "D:\\swyp lang\\bin\\refinement-eval-8m3cbou4",
+  "results": [
+    {
+      "task": "square",
+      "spec": {
+        "examples": [
+          {
+            "x": 0,
+            "y": 0
+          },
+          {
+            "x": 1,
+            "y": 1
+          }
+        ],
+        "validation": [
+          {
+            "x": 2,
+            "y": 4
+          },
+          {
+            "x": -3,
+            "y": 9
+          },
+          {
+            "x": 0.5,
+            "y": 0.25
+          }
+        ]
+      },
+      "source": "fn predict(x: number) -> number { return (x * x); } fn main(){print(predict(arg(0)));}\n",
+      "source_sha256": "336bfadec27811b4f1f0b14b1e5ab4816659dcf8fcd18e82739744455fdcb712",
+      "held_out_inputs": 60,
+      "backend_checks": 120,
+      "cli_output": "Synthesized D:\\swyp lang\\bin\\refinement-eval-8m3cbou4\\square.swyp (evaluated 57 candidates)\nValidated 3 supplied points; 2 rounds, 1 counterexamples added.\nExact float64 equality on supplied examples; no claim of proof or generalization.\n"
+    },
+    {
+      "task": "zero",
+      "spec": {
+        "examples": [
+          {
+            "x": 0,
+            "y": 0
+          }
+        ],
+        "validation": [
+          {
+            "x": 1,
+            "y": 0
+          },
+          {
+            "x": 2,
+            "y": 0
+          }
+        ]
+      },
+      "source": "fn predict(x: number) -> number { return 0; } fn main(){print(predict(arg(0)));}\n",
+      "source_sha256": "e5f85f16a8372c9860b448430a249d1934696204ab01191f5c4168788b29c10d",
+      "held_out_inputs": 62,
+      "backend_checks": 124,
+      "cli_output": "Synthesized D:\\swyp lang\\bin\\refinement-eval-8m3cbou4\\zero.swyp (evaluated 4 candidates)\nValidated 2 supplied points; 2 rounds, 1 counterexamples added.\nExact float64 equality on supplied examples; no claim of proof or generalization.\n"
+    },
+    {
+      "task": "linear",
+      "spec": {
+        "examples": [
+          {
+            "x": 0,
+            "y": 1
+          }
+        ],
+        "validation": [
+          {
+            "x": 1,
+            "y": 3
+          },
+          {
+            "x": 2,
+            "y": 5
+          },
+          {
+            "x": -3,
+            "y": -5
+          }
+        ]
+      },
+      "source": "fn predict(x: number) -> number { return (x + (x + 1)); } fn main(){print(predict(arg(0)));}\n",
+      "source_sha256": "d2149436accb06aca666871a7a3390e3e4209cc425d27e5b308b6801af93a522",
+      "held_out_inputs": 61,
+      "backend_checks": 122,
+      "cli_output": "Synthesized D:\\swyp lang\\bin\\refinement-eval-8m3cbou4\\linear.swyp (evaluated 87 candidates)\nValidated 3 supplied points; 2 rounds, 1 counterexamples added.\nExact float64 equality on supplied examples; no claim of proof or generalization.\n"
+    }
+  ],
+  "total_backend_checks": 366,
+  "claim": "Only listed training, validation and held-out points tested; no universal proof."
+}

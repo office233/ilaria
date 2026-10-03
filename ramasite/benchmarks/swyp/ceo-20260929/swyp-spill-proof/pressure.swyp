@@ -1,0 +1,16 @@
+﻿fn pressure(a:i64,b:i64,c:i64,d:i64)->i64 {
+  let a1:i64=a+1;
+  let b1:i64=b+2;
+  let c1:i64=c+3;
+  let d1:i64=d+4;
+  let a2:i64=a+5;
+  let b2:i64=b+6;
+  let c2:i64=c+7;
+  let d2:i64=d+8;
+  let s1:i64=a1+b1;
+  let s2:i64=c1+d1;
+  let s3:i64=a2+b2;
+  let s4:i64=c2+d2;
+  return (s1+s2)+(s3+s4);
+}
+fn main(){}

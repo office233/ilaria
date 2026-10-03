@@ -1,0 +1,14 @@
+fn step(x:i64)->i64 {
+  if x < 0 { return x + 1; }
+  return x + 1;
+}
+fn iterate(n:i64)->i64 {
+  let i:i64=0;
+  let x:i64=0;
+  while i<n {
+    x=step(x);
+    i=i+1;
+  }
+  return x;
+}
+fn main(){}

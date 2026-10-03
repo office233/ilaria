@@ -40,7 +40,7 @@ func (e *Executable) RunTurbo(ctx context.Context, entry string, args []Value, f
 	}
 	m := machine{executable: e, ctx: ctx, limit: fuel, fast: true}
 	raw, err := m.callTurbo(entry, rawArgs, 1)
-	return RunResult{Value: rawToValue(f.Result, raw), Steps: m.used}, err
+	return RunResult{Value: rawToValue(f.Result, raw), Steps: m.used, data: m.byteData()}, err
 }
 
 func valueToRaw(v Value) uint64 {
@@ -174,6 +174,55 @@ func (m *machine) executeTurboInstruction(ins turboInstruction, f executableFunc
 		return m.bytesLenRaw(slots[int(ins.a)])
 	case fastBytesGet:
 		return m.bytesGetRaw(slots[int(ins.a)], slots[int(ins.b)])
+	case fastBytesFromStorageU64:
+		value, err := m.bytesFromStorageU64(Uint(slots[int(ins.a)]), Uint(slots[int(ins.b)]))
+		return value.u, err
+	case fastStorageAllocU64:
+		value, err := m.storageAllocU64(Uint(slots[int(ins.a)]))
+		if err != nil {
+			return 0, err
+		}
+		return value.u, nil
+	case fastStorageLoadU64:
+		value, err := m.storageLoadU64(Uint(slots[int(ins.a)]), Uint(slots[int(ins.b)]))
+		if err != nil {
+			return 0, err
+		}
+		return value.u, nil
+	case fastStorageStoreU64:
+		extra, err := turboInstructionExtra(f, ins)
+		if err != nil {
+			return 0, err
+		}
+		if len(extra.args) != 3 {
+			return 0, diagnostic("invalid_ir", "storage.store_u64 turbo arity")
+		}
+		if err := m.storageStoreU64(Uint(slots[int(extra.args[0])]), Uint(slots[int(extra.args[1])]), Uint(slots[int(extra.args[2])])); err != nil {
+			return 0, err
+		}
+		return 0, nil
+	case fastStorageFree:
+		if err := m.storageFree(Uint(slots[int(ins.a)])); err != nil {
+			return 0, err
+		}
+		return 0, nil
+	case fastStorageLenU64:
+		value, err := m.storageLenU64(Uint(slots[int(ins.a)]))
+		if err != nil {
+			return 0, err
+		}
+		return value.u, nil
+	case fastStorageCapacityU64:
+		value, err := m.storageCapacityU64(Uint(slots[int(ins.a)]))
+		if err != nil {
+			return 0, err
+		}
+		return value.u, nil
+	case fastStorageSetLenU64:
+		if err := m.storageSetLenU64(Uint(slots[int(ins.a)]), Uint(slots[int(ins.b)])); err != nil {
+			return 0, err
+		}
+		return 0, nil
 	default:
 		a := int(ins.a)
 		x := slots[a]

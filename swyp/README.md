@@ -32,18 +32,21 @@ Output files must not already exist; Swyp never overwrites.
 
 | Area | Status | Docs |
 |---|---|---|
-| Scalar language: functions, `let`, `if`/`while`, `number`/`bool`/`string` | Tested; AST interpreter, C (GCC) and offline HTML/JS backends | [SWYP_LANG](docs/SWYP_LANG.md) |
-| Semantic Core: checked `i64`, finite `f64`, typed JSON IR, exact `safe` executor + zero-allocation `fast` embedded profile | Tested; small Core frames can execute with 0 heap allocations | [SEMANTIC_CORE](docs/SEMANTIC_CORE.md), [PERFORMANCE](docs/PERFORMANCE.md) |
-| Contracts: `verify` → `exhaustive` / `tested` / `counterexample` / `unknown` / `timeout` | Tested on finite domains; no SMT proofs | [SEMANTIC_CORE](docs/SEMANTIC_CORE.md) |
-| Synthesis: enumerative search with counterexample refinement (`synth`, `synth -contract`) | Tested; grammar is `x`, constants, `+ - *` | [CONTRACT_SYNTHESIS](docs/CONTRACT_SYNTHESIS.md) |
-| STV2 VM + SWYPB modules: compile once, run without source or toolchain | Tested, fuzzed; safe-integer subset only | [STV2_ISA](docs/STV2_ISA.md), [SWYPB_FORMAT](docs/SWYPB_FORMAT.md) |
+| Scalar language: functions, `let`, `if`/`while`, `number`/`bool`/`string` | Tested; AST interpreter, C (GCC) and offline HTML/JS backends | [SWYP_LANG](../ramasite/docs/swyp/SWYP_LANG.md) |
+| Semantic Core: checked `i64`, finite `f64`, typed JSON IR, exact `safe` executor + zero-allocation `fast` embedded profile | Tested; small Core frames can execute with 0 heap allocations | [SEMANTIC_CORE](../ramasite/docs/swyp/SEMANTIC_CORE.md), [PERFORMANCE](../ramasite/docs/swyp/PERFORMANCE.md) |
+| Brokered Core effects | Safe interpreter resumes explicit `clock.read` / `fs.read` JSONL results; scoped authority stays with SwypikOS | [BROKER_EXECUTION](../ramasite/docs/swyp/BROKER_EXECUTION.md), [EFFECTS_CAPABILITIES](../ramasite/docs/swyp/EFFECTS_CAPABILITIES.md) |
+| Supervisor preflight snapshots | `core-preflight` validates without execution and pins canonical Core IR; `core-broker --ir` consumes the same snapshot | [BROKER_EXECUTION](../ramasite/docs/swyp/BROKER_EXECUTION.md) |
+| Contracts: `verify` → `exhaustive` / `tested` / `counterexample` / `unknown` / `timeout` | Tested on finite domains; no SMT proofs | [SEMANTIC_CORE](../ramasite/docs/swyp/SEMANTIC_CORE.md) |
+| Synthesis: enumerative search with counterexample refinement (`synth`, `synth -contract`) | Tested; grammar is `x`, constants, `+ - *` | [CONTRACT_SYNTHESIS](../ramasite/docs/swyp/CONTRACT_SYNTHESIS.md) |
+| STV2 VM + SWYPB modules: compile once, run without source or toolchain | Tested, fuzzed; safe-integer subset only | [STV2_ISA](../ramasite/docs/swyp/STV2_ISA.md), [SWYPB_FORMAT](../ramasite/docs/swyp/SWYPB_FORMAT.md) |
 | `swyp judge`: stdin `{source, contract}` → verdict + one-line summary for a model | Tested | below |
 | Ilaria (Nexus) `swyp` tool calling `swyp judge` | On Nexus branch `agent/swyp-judge-tool`, tested against a real Swyp build; not yet run with the live model | below |
 | Legacy Nexus worker (`swyp worker`, `bridge/nexus`) | Adapter tested, not registered | [bridge/nexus](bridge/nexus/README.md) |
-| Natural-language `draft` / `expand` / `repair` via Ilaria | Fixture-tested only; never run against a live model | [SWYP_LANG](docs/SWYP_LANG.md) |
-| Components/models/experts/datasets/training manifests | Declarative parser + semantic validation + canonical JSON compiler | [COMPONENTS](docs/COMPONENTS.md) |
-| Semantic Core native AOT | Checked i64/finite-f64/ieee64 Core IR to C11/GCC; safe + fast profiles, optional native CPU/LTO/strip | [SEMANTIC_CORE](docs/SEMANTIC_CORE.md), [PERFORMANCE](docs/PERFORMANCE.md) |
-| Compute numeric type | Explicit `ieee64` hardware IEEE-754 semantics for near-native numeric kernels; strict `f64` remains unchanged | [PERFORMANCE](docs/PERFORMANCE.md) |
+| Natural-language `draft` / `expand` / `repair` via Ilaria | Fixture-tested only; never run against a live model | [SWYP_LANG](../ramasite/docs/swyp/SWYP_LANG.md) |
+| Components/models/experts/datasets/training manifests | Declarative parser + semantic validation + canonical JSON compiler | [COMPONENTS](../ramasite/docs/swyp/COMPONENTS.md) |
+| Modular Swyp / HIR v1 | Shared `module`/`use` preamble, deterministic explicit-root graph, typed HIR bodies, qualified direct-use linking, Core IR lowering and x64/ARM64 packed + standalone native paths | [SWYP_LANG](../ramasite/docs/swyp/SWYP_LANG.md), [ARCHITECTURE](../ramasite/docs/swyp/ARCHITECTURE.md) |
+| Semantic Core native AOT | Checked i64/finite-f64/ieee64 Core IR to C11/GCC; safe + fast profiles, optional native CPU/LTO/strip | [SEMANTIC_CORE](../ramasite/docs/swyp/SEMANTIC_CORE.md), [PERFORMANCE](../ramasite/docs/swyp/PERFORMANCE.md) |
+| Compute numeric type | Explicit `ieee64` hardware IEEE-754 semantics for near-native numeric kernels; strict `f64` remains unchanged | [PERFORMANCE](../ramasite/docs/swyp/PERFORMANCE.md) |
 
 ## Closed loop with Ilaria
 
@@ -62,14 +65,14 @@ writes `CALL swyp: {"source":"fn square(x: i64) -> i64 { return x * x; }","contr
 reads the verdict and repairs on FAIL. The candidate never runs natively; it runs
 only in the fuel-bounded core interpreter.
 
-Direction and milestones: [ROADMAP](docs/ROADMAP.md). How the pieces fit:
-[ARCHITECTURE](docs/ARCHITECTURE.md). Local build and validation:
-[DEVELOPMENT](docs/DEVELOPMENT.md). Native/AOT performance:
-[PERFORMANCE](docs/PERFORMANCE.md). Earlier reports and measurements live in
-[docs/history](docs/history).
+Direction and milestones: [ROADMAP](../ramasite/agent-md/swyp/docs/ROADMAP.md). How the pieces fit:
+[ARCHITECTURE](../ramasite/docs/swyp/ARCHITECTURE.md). Local build and validation:
+[DEVELOPMENT](../ramasite/docs/swyp/DEVELOPMENT.md). Native/AOT performance:
+[PERFORMANCE](../ramasite/docs/swyp/PERFORMANCE.md). Earlier reports and measurements live in
+[docs/history](../ramasite/agent-md/swyp/history).
 
 The long-term self-hosting and Ilaria/SwypikOS migration target is defined in
-[SWYP_1_0_MASTER_PLAN](docs/SWYP_1_0_MASTER_PLAN.md).
+[SWYP_1_0_MASTER_PLAN](../ramasite/agent-md/swyp/docs/SWYP_1_0_MASTER_PLAN.md).
 
 ## Layout
 

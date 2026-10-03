@@ -88,3 +88,20 @@ func TestFSLoaderUsesExplicitRoot(t *testing.T) {
 		t.Fatal("invalid module path accepted")
 	}
 }
+
+func TestResolveModulesReturnsGraphSnapshotSources(t *testing.T) {
+	root := []byte("module app.main; use lib.math; fn main() {}")
+	loader := mapLoader{"lib.math": "module lib.math; fn square(x: i64) -> i64 { return x * x; }"}
+	graph, modules, err := ResolveModules(context.Background(), "main.swyp", root, loader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if graph.Root != "app.main" || len(modules) != 2 {
+		t.Fatalf("graph=%+v modules=%+v", graph, modules)
+	}
+	for i, module := range modules {
+		if module.Name != graph.Nodes[i].Module || module.SourceSHA256 != graph.Nodes[i].SourceSHA256 || len(module.Source) == 0 {
+			t.Fatalf("resolved[%d]=%+v node=%+v", i, module, graph.Nodes[i])
+		}
+	}
+}

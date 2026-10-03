@@ -16,6 +16,14 @@ type warningReceiver interface {
 	SetWarning(string)
 }
 
+func reportCoreBuildWarning(out io.Writer, message string) {
+	if wr, ok := out.(warningReceiver); ok {
+		wr.SetWarning(message)
+	} else {
+		fmt.Fprintf(out, "warning: %s\n", message)
+	}
+}
+
 func coreBuildCommand(args []string, out io.Writer) error {
 	flags := flag.NewFlagSet("core-build", flag.ContinueOnError)
 	flags.SetOutput(io.Discard)
@@ -91,7 +99,11 @@ func coreBuildCommand(args []string, out io.Writer) error {
 			fmt.Fprintf(out, "Built Core AOT %s (%s; cache hit %s)\n", *output, profile, cacheKey[:12])
 			return nil
 		} else if statErr != nil && !os.IsNotExist(statErr) {
-			return fmt.Errorf("inspect Core AOT cache: %w", statErr)
+			// The cache is optional. Unix reports ENOTDIR for a cache root
+			// beneath a regular file, whereas Windows may classify the same
+			// path as missing. Both must allow a fresh, uncached build.
+			reportCoreBuildWarning(out, fmt.Sprintf("inspect Core AOT cache: %v", statErr))
+			cacheEnabled = false
 		}
 	}
 	dir, err := os.MkdirTemp("", "swyp-core-build-")
@@ -103,19 +115,14 @@ func coreBuildCommand(args []string, out io.Writer) error {
 	if err := os.WriteFile(cfile, source, 0600); err != nil {
 		return err
 	}
-	compilerArgs := nativeCompilerArgs(profile, *cpu, *lto, *strip, cfile, *output)
-	cmd := exec.Command(gcc, compilerArgs...)
-	if result, err := cmd.CombinedOutput(); err != nil {
+	// The helper owns -o and exclusively publishes a completed artifact.
+	compilerArgs := nativeCompilerArgs(profile, *cpu, *lto, *strip, cfile, "")
+	if result, err := runNativeCompilerExclusive(gcc, *output, compilerArgs...); err != nil {
 		return fmt.Errorf("Core AOT C compiler failed: %w\n%s", err, result)
 	}
 	if cacheEnabled {
 		if err := installCacheArtifact(*output, cacheArtifact); err != nil {
-			cacheWarning := fmt.Sprintf("store Core AOT cache artifact: %v", err)
-			if wr, ok := out.(warningReceiver); ok {
-				wr.SetWarning(cacheWarning)
-			} else {
-				fmt.Fprintf(out, "warning: %s\n", cacheWarning)
-			}
+			reportCoreBuildWarning(out, fmt.Sprintf("store Core AOT cache artifact: %v", err))
 		}
 	}
 	if profile == coreir.NativeFast {
@@ -159,5 +166,9 @@ func nativeCompilerArgs(profile coreir.NativeProfile, cpu string, lto, strip boo
 	if strip {
 		args = append(args, "-s")
 	}
-	return append(args, cfile, "-o", output, "-lm")
+	args = append(args, cfile)
+	if output != "" {
+		args = append(args, "-o", output)
+	}
+	return append(args, "-lm")
 }

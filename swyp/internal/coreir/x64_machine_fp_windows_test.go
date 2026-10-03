@@ -114,11 +114,27 @@ func TestX64CFGMachineCodeIEEE64MixedPositionsAndXMMRestore(t *testing.T) {
 	stdout := runPackedFPHarness(t, code, `
 typedef double (*swyp_fn)(uint64_t,double,double,uint64_t*);
 uint64_t status1=99,status2=99;
-double sentinel=123.5,after=0.0;
-__asm__ volatile("movsd %0, %%xmm6" :: "m"(sentinel) : "xmm6");
-double a=((swyp_fn)p)(1,7.25,9.5,&status1);
-__asm__ volatile("movsd %%xmm6, %0" : "=m"(after));
-double b=((swyp_fn)p)(0,7.25,9.5,&status2);
+double sentinel=123.5,after=0.0,a=0.0;
+const double x=7.25,y=9.5;
+/* One asm block owns xmm6 across the call. With separate asm statements the
+   C compiler may legally reuse xmm6 in between (clang keeps 7.25 there). */
+__asm__ volatile(
+  "movsd %[s], %%xmm6\n\t"
+  "movsd %[x], %%xmm1\n\t"
+  "movsd %[y], %%xmm2\n\t"
+  "mov $1, %%ecx\n\t"
+  "mov %[st], %%r9\n\t"
+  "mov %%rsp, %%rbx\n\t"
+  "and $-16, %%rsp\n\t"
+  "sub $32, %%rsp\n\t"
+  "call *%[fn]\n\t"
+  "mov %%rbx, %%rsp\n\t"
+  "movsd %%xmm0, %[a]\n\t"
+  "movsd %%xmm6, %[after]\n\t"
+  : [a]"=m"(a), [after]"=m"(after)
+  : [s]"m"(sentinel), [x]"m"(x), [y]"m"(y), [st]"r"(&status1), [fn]"r"(p)
+  : "rax","rbx","rcx","rdx","r8","r9","r10","r11","xmm0","xmm1","xmm2","xmm3","xmm4","xmm5","xmm6","cc","memory");
+double b=((swyp_fn)p)(0,x,y,&status2);
 printf("%.17g %llu %.17g %llu %.17g\n",a,(unsigned long long)status1,b,(unsigned long long)status2,after);
 `)
 	if stdout != "7.25 0 9.5 0 123.5" {

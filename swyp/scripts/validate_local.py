@@ -44,7 +44,7 @@ class Validation:
         self.fuzz_seconds = fuzz_seconds
         self.directory = output / (phase + "-" + dt.datetime.now().strftime("%H%M%S") + "-" + uuid.uuid4().hex[:6])
         self.directory.mkdir(parents=True, exist_ok=False)
-        self.env = dict(os.environ, GOTOOLCHAIN="local", GOMAXPROCS="2")
+        self.env = dict(os.environ, GOTOOLCHAIN="local", GOWORK="off", GOMAXPROCS="2")
         self.steps: list[dict] = []
         self.checks: list[str] = []
         self.go = shutil.which("go")
@@ -123,7 +123,7 @@ class Validation:
         source.write_text((ROOT / "examples/swyp/sum.stv2.swyp").read_text(encoding="utf-8"), encoding="utf-8")
         module = self.directory / "suma.swypb"
         self.command("compile-no-toolchains", [str(exe), "compile", "--target", "stv2", "-o", str(module), str(source)], env=guest_env)
-        self.check(module.stat().st_size == 157, "sum module occupies 157 bytes")
+        module_bytes = module.stat().st_size
         original_hash = sha256(module)
         self.command("refuse-overwrite", [str(exe), "compile", "-o", str(module), str(source)], env=guest_env, expect=1, contains="exists")
         self.check(sha256(module) == original_hash, "refusing overwrite preserves module bytes")
@@ -134,6 +134,7 @@ class Validation:
             value = json.loads(proc.stdout)
             k = max(n, 0)
             self.check(value["value"] == k * (k + 1) // 2 and value["format"] == "SWYPB", "source-free sum for n=" + str(n))
+            self.check(value["module_bytes"] == module_bytes, "reported module size matches artifact for n=" + str(n))
         self.command("fuel-exhaustion", [str(exe), "exec", "-steps", "1", str(module), "100"], env=guest_env, expect=1, contains="fuel")
         self.command("wrong-arity", [str(exe), "exec", str(module)], env=guest_env, expect=1, contains="expected")
         damaged = bytearray(module.read_bytes())

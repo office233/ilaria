@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"os"
 
 	"swyp-lang/internal/coreir"
 	"swyp-lang/internal/swyplang"
@@ -105,18 +104,18 @@ func validateARM64NativeModule(m coreir.Module, entry string) error {
 func validateARM64NativeModuleMode(m coreir.Module, entry string, allowFPCalls, allowProcessIO bool) error {
 	functions := make(map[string]coreir.Function, len(m.Functions))
 	for _, f := range m.Functions {
-		if f.Result == coreir.Bytes {
+		if f.Result == coreir.Bytes && (!allowProcessIO || f.Name == entry) {
 			return fmt.Errorf("arm64 native backend function %s: bytes result requires byte arena support", f.Name)
 		}
 		for i, param := range f.Params {
-			if param.Type == coreir.Bytes {
+			if param.Type == coreir.Bytes && (!allowProcessIO || f.Name == entry) {
 				return fmt.Errorf("arm64 native backend function %s: bytes parameter %d requires byte arena support", f.Name, i)
 			}
 		}
 		for bi, block := range f.Blocks {
 			for ii, ins := range block.Instructions {
-				if ins.Op == "bytes.get" && !allowProcessIO {
-					return fmt.Errorf("arm64 native backend function %s block %d instruction %d: bytes.get requires native byte-arena mapping", f.Name, bi, ii)
+				if (ins.Op == "bytes.get" || ins.Op == "bytes.from_storage_u64") && !allowProcessIO {
+					return fmt.Errorf("arm64 native backend function %s block %d instruction %d: %s requires native byte-arena mapping", f.Name, bi, ii, ins.Op)
 				}
 			}
 		}
@@ -159,11 +158,11 @@ func validateARM64NativeModuleMode(m coreir.Module, entry string, allowFPCalls, 
 				if len(ins.Args) != len(callee.Params) || gprArgs > 7 || fpArgs > 8 {
 					return fmt.Errorf("arm64 native call %s -> %s exceeds argument registers", name, ins.Callee)
 				}
-				if !arm64NativeCallType(callee.Result, allowFPCalls) {
+				if !arm64NativeCallType(callee.Result, allowFPCalls) && !(allowProcessIO && callee.Result == coreir.Bytes) {
 					return fmt.Errorf("arm64 native call %s -> %s result type %s is unsupported", name, ins.Callee, callee.Result)
 				}
 				for i, param := range callee.Params {
-					if !arm64NativeCallType(param.Type, allowFPCalls) {
+					if !arm64NativeCallType(param.Type, allowFPCalls) && !(allowProcessIO && param.Type == coreir.Bytes) {
 						return fmt.Errorf("arm64 native call %s -> %s argument %d type %s is unsupported", name, ins.Callee, i, param.Type)
 					}
 				}
@@ -197,17 +196,7 @@ func coreARM64Command(args []string, out io.Writer) error {
 	if err != nil {
 		return err
 	}
-	file, err := os.OpenFile(*output, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
-	if err != nil {
-		return err
-	}
-	if _, err := file.Write(assembly); err != nil {
-		_ = file.Close()
-		_ = os.Remove(*output)
-		return err
-	}
-	if err := file.Close(); err != nil {
-		_ = os.Remove(*output)
+	if err := writeNewModule(*output, assembly); err != nil {
 		return err
 	}
 	fmt.Fprintf(out, "Created direct ARM64 assembly %s (%s)\n", *output, coreir.ARM64CFGABI)

@@ -44,6 +44,24 @@ func TestLanguageManifestAndAIPromptStayAligned(t *testing.T) {
 			t.Fatalf("diagnostic code[%d]=%q want=%q", i, decoded.DiagnosticCodes[i], wantCodes[i])
 		}
 	}
+	var hasBytes bool
+	for _, typ := range decoded.CoreTypes {
+		if typ == "bytes" {
+			hasBytes = true
+			break
+		}
+	}
+	if !hasBytes {
+		t.Fatalf("language manifest core types omit implemented bytes type: %v", decoded.CoreTypes)
+	}
+	var hasOption, hasArray bool
+	for _, typ := range decoded.HIRTypes {
+		hasOption = hasOption || typ == "option<T>"
+		hasArray = hasArray || typ == "array<T,N>"
+	}
+	if !hasOption || !hasArray {
+		t.Fatalf("language manifest HIR types omit richer type model: %v", decoded.HIRTypes)
+	}
 }
 
 func TestConfiguredIlariaBackendUsesEnvironment(t *testing.T) {

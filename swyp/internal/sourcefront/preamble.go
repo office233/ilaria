@@ -147,6 +147,35 @@ func ParsePreamble(filename, source string) (Preamble, string, error) {
 	return preamble, blankPrefix(source, end), nil
 }
 
+// FirstBodyToken returns the first declaration token after the shared preamble
+// without parsing the body. It is used only for deterministic frontend routing.
+func FirstBodyToken(filename, source string) (string, error) {
+	_, body, err := ParsePreamble(filename, source)
+	if err != nil {
+		return "", err
+	}
+	var s scanner.Scanner
+	s.Init(strings.NewReader(body))
+	s.Filename = filename
+	s.Mode = scanner.ScanIdents | scanner.ScanComments | scanner.SkipComments
+	var scanErr error
+	s.Error = func(s *scanner.Scanner, message string) {
+		if scanErr == nil {
+			scanErr = &Error{Position: s.Position, Message: message}
+		}
+	}
+	if kind := s.Scan(); kind != scanner.EOF {
+		if scanErr != nil {
+			return "", scanErr
+		}
+		return s.TokenText(), nil
+	}
+	if scanErr != nil {
+		return "", scanErr
+	}
+	return "", nil
+}
+
 func identifier(text string) bool {
 	if text == "" {
 		return false
@@ -167,11 +196,15 @@ func blankPrefix(source string, end int) string {
 	if end > len(source) {
 		end = len(source)
 	}
-	b := []byte(source)
+	var b strings.Builder
+	b.Grow(len(source))
 	for i := 0; i < end; i++ {
-		if b[i] != '\n' && b[i] != '\r' {
-			b[i] = ' '
+		if source[i] == '\n' || source[i] == '\r' {
+			b.WriteByte(source[i])
+		} else {
+			b.WriteByte(' ')
 		}
 	}
-	return string(b)
+	b.WriteString(source[end:])
+	return b.String()
 }

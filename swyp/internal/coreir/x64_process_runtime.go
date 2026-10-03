@@ -33,10 +33,26 @@ func x64ProcessHelperSpec(name string) (stream string, typ Type, ok bool) {
 		return "fsread", Bytes, true
 	case "__swyp_rt_bytes_get":
 		return "bytesget", U64, true
+	case "__swyp_rt_bytes_from_storage_u64":
+		return "bytessnapshot", Bytes, true
 	case "__swyp_rt_net_connect":
 		return "netconnect", Bool, true
 	case "__swyp_rt_net_fetch":
 		return "netfetch", Bytes, true
+	case "__swyp_rt_storage_alloc_u64":
+		return "storage_alloc", U64, true
+	case "__swyp_rt_storage_load_u64":
+		return "storage_load", U64, true
+	case "__swyp_rt_storage_store_u64":
+		return "storage_store", Void, true
+	case "__swyp_rt_storage_free":
+		return "storage_free", Void, true
+	case "__swyp_rt_storage_len_u64":
+		return "storage_len", U64, true
+	case "__swyp_rt_storage_capacity_u64":
+		return "storage_capacity", U64, true
+	case "__swyp_rt_storage_set_len_u64":
+		return "storage_set_len", Void, true
 	default:
 		return "", "", false
 	}
@@ -45,6 +61,159 @@ func x64ProcessHelperSpec(name string) (stream string, typ Type, ok bool) {
 type x64ProcessDataFixup struct {
 	DispPos int
 	Target  processDataTarget
+}
+
+const (
+	nativeStorageMaxBlocks       = 64
+	nativeStorageHeaderBytes     = 16
+	nativeStorageDescriptorBytes = 32
+	nativeStoragePayloadOffset   = nativeStorageHeaderBytes + nativeStorageMaxBlocks*nativeStorageDescriptorBytes
+)
+
+// buildX64StorageHelper emits a small CRT-free helper over the standalone RW
+// runtime-data section. IDs are opaque slot+1 values, descriptors are monotonic
+// and never reused, and payload allocation is bump-only within a backend-bounded
+// arena. Free invalidates a descriptor; it intentionally does not recycle the
+// payload in v1, preserving stale-ID safety without introducing a free-list ABI.
+// All safety failures return RDX=1 and never dereference outside the arena.
+func buildX64StorageHelper(kind string, storageOffset, storageBytes int) ([]byte, x64ProcessDataFixup, error) {
+	if storageOffset < 0 || storageBytes < nativeStoragePayloadOffset || storageOffset+storageBytes > MaxProcessRuntimeArenaBytes {
+		return nil, x64ProcessDataFixup{}, fmt.Errorf("x64 storage runtime: invalid partition offset=%d bytes=%d", storageOffset, storageBytes)
+	}
+	b := &x64MachineBuilder{}
+	runtimeDisp := b.leaRegRIPRel32(x64R10)
+	if storageOffset != 0 {
+		b.addRegImm32(x64R10, uint32(storageOffset))
+	}
+	fail := make([]int, 0, 8)
+	descPtr := func(idReg, dstReg int) {
+		b.movRegReg(dstReg, idReg)
+		b.subRegImm8(dstReg, 1)
+		b.imulRegImm8(dstReg, dstReg, nativeStorageDescriptorBytes)
+		b.addRegImm32(dstReg, nativeStorageHeaderBytes)
+		b.binaryRegReg(0x01, dstReg, x64R10)
+	}
+	validateID := func(idReg, descReg, scratchReg int) {
+		b.testRegReg(idReg, idReg)
+		fail = append(fail, b.jccRel32(0x4)) // JE
+		b.cmpRegImm32(idReg, nativeStorageMaxBlocks)
+		fail = append(fail, b.jccRel32(0x7)) // JA
+		descPtr(idReg, descReg)
+		b.movRegMemDisp32(scratchReg, descReg, 16)
+		b.cmpRegImm8(scratchReg, 1)
+		fail = append(fail, b.jccRel32(0x5)) // JNE
+	}
+
+	switch kind {
+	case "storage_alloc":
+		// RCX = element count. Native storage is u64-only today.
+		capacityElems := uint64((storageBytes - nativeStoragePayloadOffset) / 8)
+		if capacityElems > uint64(^uint32(0)) {
+			return nil, x64ProcessDataFixup{}, fmt.Errorf("x64 storage runtime: capacity too large")
+		}
+		b.cmpRegImm32(x64RCX, uint32(capacityElems))
+		fail = append(fail, b.jccRel32(0x7)) // JA
+		b.movRegMemDisp32(x64R9, x64R10, 0)  // next id
+		b.testRegReg(x64R9, x64R9)
+		haveID := b.jccRel32(0x5) // JNE
+		b.movRegImm64(x64R9, 1)
+		patchX64Rel32(b.code, haveID, len(b.code))
+		b.cmpRegImm32(x64R9, nativeStorageMaxBlocks)
+		fail = append(fail, b.jccRel32(0x7)) // JA
+
+		b.movRegMemDisp32(x64R11, x64R10, 8) // cursor
+		b.testRegReg(x64R11, x64R11)
+		haveCursor := b.jccRel32(0x5)
+		b.movRegImm64(x64R11, nativeStoragePayloadOffset)
+		patchX64Rel32(b.code, haveCursor, len(b.code))
+
+		b.movRegReg(x64RAX, x64RCX)
+		b.shlRegImm8(x64RAX, 3)
+		b.movRegImm64(x64RDX, uint64(storageBytes))
+		b.binaryRegReg(0x29, x64RDX, x64R11) // available
+		b.cmpRegReg(x64RAX, x64RDX)
+		fail = append(fail, b.jccRel32(0x7)) // JA
+
+		descPtr(x64R9, x64RDX)
+		b.movMemDisp32Reg(x64RDX, 0, x64R11)
+		b.movMemDisp32Reg(x64RDX, 8, x64RCX)
+		b.movRegImm64(x64R8, 1)
+		b.movMemDisp32Reg(x64RDX, 16, x64R8)
+		b.movMemDisp32Reg(x64RDX, 24, x64RCX)
+		b.binaryRegReg(0x01, x64R11, x64RAX)
+		b.movMemDisp32Reg(x64R10, 8, x64R11)
+		b.addRegImm8(x64R9, 1)
+		b.movMemDisp32Reg(x64R10, 0, x64R9)
+		b.subRegImm8(x64R9, 1)
+		b.movRegReg(x64RAX, x64R9)
+		b.xorRegReg(x64RDX, x64RDX)
+		b.ret()
+	case "storage_load":
+		// RCX=id, RDX=index.
+		validateID(x64RCX, x64R9, x64R8)
+		b.movRegMemDisp32(x64R8, x64R9, 8)
+		b.cmpRegReg(x64RDX, x64R8)
+		fail = append(fail, b.jccRel32(0x3)) // JAE
+		b.movRegMemDisp32(x64R11, x64R9, 0)
+		b.shlRegImm8(x64RDX, 3)
+		b.binaryRegReg(0x01, x64R11, x64RDX)
+		b.binaryRegReg(0x01, x64R11, x64R10)
+		b.movRegMemDisp32(x64RAX, x64R11, 0)
+		b.xorRegReg(x64RDX, x64RDX)
+		b.ret()
+	case "storage_store":
+		// RCX=id, RDX=index, R8=value.
+		b.movRegReg(x64R11, x64R8) // preserve value
+		validateID(x64RCX, x64R9, x64RAX)
+		b.movRegMemDisp32(x64RAX, x64R9, 8)
+		b.cmpRegReg(x64RDX, x64RAX)
+		fail = append(fail, b.jccRel32(0x3))
+		b.movRegMemDisp32(x64RAX, x64R9, 0)
+		b.shlRegImm8(x64RDX, 3)
+		b.binaryRegReg(0x01, x64RAX, x64RDX)
+		b.binaryRegReg(0x01, x64RAX, x64R10)
+		b.movMemDisp32Reg(x64RAX, 0, x64R11)
+		b.xorRegReg(x64RAX, x64RAX)
+		b.xorRegReg(x64RDX, x64RDX)
+		b.ret()
+	case "storage_free":
+		validateID(x64RCX, x64R9, x64R8)
+		b.xorRegReg(x64R8, x64R8)
+		b.movMemDisp32Reg(x64R9, 16, x64R8)
+		b.xorRegReg(x64RAX, x64RAX)
+		b.xorRegReg(x64RDX, x64RDX)
+		b.ret()
+	case "storage_len":
+		validateID(x64RCX, x64R9, x64R8)
+		b.movRegMemDisp32(x64RAX, x64R9, 24)
+		b.xorRegReg(x64RDX, x64RDX)
+		b.ret()
+	case "storage_capacity":
+		validateID(x64RCX, x64R9, x64R8)
+		b.movRegMemDisp32(x64RAX, x64R9, 8)
+		b.xorRegReg(x64RDX, x64RDX)
+		b.ret()
+	case "storage_set_len":
+		validateID(x64RCX, x64R9, x64R8)
+		b.movRegMemDisp32(x64R8, x64R9, 8)
+		b.cmpRegReg(x64RDX, x64R8)
+		fail = append(fail, b.jccRel32(0x7))
+		b.movMemDisp32Reg(x64R9, 24, x64RDX)
+		b.xorRegReg(x64RAX, x64RAX)
+		b.xorRegReg(x64RDX, x64RDX)
+		b.ret()
+	default:
+		return nil, x64ProcessDataFixup{}, fmt.Errorf("x64 storage runtime: unknown helper kind %q", kind)
+	}
+
+	failureOffset := len(b.code)
+	for _, pos := range fail {
+		patchX64Rel32(b.code, pos, failureOffset)
+	}
+	b.xorRegReg(x64RAX, x64RAX)
+	b.movRegImm64(x64RDX, 1)
+	b.ret()
+	return b.code, x64ProcessDataFixup{DispPos: runtimeDisp, Target: processDataRuntime}, nil
 }
 
 func x64ProcessHelpers(process X64ProcessMachineCode) ([]string, error) {
@@ -85,6 +254,10 @@ func resolveX64LinuxProcessRuntime(process X64ProcessMachineCode) ([]byte, []x64
 	code := append([]byte(nil), process.Code...)
 	offsets := make(map[string]int, len(helpers))
 	dataFixups := make([]x64ProcessDataFixup, 0)
+	ioRuntimeBytes := process.RuntimeDataBytes - process.StorageDataBytes
+	if ioRuntimeBytes < 0 {
+		return nil, nil, fmt.Errorf("x64 process runtime: storage data exceeds runtime data")
+	}
 	for _, helper := range helpers {
 		stream, typ, _ := x64ProcessHelperSpec(helper)
 		offsets[helper] = len(code)
@@ -94,24 +267,31 @@ func resolveX64LinuxProcessRuntime(process X64ProcessMachineCode) ([]byte, []x64
 		} else if stream == "rng" {
 			runtimeCode, err = buildX64LinuxRNGHelper()
 		} else if stream == "fswrite" {
-			var fixup x64ProcessDataFixup
-			runtimeCode, fixup, err = buildX64LinuxFSWriteHelper(len(process.Data))
-			fixup.DispPos += len(code)
-			dataFixups = append(dataFixups, fixup)
+			var fixups []x64ProcessDataFixup
+			runtimeCode, fixups, err = buildX64LinuxFSWriteHelper(len(process.Data), ioRuntimeBytes)
+			for _, fixup := range fixups {
+				fixup.DispPos += len(code)
+				dataFixups = append(dataFixups, fixup)
+			}
 		} else if stream == "fsread" {
 			var fixups []x64ProcessDataFixup
-			runtimeCode, fixups, err = buildX64LinuxFSReadHelper(len(process.Data), process.RuntimeDataBytes)
+			runtimeCode, fixups, err = buildX64LinuxFSReadHelper(len(process.Data), ioRuntimeBytes)
 			for _, fixup := range fixups {
 				fixup.DispPos += len(code)
 				dataFixups = append(dataFixups, fixup)
 			}
 		} else if stream == "bytesget" {
 			var fixups []x64ProcessDataFixup
-			runtimeCode, fixups, err = buildX64BytesGetHelper(len(process.Data), process.RuntimeDataBytes)
+			runtimeCode, fixups, err = buildX64BytesGetHelper(len(process.Data), ioRuntimeBytes)
 			for _, fixup := range fixups {
 				fixup.DispPos += len(code)
 				dataFixups = append(dataFixups, fixup)
 			}
+		} else if stream == "bytessnapshot" {
+			var fixup x64ProcessDataFixup
+			runtimeCode, fixup, err = buildX64BytesFromStorageHelper(len(process.Data), ioRuntimeBytes, process.StorageDataBytes)
+			fixup.DispPos += len(code)
+			dataFixups = append(dataFixups, fixup)
 		} else if stream == "netconnect" {
 			var fixup x64ProcessDataFixup
 			runtimeCode, fixup, err = buildX64LinuxNetConnectHelper(len(process.Data))
@@ -119,11 +299,16 @@ func resolveX64LinuxProcessRuntime(process X64ProcessMachineCode) ([]byte, []x64
 			dataFixups = append(dataFixups, fixup)
 		} else if stream == "netfetch" {
 			var fixups []x64ProcessDataFixup
-			runtimeCode, fixups, err = buildX64LinuxNetFetchHelper(len(process.Data), process.RuntimeDataBytes)
+			runtimeCode, fixups, err = buildX64LinuxNetFetchHelper(len(process.Data), ioRuntimeBytes)
 			for _, fixup := range fixups {
 				fixup.DispPos += len(code)
 				dataFixups = append(dataFixups, fixup)
 			}
+		} else if stream == "storage_alloc" || stream == "storage_load" || stream == "storage_store" || stream == "storage_free" {
+			var fixup x64ProcessDataFixup
+			runtimeCode, fixup, err = buildX64StorageHelper(stream, process.RuntimeDataBytes-process.StorageDataBytes, process.StorageDataBytes)
+			fixup.DispPos += len(code)
+			dataFixups = append(dataFixups, fixup)
 		} else {
 			runtimeCode, err = buildX64LinuxProcessHelper(stream, typ)
 		}
@@ -757,6 +942,10 @@ func resolveX64WindowsProcessRuntime(process X64ProcessMachineCode) ([]byte, []x
 	offsets := make(map[string]int, len(helpers))
 	iatFixups := make([]x64PEIATFixup, 0, len(helpers)*2)
 	dataFixups := make([]x64ProcessDataFixup, 0)
+	ioRuntimeBytes := process.RuntimeDataBytes - process.StorageDataBytes
+	if ioRuntimeBytes < 0 {
+		return nil, nil, nil, fmt.Errorf("x64 process runtime: storage data exceeds runtime data")
+	}
 	for _, helper := range helpers {
 		stream, typ, _ := x64ProcessHelperSpec(helper)
 		base := len(code)
@@ -768,14 +957,16 @@ func resolveX64WindowsProcessRuntime(process X64ProcessMachineCode) ([]byte, []x
 		} else if stream == "rng" {
 			runtimeCode, helperIAT, err = buildX64WindowsRNGHelper()
 		} else if stream == "fswrite" {
-			var fixup x64ProcessDataFixup
-			runtimeCode, helperIAT, fixup, err = buildX64WindowsFSWriteHelper(len(process.Data))
-			fixup.DispPos += base
-			dataFixups = append(dataFixups, fixup)
+			var fixups []x64ProcessDataFixup
+			runtimeCode, helperIAT, fixups, err = buildX64WindowsFSWriteHelper(len(process.Data), ioRuntimeBytes)
+			for _, fixup := range fixups {
+				fixup.DispPos += base
+				dataFixups = append(dataFixups, fixup)
+			}
 		} else if stream == "fsread" {
 			var helperIAT []x64PEIATFixup
 			var fixups []x64ProcessDataFixup
-			runtimeCode, helperIAT, fixups, err = buildX64WindowsFSReadHelper(len(process.Data), process.RuntimeDataBytes)
+			runtimeCode, helperIAT, fixups, err = buildX64WindowsFSReadHelper(len(process.Data), ioRuntimeBytes)
 			for i := range helperIAT {
 				helperIAT[i].dispPos += len(code)
 			}
@@ -786,11 +977,16 @@ func resolveX64WindowsProcessRuntime(process X64ProcessMachineCode) ([]byte, []x
 			}
 		} else if stream == "bytesget" {
 			var fixups []x64ProcessDataFixup
-			runtimeCode, fixups, err = buildX64BytesGetHelper(len(process.Data), process.RuntimeDataBytes)
+			runtimeCode, fixups, err = buildX64BytesGetHelper(len(process.Data), ioRuntimeBytes)
 			for _, fixup := range fixups {
 				fixup.DispPos += base
 				dataFixups = append(dataFixups, fixup)
 			}
+		} else if stream == "bytessnapshot" {
+			var fixup x64ProcessDataFixup
+			runtimeCode, fixup, err = buildX64BytesFromStorageHelper(len(process.Data), ioRuntimeBytes, process.StorageDataBytes)
+			fixup.DispPos += len(code)
+			dataFixups = append(dataFixups, fixup)
 		} else if stream == "netconnect" {
 			var fixup x64ProcessDataFixup
 			runtimeCode, helperIAT, fixup, err = buildX64WindowsNetConnectHelper(len(process.Data))
@@ -798,11 +994,16 @@ func resolveX64WindowsProcessRuntime(process X64ProcessMachineCode) ([]byte, []x
 			dataFixups = append(dataFixups, fixup)
 		} else if stream == "netfetch" {
 			var fixups []x64ProcessDataFixup
-			runtimeCode, helperIAT, fixups, err = buildX64WindowsNetFetchHelper(len(process.Data), process.RuntimeDataBytes)
+			runtimeCode, helperIAT, fixups, err = buildX64WindowsNetFetchHelper(len(process.Data), ioRuntimeBytes)
 			for _, fixup := range fixups {
 				fixup.DispPos += base
 				dataFixups = append(dataFixups, fixup)
 			}
+		} else if stream == "storage_alloc" || stream == "storage_load" || stream == "storage_store" || stream == "storage_free" {
+			var fixup x64ProcessDataFixup
+			runtimeCode, fixup, err = buildX64StorageHelper(stream, process.RuntimeDataBytes-process.StorageDataBytes, process.StorageDataBytes)
+			fixup.DispPos += base
+			dataFixups = append(dataFixups, fixup)
 		} else {
 			runtimeCode, helperIAT, err = buildX64WindowsProcessHelper(stream, typ)
 		}
@@ -1212,9 +1413,9 @@ func buildX64LinuxFSReadHelper(moduleLen, runtimeDataBytes int) ([]byte, []x64Pr
 	}, nil
 }
 
-func buildX64WindowsFSWriteHelper(arenaLen int) ([]byte, []x64PEIATFixup, x64ProcessDataFixup, error) {
-	if arenaLen < 0 || arenaLen > MaxByteArenaBytes {
-		return nil, nil, x64ProcessDataFixup{}, fmt.Errorf("x64 fs.write: invalid arena size %d", arenaLen)
+func buildX64WindowsFSWriteHelper(arenaLen, runtimeBytes int) ([]byte, []x64PEIATFixup, []x64ProcessDataFixup, error) {
+	if arenaLen < 0 || arenaLen > MaxByteArenaBytes || runtimeBytes < 0 || runtimeBytes > MaxProcessRuntimeArenaBytes {
+		return nil, nil, nil, fmt.Errorf("x64 fs.write: invalid arena sizes %d/%d", arenaLen, runtimeBytes)
 	}
 	b := &x64MachineBuilder{}
 	// Entry RSP is 8 mod 16; 392 bytes restores pre-call alignment and leaves
@@ -1260,18 +1461,8 @@ func buildX64WindowsFSWriteHelper(arenaLen int) ([]byte, []x64PEIATFixup, x64Pro
 	// Resolve data descriptor to arena pointer/length.
 	b.movRegMemDisp32(x64R10, x64RSP, 328)
 	b.movRegMemDisp32(x64RAX, x64RSP, 368)
-	b.movRegReg(x64R8, x64RAX)
-	b.shrRegImm8(x64R8, 32)
-	b.shlRegImm8(x64RAX, 32)
-	b.shrRegImm8(x64RAX, 32)
-	b.movRegImm64(x64R11, uint64(arenaLen))
-	b.cmpRegReg(x64R8, x64R11)
-	badDataOffset := b.jccRel32(0x7)
-	b.movRegReg(x64R9, x64R11)
-	b.binaryRegReg(0x29, x64R9, x64R8)
-	b.cmpRegReg(x64RAX, x64R9)
-	badDataSpan := b.jccRel32(0x7)
-	b.binaryRegReg(0x01, x64R10, x64R8)
+	dataFixups, dataFailures := b.emitFSWriteDataPointer(arenaLen, runtimeBytes)
+	dataFixups = append(dataFixups, x64ProcessDataFixup{DispPos: dataDisp, Target: processDataModule})
 	b.movMemDisp32Reg(x64RSP, 344, x64R10)
 	b.movMemDisp32Reg(x64RSP, 352, x64RAX)
 
@@ -1326,14 +1517,14 @@ func buildX64WindowsFSWriteHelper(arenaLen int) ([]byte, []x64PEIATFixup, x64Pro
 	done := b.jmpRel32()
 
 	failureOffset := len(b.code)
-	for _, pos := range []int{badPathEmpty, badPathLong, badPathOffset, badPathSpan, badDataOffset, badDataSpan, createFailed} {
+	for _, pos := range append(dataFailures, badPathEmpty, badPathLong, badPathOffset, badPathSpan, createFailed) {
 		patchX64Rel32(b.code, pos, failureOffset)
 	}
 	b.movRegImm64(x64RAX, 1)
 	patchX64Rel32(b.code, done, len(b.code))
 	b.addRegImm32(x64RSP, 392)
 	b.ret()
-	return b.code, fixups, x64ProcessDataFixup{DispPos: dataDisp}, nil
+	return b.code, fixups, dataFixups, nil
 }
 
 func buildX64WindowsNetConnectHelper(arenaLen int) ([]byte, []x64PEIATFixup, x64ProcessDataFixup, error) {
@@ -1942,9 +2133,9 @@ func buildX64WindowsNetFetchHelper(moduleLen, runtimeDataBytes int) ([]byte, []x
 	}, nil
 }
 
-func buildX64LinuxFSWriteHelper(arenaLen int) ([]byte, x64ProcessDataFixup, error) {
-	if arenaLen < 0 || arenaLen > MaxByteArenaBytes {
-		return nil, x64ProcessDataFixup{}, fmt.Errorf("x64 fs.write: invalid arena size %d", arenaLen)
+func buildX64LinuxFSWriteHelper(arenaLen, runtimeBytes int) ([]byte, []x64ProcessDataFixup, error) {
+	if arenaLen < 0 || arenaLen > MaxByteArenaBytes || runtimeBytes < 0 || runtimeBytes > MaxProcessRuntimeArenaBytes {
+		return nil, nil, fmt.Errorf("x64 fs.write: invalid arena sizes %d/%d", arenaLen, runtimeBytes)
 	}
 	b := &x64MachineBuilder{}
 	// Preserve SysV syscall argument registers that are nonvolatile in Swyp's
@@ -1992,19 +2183,9 @@ func buildX64LinuxFSWriteHelper(arenaLen int) ([]byte, x64ProcessDataFixup, erro
 
 	// Data descriptor -> direct arena pointer/length.
 	b.movRegMemDisp32(x64RAX, x64RSP, 288)
-	b.movRegReg(x64R8, x64RAX)
-	b.shrRegImm8(x64R8, 32)
-	b.shlRegImm8(x64RAX, 32)
-	b.shrRegImm8(x64RAX, 32)
-	b.movRegImm64(x64R11, uint64(arenaLen))
-	b.cmpRegReg(x64R8, x64R11)
-	badDataOffset := b.jccRel32(0x7)
-	b.movRegReg(x64R9, x64R11)
-	b.binaryRegReg(0x29, x64R9, x64R8)
-	b.cmpRegReg(x64RAX, x64R9)
-	badDataSpan := b.jccRel32(0x7)
 	b.movRegMemDisp32(x64R10, x64RSP, 256)
-	b.binaryRegReg(0x01, x64R10, x64R8)
+	dataFixups, dataFailures := b.emitFSWriteDataPointer(arenaLen, runtimeBytes)
+	dataFixups = append(dataFixups, x64ProcessDataFixup{DispPos: dataDisp, Target: processDataModule})
 	b.movMemDisp32Reg(x64RSP, 264, x64R10)
 	b.movMemDisp32Reg(x64RSP, 272, x64RAX)
 
@@ -2041,7 +2222,7 @@ func buildX64LinuxFSWriteHelper(arenaLen int) ([]byte, x64ProcessDataFixup, erro
 	done := b.jmpRel32()
 
 	failureOffset := len(b.code)
-	for _, pos := range []int{badPathEmpty, badPathLong, badPathOffset, badPathSpan, badDataOffset, badDataSpan, openFailureJump} {
+	for _, pos := range append(dataFailures, badPathEmpty, badPathLong, badPathOffset, badPathSpan, openFailureJump) {
 		patchX64Rel32(b.code, pos, failureOffset)
 	}
 	b.movRegImm64(x64RAX, 1)
@@ -2050,7 +2231,7 @@ func buildX64LinuxFSWriteHelper(arenaLen int) ([]byte, x64ProcessDataFixup, erro
 	b.pop(x64RDI)
 	b.pop(x64RSI)
 	b.ret()
-	return b.code, x64ProcessDataFixup{DispPos: dataDisp}, nil
+	return b.code, dataFixups, nil
 }
 
 func buildX64LinuxClockHelper() ([]byte, error) {

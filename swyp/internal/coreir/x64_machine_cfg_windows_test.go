@@ -87,6 +87,44 @@ func TestX64CFGMachineCodeExecutesBranch(t *testing.T) {
 	}
 }
 
+func TestX64CFGMachineSkipsDeadPhiCopySharingLiveRegister(t *testing.T) {
+	// value 2 is a dead phi allocated to the same register as the live phi 3.
+	// Materializing value 2 would overwrite value 0 before phi 3's no-op edge
+	// copy, returning the second argument instead of the first.
+	f := SSAFunction{
+		Name:       "dead_phi",
+		Params:     []SSAValue{0, 1},
+		ParamNames: []string{"live", "dead_source"},
+		Result:     U64,
+		ValueTypes: []Type{U64, U64, U64, U64},
+		Blocks: []SSABlock{
+			{Reachable: true, Terminator: SSATerminator{Op: "jump", Targets: []int{1}, Value: NoSSAValue}},
+			{
+				Reachable: true,
+				Phis: []SSAPhi{
+					{Dest: 2, Slot: 0, Inputs: []SSAPhiInput{{Predecessor: 0, Value: 1}}},
+					{Dest: 3, Slot: 1, Inputs: []SSAPhiInput{{Predecessor: 0, Value: 0}}},
+				},
+				Terminator: SSATerminator{Op: "return", Value: 3},
+			},
+		},
+	}
+	plan := SSARegisterPlan{Locations: []RegisterLocation{
+		{Class: RegisterGPR, Register: 0, Spill: -1},
+		{Class: RegisterGPR, Register: 1, Spill: -1},
+		{Class: RegisterGPR, Register: 0, Spill: -1}, // dead phi
+		{Class: RegisterGPR, Register: 0, Spill: -1}, // live phi
+	}}
+	code, err := EmitX64CFGMachineCode(f, plan)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, status := runX64MachineCodeForTest(t, code, 7, 9)
+	if status != 0 || got != 7 {
+		t.Fatalf("got=%d status=%d want=7", got, status)
+	}
+}
+
 func TestX64CFGMachineCodeExecutesSpills(t *testing.T) {
 	f := Function{
 		Name:   "pressure",
@@ -159,6 +197,19 @@ func TestX64CFGMachineModuleExecutesScalarCall(t *testing.T) {
 	got, status = runX64MachineCodeForTest(t, code, uintptr(^uint64(0)>>1))
 	if status != 1 || got != 0 {
 		t.Fatalf("overflow got=%d status=%d want=0/1", got, status)
+	}
+}
+
+func TestX64CFGMachineUnreachableReturnsBoundsStatus(t *testing.T) {
+	f := Function{
+		Name:   "entry",
+		Result: I64,
+		Blocks: []Block{{Terminator: Terminator{Op: "unreachable", Value: -1}}},
+	}
+	code := mustX64CFGModuleCode(t, []Function{f}, "entry", X64LeafRegisterCount())
+	got, status := runX64MachineCodeForTest(t, code)
+	if got != 0 || status != 3 {
+		t.Fatalf("unreachable got=%d status=%d want=0/3", got, status)
 	}
 }
 

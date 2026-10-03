@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"os"
 
 	"swyp-lang/internal/coreir"
 	"swyp-lang/internal/swyplang"
@@ -64,6 +63,14 @@ func compileX64ModuleIRCapabilities(sourcePath, entry string, allowFPCalls, allo
 	if err != nil {
 		return x64ModuleIRArtifact{}, err
 	}
+	return prepareX64ModuleIR(m, entry, allowFPCalls, allowProcessIO)
+}
+
+// prepareX64ModuleIR is the shared backend boundary for source-lowered and
+// linked-HIR Core modules. Everything after this point is architecture/backend
+// validation, optimization, SSA and register allocation.
+func prepareX64ModuleIR(m coreir.Module, entry string, allowFPCalls, allowProcessIO bool) (x64ModuleIRArtifact, error) {
+	var err error
 	m, _, err = coreir.Optimize(m)
 	if err != nil {
 		return x64ModuleIRArtifact{}, err
@@ -158,18 +165,18 @@ func validateX64NativeModule(m coreir.Module, entry string) error {
 func validateX64NativeModuleMode(m coreir.Module, entry string, allowFPCalls, allowProcessIO bool) error {
 	functions := make(map[string]coreir.Function, len(m.Functions))
 	for _, f := range m.Functions {
-		if f.Result == coreir.Bytes {
+		if f.Result == coreir.Bytes && (!allowProcessIO || f.Name == entry) {
 			return fmt.Errorf("x64 native backend function %s: bytes result requires byte arena support", f.Name)
 		}
 		for i, param := range f.Params {
-			if param.Type == coreir.Bytes {
+			if param.Type == coreir.Bytes && (!allowProcessIO || f.Name == entry) {
 				return fmt.Errorf("x64 native backend function %s: bytes parameter %d requires byte arena support", f.Name, i)
 			}
 		}
 		for bi, block := range f.Blocks {
 			for ii, ins := range block.Instructions {
-				if ins.Op == "bytes.get" && !allowProcessIO {
-					return fmt.Errorf("x64 native backend function %s block %d instruction %d: bytes.get requires native byte-arena mapping", f.Name, bi, ii)
+				if (ins.Op == "bytes.get" || ins.Op == "bytes.from_storage_u64") && !allowProcessIO {
+					return fmt.Errorf("x64 native backend function %s block %d instruction %d: %s requires native byte-arena mapping", f.Name, bi, ii, ins.Op)
 				}
 			}
 		}
@@ -204,11 +211,11 @@ func validateX64NativeModuleMode(m coreir.Module, entry string, allowFPCalls, al
 				if len(ins.Args) > 4 || len(callee.Params) > 4 {
 					return fmt.Errorf("x64 native call %s -> %s exceeds 4 GPR arguments", name, ins.Callee)
 				}
-				if !x64NativeCallType(callee.Result, allowFPCalls) {
+				if !x64NativeCallType(callee.Result, allowFPCalls) && !(allowProcessIO && callee.Result == coreir.Bytes) {
 					return fmt.Errorf("x64 native call %s -> %s result type %s is unsupported", name, ins.Callee, callee.Result)
 				}
 				for i, param := range callee.Params {
-					if !x64NativeCallType(param.Type, allowFPCalls) {
+					if !x64NativeCallType(param.Type, allowFPCalls) && !(allowProcessIO && param.Type == coreir.Bytes) {
 						return fmt.Errorf("x64 native call %s -> %s argument %d type %s is unsupported", name, ins.Callee, i, param.Type)
 					}
 				}
@@ -323,15 +330,7 @@ func coreX64Command(args []string, out io.Writer) error {
 	if err != nil {
 		return err
 	}
-	file, err := os.OpenFile(*output, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
-	if err != nil {
-		return err
-	}
-	if _, err := file.Write(artifact.Assembly); err != nil {
-		_ = file.Close()
-		return err
-	}
-	if err := file.Close(); err != nil {
+	if err := writeNewModule(*output, artifact.Assembly); err != nil {
 		return err
 	}
 	fmt.Fprintf(out, "Created direct x86-64 assembly %s (%s)\n", *output, coreir.X64CFGABI)

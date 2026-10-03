@@ -82,6 +82,37 @@ func prepareTurboBlocks(f Function, constants [][]Value) ([][]turboInstruction, 
 				ti.kind = fastBytesGet
 				ti.a = int16(ins.Args[0])
 				ti.b = int16(ins.Args[1])
+			case "bytes.from_storage_u64":
+				ti.kind = fastBytesFromStorageU64
+				ti.a = int16(ins.Args[0])
+				ti.b = int16(ins.Args[1])
+			case "storage.alloc_u64":
+				ti.kind = fastStorageAllocU64
+				ti.a = int16(ins.Args[0])
+			case "storage.load_u64":
+				ti.kind = fastStorageLoadU64
+				ti.a = int16(ins.Args[0])
+				ti.b = int16(ins.Args[1])
+			case "storage.store_u64":
+				ti.kind = fastStorageStoreU64
+				extra, err := appendTurboExtra(&extras, turboExtra{args: turboArgs(ins.Args)})
+				if err != nil {
+					return nil, nil, nil, err
+				}
+				ti.extra = extra
+			case "storage.free":
+				ti.kind = fastStorageFree
+				ti.a = int16(ins.Args[0])
+			case "storage.len_u64":
+				ti.kind = fastStorageLenU64
+				ti.a = int16(ins.Args[0])
+			case "storage.capacity_u64":
+				ti.kind = fastStorageCapacityU64
+				ti.a = int16(ins.Args[0])
+			case "storage.set_len_u64":
+				ti.kind = fastStorageSetLenU64
+				ti.a = int16(ins.Args[0])
+				ti.b = int16(ins.Args[1])
 			default:
 				if len(ins.Args) > 0 {
 					ti.a = int16(ins.Args[0])

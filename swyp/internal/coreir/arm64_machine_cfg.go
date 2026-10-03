@@ -88,10 +88,13 @@ func EmitARM64CFGMachineCode(f SSAFunction, plan SSARegisterPlan) ([]byte, error
 	}
 	gprIndex, fpIndex := 0, 0
 	for _, value := range f.Params {
-		loc := plan.Locations[value]
 		if registerClass(f.ValueTypes[value]) == RegisterFP {
 			src := fpIndex
 			fpIndex++
+			if !ssaValueUsed(f, value) {
+				continue
+			}
+			loc := plan.Locations[value]
 			if loc.Spill >= 0 {
 				if err := b.strDSp(src, arm64MachineFPSpillOffset(f, plan, loc.Spill)); err != nil {
 					return nil, err
@@ -105,6 +108,10 @@ func EmitARM64CFGMachineCode(f SSAFunction, plan SSARegisterPlan) ([]byte, error
 		} else {
 			src := gprIndex
 			gprIndex++
+			if !ssaValueUsed(f, value) {
+				continue
+			}
+			loc := plan.Locations[value]
 			if loc.Spill >= 0 {
 				if err := b.strRegSP(src, loc.Spill*8); err != nil {
 					return nil, err
@@ -182,7 +189,7 @@ func EmitARM64CFGMachineCode(f SSAFunction, plan SSARegisterPlan) ([]byte, error
 				return nil, fmt.Errorf("arm64 cfg machine: block %d invalid jump", bi)
 			}
 			target := block.Terminator.Targets[0]
-			if err := emitARM64MachinePhiCopies(b, f, plan, bi, target); err != nil {
+			if err := emitARM64MachineLivePhiCopies(b, f, plan, bi, target); err != nil {
 				return nil, err
 			}
 			fixups = append(fixups, arm64BlockFixup{wordIndex: b.branchPlaceholder(), target: target})
@@ -201,7 +208,7 @@ func EmitARM64CFGMachineCode(f SSAFunction, plan SSARegisterPlan) ([]byte, error
 			}
 			falseEdge := b.cbzPlaceholder(cond)
 			trueTarget := block.Terminator.Targets[0]
-			if err := emitARM64MachinePhiCopies(b, f, plan, bi, trueTarget); err != nil {
+			if err := emitARM64MachineLivePhiCopies(b, f, plan, bi, trueTarget); err != nil {
 				return nil, err
 			}
 			fixups = append(fixups, arm64BlockFixup{wordIndex: b.branchPlaceholder(), target: trueTarget})
@@ -210,10 +217,21 @@ func EmitARM64CFGMachineCode(f SSAFunction, plan SSARegisterPlan) ([]byte, error
 				return nil, err
 			}
 			falseTarget := block.Terminator.Targets[1]
-			if err := emitARM64MachinePhiCopies(b, f, plan, bi, falseTarget); err != nil {
+			if err := emitARM64MachineLivePhiCopies(b, f, plan, bi, falseTarget); err != nil {
 				return nil, err
 			}
 			fixups = append(fixups, arm64BlockFixup{wordIndex: b.branchPlaceholder(), target: falseTarget})
+		case "unreachable":
+			// Controlled bounds/trap return. Keep the host alive and use the
+			// established machine ABI status=3 used by checked bounds helpers.
+			b.movImm64(0, 0)
+			b.fmovDX(0, 31)
+			b.movImm64(17, 3)
+			b.strReg(16, 17)
+			if err := b.adjustSP(spillBytes); err != nil {
+				return nil, err
+			}
+			b.ret()
 		default:
 			return nil, fmt.Errorf("arm64 cfg machine: unsupported terminator %q in block %d", block.Terminator.Op, bi)
 		}
@@ -276,6 +294,7 @@ type ARM64ProcessMachineCode struct {
 	RuntimeFixups    []ARM64ProcessRuntimeFixup
 	Data             []byte
 	RuntimeDataBytes int
+	StorageDataBytes int
 }
 
 func EmitARM64CFGMachineProcessModule(functions []SSAFunction, plans map[string]SSARegisterPlan, entry string) (ARM64ProcessMachineCode, error) {
@@ -384,7 +403,8 @@ func arm64MachineHasProcessIO(f SSAFunction) bool {
 			continue
 		}
 		for _, ins := range block.Instructions {
-			if ins.Op == "io.stdout" || ins.Op == "io.stderr" || ins.Op == "clock.read" || ins.Op == "rng.sample" || ins.Op == "fs.read" || ins.Op == "fs.write" || ins.Op == "bytes.get" || ins.Op == "net.connect" || ins.Op == "net.fetch" || ins.Op == "process.exec" {
+			if ins.Op == "io.stdout" || ins.Op == "io.stderr" || ins.Op == "clock.read" || ins.Op == "rng.sample" || ins.Op == "fs.read" || ins.Op == "fs.write" || ins.Op == "bytes.get" || ins.Op == "net.connect" || ins.Op == "net.fetch" || ins.Op == "process.exec" ||
+				ins.Op == "storage.alloc_u64" || ins.Op == "storage.load_u64" || ins.Op == "storage.store_u64" || ins.Op == "storage.free" || ins.Op == "bytes.from_storage_u64" {
 				return true
 			}
 		}
@@ -480,7 +500,10 @@ type arm64MachineCallFrame struct {
 	callSaveGPRBase  int
 	callSaveFPBase   int
 	fpSaveCount      int
-	frameBytes       int
+	// linkOffset holds the caller's x30. Every BL in the body overwrites x30,
+	// so non-leaf functions must reload it before RET.
+	linkOffset int
+	frameBytes int
 }
 
 func arm64MachineCallFrameFor(f SSAFunction, plan SSARegisterPlan) arm64MachineCallFrame {
@@ -493,7 +516,8 @@ func arm64MachineCallFrameFor(f SSAFunction, plan SSARegisterPlan) arm64MachineC
 	if fpSaveCount > len(arm64MachineFPRegisters) {
 		fpSaveCount = len(arm64MachineFPRegisters)
 	}
-	frameBytes := (callSaveFPBase + fpSaveCount*8 + 15) &^ 15
+	linkOffset := callSaveFPBase + fpSaveCount*8
+	frameBytes := (linkOffset + 8 + 15) &^ 15
 	return arm64MachineCallFrame{
 		spillBytes:       spillBytes,
 		statusPtrOffset:  statusPtrOffset,
@@ -501,6 +525,7 @@ func arm64MachineCallFrameFor(f SSAFunction, plan SSARegisterPlan) arm64MachineC
 		callSaveGPRBase:  callSaveGPRBase,
 		callSaveFPBase:   callSaveFPBase,
 		fpSaveCount:      fpSaveCount,
+		linkOffset:       linkOffset,
 		frameBytes:       frameBytes,
 	}
 }
@@ -533,15 +558,32 @@ func emitARM64CFGMachineCallsFunction(f SSAFunction, plan SSARegisterPlan, allow
 	if err := b.adjustSP(-layout.frameBytes); err != nil {
 		return nil, nil, err
 	}
+	if err := b.strRegSP(30, layout.linkOffset); err != nil {
+		return nil, nil, err
+	}
+	// epilogue restores the caller's link register and frame before RET.
+	epilogue := func() error {
+		if err := b.ldrRegSP(30, layout.linkOffset); err != nil {
+			return err
+		}
+		if err := b.adjustSP(layout.frameBytes); err != nil {
+			return err
+		}
+		b.ret()
+		return nil
+	}
 	if err := b.strRegSP(16, layout.statusPtrOffset); err != nil {
 		return nil, nil, err
 	}
 	gprIndex, fpIndex := 0, 0
 	for _, value := range f.Params {
-		loc := plan.Locations[value]
 		if registerClass(f.ValueTypes[value]) == RegisterFP {
 			src := fpIndex
 			fpIndex++
+			if !ssaValueUsed(f, value) {
+				continue
+			}
+			loc := plan.Locations[value]
 			if loc.Spill >= 0 {
 				if err := b.strDSp(src, arm64MachineFPSpillOffset(f, plan, loc.Spill)); err != nil {
 					return nil, nil, err
@@ -555,6 +597,10 @@ func emitARM64CFGMachineCallsFunction(f SSAFunction, plan SSARegisterPlan, allow
 		} else {
 			src := gprIndex
 			gprIndex++
+			if !ssaValueUsed(f, value) {
+				continue
+			}
+			loc := plan.Locations[value]
 			if loc.Spill >= 0 {
 				if err := b.strRegSP(src, loc.Spill*8); err != nil {
 					return nil, nil, err
@@ -663,6 +709,15 @@ func emitARM64CFGMachineCallsFunction(f SSAFunction, plan SSARegisterPlan, allow
 				}
 				continue
 			}
+			if ins.Op == "storage.alloc_u64" || ins.Op == "storage.load_u64" || ins.Op == "storage.store_u64" || ins.Op == "storage.free" || ins.Op == "bytes.from_storage_u64" {
+				if !allowProcessIO {
+					return nil, nil, fmt.Errorf("arm64 cfg machine calls: %s requires standalone process backend", ins.Op)
+				}
+				if err := emitARM64MachineStorage(b, f, plan, ins, layout); err != nil {
+					return nil, nil, fmt.Errorf("arm64 cfg machine calls block %d: %w", bi, err)
+				}
+				continue
+			}
 			var err error
 			if registerClass(f.ValueTypes[ins.Dest]) == RegisterFP ||
 				(len(ins.Args) > 0 && registerClass(f.ValueTypes[ins.Args[0]]) == RegisterFP) {
@@ -710,16 +765,15 @@ func emitARM64CFGMachineCallsFunction(f SSAFunction, plan SSARegisterPlan, allow
 			}
 			b.movImm64(17, 0)
 			b.strReg(16, 17)
-			if err := b.adjustSP(layout.frameBytes); err != nil {
+			if err := epilogue(); err != nil {
 				return nil, nil, err
 			}
-			b.ret()
 		case "jump":
 			if len(block.Terminator.Targets) != 1 {
 				return nil, nil, fmt.Errorf("arm64 cfg machine calls: block %d invalid jump", bi)
 			}
 			target := block.Terminator.Targets[0]
-			if err := emitARM64MachinePhiCopies(b, f, plan, bi, target); err != nil {
+			if err := emitARM64MachineLivePhiCopies(b, f, plan, bi, target); err != nil {
 				return nil, nil, err
 			}
 			fixups = append(fixups, arm64BlockFixup{wordIndex: b.branchPlaceholder(), target: target})
@@ -738,7 +792,7 @@ func emitARM64CFGMachineCallsFunction(f SSAFunction, plan SSARegisterPlan, allow
 			}
 			falseEdge := b.cbzPlaceholder(cond)
 			trueTarget := block.Terminator.Targets[0]
-			if err := emitARM64MachinePhiCopies(b, f, plan, bi, trueTarget); err != nil {
+			if err := emitARM64MachineLivePhiCopies(b, f, plan, bi, trueTarget); err != nil {
 				return nil, nil, err
 			}
 			fixups = append(fixups, arm64BlockFixup{wordIndex: b.branchPlaceholder(), target: trueTarget})
@@ -747,10 +801,21 @@ func emitARM64CFGMachineCallsFunction(f SSAFunction, plan SSARegisterPlan, allow
 				return nil, nil, err
 			}
 			falseTarget := block.Terminator.Targets[1]
-			if err := emitARM64MachinePhiCopies(b, f, plan, bi, falseTarget); err != nil {
+			if err := emitARM64MachineLivePhiCopies(b, f, plan, bi, falseTarget); err != nil {
 				return nil, nil, err
 			}
 			fixups = append(fixups, arm64BlockFixup{wordIndex: b.branchPlaceholder(), target: falseTarget})
+		case "unreachable":
+			b.movImm64(0, 0)
+			b.fmovDX(0, 31)
+			if err := b.ldrRegSP(16, layout.statusPtrOffset); err != nil {
+				return nil, nil, err
+			}
+			b.movImm64(17, 3)
+			b.strReg(16, 17)
+			if err := epilogue(); err != nil {
+				return nil, nil, err
+			}
 		default:
 			return nil, nil, fmt.Errorf("arm64 cfg machine calls: unsupported terminator %q", block.Terminator.Op)
 		}
@@ -764,10 +829,9 @@ func emitARM64CFGMachineCallsFunction(f SSAFunction, plan SSARegisterPlan, allow
 	}
 	b.movImm64(17, 1)
 	b.strReg(16, 17)
-	if err := b.adjustSP(layout.frameBytes); err != nil {
+	if err := epilogue(); err != nil {
 		return nil, nil, err
 	}
-	b.ret()
 	ioFailureOffset := len(b.words)
 	b.movImm64(0, 0)
 	b.fmovDX(0, 31)
@@ -776,10 +840,9 @@ func emitARM64CFGMachineCallsFunction(f SSAFunction, plan SSARegisterPlan, allow
 	}
 	b.movImm64(17, 2)
 	b.strReg(16, 17)
-	if err := b.adjustSP(layout.frameBytes); err != nil {
+	if err := epilogue(); err != nil {
 		return nil, nil, err
 	}
-	b.ret()
 	boundsFailureOffset := len(b.words)
 	b.movImm64(0, 0)
 	b.fmovDX(0, 31)
@@ -788,10 +851,9 @@ func emitARM64CFGMachineCallsFunction(f SSAFunction, plan SSARegisterPlan, allow
 	}
 	b.movImm64(17, 3)
 	b.strReg(16, 17)
-	if err := b.adjustSP(layout.frameBytes); err != nil {
+	if err := epilogue(); err != nil {
 		return nil, nil, err
 	}
-	b.ret()
 	for _, fixup := range b.overflowFixups {
 		if err := b.patchCondBranch(fixup, overflowOffset); err != nil {
 			return nil, nil, err
@@ -983,11 +1045,92 @@ func arm64ProcessRuntimeHelper(name string) bool {
 	case "__swyp_rt_stdout_i64", "__swyp_rt_stdout_u64", "__swyp_rt_stdout_bool",
 		"__swyp_rt_stdout_ieee64",
 		"__swyp_rt_stderr_i64", "__swyp_rt_stderr_u64", "__swyp_rt_stderr_bool", "__swyp_rt_stderr_ieee64",
-		"__swyp_rt_clock_u64", "__swyp_rt_rng_u64", "__swyp_rt_fs_read", "__swyp_rt_fs_write", "__swyp_rt_bytes_get", "__swyp_rt_net_connect", "__swyp_rt_net_fetch":
+		"__swyp_rt_clock_u64", "__swyp_rt_rng_u64", "__swyp_rt_fs_read", "__swyp_rt_fs_write", "__swyp_rt_bytes_get", "__swyp_rt_net_connect", "__swyp_rt_net_fetch",
+		"__swyp_rt_storage_alloc_u64", "__swyp_rt_storage_load_u64", "__swyp_rt_storage_store_u64", "__swyp_rt_storage_free", "__swyp_rt_bytes_from_storage_u64":
 		return true
 	default:
 		return false
 	}
+}
+
+func emitARM64MachineStorage(b *arm64MachineBuilder, f SSAFunction, plan SSARegisterPlan, ins SSAInstruction, layout arm64MachineCallFrame) error {
+	wantArgs, helper := 0, ""
+	result := U64
+	switch ins.Op {
+	case "storage.alloc_u64":
+		wantArgs, helper = 1, "__swyp_rt_storage_alloc_u64"
+	case "storage.load_u64":
+		wantArgs, helper = 2, "__swyp_rt_storage_load_u64"
+	case "storage.store_u64":
+		wantArgs, helper = 3, "__swyp_rt_storage_store_u64"
+	case "storage.free":
+		wantArgs, helper = 1, "__swyp_rt_storage_free"
+	case "bytes.from_storage_u64":
+		wantArgs, helper, result = 2, "__swyp_rt_bytes_from_storage_u64", Bytes
+	default:
+		return fmt.Errorf("arm64 storage: unsupported operation %q", ins.Op)
+	}
+	if len(ins.Args) != wantArgs {
+		return fmt.Errorf("arm64 storage: %s requires %d operands", ins.Op, wantArgs)
+	}
+	for i := range arm64MachineRegisters {
+		if err := b.strRegSP(arm64MachineRegisters[i], layout.callSaveGPRBase+i*8); err != nil {
+			return err
+		}
+	}
+	for i := 0; i < layout.fpSaveCount; i++ {
+		if err := b.strDSp(arm64MachineFPRegisters[i], layout.callSaveFPBase+i*8); err != nil {
+			return err
+		}
+	}
+	for i, value := range ins.Args {
+		if value < 0 || int(value) >= len(f.ValueTypes) || f.ValueTypes[value] != U64 {
+			return fmt.Errorf("arm64 storage: operand %d must be u64", i)
+		}
+		loc := plan.Locations[value]
+		if loc.Spill >= 0 {
+			if err := b.ldrRegSP(i, loc.Spill*8); err != nil {
+				return err
+			}
+		} else {
+			src := arm64PhysicalMachineReg(plan, value)
+			if src != i {
+				b.movRegReg(i, src)
+			}
+		}
+	}
+	b.callFixups = append(b.callFixups, arm64CallFixup{wordIndex: b.blPlaceholder(), callee: helper})
+	b.movRegReg(6, 0)
+	b.movRegReg(7, 1)
+	for i := range arm64MachineRegisters {
+		if err := b.ldrRegSP(arm64MachineRegisters[i], layout.callSaveGPRBase+i*8); err != nil {
+			return err
+		}
+	}
+	for i := 0; i < layout.fpSaveCount; i++ {
+		if err := b.ldrDSp(arm64MachineFPRegisters[i], layout.callSaveFPBase+i*8); err != nil {
+			return err
+		}
+	}
+	if ins.Dest >= 0 {
+		if int(ins.Dest) >= len(f.ValueTypes) || f.ValueTypes[ins.Dest] != result {
+			return fmt.Errorf("arm64 storage: destination must be %s", result)
+		}
+		loc := plan.Locations[ins.Dest]
+		if loc.Spill >= 0 {
+			if err := b.strRegSP(6, loc.Spill*8); err != nil {
+				return err
+			}
+		} else {
+			dst := arm64PhysicalMachineReg(plan, ins.Dest)
+			if dst != 6 {
+				b.movRegReg(dst, 6)
+			}
+		}
+	}
+	b.cmpRegReg(7, 31)
+	b.boundsFailureFixups = append(b.boundsFailureFixups, b.condBranchPlaceholder(0x1))
+	return nil
 }
 
 func emitARM64MachineNetConnect(b *arm64MachineBuilder, f SSAFunction, plan SSARegisterPlan, ins SSAInstruction, layout arm64MachineCallFrame) error {
@@ -1545,6 +1688,30 @@ func emitARM64MachinePhiCopies(b *arm64MachineBuilder, f SSAFunction, plan SSARe
 	return nil
 }
 
+func emitARM64MachineLivePhiCopies(b *arm64MachineBuilder, f SSAFunction, plan SSARegisterPlan, predecessor, target int) error {
+	if target < 0 || target >= len(f.Blocks) {
+		return emitARM64MachinePhiCopies(b, f, plan, predecessor, target)
+	}
+	block := f.Blocks[target]
+	if len(block.Phis) == 0 {
+		return emitARM64MachinePhiCopies(b, f, plan, predecessor, target)
+	}
+	live := make([]SSAPhi, 0, len(block.Phis))
+	for _, phi := range block.Phis {
+		if ssaValueUsed(f, phi.Dest) {
+			live = append(live, phi)
+		}
+	}
+	if len(live) == len(block.Phis) {
+		return emitARM64MachinePhiCopies(b, f, plan, predecessor, target)
+	}
+	filtered := f
+	filtered.Blocks = append([]SSABlock(nil), f.Blocks...)
+	block.Phis = live
+	filtered.Blocks[target] = block
+	return emitARM64MachinePhiCopies(b, filtered, plan, predecessor, target)
+}
+
 func (b *arm64MachineBuilder) branchPlaceholder() int {
 	index := len(b.words)
 	b.append(0x14000000)
@@ -1605,6 +1772,14 @@ func (b *arm64MachineBuilder) patchBranch(index, target int) error {
 func (b *arm64MachineBuilder) cbzPlaceholder(reg int) int {
 	index := len(b.words)
 	b.append(0xb4000000 | uint32(reg&31))
+	return index
+}
+
+// cbnzPlaceholder emits CBNZ; patchCBZ patches it because both share the
+// imm19 layout and patchCBZ preserves the opcode bits.
+func (b *arm64MachineBuilder) cbnzPlaceholder(reg int) int {
+	index := len(b.words)
+	b.append(0xb5000000 | uint32(reg&31))
 	return index
 }
 

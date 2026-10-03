@@ -50,9 +50,36 @@ type SSAFunction struct {
 	Blocks     []SSABlock
 }
 
+func ssaValueUsed(f SSAFunction, value SSAValue) bool {
+	for _, block := range f.Blocks {
+		if !block.Reachable {
+			continue
+		}
+		for _, phi := range block.Phis {
+			for _, input := range phi.Inputs {
+				if input.Value == value {
+					return true
+				}
+			}
+		}
+		for _, ins := range block.Instructions {
+			for _, arg := range ins.Args {
+				if arg == value {
+					return true
+				}
+			}
+		}
+		if block.Terminator.Value == value {
+			return true
+		}
+	}
+	return false
+}
+
 // BuildSSA versions mutable Core slots into a conventional SSA view. It does
-// not mutate the input Function and is intended for optimization and direct
-// native backends; Core's executable/wire format remains unchanged.
+// not mutate the input Function. Incoming phis are pruned by slot liveness;
+// every reachable read must still be definitely assigned. Core's executable/
+// wire format remains unchanged.
 func BuildSSA(f Function) (SSAFunction, error) {
 	if len(f.Blocks) == 0 {
 		return SSAFunction{}, fmt.Errorf("ssa: function has no blocks")
@@ -60,6 +87,13 @@ func BuildSSA(f Function) (SSAFunction, error) {
 	preds, reachable, err := ssaCFG(f)
 	if err != nil {
 		return SSAFunction{}, err
+	}
+	liveness, err := AnalyzeLiveness(f)
+	if err != nil {
+		return SSAFunction{}, err
+	}
+	if err := definiteAssignment(f, preds); err != nil {
+		return SSAFunction{}, fmt.Errorf("ssa: %w", err)
 	}
 	result := SSAFunction{
 		Name:       f.Name,
@@ -124,6 +158,9 @@ func BuildSSA(f Function) (SSAFunction, error) {
 			}
 			if bi != 0 {
 				for slot := range f.Slots {
+					if !liveness.Blocks[bi].LiveIn[slot] {
+						continue
+					}
 					merged := mergeSSAPredecessors(preds[bi], out, reachable, slot)
 					if len(merged) == 1 {
 						if in[bi][slot] != merged[0] {

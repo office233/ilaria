@@ -8,11 +8,11 @@ import (
 const MaxX64LeafCodeBytes = 1 << 20
 
 type x64MachineBuilder struct {
-	code               []byte
-	overflowFixups     []int
-	ioFailureFixups    []int
+	code                []byte
+	overflowFixups      []int
+	ioFailureFixups     []int
 	boundsFailureFixups []int
-	callFixups         []x64CallFixup
+	callFixups          []x64CallFixup
 }
 
 func EmitX64LeafMachineCode(f SSAFunction, plan SSARegisterPlan) ([]byte, error) {
@@ -184,6 +184,22 @@ func (b *x64MachineBuilder) emitInstruction(f SSAFunction, plan SSARegisterPlan,
 		a, _, err := arg(0)
 		if err != nil {
 			return err
+		}
+		if dst != a {
+			b.movRegReg(dst, a)
+		}
+		return nil
+	case "bitcast_i64_u64", "bitcast_u64_i64":
+		a, srcType, err := arg(0)
+		if err != nil {
+			return err
+		}
+		wantSrc, wantDst := I64, U64
+		if ins.Op == "bitcast_u64_i64" {
+			wantSrc, wantDst = U64, I64
+		}
+		if srcType != wantSrc || f.ValueTypes[ins.Dest] != wantDst {
+			return fmt.Errorf("x64 machine: invalid %s types %s -> %s", ins.Op, srcType, f.ValueTypes[ins.Dest])
 		}
 		if dst != a {
 			b.movRegReg(dst, a)
@@ -383,6 +399,17 @@ func (b *x64MachineBuilder) movMemByteReg(base, src int) {
 func (b *x64MachineBuilder) divReg(reg int) {
 	b.rex(true, 0, reg)
 	b.code = append(b.code, 0xf7, modRM(3, 6, reg))
+}
+
+// idivReg emits signed IDIV r/m64: RDX:RAX / reg -> RAX quotient, RDX remainder.
+func (b *x64MachineBuilder) idivReg(reg int) {
+	b.rex(true, 0, reg)
+	b.code = append(b.code, 0xf7, modRM(3, 7, reg))
+}
+
+// cqo sign-extends RAX into RDX:RAX before a signed division.
+func (b *x64MachineBuilder) cqo() {
+	b.code = append(b.code, 0x48, 0x99)
 }
 
 func (b *x64MachineBuilder) shrRegImm8(reg int, shift byte) {

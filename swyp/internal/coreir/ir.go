@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"unicode"
 )
 
 const (
@@ -63,8 +64,12 @@ type Terminator struct {
 // DecodeStrict rejects unknown fields, duplicate keys (including casing aliases),
 // nulls, trailing values and excessive size/depth before semantic validation.
 func DecodeStrict(data []byte, out any) error {
-	if len(data) == 0 || len(data) > MaxBytes {
-		return diagnostic("invalid_json", "JSON size outside 1..1 MiB")
+	return decodeStrictBounded(data, MaxBytes, out)
+}
+
+func decodeStrictBounded(data []byte, maxBytes int, out any) error {
+	if len(data) == 0 || len(data) > maxBytes {
+		return diagnostic("invalid_json", fmt.Sprintf("JSON size outside 1..%d bytes", maxBytes))
 	}
 	d := json.NewDecoder(bytes.NewReader(data))
 	d.UseNumber()
@@ -93,7 +98,7 @@ func DecodeStrict(data []byte, out any) error {
 					if !ok {
 						return fmt.Errorf("expected object key")
 					}
-					key = strings.ToLower(key)
+					key = foldJSONKey(key)
 					if seen[key] {
 						return fmt.Errorf("duplicate object key %q", key)
 					}
@@ -128,6 +133,24 @@ func DecodeStrict(data []byte, out any) error {
 		return diagnostic("invalid_json", err.Error())
 	}
 	return nil
+}
+
+// encoding/json matches field names using Unicode simple case folding, not
+// just lowercase conversion. For example, long s (U+017F) aliases ASCII s.
+// Use the smallest rune in each fold cycle so duplicate detection covers the
+// same aliases as the decoder without depending on private stdlib helpers.
+func foldJSONKey(key string) string {
+	var folded strings.Builder
+	for _, r := range key {
+		canonical := r
+		for next := unicode.SimpleFold(r); next != r; next = unicode.SimpleFold(next) {
+			if next < canonical {
+				canonical = next
+			}
+		}
+		folded.WriteRune(canonical)
+	}
+	return folded.String()
 }
 
 func Decode(data []byte) (Module, error) {
@@ -325,6 +348,41 @@ func (m Module) Validate() error {
 						return fail("bytes.get requires bytes and u64 operands")
 					}
 					result, trap = U64, true
+				case "bytes.from_storage_u64":
+					if len(types) != 2 || types[0] != U64 || types[1] != U64 {
+						return fail("bytes.from_storage_u64 requires storage-id and length u64 operands")
+					}
+					result, trap = Bytes, true
+				case "storage.alloc_u64":
+					if len(types) != 1 || types[0] != U64 {
+						return fail("storage.alloc_u64 requires element-count u64")
+					}
+					result, trap = U64, true
+				case "storage.load_u64":
+					if len(types) != 2 || types[0] != U64 || types[1] != U64 {
+						return fail("storage.load_u64 requires storage-id u64 and index u64")
+					}
+					result, trap = U64, true
+				case "storage.store_u64":
+					if len(types) != 3 || types[0] != U64 || types[1] != U64 || types[2] != U64 {
+						return fail("storage.store_u64 requires storage-id, index and value u64 operands")
+					}
+					result, trap = Void, true
+				case "storage.free":
+					if len(types) != 1 || types[0] != U64 {
+						return fail("storage.free requires storage-id u64")
+					}
+					result, trap = Void, true
+				case "storage.len_u64", "storage.capacity_u64":
+					if len(types) != 1 || types[0] != U64 {
+						return fail(ins.Op + " requires storage-id u64")
+					}
+					result, trap = U64, true
+				case "storage.set_len_u64":
+					if len(types) != 2 || types[0] != U64 || types[1] != U64 {
+						return fail("storage.set_len_u64 requires storage-id and length u64")
+					}
+					result, trap = Void, true
 				default:
 					result, trap, err = resultType(ins.Op, types)
 				}

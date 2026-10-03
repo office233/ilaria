@@ -178,6 +178,29 @@ func TestEmitARM64CFGMachineCodeBranchEncodings(t *testing.T) {
 	}
 }
 
+func TestEmitARM64CFGMachineCodeSupportsUnreachableBoundsSink(t *testing.T) {
+	f := Function{
+		Name:   "entry",
+		Result: I64,
+		Blocks: []Block{{Terminator: Terminator{Op: "unreachable", Value: -1}}},
+	}
+	ssa, err := BuildSSA(f)
+	if err != nil {
+		t.Fatal(err)
+	}
+	plan, err := AllocateSSARegisters(ssa, ARM64LeafRegisterCount(), 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	code, err := EmitARM64CFGMachineCode(ssa, plan)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(code) == 0 {
+		t.Fatal("unreachable bounds sink emitted empty ARM64 code")
+	}
+}
+
 func TestARM64MachinePhiCopiesBreakRegisterCycle(t *testing.T) {
 	f := SSAFunction{
 		Name:       "cycle",

@@ -189,6 +189,22 @@ func (b *arm64MachineBuilder) emitInstruction(f SSAFunction, plan SSARegisterPla
 			b.movRegReg(dst, a)
 		}
 		return commit()
+	case "bitcast_i64_u64", "bitcast_u64_i64":
+		a, srcType, err := arg(0, 7)
+		if err != nil {
+			return err
+		}
+		wantSrc, wantDst := I64, U64
+		if ins.Op == "bitcast_u64_i64" {
+			wantSrc, wantDst = U64, I64
+		}
+		if srcType != wantSrc || f.ValueTypes[ins.Dest] != wantDst {
+			return fmt.Errorf("arm64 machine: invalid %s types %s -> %s", ins.Op, srcType, f.ValueTypes[ins.Dest])
+		}
+		if dst != a {
+			b.movRegReg(dst, a)
+		}
+		return commit()
 	case "neg":
 		a, t, err := arg(0, 7)
 		if err != nil {
@@ -262,12 +278,16 @@ func (b *arm64MachineBuilder) emitInstruction(f SSAFunction, plan SSARegisterPla
 				b.subRegReg(dst, a, c)
 			}
 		case "mul":
-			b.mul(dst, a, c)
 			if at == I64 {
+				// Read both operands for the high half before MUL can overwrite
+				// one of them when dst shares its register.
 				b.smulh(6, a, c)
+				b.mul(dst, a, c)
 				b.asrImm(8, dst, 63)
 				b.cmpRegReg(6, 8)
 				b.branchCondPlaceholder(0x1) // NE
+			} else {
+				b.mul(dst, a, c)
 			}
 		case "band":
 			b.logicalRegReg(0x8a000000, dst, a, c)
@@ -275,6 +295,53 @@ func (b *arm64MachineBuilder) emitInstruction(f SSAFunction, plan SSARegisterPla
 			b.logicalRegReg(0xaa000000, dst, a, c)
 		case "bxor":
 			b.logicalRegReg(0xca000000, dst, a, c)
+		}
+		return commit()
+	case "div", "rem":
+		// Checked Core semantics: a zero divisor traps, i64 MIN/-1 overflows and
+		// MIN%-1 is 0. SDIV/UDIV silently return 0 or MIN for those inputs, so
+		// both cases are handled before dividing. Traps use status 1.
+		a, at, err := arg(0, 7)
+		if err != nil {
+			return err
+		}
+		c, bt, err := arg(1, 8)
+		if err != nil {
+			return err
+		}
+		if at != bt || (at != I64 && at != U64) {
+			return fmt.Errorf("arm64 machine: %s unsupported operands %s/%s", ins.Op, at, bt)
+		}
+		b.cmpRegReg(c, 31)
+		b.branchCondPlaceholder(0x0) // EQ: division by zero
+		done := -1
+		if at == I64 {
+			b.movImm64(6, ^uint64(0))
+			b.cmpRegReg(c, 6)
+			general := b.condBranchPlaceholder(0x1) // NE
+			if ins.Op == "div" {
+				b.subsRegReg(dst, 31, a)
+				b.branchOverflow()
+			} else {
+				b.movImm64(dst, 0)
+			}
+			done = b.branchPlaceholder()
+			if err := b.patchCondBranch(general, len(b.words)); err != nil {
+				return err
+			}
+		}
+		signed := at == I64
+		if ins.Op == "div" {
+			b.divide(signed, dst, a, c)
+		} else {
+			// MSUB reads all operands before writing dst, so aliasing is safe.
+			b.divide(signed, 6, a, c)
+			b.msub(dst, 6, c, a)
+		}
+		if done >= 0 {
+			if err := b.patchBranch(done, len(b.words)); err != nil {
+				return err
+			}
 		}
 		return commit()
 	default:
@@ -321,6 +388,41 @@ func (b *arm64MachineBuilder) emitFPInstruction(f SSAFunction, plan SSARegisterP
 	}
 	if destType == F64 {
 		return fmt.Errorf("arm64 machine fp: strict f64 is unsupported; use ieee64 or Core AOT")
+	}
+	if ins.Op == "bitcast_ieee64_u64" {
+		if len(ins.Args) != 1 || f.ValueTypes[ins.Args[0]] != IEEE64 || destType != U64 {
+			return fmt.Errorf("arm64 machine fp: bitcast_ieee64_u64 requires ieee64 -> u64")
+		}
+		a, _, err := source(0, 25)
+		if err != nil {
+			return err
+		}
+		raw := 7
+		if destLoc.Spill < 0 {
+			raw = arm64PhysicalMachineReg(plan, ins.Dest)
+		}
+		b.fmovXD(raw, a)
+		if destLoc.Spill >= 0 {
+			return b.strRegSP(raw, destLoc.Spill*8)
+		}
+		return nil
+	}
+	if ins.Op == "bitcast_u64_ieee64" {
+		if len(ins.Args) != 1 || f.ValueTypes[ins.Args[0]] != U64 || destType != IEEE64 {
+			return fmt.Errorf("arm64 machine fp: bitcast_u64_ieee64 requires u64 -> ieee64")
+		}
+		value := ins.Args[0]
+		loc := plan.Locations[value]
+		raw := 7
+		if loc.Spill >= 0 {
+			if err := b.ldrRegSP(raw, loc.Spill*8); err != nil {
+				return err
+			}
+		} else {
+			raw = arm64PhysicalMachineReg(plan, value)
+		}
+		b.fmovDX(dstFP, raw)
+		return commitFP()
 	}
 	switch ins.Op {
 	case "call":
@@ -526,6 +628,14 @@ func (b *arm64MachineBuilder) ldrRegBase(dst, base, offset int) error {
 	return nil
 }
 
+func (b *arm64MachineBuilder) strRegBase(src, base, offset int) error {
+	if offset < 0 || offset%8 != 0 || offset/8 > 0xfff {
+		return fmt.Errorf("arm64 machine: store offset %d out of range", offset)
+	}
+	b.append(0xf9000000 | uint32(offset/8)<<10 | uint32(base&31)<<5 | uint32(src&31))
+	return nil
+}
+
 func (b *arm64MachineBuilder) ldrbRegBase(dst, base, offset int) error {
 	if offset < 0 || offset > 0xfff {
 		return fmt.Errorf("arm64 machine: byte load offset %d out of range", offset)
@@ -544,6 +654,20 @@ func (b *arm64MachineBuilder) strbRegBase(src, base, offset int) error {
 
 func (b *arm64MachineBuilder) udiv(dst, numerator, denominator int) {
 	b.append(0x9ac00800 | uint32(denominator&31)<<16 | uint32(numerator&31)<<5 | uint32(dst&31))
+}
+
+// divide emits 64-bit SDIV or UDIV.
+func (b *arm64MachineBuilder) divide(signed bool, dst, numerator, denominator int) {
+	if signed {
+		b.append(0x9ac00c00 | uint32(denominator&31)<<16 | uint32(numerator&31)<<5 | uint32(dst&31))
+		return
+	}
+	b.udiv(dst, numerator, denominator)
+}
+
+// msub emits MSUB: dst = minuend - a*c.
+func (b *arm64MachineBuilder) msub(dst, a, c, minuend int) {
+	b.append(0x9b008000 | uint32(c&31)<<16 | uint32(minuend&31)<<10 | uint32(a&31)<<5 | uint32(dst&31))
 }
 
 func (b *arm64MachineBuilder) cset(dst int, cond uint32) {

@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"os"
 
 	"swyp-lang/internal/componentspec"
 )
@@ -59,19 +58,11 @@ func componentCommand(args []string, out io.Writer) error {
 	if err != nil {
 		return err
 	}
-	file, err := os.OpenFile(*output, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
-	if err != nil {
-		return err
-	}
 	payload := b
 	if mode != "go" {
 		payload = append(payload, '\n')
 	}
-	if _, err := file.Write(payload); err != nil {
-		_ = file.Close()
-		return err
-	}
-	if err := file.Close(); err != nil {
+	if err := writeNewModule(*output, payload); err != nil {
 		return err
 	}
 	if mode == "go" {

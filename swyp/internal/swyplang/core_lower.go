@@ -96,7 +96,7 @@ func (p *Program) CoreIR(entry string) (module coreir.Module, err error) {
 			if e == nil {
 				return
 			}
-			if e.kind == "call" && e.name != "print" && e.name != "eprint" && e.name != "clock" && e.name != "random" && e.name != "write_file" && e.name != "read_file" && e.name != "tcp_connect" && e.name != "http_fetch" && e.name != "process_exec" && e.name != "bytes_len" && e.name != "bytes_get" {
+			if e.kind == "call" && e.name != "print" && e.name != "eprint" && e.name != "clock" && e.name != "random" && e.name != "write_file" && e.name != "read_file" && e.name != "tcp_connect" && e.name != "http_fetch" && e.name != "process_exec" && e.name != "bytes_len" && e.name != "bytes_get" && e.name != "some" && e.name != "none" && e.name != "ok" && e.name != "err" && e.name != "drop" && e.name != "store" {
 				visit(e.name, e.pos)
 			}
 			for _, a := range e.args {

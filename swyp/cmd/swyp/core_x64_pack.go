@@ -29,9 +29,23 @@ func coreX64PackCommand(args []string, out io.Writer) error {
 	if err != nil {
 		return err
 	}
+	module, encoded, err := encodeX64PackArtifact(artifact, *entry)
+	if err != nil {
+		return err
+	}
+	if err := writeNewModule(*output, encoded); err != nil {
+		return err
+	}
+	fmt.Fprintf(out, "Created x86-64 module %s (code=%d bytes sha256=%s abi=%s)\n",
+		*output, len(module.Code), module.Header.CodeSHA256, module.Header.ABI)
+	return nil
+}
+
+func encodeX64PackArtifact(artifact x64ModuleIRArtifact, entry string) (coreir.X64Module, []byte, error) {
 	var module coreir.X64Module
 	var code []byte
 	var leafErr error
+	var err error
 	if len(artifact.Functions) == 1 {
 		code, leafErr = coreir.EmitX64LeafMachineCode(artifact.EntrySSA, artifact.EntryPlan)
 		if leafErr == nil {
@@ -44,7 +58,7 @@ func coreX64PackCommand(args []string, out io.Writer) error {
 		}
 	} else {
 		leafErr = fmt.Errorf("entry retains %d reachable functions", len(artifact.Functions))
-		code, err = coreir.EmitX64CFGMachineModule(artifact.Functions, artifact.Plans, *entry)
+		code, err = coreir.EmitX64CFGMachineModule(artifact.Functions, artifact.Plans, entry)
 		if err == nil {
 			usesFP := false
 			for _, function := range artifact.Functions {
@@ -66,26 +80,11 @@ func coreX64PackCommand(args []string, out io.Writer) error {
 		}
 	}
 	if err != nil {
-		return fmt.Errorf("x64 pack: leaf backend: %v; cfg backend: %w", leafErr, err)
+		return coreir.X64Module{}, nil, fmt.Errorf("x64 pack: leaf backend: %v; cfg backend: %w", leafErr, err)
 	}
 	encoded, err := coreir.EncodeX64Module(module)
 	if err != nil {
-		return err
+		return coreir.X64Module{}, nil, err
 	}
-	file, err := os.OpenFile(*output, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
-	if err != nil {
-		return err
-	}
-	if _, err := file.Write(encoded); err != nil {
-		_ = file.Close()
-		_ = os.Remove(*output)
-		return err
-	}
-	if err := file.Close(); err != nil {
-		_ = os.Remove(*output)
-		return err
-	}
-	fmt.Fprintf(out, "Created x86-64 module %s (code=%d bytes sha256=%s abi=%s)\n",
-		*output, len(module.Code), module.Header.CodeSHA256, module.Header.ABI)
-	return nil
+	return module, encoded, nil
 }

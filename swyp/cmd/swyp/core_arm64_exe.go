@@ -36,66 +36,17 @@ func coreARM64ExeCommand(args []string, out io.Writer) error {
 	if err != nil {
 		return err
 	}
-	if moduleUsesEffect(artifact.Module, coreir.EffectFSWrite) && !*allowFSWrite {
-		return fmt.Errorf("entry requires capability workspace_write; rerun with -allow-fs-write to grant standalone filesystem write authority")
+	if err := validateStandaloneSensitiveGrants(artifact.Module, *allowFSRead, *allowFSWrite, *allowNetConnect, *allowNetFetch, *allowProcessExec); err != nil {
+		return err
 	}
-	if moduleUsesEffect(artifact.Module, coreir.EffectFSRead) && !*allowFSRead {
-		return fmt.Errorf("entry requires capability workspace_read; rerun with -allow-fs-read to grant standalone filesystem read authority")
-	}
-	if moduleUsesEffect(artifact.Module, coreir.EffectNetConnect) && !*allowNetConnect {
-		return fmt.Errorf("entry requires capability network_connect; rerun with -allow-net-connect to grant standalone TCP connect authority")
-	}
-	if moduleUsesEffect(artifact.Module, coreir.EffectNetFetch) && !*allowNetFetch {
-		return fmt.Errorf("entry requires capability network_fetch; rerun with -allow-net-fetch to grant standalone plaintext HTTP fetch authority")
-	}
-	if moduleUsesEffect(artifact.Module, coreir.EffectProcessExec) && !*allowProcessExec {
-		return fmt.Errorf("entry requires capability process_exec; rerun with -allow-process-exec to grant standalone process execution authority")
-	}
-	usesProcessIO := arm64ArtifactUsesProcessIO(artifact)
-	var code []byte
-	var processCode coreir.ARM64ProcessMachineCode
-	if usesProcessIO {
-		processCode, err = coreir.EmitARM64CFGMachineProcessModule(artifact.Functions, artifact.Plans, artifact.EntrySSA.Name)
-		processCode.Data = append([]byte(nil), artifact.Module.Data...)
-		if moduleUsesEffect(artifact.Module, coreir.EffectFSRead) || moduleUsesEffect(artifact.Module, coreir.EffectNetFetch) {
-			processCode.RuntimeDataBytes = coreir.DefaultProcessRuntimeArenaBytes
-		}
-		code = processCode.Code
-	} else {
-		code, err = emitARM64PackedCode(artifact)
-	}
+	image, textBytes, mode, err := encodeARM64StandaloneArtifact(artifact, *pie)
 	if err != nil {
 		return err
 	}
-	var image []byte
-	if usesProcessIO {
-		image, err = coreir.EncodeARM64ELFProcessExecutable(artifact.EntrySSA, processCode, *pie)
-	} else if *pie {
-		image, err = coreir.EncodeARM64ELFPIEExecutable(artifact.EntrySSA, code)
-	} else {
-		image, err = coreir.EncodeARM64ELFExecutable(artifact.EntrySSA, code)
-	}
-	if err != nil {
+	if err := writeExecutable(*output, image); err != nil {
 		return err
 	}
-	file, err := os.OpenFile(*output, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0700)
-	if err != nil {
-		return err
-	}
-	if _, err := file.Write(image); err != nil {
-		_ = file.Close()
-		_ = os.Remove(*output)
-		return err
-	}
-	if err := file.Close(); err != nil {
-		_ = os.Remove(*output)
-		return err
-	}
-	mode := "ELF64/AArch64"
-	if *pie {
-		mode += " PIE"
-	}
-	fmt.Fprintf(out, "Created standalone %s executable %s (text=%d bytes entry=%s)\n", mode, *output, len(code), coreir.ARM64LeafSymbol(*entry))
+	fmt.Fprintf(out, "Created standalone %s executable %s (text=%d bytes entry=%s)\n", mode, *output, textBytes, coreir.ARM64LeafSymbol(*entry))
 	return nil
 }
 

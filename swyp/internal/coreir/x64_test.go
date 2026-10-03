@@ -86,7 +86,7 @@ func TestEmitX64LeafSSAExecutableViaAssemblerLinker(t *testing.T) {
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-extern int64_t swyp_core_add(int64_t x, int64_t y, uint64_t *status);
+extern int64_t __attribute__((ms_abi)) swyp_core_add(int64_t x, int64_t y, uint64_t *status);
 int main(int argc, char **argv) {
     if (argc != 3) return 2;
     uint64_t status = 99;

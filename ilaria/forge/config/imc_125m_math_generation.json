@@ -1,0 +1,15 @@
+{
+  "format": "imc-125m-verified-math-generation-v1",
+  "language": "en",
+  "quality_gate": {
+    "sample_documents": 100000,
+    "minimum_families": 32,
+    "minimum_unique_text_ratio_ppm": 999000,
+    "minimum_unique_evidence_ratio_ppm": 999000,
+    "maximum_family_share_ppm": 40000
+  },
+  "seed": 1250017,
+  "shard_docs": 10000,
+  "source_name": "first_party_math",
+  "target_text_bytes": 650000000
+}

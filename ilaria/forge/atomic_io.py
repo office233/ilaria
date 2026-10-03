@@ -26,17 +26,15 @@ def atomic_binary_writer(path: str | os.PathLike[str]) -> Iterator[BinaryIO]:
     destination = Path(path)
     fd, temporary = tempfile.mkstemp(
         prefix=f'.{destination.name}.', suffix='.tmp', dir=destination.parent)
+    stream = None
     try:
         stream = os.fdopen(fd, 'wb')
-    except BaseException:
-        os.close(fd)
-        Path(temporary).unlink(missing_ok=True)
-        raise
-    try:
         with stream:
             yield stream
             stream.flush()
             os.fsync(stream.fileno())
         os.replace(temporary, destination)
     finally:
+        if stream is None:
+            os.close(fd)
         Path(temporary).unlink(missing_ok=True)

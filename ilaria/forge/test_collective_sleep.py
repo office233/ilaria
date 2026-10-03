@@ -105,3 +105,29 @@ def test_policy_rejects_invalid_values():
         SleepPolicy(max_steps=0).validate()
     with pytest.raises(ValueError):
         SleepPolicy(max_anchor_accuracy_drop=2).validate()
+
+
+@pytest.mark.parametrize("failure", ["loss", "train", "validation"])
+def test_sleep_restores_last_accepted_weights_after_failure(failure):
+    model = Tiny()
+
+    def train_step(step):
+        with torch.no_grad():
+            model.x.fill_(float(step))
+        if step == 2:
+            if failure == "loss":
+                return math.nan
+            if failure == "train":
+                raise RuntimeError("training callback failed")
+        return 1.0
+
+    def validate():
+        x = float(model.x.detach())
+        if failure == "validation" and x == 2:
+            return {"objective": math.nan, "anchor_accuracy": 1.0}
+        return {"objective": 10 - x, "anchor_accuracy": 1.0}
+
+    with pytest.raises((RuntimeError, ValueError)):
+        consolidate(model, train_step=train_step, validate=validate,
+                    policy=SleepPolicy(max_steps=3, eval_every=1))
+    assert model.x.item() == 1.0

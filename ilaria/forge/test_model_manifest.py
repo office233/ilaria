@@ -17,6 +17,7 @@ from imc_model import ImcConfig  # noqa: E402
 from model_manifest import (  # noqa: E402
     build_manifest,
     load_tokenizer_identity,
+    validate_architecture_manifest_file,
     write_manifest,
 )
 
@@ -142,3 +143,46 @@ def test_load_tokenizer_identity_rejects_noncanonical_vocab(tmp_path):
     )
     with pytest.raises(ValueError, match="65536"):
         load_tokenizer_identity(path)
+
+
+@pytest.mark.parametrize("field,value", [
+    ("base_vocab_size", 61439), ("protocol_start_id", 61439),
+    ("eos_id", 3), ("eos_token", "<wrong:eos>"), ("vocab_size", "65536"),
+])
+def test_load_tokenizer_identity_rejects_protocol_layout_drift(tmp_path, field, value):
+    data = tokenizer_identity()
+    data[field] = value
+    path = tmp_path / "tokenizer.json"
+    path.write_text(json.dumps(data), encoding="utf-8")
+    with pytest.raises(ValueError, match=field):
+        load_tokenizer_identity(path)
+
+
+@pytest.mark.parametrize("field,value", [
+    ("parameter_count", 1), ("config_sha256", "c" * 64),
+    ("source_sha256", "ab" * 31 + "  "),
+])
+def test_architecture_validator_rejects_semantic_tampering_even_with_recomputed_identity(tmp_path, field, value):
+    from data_contract import canonical_json_sha256
+
+    data = manifest()
+    data[field] = value
+    data.pop("architecture_hash")
+    data["architecture_hash"] = canonical_json_sha256(data)
+    path = tmp_path / "architecture.json"
+    write_manifest(path, data)
+    with pytest.raises(ValueError):
+        validate_architecture_manifest_file(path)
+
+
+def test_architecture_validator_accepts_reconstructed_contract(tmp_path):
+    path = tmp_path / "architecture.json"
+    write_manifest(path, manifest())
+    assert validate_architecture_manifest_file(path) == manifest()
+
+
+def test_architecture_manifest_rejects_incorrect_preset_label():
+    identity = tokenizer_identity()
+    cfg = ImcConfig.preset("imc-125m", vocab_size=identity["vocab_size"], eos_token_id=identity["eos_id"])
+    with pytest.raises(ValueError, match="preset"):
+        build_manifest(cfg, preset="imc-1b", tokenizer_identity=identity, source_sha256=HASH_B)

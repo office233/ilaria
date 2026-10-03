@@ -6,6 +6,9 @@ Sources (all streamed from HuggingFace, nothing is stored twice):
   wiki_en       wikimedia/wikipedia 20231101.en      en   encyclopedic English
   fineweb2_ro   HuggingFaceFW/fineweb-2 ron_Latn     ro   filtered Romanian web (the bulk of RO tokens)
   fineweb_edu   HuggingFaceFW/fineweb-edu sample-10BT en   educational English web
+  openmath_reasoning_cot nvidia/OpenMathReasoning       en   verifier-oriented math reasoning (CoT split)
+  openscience_reasoning_2 nvidia/OpenScienceReasoning-2  en   synthetic multi-domain science/reasoning
+  opencode_reasoning_split0 nvidia/OpenCodeReasoning split_0 en licensed coding reasoning with embedded prompts
 
 Output: <out-dir>/<source>-NNNNN.jsonl shards of {"text": ...} lines plus a
 <source>.manifest.json recording the complete shards, the number of documents
@@ -171,17 +174,220 @@ def chunk_paragraphs(text: str, target_chars: int = 300, max_len: int = 3000) ->
 # ---------------------------------------------------------------- sources
 
 
-def _load(hf_id: str, config: Optional[str], revision: Optional[str] = None):
+def _load(
+    hf_id: str,
+    config: Optional[str],
+    revision: Optional[str] = None,
+    *,
+    split: str = "train",
+):
     try:
         from datasets import load_dataset
     except ImportError:
         sys.exit("[prepare_corpus] ERROR: 'datasets' package not installed. Run: pip install datasets")
-    kwargs = {"split": "train", "streaming": True}
+    kwargs = {"split": split, "streaming": True}
     if revision:
         kwargs["revision"] = revision
     if config:
         return load_dataset(hf_id, config, **kwargs)
     return load_dataset(hf_id, **kwargs)
+
+
+_THINK_TAG = re.compile(r"</?think>", re.IGNORECASE)
+
+
+def _clean_reasoning_text(text: str, *, max_len: int = 8_000) -> str:
+    """Normalize math/reasoning text without the prose-heavy alpha-ratio filter.
+
+    Math rows contain substantial LaTeX and symbolic content, so the generic web
+    cleaner would discard valid examples. We still apply PII masking, whitespace
+    normalization and a context-sized deterministic truncation.
+    """
+    if not text:
+        return ""
+    text = _THINK_TAG.sub("", scrub_pii(text.replace("\r", "")))
+    text = re.sub(r"[ \t]+", " ", text)
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    text = "\n".join(line.rstrip() for line in text.split("\n")).strip()
+    if len(text) < 20:
+        return ""
+    if len(text) <= max_len:
+        return text
+    cut = text[:max_len]
+    boundary = max(cut.rfind("\n\n"), cut.rfind(". "), cut.rfind("\n"), cut.rfind(" "))
+    if boundary >= max_len // 2:
+        cut = cut[:boundary]
+    return cut.strip()
+
+
+def _openmath_reasoning_cot_from(
+    ds,
+    max_samples: Optional[int],
+    *,
+    skip: int = 0,
+    max_len: int = 8_000,
+) -> Generator[tuple, None, None]:
+    """Yield deterministic problem/solution documents from OpenMathReasoning CoT."""
+    count = 0
+    for i, row in enumerate(ds, start=skip):
+        problem = row.get("problem", "")
+        solution = row.get("generated_solution", "")
+        if not isinstance(problem, str) or not isinstance(solution, str):
+            continue
+        problem = problem.strip()
+        solution = solution.strip()
+        if not problem or not solution:
+            continue
+        text = _clean_reasoning_text(
+            f"Problem:\n{problem}\n\nSolution:\n{solution}",
+            max_len=max_len,
+        )
+        if not text:
+            continue
+        metadata = {"path": f"cot/{i:012d}"}
+        for field in ("problem_source", "generation_model", "problem_type"):
+            value = row.get(field)
+            if isinstance(value, str) and value.strip():
+                metadata[field] = value.strip()
+        expected = row.get("expected_answer")
+        if isinstance(expected, str) and expected.strip():
+            metadata["expected_answer"] = expected.strip()
+        used_in_kaggle = row.get("used_in_kaggle")
+        if isinstance(used_in_kaggle, bool):
+            metadata["used_in_kaggle"] = used_in_kaggle
+        yield i, text, metadata
+        count += 1
+        if max_samples and count >= max_samples:
+            return
+
+
+def _openmath_reasoning_cot(
+    max_samples: Optional[int],
+    skip: int = 0,
+    revision: Optional[str] = None,
+) -> Generator[tuple, None, None]:
+    ds = _load("nvidia/OpenMathReasoning", None, revision, split="cot")
+    if skip:
+        ds = ds.skip(skip)
+    return _openmath_reasoning_cot_from(ds, max_samples, skip=skip)
+
+
+def _openscience_reasoning_2_from(
+    ds,
+    max_samples: Optional[int],
+    *,
+    skip: int = 0,
+    max_len: int = 8_000,
+) -> Generator[tuple, None, None]:
+    """Yield self-contained OpenScienceReasoning-2 question/reasoning rows."""
+    count = 0
+    for i, row in enumerate(ds, start=skip):
+        prompt = row.get("input", "")
+        reasoning = row.get("output", "")
+        expected = row.get("expected_answer", "")
+        if not isinstance(prompt, str) or not isinstance(reasoning, str):
+            continue
+        prompt = prompt.strip()
+        reasoning = reasoning.strip()
+        if not prompt or not reasoning:
+            continue
+        suffix = (
+            f"\n\nExpected answer:\n{expected.strip()}"
+            if isinstance(expected, str) and expected.strip()
+            else ""
+        )
+        text = _clean_reasoning_text(
+            f"Question:\n{prompt}\n\nReasoning and answer:\n{reasoning}{suffix}",
+            max_len=max_len,
+        )
+        if text:
+            metadata = {"path": f"train/{i:012d}"}
+            if isinstance(expected, str) and expected.strip():
+                metadata["expected_answer"] = expected.strip()
+            yield i, text, metadata
+            count += 1
+            if max_samples and count >= max_samples:
+                return
+
+
+def _openscience_reasoning_2(
+    max_samples: Optional[int],
+    skip: int = 0,
+    revision: Optional[str] = None,
+) -> Generator[tuple, None, None]:
+    ds = _load("nvidia/OpenScienceReasoning-2", None, revision, split="train")
+    if skip:
+        ds = ds.skip(skip)
+    return _openscience_reasoning_2_from(ds, max_samples, skip=skip)
+
+
+_OPENCODE_REQUIRED_DATASET = "code_contests"
+_OPENCODE_REQUIRED_LICENSE = "cc-by-4.0"
+
+
+def _opencode_reasoning_split0_from(
+    ds,
+    max_samples: Optional[int],
+    *,
+    skip: int = 0,
+    max_len: int = 8_000,
+) -> Generator[tuple, None, None]:
+    """Yield embedded-prompt OpenCodeReasoning rows with allowlisted licenses."""
+    count = 0
+    for i, row in enumerate(ds, start=skip):
+        license_id = row.get("license", "")
+        dataset_id = row.get("dataset", "")
+        prompt = row.get("input", "")
+        reasoning = row.get("output", "")
+        solution = row.get("solution", "")
+        if (
+            not isinstance(license_id, str)
+            or license_id.strip().lower() != _OPENCODE_REQUIRED_LICENSE
+            or not isinstance(dataset_id, str)
+            or dataset_id.strip().lower() != _OPENCODE_REQUIRED_DATASET
+        ):
+            continue
+        if not all(isinstance(value, str) for value in (prompt, reasoning, solution)):
+            continue
+        prompt = prompt.strip()
+        reasoning = reasoning.strip()
+        solution = solution.strip()
+        if not prompt or prompt == "-" or not reasoning or not solution:
+            continue
+        text = _clean_reasoning_text(
+            f"Coding problem:\n{prompt}\n\nReference solution:\n{solution}\n\nReasoning:\n{reasoning}",
+            max_len=max_len,
+        )
+        if text:
+            metadata = {
+                "path": f"split_0/{i:012d}",
+                "license": license_id.strip().lower(),
+                "dataset": dataset_id.strip().lower(),
+            }
+            for field in ("id", "source", "split", "difficulty"):
+                value = row.get(field)
+                if isinstance(value, str) and value.strip():
+                    metadata[field if field != "id" else "record_id"] = value.strip()
+            yield i, text, metadata
+            count += 1
+            if max_samples and count >= max_samples:
+                return
+
+
+def _opencode_reasoning_split0(
+    max_samples: Optional[int],
+    skip: int = 0,
+    revision: Optional[str] = None,
+) -> Generator[tuple, None, None]:
+    ds = _load(
+        "nvidia/OpenCodeReasoning",
+        "split_0",
+        revision,
+        split="split_0",
+    )
+    if skip:
+        ds = ds.skip(skip)
+    return _opencode_reasoning_split0_from(ds, max_samples, skip=skip)
 
 
 def _docs(
@@ -213,6 +419,39 @@ def _docs_from(ds, max_samples: Optional[int], max_len: int, skip: int = 0) -> G
                 return
 
 
+def _wiki_from_rows(
+    ds,
+    max_samples: Optional[int],
+    *,
+    skip: int = 0,
+) -> Generator[tuple, None, None]:
+    count = 0
+    for i, row in enumerate(ds, start=skip):
+        article_id = row.get("id")
+        title = row.get("title")
+        url = row.get("url")
+        article_key = (
+            article_id.strip()
+            if isinstance(article_id, str) and article_id.strip()
+            else f"row-{i:012d}"
+        )
+        for chunk_index, chunk in enumerate(
+            chunk_paragraphs(row.get("text", ""), target_chars=600, max_len=4000)
+        ):
+            metadata = {
+                "path": f"article/{article_key}/{chunk_index:04d}",
+                "article_id": article_key,
+            }
+            if isinstance(title, str) and title.strip():
+                metadata["title"] = title.strip()
+            if isinstance(url, str) and url.strip():
+                metadata["article_url"] = url.strip()
+            yield i, chunk, metadata
+            count += 1
+            if max_samples and count >= max_samples:
+                return
+
+
 def _wiki(
     hf_id: str,
     config: str,
@@ -223,13 +462,7 @@ def _wiki(
     ds = _load(hf_id, config, revision)
     if skip:
         ds = ds.skip(skip)
-    count = 0
-    for i, row in enumerate(ds, start=skip):
-        for chunk in chunk_paragraphs(row.get("text", ""), target_chars=600, max_len=4000):
-            yield i, chunk
-            count += 1
-            if max_samples and count >= max_samples:
-                return
+    return _wiki_from_rows(ds, max_samples, skip=skip)
 
 
 @dataclass(frozen=True)
@@ -253,14 +486,40 @@ SOURCES: Dict[str, Source] = {
     "fineweb2_ro": Source("fineweb2_ro", "HuggingFaceFW/fineweb-2", "ron_Latn", "ro",
                           lambda n, skip=0, revision=None: _docs("HuggingFaceFW/fineweb-2", "ron_Latn", n, 8000, skip, revision), 2_000_000),
     "fineweb_edu": Source("fineweb_edu", "HuggingFaceFW/fineweb-edu", "sample-10BT", "en",
-                          lambda n, skip=0, revision=None: _docs("HuggingFaceFW/fineweb-edu", "sample-10BT", n, 8000, skip, revision), 2_000_000),
+                           lambda n, skip=0, revision=None: _docs("HuggingFaceFW/fineweb-edu", "sample-10BT", n, 8000, skip, revision), 2_000_000),
+    "openmath_reasoning_cot": Source(
+        "openmath_reasoning_cot",
+        "nvidia/OpenMathReasoning",
+        None,
+        "en",
+        _openmath_reasoning_cot,
+        70_000,
+    ),
+    "openscience_reasoning_2": Source(
+        "openscience_reasoning_2",
+        "nvidia/OpenScienceReasoning-2",
+        None,
+        "en",
+        _openscience_reasoning_2,
+        80_000,
+    ),
+    "opencode_reasoning_split0": Source(
+        "opencode_reasoning_split0",
+        "nvidia/OpenCodeReasoning",
+        "split_0",
+        "en",
+        _opencode_reasoning_split0,
+        80_000,
+    ),
 }
 
 
 def texts(stream: Iterable[tuple]) -> Generator[str, None, None]:
-    """Drop the raw-row index from a (raw_row, text) stream."""
-    for _, t in stream:
-        yield t
+    """Drop raw-row/provenance fields from a corpus stream."""
+    for row in stream:
+        if not isinstance(row, tuple) or len(row) not in {2, 3}:
+            raise ValueError("corpus stream rows must be (raw_row, text[, metadata])")
+        yield row[1]
 
 
 # Kept for callers of the previous version (text-only streams).
@@ -374,7 +633,7 @@ def write_shards(
     source: Optional[Source] = None,
     seed: Optional[int] = None,
 ) -> int:
-    """Write (raw_row, text) docs as <name>-NNNNN.jsonl shards from start_shard on.
+    """Write (raw_row, text[, metadata]) docs as JSONL shards.
 
     The manifest records the complete shards, the total docs and `raw_rows`
     (= last raw row index + 1) so resume_plan can `.skip()` the stream on the
@@ -397,11 +656,39 @@ def write_shards(
         with open(tmp, "w", encoding="utf-8", newline="\n") as f:
             for _ in range(shard_docs):
                 try:
-                    raw, t = next(docs)
+                    item = next(docs)
                 except StopIteration:
                     exhausted = True
                     break
-                f.write(json.dumps({"text": t}, ensure_ascii=False) + "\n")
+                if not isinstance(item, tuple) or len(item) not in {2, 3}:
+                    raise ValueError(
+                        "corpus stream rows must be (raw_row, text[, metadata])"
+                    )
+                raw, t = item[0], item[1]
+                metadata = item[2] if len(item) == 3 else {}
+                if type(raw) is not int or raw < 0:
+                    raise ValueError(
+                        "corpus stream raw-row index must be a non-negative integer"
+                    )
+                if not isinstance(t, str) or not t:
+                    raise ValueError("corpus stream text must be a non-empty string")
+                if not isinstance(metadata, dict):
+                    raise ValueError("corpus stream metadata must be an object")
+                if "text" in metadata:
+                    raise ValueError("corpus stream metadata cannot override text")
+                payload = dict(metadata)
+                path_value = payload.get("path")
+                if path_value is None:
+                    path_value = f"row/{raw:012d}"
+                    payload["path"] = path_value
+                if not isinstance(path_value, str) or not path_value.strip():
+                    raise ValueError(
+                        "corpus stream metadata path must be a non-empty string"
+                    )
+                payload["text"] = t
+                f.write(
+                    json.dumps(payload, ensure_ascii=False, sort_keys=True) + "\n"
+                )
                 n += 1
                 last_raw = raw
         if n == 0:

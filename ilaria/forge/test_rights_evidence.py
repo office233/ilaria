@@ -140,4 +140,5 @@ def test_canonical_rights_evidence_and_source_locks_validate_together():
     )
     assert evidence["git_source_lock_sha256"]
     assert evidence["sources"]["zephyr"]["source_kind"] == "git"
-    assert evidence["sources"]["zephyr"]["review_state"] == "EVIDENCE_COLLECTED"
+    assert evidence["sources"]["zephyr"]["review_state"] == "APPROVED"
+    assert evidence["sources"]["zephyr"]["unresolved_obligations"] == []

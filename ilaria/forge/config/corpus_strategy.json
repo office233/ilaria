@@ -6,8 +6,8 @@
       {
         "source": "wiki_en",
         "role": "preferred_external",
-        "status": "REVIEW_REQUIRED",
-        "reason": "high-quality general English with explicit attribution/share-alike obligations"
+        "status": "ELIGIBLE",
+        "reason": "production-selected English source; rights registry/evidence review is APPROVED with no unresolved obligations and exact revision locking"
       },
       {
         "source": "fineweb_edu",
@@ -19,8 +19,8 @@
     "code": [
       {
         "source": "zephyr",
-        "role": "preferred",
-        "status": "MANUAL_SOURCE_REQUIRED",
+        "role": "supplement",
+        "status": "ELIGIBLE",
         "reason": "exact-revision upstream source with pervasive SPDX/REUSE metadata; ingest only per-file allowlisted code/docs"
       },
       {
@@ -42,6 +42,12 @@
         "reason": "Apache-2.0 OR MIT upstream source with license-metadata.json; ingest only file-level allowlisted material"
       },
       {
+        "source": "opencode_reasoning_split0",
+        "role": "preferred",
+        "status": "ELIGIBLE",
+        "reason": "production-selected code source; exact revision plus approved rights/evidence and per-row CC-BY-4.0/Apache-2.0/MIT allowlist"
+      },
+      {
         "source": "the_stack_v2",
         "role": "not_default",
         "status": "REVIEW_REQUIRED",
@@ -50,10 +56,28 @@
     ],
     "math_science": [
       {
+        "source": "first_party_math",
+        "role": "not_default",
+        "status": "OWNERSHIP_ATTESTATION_REQUIRED",
+        "reason": "deterministic verifier-backed first-party mathematics generated entirely from exact programmatic constructions, with no external problem text or model-generated content"
+      },
+      {
+        "source": "openmath_reasoning_cot",
+        "role": "preferred",
+        "status": "ELIGIBLE",
+        "reason": "production-selected mathematics source; rights registry/evidence review is APPROVED with no unresolved obligations at the pinned revision"
+      },
+      {
         "source": "wiki_en",
-        "role": "preferred_external",
+        "role": "supplement",
         "status": "REVIEW_REQUIRED",
         "reason": "topic-filtered, provenance-preserving subset after attribution/share-alike review"
+      },
+      {
+        "source": "openscience_reasoning_2",
+        "role": "supplement",
+        "status": "ELIGIBLE",
+        "reason": "production-selected science supplement; rights registry/evidence review is APPROVED with no unresolved obligations at the pinned revision"
       },
       {
         "source": "openstax_physics_ccby",
@@ -66,40 +90,52 @@
       {
         "source": "zephyr",
         "role": "preferred",
-        "status": "MANUAL_SOURCE_REQUIRED",
+        "status": "ELIGIBLE",
         "reason": "Apache-2.0 RTOS with SPDX/REUSE licensing; ingest only files passing per-file SPDX allowlist"
       },
       {
         "source": "freebsd_licensed_tree",
         "role": "supplement",
-        "status": "MANUAL_SOURCE_REQUIRED",
+        "status": "ELIGIBLE",
         "reason": "BSD-oriented OS source; ingest only files passing per-file SPDX allowlist"
       },
       {
         "source": "freertos_kernel",
         "role": "supplement",
-        "status": "MANUAL_SOURCE_REQUIRED",
+        "status": "ELIGIBLE",
         "reason": "MIT-licensed FreeRTOS kernel pinned to an exact commit; keep acquisition scoped to the kernel repository"
+      },
+      {
+        "source": "apache_nuttx",
+        "role": "supplement",
+        "status": "ELIGIBLE",
+        "reason": "Apache NuttX RTOS pinned to an exact commit; ingest only per-file SPDX-allowlisted OS, architecture and driver material"
       }
     ],
     "hardware": [
       {
         "source": "zephyr",
         "role": "preferred",
-        "status": "MANUAL_SOURCE_REQUIRED",
+        "status": "ELIGIBLE",
         "reason": "large driver/board/devicetree corpus filtered per-file by SPDX and exact revision"
       },
       {
         "source": "freebsd_licensed_tree",
         "role": "supplement",
-        "status": "MANUAL_SOURCE_REQUIRED",
+        "status": "ELIGIBLE",
         "reason": "additional driver and hardware-facing source filtered per-file by SPDX and revision"
       },
       {
         "source": "freertos_kernel",
         "role": "supplement",
-        "status": "MANUAL_SOURCE_REQUIRED",
+        "status": "ELIGIBLE",
         "reason": "MIT-licensed embedded-kernel source pinned to an exact commit"
+      },
+      {
+        "source": "apache_nuttx",
+        "role": "supplement",
+        "status": "ELIGIBLE",
+        "reason": "Apache NuttX architecture, board and driver corpus filtered per-file by SPDX at an exact revision"
       }
     ],
     "tools_protocol": [
@@ -120,6 +156,22 @@
         "role": "supplement",
         "status": "MANUAL_SOURCE_REQUIRED",
         "reason": "device/tool protocols from an exact Zephyr revision filtered through SPDX/REUSE"
+      }
+    ],
+    "agent_tool_trajectories": [
+      {
+        "source": "first_party_trajectories",
+        "role": "preferred",
+        "status": "OWNERSHIP_ATTESTATION_REQUIRED",
+        "reason": "deterministic verifier-backed first-party tool trajectories generated from content-addressed project code and configuration"
+      }
+    ],
+    "world_device_trajectories": [
+      {
+        "source": "first_party_trajectories",
+        "role": "preferred",
+        "status": "OWNERSHIP_ATTESTATION_REQUIRED",
+        "reason": "deterministic nonpersonal device/world trajectories with explicit simulator verification and provenance"
       }
     ]
   },

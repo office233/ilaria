@@ -1,9 +1,23 @@
 {
-  "evidence_sha256": "402e38f56c25af1dbb0c4fdc74993f766215d630be71074876f32c559056391e",
+  "evidence_sha256": "972b54be133a8f1c7da451eef43789eab961b668689f185dd736eca65cc0e12c",
   "format": "ilaria-rights-evidence-v1",
-  "git_source_lock_sha256": "f643020c68764eda809c3f316cf7027ee23bc60aad847eacad54e0dacbb7996f",
-  "source_lock_sha256": "c7a7305dc9cc72958b1cf787a234f68a64df746ac2f63e19c29b392743ae3e5f",
+  "git_source_lock_sha256": "424e681d9ee6921742bec02481e5c832cd7f589351145a4105088c86b8e2769f",
+  "source_lock_sha256": "702264b18416825c3b95e565de0f28225a64c6b7c52a6a429b13e647c0b08b2a",
   "sources": {
+    "apache_nuttx": {
+      "commit": "4295024832a0f70820156d2a7e6e09d68897e91f",
+      "declared_license": "Apache-2.0 or Apache-2.0-compatible per repository policy, filtered per-file by SPDX",
+      "evidence_urls": [
+        "https://github.com/apache/nuttx/blob/master/LICENSE",
+        "https://github.com/apache/nuttx",
+        "https://nuttx.apache.org/docs/latest/introduction/resources.html"
+      ],
+      "ref": "master",
+      "review_state": "APPROVED",
+      "source_kind": "git",
+      "unresolved_obligations": [],
+      "url": "https://github.com/apache/nuttx.git"
+    },
     "fineweb2_ro": {
       "config": "ron_Latn",
       "declared_license": "ODC-By-1.0",
@@ -38,83 +52,113 @@
         "define attribution/notice policy for any public produced work"
       ]
     },
-    "freertos_kernel": {
-      "source_kind": "git",
-      "url": "https://github.com/FreeRTOS/FreeRTOS-Kernel.git",
-      "ref": "main",
-      "commit": "8be86d4a24fd4091f8f4192018423ab590f408db",
-      "declared_license": "MIT",
-      "evidence_urls": [
-        "https://github.com/FreeRTOS/FreeRTOS-Kernel/blob/main/include/FreeRTOS.h"
-      ],
-      "review_state": "EVIDENCE_COLLECTED",
-      "unresolved_obligations": [
-        "retain MIT copyright/license notice in attribution records",
-        "keep acquisition scoped to the FreeRTOS-Kernel repository and separately review submodules or external ports"
-      ]
-    },
     "freebsd_licensed_tree": {
-      "source_kind": "git",
-      "url": "https://github.com/freebsd/freebsd-src.git",
-      "ref": "main",
       "commit": "52b2056849e4f77581594b9ca21ac3feb60429c3",
       "declared_license": "BSD-2-Clause collection with file-level exceptions",
       "evidence_urls": [
         "https://github.com/freebsd/freebsd-src",
         "https://github.com/freebsd/freebsd-doc/blob/main/documentation/content/en/articles/license-guide/_index.adoc"
       ],
-      "review_state": "EVIDENCE_COLLECTED",
-      "unresolved_obligations": [
-        "apply per-file SPDX allowlist and exclude cddl/contrib/other non-allowlisted material",
-        "retain file-level provenance and applicable copyright/license notices"
-      ]
+      "ref": "main",
+      "review_state": "APPROVED",
+      "source_kind": "git",
+      "unresolved_obligations": [],
+      "url": "https://github.com/freebsd/freebsd-src.git"
+    },
+    "freertos_kernel": {
+      "commit": "8be86d4a24fd4091f8f4192018423ab590f408db",
+      "declared_license": "MIT",
+      "evidence_urls": [
+        "https://github.com/FreeRTOS/FreeRTOS-Kernel/blob/main/include/FreeRTOS.h"
+      ],
+      "ref": "main",
+      "review_state": "APPROVED",
+      "source_kind": "git",
+      "unresolved_obligations": [],
+      "url": "https://github.com/FreeRTOS/FreeRTOS-Kernel.git"
     },
     "golang_go": {
-      "source_kind": "git",
-      "url": "https://github.com/golang/go.git",
-      "ref": "master",
       "commit": "f91ce18c4db84c9f0fe271d1832f9cee91b58aa9",
       "declared_license": "BSD-3-Clause",
       "evidence_urls": [
         "https://github.com/golang/go",
         "https://github.com/golang/go/blob/master/LICENSE"
       ],
+      "ref": "master",
       "review_state": "EVIDENCE_COLLECTED",
+      "source_kind": "git",
       "unresolved_obligations": [
         "retain BSD license and patent notices",
         "exclude generated/vendor/testdata or separately review their provenance before ingestion"
-      ]
+      ],
+      "url": "https://github.com/golang/go.git"
+    },
+    "opencode_reasoning_split0": {
+      "config": "split_0",
+      "declared_license": "CC-BY-4.0 with per-row CC-BY-4.0/Apache-2.0/MIT allowlist",
+      "evidence_urls": [
+        "https://huggingface.co/datasets/nvidia/OpenCodeReasoning/blob/20a1ca19c0d050fe9057fc08339d6b370ec1c67a/README.md",
+        "https://creativecommons.org/licenses/by/4.0/"
+      ],
+      "provider": "nvidia/OpenCodeReasoning",
+      "review_state": "APPROVED",
+      "revision": "20a1ca19c0d050fe9057fc08339d6b370ec1c67a",
+      "unresolved_obligations": []
+    },
+    "openmath_reasoning_cot": {
+      "config": null,
+      "declared_license": "CC-BY-4.0",
+      "evidence_urls": [
+        "https://huggingface.co/datasets/nvidia/OpenMathReasoning/blob/d3d08664755704f422af97d43a7ff0ded4bd95df/README.md",
+        "https://creativecommons.org/licenses/by/4.0/"
+      ],
+      "provider": "nvidia/OpenMathReasoning",
+      "review_state": "APPROVED",
+      "revision": "d3d08664755704f422af97d43a7ff0ded4bd95df",
+      "unresolved_obligations": []
+    },
+    "openscience_reasoning_2": {
+      "config": null,
+      "declared_license": "CC-BY-4.0",
+      "evidence_urls": [
+        "https://huggingface.co/datasets/nvidia/OpenScienceReasoning-2/blob/174b02c9cdf231f220765b2a1d5ece4550921894/README.md",
+        "https://creativecommons.org/licenses/by/4.0/"
+      ],
+      "provider": "nvidia/OpenScienceReasoning-2",
+      "review_state": "APPROVED",
+      "revision": "174b02c9cdf231f220765b2a1d5ece4550921894",
+      "unresolved_obligations": []
     },
     "python_cpython": {
-      "source_kind": "git",
-      "url": "https://github.com/python/cpython.git",
-      "ref": "main",
       "commit": "115c297fdcc7d0fab41ed0e5c08f1b9cbec35976",
       "declared_license": "PSF-2.0 with file-level exceptions",
       "evidence_urls": [
         "https://github.com/python/cpython/blob/main/Doc/license.rst"
       ],
+      "ref": "main",
       "review_state": "EVIDENCE_COLLECTED",
+      "source_kind": "git",
       "unresolved_obligations": [
         "retain PSF copyright/license notice",
         "identify and exclude or separately classify files governed by other licenses"
-      ]
+      ],
+      "url": "https://github.com/python/cpython.git"
     },
     "rust_lang": {
-      "source_kind": "git",
-      "url": "https://github.com/rust-lang/rust.git",
-      "ref": "master",
       "commit": "ea6bb45b74c24a026dab4187b1550e97b6985c8a",
       "declared_license": "Apache-2.0 OR MIT with file-level third-party exceptions",
       "evidence_urls": [
         "https://github.com/rust-lang/rust/blob/main/COPYRIGHT",
         "https://github.com/rust-lang/rust/blob/main/license-metadata.json"
       ],
+      "ref": "master",
       "review_state": "EVIDENCE_COLLECTED",
+      "source_kind": "git",
       "unresolved_obligations": [
         "derive an allowlist from license-metadata.json and exclude GPL/other non-allowlisted imported subtrees",
         "retain applicable Apache/MIT and third-party notices for accepted files"
-      ]
+      ],
+      "url": "https://github.com/rust-lang/rust.git"
     },
     "tinystories": {
       "config": null,
@@ -140,13 +184,9 @@
         "https://foundation.wikimedia.org/wiki/Terms_of_Use"
       ],
       "provider": "wikimedia/wikipedia",
-      "review_state": "EVIDENCE_COLLECTED",
+      "review_state": "APPROVED",
       "revision": "b04c8d1ceb2f5cd4588862100d08de323dccfbaa",
-      "unresolved_obligations": [
-        "define attribution path to article authors/source history",
-        "review share-alike implications for redistributed derived corpus artifacts",
-        "retain provenance needed to satisfy reuse obligations"
-      ]
+      "unresolved_obligations": []
     },
     "wiki_ro": {
       "config": "20231101.ro",
@@ -166,9 +206,6 @@
       ]
     },
     "zephyr": {
-      "source_kind": "git",
-      "url": "https://github.com/zephyrproject-rtos/zephyr.git",
-      "ref": "main",
       "commit": "f0bdf59a0b7d1b4dadbec339662d764cba78138a",
       "declared_license": "Apache-2.0",
       "evidence_urls": [
@@ -176,12 +213,11 @@
         "https://docs.zephyrproject.org/latest/contribute/guidelines.html",
         "https://github.com/zephyrproject-rtos/zephyr/blob/main/LICENSE"
       ],
-      "review_state": "EVIDENCE_COLLECTED",
-      "unresolved_obligations": [
-        "ingest only per-file SPDX/REUSE entries allowed by the corpus policy",
-        "review Apache-2.0 attribution and NOTICE handling for corpus artifacts and model documentation",
-        "retain exact repository revision and per-file provenance for every accepted file"
-      ]
+      "ref": "main",
+      "review_state": "APPROVED",
+      "source_kind": "git",
+      "unresolved_obligations": [],
+      "url": "https://github.com/zephyrproject-rtos/zephyr.git"
     }
   }
 }

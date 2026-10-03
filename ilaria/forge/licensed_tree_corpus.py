@@ -83,7 +83,12 @@ def build_raw_corpus(
 
     for record in manifest["files"]:
         path = tree / record["path"]
-        text = path.read_text(encoding="utf-8", errors="ignore").strip()
+        try:
+            text = path.read_text(encoding="utf-8").strip()
+        except UnicodeDecodeError as exc:
+            raise ValueError(
+                f"licensed-tree file is not valid UTF-8: {record['path']}"
+            ) from exc
         if not text:
             continue
         buffer.append(

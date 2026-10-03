@@ -107,6 +107,21 @@ class IlariaLexTests(unittest.TestCase):
         self.assertEqual(meta["tokenizer_format"], ht.ILARIALEX_FORMAT)
         self.assertEqual(meta["protocol_start_id"], self.base_size)
         self.assertEqual(meta["tokenizer_sha256"], ht.tokenizer_sha256(self.out))
+        self.assertEqual(
+            meta["stream_sha256"],
+            ht.tokenizer_sha256(prefix + ".bin"),
+        )
+
+    def test_encode_jsonl_rejects_corrupt_records_without_partial_output(self):
+        shard = os.path.join(self.dir, "corrupt.jsonl")
+        prefix = os.path.join(self.dir, "corrupt")
+        with open(shard, "w", encoding="utf-8", newline="\n") as stream:
+            stream.write(json.dumps({"text": SAMPLE[0]}) + "\n")
+            stream.write("{broken\n")
+
+        with self.assertRaisesRegex(ValueError, r"corrupt\.jsonl:2: invalid JSON"):
+            ht.encode_jsonl(self.tok, shard, prefix, self.out)
+        self.assertFalse(os.path.exists(prefix + ".bin"))
 
     def test_uint16_boundary_includes_exact_65536_vocab(self):
         self.assertIs(ht.stream_dtype(65_535), np.uint16)

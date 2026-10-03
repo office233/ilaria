@@ -113,6 +113,30 @@ type ReplayExample struct {
 	VerifierEvidenceHash string `json:"verifier_evidence_hash"`
 }
 
+type IMCLocalProbeEnvelope struct {
+	ProtocolVersion        uint64 `json:"protocol_version"`
+	ExpertID               string `json:"expert_id"`
+	PeerID                 string `json:"peer_id"`
+	RoundID                string `json:"round_id"`
+	ModelConfigHash        string `json:"model_config_hash"`
+	GenesisCheckpointHash  string `json:"genesis_checkpoint_hash"`
+	ParameterDeltaHash     string `json:"parameter_delta_hash"`
+	CurriculumManifestHash string `json:"curriculum_manifest_hash"`
+	TrainingRecipeHash     string `json:"training_recipe_hash"`
+	ConsentEpoch           uint64 `json:"consent_epoch"`
+	LeaseFence             uint64 `json:"lease_fence"`
+	Nonce                  string `json:"nonce"`
+	DeadlineUnixMS         int64  `json:"deadline_unix_ms"`
+	PayloadBytes           uint64 `json:"payload_bytes"`
+	PayloadBase64          string `json:"payload_base64"`
+	TensorLayoutJSON       string `json:"tensor_layout_json"`
+	ModelConfigJSON        string `json:"model_config_json"`
+	RecipeJSON             string `json:"recipe_json"`
+	SignedCanonicalBase64  string `json:"signed_canonical_base64"`
+	SignerKeyID            string `json:"signer_key_id"`
+	Signature              string `json:"signature"`
+}
+
 type PCEReplayArtifact struct {
 	Format               string `json:"format"`
 	ProtocolVersion      uint64 `json:"protocol_version"`
@@ -124,6 +148,57 @@ type PCEReplayArtifact struct {
 	ActionTarget         string `json:"action_target"`
 	VerifierEvidenceHash string `json:"verifier_evidence_hash"`
 	SignerKeyID          string `json:"signer_key_id"`
+}
+
+type IMCNetworkRoundJob struct {
+	ProtocolVersion             uint64 `json:"protocol_version"`
+	IssuerID                    string `json:"issuer_id"`
+	ExpertID                    string `json:"expert_id"`
+	SessionID                   string `json:"session_id"`
+	RoundSequence               uint64 `json:"round_sequence"`
+	RoundID                     string `json:"round_id"`
+	GenesisCheckpointHash       string `json:"genesis_checkpoint_hash"`
+	CurrentParentCheckpointHash string `json:"current_parent_checkpoint_hash"`
+	LineageHash                 string `json:"lineage_hash"`
+	ModelConfigHash             string `json:"model_config_hash"`
+	CurriculumManifestHash      string `json:"curriculum_manifest_hash"`
+	DatasetScope                string `json:"dataset_scope"`
+	AuthorizedPurpose           string `json:"authorized_purpose"`
+	TrainingRecipeHash          string `json:"training_recipe_hash"`
+	ProposerID                  string `json:"proposer_id"`
+	RecipeJSON                  string `json:"recipe_json"`
+	EvaluatorID                 string `json:"evaluator_id"`
+	ProposerKeyHash             string `json:"proposer_key_hash"`
+	EvaluatorKeyHash            string `json:"evaluator_key_hash"`
+	Nonce                       string `json:"nonce"`
+	ConsentEpoch                uint64 `json:"consent_epoch"`
+	LeaseFence                  uint64 `json:"lease_fence"`
+	DeadlineUnixMS              int64  `json:"deadline_unix_ms"`
+}
+
+type IMCNetworkRoundReceipt struct {
+	ProtocolVersion             uint64 `json:"protocol_version"`
+	IssuerID                    string `json:"issuer_id"`
+	EvaluatorID                 string `json:"evaluator_id"`
+	SessionID                   string `json:"session_id"`
+	RoundID                     string `json:"round_id"`
+	RoundSequence               uint64 `json:"round_sequence"`
+	IssuedJobHash               string `json:"issued_job_hash"`
+	CurrentParentCheckpointHash string `json:"current_parent_checkpoint_hash"`
+	CandidateCheckpointHash     string `json:"candidate_checkpoint_hash"`
+	ParameterDeltaHash          string `json:"parameter_delta_hash"`
+	Accepted                    bool   `json:"accepted"`
+	TrainingRecipeHash          string `json:"training_recipe_hash"`
+	ModelConfigHash             string `json:"model_config_hash"`
+	GenesisCheckpointHash       string `json:"genesis_checkpoint_hash"`
+	LineageHash                 string `json:"lineage_hash"`
+	ConsentEpoch                uint64 `json:"consent_epoch"`
+	LeaseFence                  uint64 `json:"lease_fence"`
+	Nonce                       string `json:"nonce"`
+	DeadlineUnixMS              int64  `json:"deadline_unix_ms"`
+	BeforeMetricsJSON           string `json:"before_metrics_json"`
+	CandidateMetricsJSON        string `json:"candidate_metrics_json"`
+	ActiveMetricsJSON           string `json:"active_metrics_json"`
 }
 
 type ConnectomeEdge struct {

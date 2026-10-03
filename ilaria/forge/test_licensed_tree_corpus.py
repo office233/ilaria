@@ -50,6 +50,27 @@ def test_adapter_emits_canonical_raw_source_manifest(tmp_path):
     assert all(row["text"].startswith("[FILE ") for row in rows)
 
 
+def test_adapter_rejects_non_utf8_source_instead_of_silently_mutating_it(tmp_path):
+    root = tmp_path / "tree"
+    root.mkdir()
+    source = root / "invalid.c"
+    source.write_bytes(
+        b"// SPDX-License-Identifier: Apache-2.0\nint valid;\n\xff\xfe"
+    )
+    licensed = build_manifest(root, source_name="zephyr", source_revision="a" * 40)
+    licensed_path = tmp_path / "licensed.json"
+    atomic_write_json(licensed_path, licensed)
+
+    with pytest.raises(ValueError, match="not valid UTF-8"):
+        build_raw_corpus(
+            licensed_path,
+            root=root,
+            out_dir=tmp_path / "raw",
+            source_name="zephyr",
+            provider="fixture",
+        )
+
+
 def test_curation_remains_the_rights_gate(tmp_path):
     root, licensed_path, _ = fixture(tmp_path)
     raw = tmp_path / "raw"

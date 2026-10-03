@@ -21,6 +21,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -29,6 +30,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"unicode/utf8"
 )
 
 // doubleEncodingMap maps known mojibake sequences (cp1252 read as UTF-8)
@@ -103,10 +105,12 @@ func main() {
 		os.Exit(2)
 	}
 
+	failed := false
 	for _, p := range paths {
 		rep, err := audit(p)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "ERROR %s: %v\n", p, err)
+			failed = true
 			continue
 		}
 		printReport(rep, *sample)
@@ -116,11 +120,15 @@ func main() {
 			repaired, kept, err := repair(p, out)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "  repair FAILED: %v\n", err)
+				failed = true
 				continue
 			}
 			fmt.Printf("  → repaired %d lines (skipped %d malformed) → %s\n",
 				repaired, kept, out)
 		}
+	}
+	if failed {
+		os.Exit(1)
 	}
 }
 
@@ -131,19 +139,17 @@ func audit(path string) (*report, error) {
 	}
 	defer f.Close()
 
-	st, _ := f.Stat()
+	st, err := f.Stat()
+	if err != nil {
+		return nil, err
+	}
 	rep := &report{path: path, totalBytes: st.Size(), fields: map[string]int{}}
 
-	scanner := bufio.NewScanner(f)
-	// Some Wikipedia articles exceed 1 MB on a single line — give the
-	// scanner a generous buffer to avoid spurious "token too long" errors.
-	scanner.Buffer(make([]byte, 1024*1024), 16*1024*1024)
-
-	for scanner.Scan() {
-		line := scanner.Text()
+	err = forEachLine(f, func(raw []byte) error {
+		line := string(raw)
 		rep.lines++
-		if len(line) > rep.maxLineLen {
-			rep.maxLineLen = len(line)
+		if len(raw) > rep.maxLineLen {
+			rep.maxLineLen = len(raw)
 		}
 		if rep.firstLine == "" {
 			rep.firstLine = line
@@ -151,21 +157,22 @@ func audit(path string) (*report, error) {
 		rep.lastLine = line
 
 		var obj map[string]interface{}
-		if err := json.Unmarshal([]byte(line), &obj); err != nil {
+		if err := json.Unmarshal(raw, &obj); err != nil {
 			rep.parseErrors++
-			continue
+			return nil
 		}
 		for k, v := range obj {
 			if s, ok := v.(string); ok {
 				rep.fields[k]++
-				rep.totalTextLen += len(s)
+				rep.totalTextLen += utf8.RuneCountInString(s)
 				for _, m := range corruptionMarkers {
 					rep.corruption += strings.Count(s, m)
 				}
 			}
 		}
-	}
-	if err := scanner.Err(); err != nil && err != io.EOF {
+		return nil
+	})
+	if err != nil {
 		return rep, err
 	}
 	if rep.totalBytes > 0 {
@@ -214,16 +221,37 @@ func printReport(r *report, sampleLen int) {
 }
 
 func truncate(s string, n int) string {
-	if n <= 0 || len(s) <= n {
+	runes := []rune(s)
+	if n <= 0 || len(runes) <= n {
 		return s
 	}
-	return s[:n] + "…"
+	return string(runes[:n]) + "…"
+}
+
+func forEachLine(r io.Reader, visit func([]byte) error) error {
+	reader := bufio.NewReader(r)
+	for {
+		line, err := reader.ReadBytes('\n')
+		if len(line) > 0 {
+			line = bytes.TrimSuffix(line, []byte{'\n'})
+			line = bytes.TrimSuffix(line, []byte{'\r'})
+			if visitErr := visit(line); visitErr != nil {
+				return visitErr
+			}
+		}
+		if err == io.EOF {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+	}
 }
 
 // repair streams the input, applies double-encoding fixes to known
 // text fields, and writes a JSONL output. Returns (linesRepaired,
 // linesSkipped, err). Lines that fail to parse are skipped silently.
-func repair(in, out string) (int, int, error) {
+func repair(in, out string) (repaired, skipped int, err error) {
 	src, err := os.Open(in)
 	if err != nil {
 		return 0, 0, err
@@ -234,32 +262,24 @@ func repair(in, out string) (int, int, error) {
 	if err != nil {
 		return 0, 0, err
 	}
-	defer dst.Close()
+	defer func() {
+		if closeErr := dst.Close(); err == nil {
+			err = closeErr
+		}
+	}()
 
 	w := bufio.NewWriterSize(dst, 1<<20)
-	defer w.Flush()
-
-	scanner := bufio.NewScanner(src)
-	scanner.Buffer(make([]byte, 1024*1024), 16*1024*1024)
-
-	textFields := map[string]bool{
-		"text": true, "instruction": true, "response": true,
-		"prompt": true, "completion": true, "question": true,
-		"answer": true, "content": true,
-	}
-
-	repaired := 0
-	skipped := 0
-	for scanner.Scan() {
-		line := scanner.Bytes()
+	err = forEachLine(src, func(line []byte) error {
 		var obj map[string]interface{}
 		if err := json.Unmarshal(line, &obj); err != nil {
 			skipped++
-			continue
+			return nil
 		}
 		dirty := false
 		for k, v := range obj {
-			if !textFields[k] {
+			switch k {
+			case "text", "instruction", "response", "prompt", "completion", "question", "answer", "content":
+			default:
 				continue
 			}
 			if s, ok := v.(string); ok {
@@ -270,18 +290,26 @@ func repair(in, out string) (int, int, error) {
 				}
 			}
 		}
-		_ = dirty // emit every parsed line so the output is a complete corpus
+		if dirty {
+			repaired++
+		}
 		enc, err := json.Marshal(obj)
 		if err != nil {
-			skipped++
-			continue
+			return fmt.Errorf("encode repaired JSON: %w", err)
 		}
-		w.Write(enc)
-		w.WriteByte('\n')
-		repaired++
-	}
-	if err := scanner.Err(); err != nil && err != io.EOF {
+		if _, err := w.Write(enc); err != nil {
+			return fmt.Errorf("write repaired JSON: %w", err)
+		}
+		if err := w.WriteByte('\n'); err != nil {
+			return fmt.Errorf("write repaired newline: %w", err)
+		}
+		return nil
+	})
+	if err != nil {
 		return repaired, skipped, err
+	}
+	if err = w.Flush(); err != nil {
+		return repaired, skipped, fmt.Errorf("flush repaired corpus: %w", err)
 	}
 	return repaired, skipped, nil
 }

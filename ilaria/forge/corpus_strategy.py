@@ -14,6 +14,8 @@ REQUIRED_LANES = frozenset(
         "os_drivers",
         "hardware",
         "tools_protocol",
+        "agent_tool_trajectories",
+        "world_device_trajectories",
     }
 )
 ALLOWED_STATUSES = frozenset(
@@ -31,10 +33,15 @@ def assess_strategy(
     git_locked_sources: set[str],
     *,
     first_party_attested: bool = False,
+    first_party_attested_sources: set[str] | None = None,
 ) -> dict:
     """Report whether every preferred lane source has completed manual review."""
     blockers: list[str] = []
     preferred_sources: dict[str, str] = {}
+    attested_sources = set(first_party_attested_sources or set())
+    if first_party_attested:
+        # Backward-compatible meaning of the original boolean gate.
+        attested_sources.add("first_party_contracts")
     for lane in sorted(REQUIRED_LANES):
         candidates = strategy["lanes"][lane]
         preferred = next(
@@ -46,15 +53,15 @@ def assess_strategy(
         preferred_sources[lane] = source
         status = preferred.get("status")
         attestation_satisfies = (
-            source == "first_party_contracts"
+            source in attested_sources
             and status == "OWNERSHIP_ATTESTATION_REQUIRED"
-            and first_party_attested
         )
         if status != "ELIGIBLE" and not attestation_satisfies:
             blockers.append(
                 f"corpus_strategy:{lane}:{source}:status={status}"
             )
         if source in {
+            "apache_nuttx",
             "golang_go",
             "python_cpython",
             "rust_lang",

@@ -13,6 +13,8 @@ from corpus_inventory import (
     load_lane_rules,
 )
 from curriculum_stream import REQUIRED_LANES
+from data_contract import canonical_json_sha256
+from first_party_attestation import attestation_scope_sha256, build_attestation_template
 
 
 def _sha(path: Path) -> str:
@@ -250,6 +252,65 @@ def test_manifest_hash_drift_fails_closed(tmp_path):
         )
 
 
+def test_inventory_rejects_shard_path_escape(tmp_path):
+    curriculum = tmp_path / "curriculum.json"
+    rules = tmp_path / "rules.json"
+    rights = tmp_path / "rights.json"
+    _write_curriculum(curriculum)
+    _write_rules(rules)
+    _write_rights(rights)
+    manifest = _write_source(
+        tmp_path / "alpha",
+        "alpha",
+        "a1",
+        [{"path": "lib/a.c", "text": "one"}],
+    )
+    raw = json.loads(manifest.read_text(encoding="utf-8"))
+    raw["shard_records"][0]["filename"] = "../outside.jsonl"
+    outside = manifest.parent.parent / "outside.jsonl"
+    outside.write_text('{"path":"lib/a.c","text":"one"}\n', encoding="utf-8")
+    raw["shard_records"][0]["bytes"] = outside.stat().st_size
+    raw["shard_records"][0]["sha256"] = _sha(outside)
+    manifest.write_text(json.dumps(raw), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="escapes manifest directory"):
+        build_inventory(
+            [manifest],
+            curriculum_path=curriculum,
+            lane_rules_path=rules,
+            rights_registry_path=rights,
+            target_tokens=100,
+        )
+
+
+@pytest.mark.parametrize("bad_index", [None, -1, "0"])
+def test_inventory_rejects_invalid_shard_index(tmp_path, bad_index):
+    manifest = _write_source(
+        tmp_path / "alpha",
+        "alpha",
+        "a1",
+        [{"path": "lib/a.c", "text": "one"}],
+    )
+    raw = json.loads(manifest.read_text(encoding="utf-8"))
+    raw["shard_records"][0]["index"] = bad_index
+    manifest.write_text(json.dumps(raw), encoding="utf-8")
+
+    curriculum = tmp_path / "curriculum.json"
+    rules = tmp_path / "rules.json"
+    rights = tmp_path / "rights.json"
+    _write_curriculum(curriculum)
+    _write_rules(rules)
+    _write_rights(rights)
+    with pytest.raises(ValueError, match="invalid shard index"):
+        build_inventory(
+            [manifest],
+            curriculum_path=curriculum,
+            lane_rules_path=rules,
+            rights_registry_path=rights,
+            target_tokens=100,
+        )
+
+
 def test_lane_rules_reject_ambiguous_patterns(tmp_path):
     rules_path = tmp_path / "rules.json"
     _write_rules(rules_path)
@@ -262,3 +323,199 @@ def test_lane_rules_reject_ambiguous_patterns(tmp_path):
     rules = load_lane_rules(rules_path, set(REQUIRED_LANES))
     with pytest.raises(ValueError, match="ambiguous lane classification"):
         classify_path("alpha", "drivers/x.c", rules)
+
+
+def test_unsigned_first_party_source_is_candidate_only(tmp_path):
+    curriculum = tmp_path / "curriculum.json"
+    mix = {lane: 0 for lane in REQUIRED_LANES}
+    mix["agent_tool_trajectories"] = 1_000_000
+    curriculum.write_text(
+        json.dumps(
+            {
+                "format": "imc-125m-curriculum-v1",
+                "policy": "exact-token-budget-v1",
+                "boundary_policy": "replace-final-lane-token-with-eos-v1",
+                "target_mix_ppm": mix,
+            }
+        ),
+        encoding="utf-8",
+    )
+    rules = tmp_path / "rules.json"
+    rules.write_text(
+        json.dumps(
+            {
+                "format": "imc-125m-inventory-lanes-v1",
+                "sources": {
+                    "first_party": {
+                        "rules": [
+                            {
+                                "lane": "agent_tool_trajectories",
+                                "default": True,
+                            }
+                        ]
+                    }
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    rights = tmp_path / "rights.json"
+    rights.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "policy": "fixture",
+                "sources": {
+                    "unrelated_external": {
+                        "status": "REVIEW_REQUIRED",
+                        "commercial_use_approved": False,
+                        "review_ref": "",
+                    }
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    owned = tmp_path / "owned-generator.py"
+    owned.write_text("# first-party generator fixture\n", encoding="utf-8")
+    attestation_data = build_attestation_template(
+        tmp_path, paths=[owned.name]
+    )
+    attestation = tmp_path / "attestation.json"
+    attestation.write_text(json.dumps(attestation_data), encoding="utf-8")
+
+    manifest = _write_source(
+        tmp_path / "candidate",
+        "first_party",
+        "r1",
+        [
+            {
+                "path": "agent_tool_trajectories/00000/task-1",
+                "text": "verified synthetic trajectory",
+            }
+        ],
+    )
+    raw = json.loads(manifest.read_text(encoding="utf-8"))
+    raw["pipeline"] = {
+        "rights_basis": "first_party_attestation",
+        "attestation_scope_sha256": attestation_scope_sha256(attestation_data),
+        "attestation_required_files": list(attestation_data["files"]),
+    }
+    manifest.write_text(json.dumps(raw, sort_keys=True), encoding="utf-8")
+
+    report = build_inventory(
+        [manifest],
+        curriculum_path=curriculum,
+        lane_rules_path=rules,
+        rights_registry_path=rights,
+        target_tokens=100,
+        first_party_attestations={"first_party": attestation},
+        first_party_root=tmp_path,
+    )
+    source = report["sources"]["first_party"]
+    assert source["rights_status"] == "OWNERSHIP_ATTESTATION_REQUIRED"
+    assert source["eligibility_basis"] == "first_party_attestation"
+    assert source["stats"]["documents"] == 1
+    lane = report["lanes"]["agent_tool_trajectories"]
+    assert lane["candidate"]["documents"] == 1
+    assert lane["approved"]["documents"] == 0
+
+
+def test_signed_first_party_source_becomes_approved(tmp_path):
+    curriculum = tmp_path / "curriculum.json"
+    mix = {lane: 0 for lane in REQUIRED_LANES}
+    mix["agent_tool_trajectories"] = 1_000_000
+    curriculum.write_text(
+        json.dumps(
+            {
+                "format": "imc-125m-curriculum-v1",
+                "policy": "exact-token-budget-v1",
+                "boundary_policy": "replace-final-lane-token-with-eos-v1",
+                "target_mix_ppm": mix,
+            }
+        ),
+        encoding="utf-8",
+    )
+    rules = tmp_path / "rules.json"
+    rules.write_text(
+        json.dumps(
+            {
+                "format": "imc-125m-inventory-lanes-v1",
+                "sources": {
+                    "first_party": {
+                        "rules": [
+                            {
+                                "lane": "agent_tool_trajectories",
+                                "default": True,
+                            }
+                        ]
+                    }
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    rights = tmp_path / "rights.json"
+    rights.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "policy": "fixture",
+                "sources": {
+                    "unrelated_external": {
+                        "status": "REVIEW_REQUIRED",
+                        "commercial_use_approved": False,
+                        "review_ref": "",
+                    }
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    owned = tmp_path / "owned-generator.py"
+    owned.write_text("# first-party generator fixture\n", encoding="utf-8")
+    attestation_data = build_attestation_template(tmp_path, paths=[owned.name])
+    attestation_data.update(
+        {
+            "ownership_attested": True,
+            "attested_by": "fixture-owner",
+            "review_ref": "fixture-review-1",
+        }
+    )
+    identity_payload = dict(attestation_data)
+    identity_payload.pop("attestation_sha256", None)
+    attestation_data["attestation_sha256"] = canonical_json_sha256(
+        identity_payload
+    )
+    attestation = tmp_path / "attestation.json"
+    attestation.write_text(json.dumps(attestation_data), encoding="utf-8")
+    manifest = _write_source(
+        tmp_path / "candidate",
+        "first_party",
+        "r1",
+        [
+            {
+                "path": "agent_tool_trajectories/00000/task-1",
+                "text": "verified signed first-party trajectory",
+            }
+        ],
+    )
+    raw = json.loads(manifest.read_text(encoding="utf-8"))
+    raw["pipeline"] = {
+        "rights_basis": "first_party_attestation",
+        "attestation_scope_sha256": attestation_scope_sha256(attestation_data),
+        "attestation_required_files": list(attestation_data["files"]),
+    }
+    manifest.write_text(json.dumps(raw, sort_keys=True), encoding="utf-8")
+    report = build_inventory(
+        [manifest],
+        curriculum_path=curriculum,
+        lane_rules_path=rules,
+        rights_registry_path=rights,
+        target_tokens=100,
+        first_party_attestations={"first_party": attestation},
+        first_party_root=tmp_path,
+    )
+    assert report["sources"]["first_party"]["rights_status"] == "ATTESTED_FIRST_PARTY"
+    assert report["lanes"]["agent_tool_trajectories"]["approved"]["documents"] == 1

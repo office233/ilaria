@@ -1,0 +1,17 @@
+{
+  "attestation_sha256": "922af0360ed626e2a9389b6fa9fb98f247255822826837d3559a5375a7e0c3bc",
+  "attested_by": "",
+  "files": [
+    {
+      "path": "forge/config/imc_125m_math_generation.json",
+      "sha256": "aa9fc5ff32d603d7b5634ef0330fda718ae674c05493e58c9d4bb026e378aa1a"
+    },
+    {
+      "path": "forge/verified_math_corpus.py",
+      "sha256": "c75021fec0810b6d1571858043c35a0c5143d0aa191398c87a5818abd0ffff0e"
+    }
+  ],
+  "format": "ilaria-first-party-attestation-v1",
+  "ownership_attested": false,
+  "review_ref": ""
+}

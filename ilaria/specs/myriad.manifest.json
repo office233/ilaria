@@ -418,6 +418,96 @@
     },
     {
       "kind": "record",
+      "name": "IMCLocalProbeEnvelope",
+      "fields": [
+        {
+          "name": "protocol_version",
+          "type": "u64"
+        },
+        {
+          "name": "expert_id",
+          "type": "string"
+        },
+        {
+          "name": "peer_id",
+          "type": "string"
+        },
+        {
+          "name": "round_id",
+          "type": "string"
+        },
+        {
+          "name": "model_config_hash",
+          "type": "string"
+        },
+        {
+          "name": "genesis_checkpoint_hash",
+          "type": "string"
+        },
+        {
+          "name": "parameter_delta_hash",
+          "type": "string"
+        },
+        {
+          "name": "curriculum_manifest_hash",
+          "type": "string"
+        },
+        {
+          "name": "training_recipe_hash",
+          "type": "string"
+        },
+        {
+          "name": "consent_epoch",
+          "type": "u64"
+        },
+        {
+          "name": "lease_fence",
+          "type": "u64"
+        },
+        {
+          "name": "nonce",
+          "type": "string"
+        },
+        {
+          "name": "deadline_unix_ms",
+          "type": "i64"
+        },
+        {
+          "name": "payload_bytes",
+          "type": "u64"
+        },
+        {
+          "name": "payload_base64",
+          "type": "string"
+        },
+        {
+          "name": "tensor_layout_json",
+          "type": "string"
+        },
+        {
+          "name": "model_config_json",
+          "type": "string"
+        },
+        {
+          "name": "recipe_json",
+          "type": "string"
+        },
+        {
+          "name": "signed_canonical_base64",
+          "type": "string"
+        },
+        {
+          "name": "signer_key_id",
+          "type": "string"
+        },
+        {
+          "name": "signature",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "kind": "record",
       "name": "PCEReplayArtifact",
       "fields": [
         {
@@ -458,6 +548,198 @@
         },
         {
           "name": "signer_key_id",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "kind": "record",
+      "name": "IMCNetworkRoundJob",
+      "fields": [
+        {
+          "name": "protocol_version",
+          "type": "u64"
+        },
+        {
+          "name": "issuer_id",
+          "type": "string"
+        },
+        {
+          "name": "expert_id",
+          "type": "string"
+        },
+        {
+          "name": "session_id",
+          "type": "string"
+        },
+        {
+          "name": "round_sequence",
+          "type": "u64"
+        },
+        {
+          "name": "round_id",
+          "type": "string"
+        },
+        {
+          "name": "genesis_checkpoint_hash",
+          "type": "string"
+        },
+        {
+          "name": "current_parent_checkpoint_hash",
+          "type": "string"
+        },
+        {
+          "name": "lineage_hash",
+          "type": "string"
+        },
+        {
+          "name": "model_config_hash",
+          "type": "string"
+        },
+        {
+          "name": "curriculum_manifest_hash",
+          "type": "string"
+        },
+        {
+          "name": "dataset_scope",
+          "type": "string"
+        },
+        {
+          "name": "authorized_purpose",
+          "type": "string"
+        },
+        {
+          "name": "training_recipe_hash",
+          "type": "string"
+        },
+        {
+          "name": "proposer_id",
+          "type": "string"
+        },
+        {
+          "name": "recipe_json",
+          "type": "string"
+        },
+        {
+          "name": "evaluator_id",
+          "type": "string"
+        },
+        {
+          "name": "proposer_key_hash",
+          "type": "string"
+        },
+        {
+          "name": "evaluator_key_hash",
+          "type": "string"
+        },
+        {
+          "name": "nonce",
+          "type": "string"
+        },
+        {
+          "name": "consent_epoch",
+          "type": "u64"
+        },
+        {
+          "name": "lease_fence",
+          "type": "u64"
+        },
+        {
+          "name": "deadline_unix_ms",
+          "type": "i64"
+        }
+      ]
+    },
+    {
+      "kind": "record",
+      "name": "IMCNetworkRoundReceipt",
+      "fields": [
+        {
+          "name": "protocol_version",
+          "type": "u64"
+        },
+        {
+          "name": "issuer_id",
+          "type": "string"
+        },
+        {
+          "name": "evaluator_id",
+          "type": "string"
+        },
+        {
+          "name": "session_id",
+          "type": "string"
+        },
+        {
+          "name": "round_id",
+          "type": "string"
+        },
+        {
+          "name": "round_sequence",
+          "type": "u64"
+        },
+        {
+          "name": "issued_job_hash",
+          "type": "string"
+        },
+        {
+          "name": "current_parent_checkpoint_hash",
+          "type": "string"
+        },
+        {
+          "name": "candidate_checkpoint_hash",
+          "type": "string"
+        },
+        {
+          "name": "parameter_delta_hash",
+          "type": "string"
+        },
+        {
+          "name": "accepted",
+          "type": "bool"
+        },
+        {
+          "name": "training_recipe_hash",
+          "type": "string"
+        },
+        {
+          "name": "model_config_hash",
+          "type": "string"
+        },
+        {
+          "name": "genesis_checkpoint_hash",
+          "type": "string"
+        },
+        {
+          "name": "lineage_hash",
+          "type": "string"
+        },
+        {
+          "name": "consent_epoch",
+          "type": "u64"
+        },
+        {
+          "name": "lease_fence",
+          "type": "u64"
+        },
+        {
+          "name": "nonce",
+          "type": "string"
+        },
+        {
+          "name": "deadline_unix_ms",
+          "type": "i64"
+        },
+        {
+          "name": "before_metrics_json",
+          "type": "string"
+        },
+        {
+          "name": "candidate_metrics_json",
+          "type": "string"
+        },
+        {
+          "name": "active_metrics_json",
           "type": "string"
         }
       ]

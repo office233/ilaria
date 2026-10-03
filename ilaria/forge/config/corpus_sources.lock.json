@@ -1,6 +1,6 @@
 {
   "format": "ilaria-corpus-source-lock-v1",
-  "source_lock_sha256": "c7a7305dc9cc72958b1cf787a234f68a64df746ac2f63e19c29b392743ae3e5f",
+  "source_lock_sha256": "702264b18416825c3b95e565de0f28225a64c6b7c52a6a429b13e647c0b08b2a",
   "sources": {
     "fineweb2_ro": {
       "config": "ron_Latn",
@@ -11,6 +11,21 @@
       "config": "sample-10BT",
       "provider": "HuggingFaceFW/fineweb-edu",
       "revision": "87f09149ef4734204d70ed1d046ddc9ca3f2b8f9"
+    },
+    "openmath_reasoning_cot": {
+      "config": null,
+      "provider": "nvidia/OpenMathReasoning",
+      "revision": "d3d08664755704f422af97d43a7ff0ded4bd95df"
+    },
+    "opencode_reasoning_split0": {
+      "config": "split_0",
+      "provider": "nvidia/OpenCodeReasoning",
+      "revision": "20a1ca19c0d050fe9057fc08339d6b370ec1c67a"
+    },
+    "openscience_reasoning_2": {
+      "config": null,
+      "provider": "nvidia/OpenScienceReasoning-2",
+      "revision": "174b02c9cdf231f220765b2a1d5ece4550921894"
     },
     "tinystories": {
       "config": null,

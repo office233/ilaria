@@ -19,6 +19,22 @@ Canonical execution plan: `docs/plans/MASTER_PLAN.md`.
 
 Every participating SwypikOS device hosts an IMC instance. Instances may specialize as experts while preserving the same IMC architecture and protocol. `CorticalConnectome` defines verified inter-cortex relationships; SwypikOS Compute Fabric supplies signed distributed training jobs and candidate deltas. Personal hippocampal memory remains local by default.
 
+## Verified effect evidence
+
+`runtime/evidence` and `cmd/evidence-check` verify SwypikOS effect receipts against
+explicit executor-bound public keys and independently supplied task/lease/fence
+context. The observer accepts successful signed `fs.read` and `clock.read`
+outcomes, exposes no OS authority, omits private payloads from observations and
+keeps `training_eligible=false`.
+
+The CLI also supports `--stream --keys FILE` for a persistent supervisor
+connection with bounded JSONL envelopes and correlated verification responses.
+Its explicit trust snapshot is loaded once per process.
+
+See the [Ilaria consumer guide](runtime/evidence/README.md) and the
+[cross-product effects v1 milestone](../ramasite/docs/workspace/milestones/effects-v1.md) for the
+wire contract, integration gate and remaining construction work.
+
 ## Model architecture
 
 - decoder-only transformer

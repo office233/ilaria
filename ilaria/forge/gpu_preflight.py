@@ -41,6 +41,7 @@ def assess_gpu_report(
     min_vram_gib: float = 24.0,
     min_compute_major: int = 7,
     require_bf16: bool = False,
+    require_name_contains: str = "",
 ) -> dict:
     if type(world_size) is not int or world_size < 1:
         raise ValueError("world_size must be a positive integer")
@@ -50,6 +51,8 @@ def assess_gpu_report(
         raise ValueError("min_compute_major must be a positive integer")
     if type(require_bf16) is not bool:
         raise ValueError("require_bf16 must be boolean")
+    if not isinstance(require_name_contains, str):
+        raise ValueError("require_name_contains must be a string")
 
     blockers: list[str] = []
     devices = report.get("devices") if isinstance(report, dict) else None
@@ -78,6 +81,10 @@ def assess_gpu_report(
             blockers.append(f"gpu{index}:compute_capability_below_{min_compute_major}.0")
         if require_bf16 and device.get("bf16_native") is not True:
             blockers.append(f"gpu{index}:bf16_not_native")
+        if require_name_contains:
+            name = device.get("name")
+            if not isinstance(name, str) or require_name_contains.casefold() not in name.casefold():
+                blockers.append(f"gpu{index}:name_missing={require_name_contains}")
 
     return {
         **report,
@@ -87,6 +94,7 @@ def assess_gpu_report(
             "min_vram_gib": float(min_vram_gib),
             "min_compute_major": min_compute_major,
             "require_bf16": require_bf16,
+            "require_name_contains": require_name_contains,
         },
         "blockers": blockers,
     }
@@ -98,6 +106,7 @@ def main() -> None:
     parser.add_argument("--min-vram-gib", type=float, default=24.0)
     parser.add_argument("--min-compute-major", type=int, default=7)
     parser.add_argument("--require-bf16", action="store_true")
+    parser.add_argument("--require-name-contains", default="")
     args = parser.parse_args()
     report = assess_gpu_report(
         probe_torch_cuda(),
@@ -105,6 +114,7 @@ def main() -> None:
         min_vram_gib=args.min_vram_gib,
         min_compute_major=args.min_compute_major,
         require_bf16=args.require_bf16,
+        require_name_contains=args.require_name_contains,
     )
     print(json.dumps(report, indent=2, sort_keys=True))
     if not report["ready"]:

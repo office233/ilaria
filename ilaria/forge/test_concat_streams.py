@@ -4,6 +4,7 @@ import os
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 import numpy as np
 
@@ -149,6 +150,94 @@ class ConcatTests(unittest.TestCase):
                 [os.path.basename(path) for path in order],
                 ["ro-00000", "en-00000", "ro-00001", "en-00001"],
             )
+
+    def test_output_alias_never_overwrites_input(self):
+        with tempfile.TemporaryDirectory() as directory:
+            prefix = _write_shard(directory, "source", [1, 61_440])
+            before = {suffix: sha256_file(prefix + suffix) for suffix in (".bin", ".json")}
+            with self.assertRaisesRegex(ValueError, "alias"):
+                cs.concat([prefix, prefix], prefix)
+            self.assertEqual(before, {suffix: sha256_file(prefix + suffix) for suffix in before})
+
+    def test_hardlink_output_alias_is_refused(self):
+        with tempfile.TemporaryDirectory() as directory:
+            prefix = _write_shard(directory, "source", [1, 61_440])
+            output = os.path.join(directory, "linked")
+            try:
+                os.link(prefix + ".bin", output + ".bin")
+            except OSError as exc:
+                self.skipTest(f"hardlinks unavailable: {exc}")
+            before = sha256_file(prefix + ".bin")
+            with self.assertRaisesRegex(ValueError, "alias"):
+                cs.concat([prefix], output)
+            self.assertEqual(before, sha256_file(prefix + ".bin"))
+
+    def test_invalid_tokens_preserve_previous_output(self):
+        with tempfile.TemporaryDirectory() as directory:
+            prefix = _write_shard(directory, "invalid", [99, 7], vocab=8, eos=7, protocol_start=7)
+            output = os.path.join(directory, "output")
+            for suffix in (".bin", ".json"):
+                with open(output + suffix, "wb") as stream:
+                    stream.write(b"previous artifact")
+            with self.assertRaisesRegex(ValueError, "outside vocab_size"):
+                cs.concat([prefix], output)
+            for suffix in (".bin", ".json"):
+                with open(output + suffix, "rb") as stream:
+                    self.assertEqual(stream.read(), b"previous artifact")
+
+    def test_rejects_incorrect_eos_document_count(self):
+        with tempfile.TemporaryDirectory() as directory:
+            prefix = _write_shard(directory, "source", [1, 61_440])
+            with open(prefix + ".json", encoding="utf-8") as stream:
+                meta = json.load(stream)
+            meta["documents"] = 0
+            with open(prefix + ".json", "w", encoding="utf-8") as stream:
+                json.dump(meta, stream)
+            with self.assertRaisesRegex(ValueError, "EOS token count"):
+                cs.concat([prefix], os.path.join(directory, "output"))
+
+    def test_hash_is_over_exact_copied_bytes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            prefix = _write_shard(directory, "source", [1, 61_440])
+            output = os.path.join(directory, "output")
+            meta = cs.concat([prefix], output)
+            self.assertEqual(meta["shard_records"][0]["bin_sha256"], sha256_file(output + ".bin"))
+            # The in-copy size check catches changes after the metadata preflight.
+            real_copy = cs._copy_validated_shard
+            def changed_copy(source, metadata, stream):
+                with open(source + ".bin", "ab") as file:
+                    file.write(b"\x01\x00")
+                return real_copy(source, metadata, stream)
+            with patch.object(cs, "_copy_validated_shard", side_effect=changed_copy):
+                with self.assertRaisesRegex(ValueError, "changed after metadata"):
+                    cs.concat([prefix], os.path.join(directory, "changed-output"))
+
+    def test_rejects_wrong_declared_hash(self):
+        with tempfile.TemporaryDirectory() as directory:
+            prefix = _write_shard(directory, "source", [1, 61_440])
+            with open(prefix + ".json", encoding="utf-8") as stream:
+                meta = json.load(stream)
+            meta["stream_sha256"] = "a" * 64
+            with open(prefix + ".json", "w", encoding="utf-8") as stream:
+                json.dump(meta, stream)
+            with self.assertRaisesRegex(ValueError, "hash mismatch"):
+                cs.concat([prefix], os.path.join(directory, "output"))
+
+    def test_metadata_change_during_copy_does_not_publish(self):
+        with tempfile.TemporaryDirectory() as directory:
+            prefix = _write_shard(directory, "source", [1, 61_440])
+            output = os.path.join(directory, "output")
+            real_copy = cs._copy_validated_shard
+            def changed_metadata(source, metadata, stream):
+                copied = real_copy(source, metadata, stream)
+                with open(source + ".json", "a", encoding="utf-8") as file:
+                    file.write("\n")
+                return copied
+            with patch.object(cs, "_copy_validated_shard", side_effect=changed_metadata):
+                with self.assertRaisesRegex(ValueError, "metadata changed"):
+                    cs.concat([prefix], output)
+            self.assertFalse(os.path.exists(output + ".bin"))
+            self.assertFalse(os.path.exists(output + ".json"))
 
 
 if __name__ == "__main__":

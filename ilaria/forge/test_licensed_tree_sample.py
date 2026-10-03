@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from data_contract import atomic_write_json
-from licensed_tree_sample import build_sample, build_sample_set
+from licensed_tree_sample import _utf8_prefix, build_sample, build_sample_set
 from licensed_tree_source import build_manifest
 
 
@@ -63,6 +63,12 @@ def test_sample_respects_prefix_and_byte_cap(tmp_path):
     assert report["files"] == ["subsys/net.c"]
     assert report["bytes"] <= 100
     assert "drivers/a.c" not in out.read_text(encoding="utf-8")
+
+
+def test_utf8_prefix_never_splits_a_multibyte_character():
+    payload = "abcșdef".encode("utf-8")
+    assert _utf8_prefix(payload, 4) == "abc"
+    assert _utf8_prefix(payload, 5) == "abcș"
 
 
 def test_sample_set_builds_multiple_lanes_from_one_manifest(tmp_path):

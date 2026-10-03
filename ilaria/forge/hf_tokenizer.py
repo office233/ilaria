@@ -19,6 +19,11 @@ from pathlib import Path
 
 import numpy as np
 
+try:
+    from .atomic_io import atomic_binary_writer
+except ImportError:  # direct script execution
+    from atomic_io import atomic_binary_writer
+
 ILARIALEX_FORMAT = "ilarialex-v1"
 ILARIALEX_VOCAB_SIZE = 65_536
 ILARIALEX_PROTOCOL_RESERVED = 4_096
@@ -335,15 +340,20 @@ def encode_jsonl(tok, in_path: str, out_prefix: str, tok_name: str) -> dict:
     vocab = tok.get_vocab_size()
     dtype = stream_dtype(vocab)
     docs = tokens = 0
-    with open(in_path, encoding="utf-8") as source, open(
-        out_prefix + ".bin", "wb"
+    with open(in_path, encoding="utf-8") as source, atomic_binary_writer(
+        out_prefix + ".bin"
     ) as out:
         buf = []
-        for line in source:
+        for line_number, line in enumerate(source, 1):
             try:
-                text = json.loads(line).get("text", "")
-            except ValueError:
-                continue
+                record = json.loads(line)
+            except json.JSONDecodeError as exc:
+                raise ValueError(f"{in_path}:{line_number}: invalid JSON") from exc
+            if not isinstance(record, dict):
+                raise ValueError(f"{in_path}:{line_number}: expected JSON object")
+            text = record.get("text", "")
+            if not isinstance(text, str):
+                raise ValueError(f"{in_path}:{line_number}: text must be a string")
             if not text:
                 continue
             ids = tok.encode(text, add_special_tokens=False).ids
@@ -365,6 +375,7 @@ def encode_jsonl(tok, in_path: str, out_prefix: str, tok_name: str) -> dict:
         "dtype": "uint16" if dtype is np.uint16 else "uint32",
         "tokens": tokens,
         "documents": docs,
+        "stream_sha256": tokenizer_sha256(out_prefix + ".bin"),
         "tokenizer": str(Path(tok_name).name),
         "tokenizer_sha256": tokenizer_sha256(tok_name),
         "tokenizer_format": contract["format"],

@@ -1,0 +1,21 @@
+{
+  "format": "imc-125m-verified-trajectory-generation-v1",
+  "language": "en",
+  "quality_gate": {
+    "maximum_family_share_ppm": 110000,
+    "minimum_families": {
+      "agent_tool_trajectories": 12,
+      "world_device_trajectories": 10
+    },
+    "minimum_unique_evidence_ratio_ppm": 999000,
+    "minimum_unique_text_ratio_ppm": 999000,
+    "sample_documents_per_lane": 100000
+  },
+  "seed": 1250007,
+  "shard_docs": 10000,
+  "source_name": "first_party_trajectories",
+  "target_text_bytes": {
+    "agent_tool_trajectories": 450000000,
+    "world_device_trajectories": 300000000
+  }
+}

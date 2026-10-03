@@ -17,7 +17,10 @@ def _run_git(
     *,
     cwd: Path | None = None,
     runner: Callable[..., subprocess.CompletedProcess] = subprocess.run,
+    timeout_seconds: int = 1800,
 ) -> subprocess.CompletedProcess:
+    if timeout_seconds < 1:
+        raise ValueError("git command timeout must be positive")
     env = dict(os.environ)
     env.update(
         {
@@ -33,7 +36,7 @@ def _run_git(
         capture_output=True,
         text=True,
         check=False,
-        timeout=180,
+        timeout=timeout_seconds,
     )
     if proc.returncode != 0:
         raise RuntimeError(
@@ -48,6 +51,7 @@ def checkout_locked_source(
     source_name: str,
     destination: str | Path,
     runner: Callable[..., subprocess.CompletedProcess] = subprocess.run,
+    command_timeout_seconds: int = 1800,
 ) -> dict:
     lock = load_lock(lock_path)
     record = lock["sources"].get(source_name)
@@ -63,26 +67,43 @@ def checkout_locked_source(
     else:
         target.mkdir(parents=True)
 
+    complete = False
     try:
-        _run_git(["init", "--quiet"], cwd=target, runner=runner)
+        _run_git(
+            ["init", "--quiet"],
+            cwd=target,
+            runner=runner,
+            timeout_seconds=command_timeout_seconds,
+        )
         _run_git(
             ["remote", "add", "origin", record["url"]],
             cwd=target,
             runner=runner,
+            timeout_seconds=command_timeout_seconds,
         )
         _run_git(
             ["fetch", "--quiet", "--depth", "1", "origin", record["commit"]],
             cwd=target,
             runner=runner,
+            timeout_seconds=command_timeout_seconds,
         )
         _run_git(
             ["checkout", "--quiet", "--detach", "FETCH_HEAD"],
             cwd=target,
             runner=runner,
+            timeout_seconds=command_timeout_seconds,
         )
-        head = _run_git(["rev-parse", "HEAD"], cwd=target, runner=runner).stdout.strip()
+        head = _run_git(
+            ["rev-parse", "HEAD"],
+            cwd=target,
+            runner=runner,
+            timeout_seconds=command_timeout_seconds,
+        ).stdout.strip()
         remote = _run_git(
-            ["remote", "get-url", "origin"], cwd=target, runner=runner
+            ["remote", "get-url", "origin"],
+            cwd=target,
+            runner=runner,
+            timeout_seconds=command_timeout_seconds,
         ).stdout.strip()
         if head != record["commit"]:
             raise ValueError(
@@ -99,7 +120,7 @@ def checkout_locked_source(
             submodules = True
         else:
             submodules = False
-        return {
+        result = {
             "source_name": source_name,
             "url": record["url"],
             "ref": record["ref"],
@@ -107,11 +128,12 @@ def checkout_locked_source(
             "destination": str(target),
             "submodules_present": submodules,
         }
-    except Exception:
+        complete = True
+        return result
+    finally:
         # Never leave a partial checkout looking production-ready.
-        if target.exists():
-            shutil.rmtree(target, ignore_errors=True)
-        raise
+        if not complete and target.exists():
+            shutil.rmtree(target)
 
 
 def main() -> None:
@@ -119,11 +141,13 @@ def main() -> None:
     parser.add_argument("--lock", required=True)
     parser.add_argument("--source", required=True)
     parser.add_argument("--out", required=True)
+    parser.add_argument("--timeout-seconds", type=int, default=1800)
     args = parser.parse_args()
     report = checkout_locked_source(
         args.lock,
         source_name=args.source,
         destination=args.out,
+        command_timeout_seconds=args.timeout_seconds,
     )
     print(json.dumps(report, indent=2, sort_keys=True))
 

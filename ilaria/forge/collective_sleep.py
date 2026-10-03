@@ -110,58 +110,61 @@ def consolidate(
     rejected_for_forgetting = 0
     stopped_early = False
 
-    for step in range(1, policy.max_steps + 1):
-        raw_loss = train_step(step)
-        loss = (
-            float(raw_loss.detach())
-            if isinstance(raw_loss, torch.Tensor)
-            else float(raw_loss)
-        )
-        if not math.isfinite(loss):
-            raise RuntimeError(f"sleep training loss became non-finite at step {step}")
+    try:
+        for step in range(1, policy.max_steps + 1):
+            raw_loss = train_step(step)
+            loss = (
+                float(raw_loss.detach())
+                if isinstance(raw_loss, torch.Tensor)
+                else float(raw_loss)
+            )
+            if not math.isfinite(loss):
+                raise RuntimeError(f"sleep training loss became non-finite at step {step}")
 
-        should_eval = (
-            step % policy.eval_every == 0 or step == policy.max_steps
-        )
-        if not should_eval:
-            continue
+            should_eval = (
+                step % policy.eval_every == 0 or step == policy.max_steps
+            )
+            if not should_eval:
+                continue
 
-        metrics = dict(validate())
-        objective, anchor_accuracy = _validate_metrics(metrics)
-        eligible = anchor_accuracy >= anchor_floor
-        improved = (
-            eligible
-            and objective < best_objective - policy.min_improvement
-        )
+            metrics = dict(validate())
+            objective, anchor_accuracy = _validate_metrics(metrics)
+            eligible = anchor_accuracy >= anchor_floor
+            improved = (
+                eligible
+                and objective < best_objective - policy.min_improvement
+            )
 
-        record = {
-            "step": step,
-            "train_loss": loss,
-            **metrics,
-            "anchor_floor": anchor_floor,
-            "eligible": eligible,
-            "promoted": improved,
-        }
-        history.append(record)
+            record = {
+                "step": step,
+                "train_loss": loss,
+                **metrics,
+                "anchor_floor": anchor_floor,
+                "eligible": eligible,
+                "promoted": improved,
+            }
+            history.append(record)
 
-        if not eligible:
-            rejected_for_forgetting += 1
+            if not eligible:
+                rejected_for_forgetting += 1
 
-        if improved:
-            best_state = copy.deepcopy(model.state_dict())
-            best_metrics = dict(metrics)
-            best_objective = objective
-            best_step = step
-            accepted_updates += 1
-            stale_evals = 0
-        else:
-            stale_evals += 1
+            if improved:
+                best_state = copy.deepcopy(model.state_dict())
+                best_metrics = dict(metrics)
+                best_objective = objective
+                best_step = step
+                accepted_updates += 1
+                stale_evals = 0
+            else:
+                stale_evals += 1
 
-        if stale_evals >= policy.patience_evals:
-            stopped_early = True
-            break
-
-    model.load_state_dict(best_state, strict=True)
+            if stale_evals >= policy.patience_evals:
+                stopped_early = True
+                break
+    finally:
+        # A failing callback or non-finite candidate must not leave rejected
+        # weights in the caller's live model.
+        model.load_state_dict(best_state, strict=True)
     return SleepResult(
         best_step=best_step,
         stopped_early=stopped_early,

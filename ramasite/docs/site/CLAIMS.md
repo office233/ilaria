@@ -36,19 +36,27 @@ Boundary:
 
 ## SwypikOS
 
-Safe current claim:
+Positioning (owner decision, 2026-10-03): SwypikOS is presented as an operating
+system — its own kernel, its own desktop, Ilaria built in. It is **not** marketed as
+an application installed on Windows. The current Windows build is an internal
+development host for the desktop and agent and is not mentioned in public copy.
 
-- The verified implementation is a native Windows desktop shell connected to Ilaria.
+Safe current claims:
+
+- A first-party kernel seed boots via UEFI and passes 21/21 expected QEMU outcomes (emulation only).
+- The SwypikOS desktop, the approval-gated Ilaria agent and its own search engine are built and tested internally.
+- No Chromium/Electron/WebView inside the desktop.
 
 Roadmap language:
 
 - A broader agentic computing platform.
 - Deeper system/device integration.
-- Expansion beyond the current Windows shell.
+- Running on physical hardware and devices beyond the desktop.
 
 Do not currently claim:
 
-- that a standalone general-purpose OS replacing Windows/macOS is already shipping;
+- that SwypikOS is a shipping, general-purpose OS ready for everyday use;
+- that the kernel runs on physical hardware;
 - verified universal hardware/driver support;
 - measured ~25 MB RAM or ~50 ms startup unless those numbers are reproduced by a documented benchmark on the release build.
 

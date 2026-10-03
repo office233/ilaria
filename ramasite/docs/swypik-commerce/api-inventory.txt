@@ -1,0 +1,292 @@
+app\api\admin\applications\[id]\approve\route.ts | POST | POST /api/admin/applications/[id]/approve Approves a creator application atomically:
+app\api\admin\applications\[id]\reject\route.ts | POST | POST /api/admin/applications/[id]/reject Rejects a creator application atomically with a required reason.
+app\api\admin\courier-payouts\route.ts | GET,POST | FRONT R5 — Admin: aprobare/respingere cereri de payout curieri. GET  /api/admin/courier-payouts?status=pending — listă
+app\api\admin\creator-fund\route.ts | GET,POST | GET  /api/admin/creator-fund          — pool-urile lunare + sumar payout-uri POST /api/admin/creator-fund          — distribuie fondul pentru o lună
+app\api\admin\cron\[jobName]\trigger\route.ts | POST | POST /api/admin/cron/[jobName]/trigger Admin-only endpoint care declanșează manual un cron job, injectând
+app\api\admin\disputes\route.ts | GET,POST | Admin: list and submit evidence for Stripe disputes (chargebacks). GET  /api/admin/disputes
+app\api\admin\disputes\[disputeId]\suggest\route.ts | GET | Admin: derive suggested evidence fields from the order linked to a dispute. GET /api/admin/disputes/:disputeId/suggest
+app\api\admin\disputes\[disputeId]\upload\route.ts | POST | Admin: upload a file to Stripe as dispute evidence and return the file_id. POST /api/admin/disputes/:disputeId/upload  multipart/form-data
+app\api\admin\finance\summary\route.ts | GET | FRONT R5 — raport financiar minimal (admin). GET /api/admin/finance/summary?from=YYYY-MM-DD&to=YYYY-MM-DD
+app\api\admin\fleet\[id]\route.ts | PATCH | PATCH /api/admin/fleet/[id] — verificarea aplicațiilor de flotă. Body: { action: "approve" | "reject" | "suspend", fleet_partner_id? }
+app\api\admin\fleet-partners\[id]\route.ts | PATCH | PATCH /api/admin/fleet-partners/[id] — administrarea francizelor de flotă. Body: { action: "approve" | "reject" | "suspend" | "reactivate" | "delete",
+app\api\admin\fly\price-watch\route.ts | GET | GET /api/admin/fly/price-watch — raport competitivitate prețuri Fly. Ultima scanare per rută: prețul nostru vs. cel mai mic preț din piață.
+app\api\admin\fulfillment\route.ts | POST | Admin Fulfillment Actions API POST /api/admin/fulfillment
+app\api\admin\hosts\[id]\route.ts | POST | POST /api/admin/hosts/[id] — acțiuni pe aplicațiile de gazdă. Body: { action: "approve" | "reject" | "needs_info", note?: string }
+app\api\admin\import\route.ts | POST | Minimal RFC-4180-ish CSV parser. Handles quoted fields with embedded commas, newlines & escaped quotes ("").
+app\api\admin\login\route.ts | POST | 
+app\api\admin\logout\route.ts | POST | 
+app\api\admin\marketplace\route.ts | GET | 
+app\api\admin\moderation\[id]\ban-creator\route.ts | POST | POST /api/admin/moderation/[id]/ban-creator — suspendă 7 zile
+app\api\admin\moderation\[id]\delete-video\route.ts | POST | POST /api/admin/moderation/[id]/delete-video — soft delete via status='deleted'
+app\api\admin\moderation\[id]\dismiss\route.ts | POST | POST /api/admin/moderation/[id]/dismiss
+app\api\admin\moderation\[id]\hide-video\route.ts | POST | POST /api/admin/moderation/[id]/hide-video
+app\api\admin\orders\risk\route.ts | GET | Admin: list orders with fraud risk scoring. GET /api/admin/orders/risk?status=paid|pending&minScore=30
+app\api\admin\orders\route.ts | GET,PATCH | Admin Orders API GET  /api/admin/orders        — list all orders with filters
+app\api\admin\orders\[id]\fraud-decision\route.ts | POST | Admin: manual decision on a flagged order's fraud status. POST /api/admin/orders/<id>/fraud-decision
+app\api\admin\pricing\route.ts | GET,POST | Admin Pricing — listare + editare zone și surge manual. GET  /api/admin/pricing            → zone + reguli surge active
+app\api\admin\returns\[orderId]\approve\route.ts | POST | Admin Returns — Approve POST /api/admin/returns/[orderId]/approve
+app\api\admin\returns\[orderId]\reject\route.ts | POST | Admin Returns — Reject POST /api/admin/returns/[orderId]/reject
+app\api\admin\reviews\[id]\hide\route.ts | POST | POST /api/admin/reviews/[id]/hide Body: { reason?: string }
+app\api\admin\reviews\[id]\route.ts | DELETE | DELETE /api/admin/reviews/[id] — hard delete
+app\api\admin\reviews\[id]\unhide\route.ts | POST | POST /api/admin/reviews/[id]/unhide
+app\api\admin\strikes\route.ts | GET,POST | GET  /api/admin/strikes        — list highest-risk users GET  /api/admin/strikes?userId=<uuid> — strike history for one user
+app\api\admin\users\[id]\fraud-block\route.ts | POST | Admin: block or unblock a user from placing any future orders. POST /api/admin/users/<uuid>/fraud-block
+app\api\admin\users\[id]\role\route.ts | POST | POST /api/admin/users/[id]/role — body {role: 'admin'|'user'|'creator'|'seller'|'shopper'}
+app\api\admin\users\[id]\suspend\route.ts | POST | POST /api/admin/users/[id]/suspend — body {days, reason}
+app\api\admin\users\[id]\unsuspend\route.ts | POST | POST /api/admin/users/[id]/unsuspend
+app\api\admin\videos\route.ts | GET,POST | GET /api/admin/videos — list all video assets for admin review. Schema (migration 0001):
+app\api\admin\videos\[id]\reencode\route.ts | POST | POST /api/admin/videos/[id]/reencode Re-process an EXISTING video by pulling its source from an external URL
+app\api\age-verification\opt-in\route.ts | PATCH | PATCH /api/age-verification/opt-in Toggles the user's `adult_content_opt_in`.
+app\api\age-verification\start\route.ts | POST | Stripe Identity — start a verification session. POST /api/age-verification/start
+app\api\age-verification\status\route.ts | GET | GET /api/age-verification/status Returns the current age-verification + opt-in state for the signed-in user.
+app\api\ai\suggest-hashtags\route.ts | POST | 
+app\api\apply-seller\route.ts | POST | 
+app\api\apps\installs\route.ts | GET,DELETE | GET    /api/apps/installs — apps instalate de seller-ul logat. DELETE /api/apps/installs?app_id=... — dezinstalare (revocă tokenul).
+app\api\apps\oauth\authorize\route.ts | GET,POST | OAuth2 simplificat — pas 1: autorizare. GET  /api/apps/oauth/authorize?client_id=...&scopes=read_orders,read_products
+app\api\apps\oauth\token\route.ts | POST | OAuth2 simplificat — pas 2: exchange code → token. POST /api/apps/oauth/token
+app\api\apps\route.ts | GET | GET /api/apps — App Store public: lista apps published. Query: ?q= (search în nume/descriere), ?limit=
+app\api\apps\[slug]\route.ts | GET | GET /api/apps/[slug] — detaliu app published + starea instalării pentru seller-ul logat (dacă există sesiune de seller).
+app\api\audio\tracks\route.ts | GET | GET /api/audio/tracks Query params:
+app\api\auth\me\route.ts | GET | GET /api/auth/me — Returns the current session user (or 401 if guest). Response 200:
+app\api\auth\oauth\apple\callback\route.ts | POST,GET | 
+app\api\auth\oauth\apple\start\route.ts | GET | 
+app\api\auth\oauth\google\callback\route.ts | GET | 
+app\api\auth\oauth\google\start\route.ts | GET | 
+app\api\auth\orders\route.ts | GET | Customer Orders API — backed by `users` + `user_sessions` tables GET /api/auth/orders — list orders for authenticated customer
+app\api\auth\route.ts | POST,GET,DELETE | Customer / unified Auth API — backed by `users` + `user_sessions` tables. POST /api/auth   { action: "login",         email }                       → 
+app\api\auth\token\refresh\route.ts | POST | POST /api/auth/token/refresh Header: Authorization: Bearer <token curent, încă valid>
+app\api\auth\token\revoke\route.ts | POST | POST /api/auth/token/revoke Header: Authorization: Bearer <token>
+app\api\auth\token\route.ts | POST | Bearer token auth pentru clienți PWA/mobile. POST /api/auth/token   { email, password }
+app\api\bookings\slots\route.ts | GET,POST | Rezervări pe ore (servicii: frizerii, cabinete, terenuri, service auto). POST /api/bookings/slots  → rezervă un interval orar.
+app\api\campaigns\manage\expenses\route.ts | GET,POST | Raportare cheltuieli (transparență Swypik Cares). POST /api/campaigns/manage/expenses → cauza verificată raportează o plată
+app\api\campaigns\manage\route.ts | GET,POST,PATCH | Swypik Cares — management campanii de către cauze VERIFICATE. POST  /api/campaigns/manage  → creează o campanie (status 'draft').
+app\api\campaigns\route.ts | GET | Swypik Cares — campanii de donații. GET /api/campaigns              → listă publică (active, cu progres)
+app\api\cart\items\route.ts | POST | POST /api/cart/items → upsert item into active cart. Body: { productId, quantity?, variantId?, title?, image?, priceCents?, currency? }
+app\api\cart\items\[id]\route.ts | PATCH,DELETE | PATCH /api/cart/items/[id]  body { quantity } DELETE /api/cart/items/[id]
+app\api\cart\merge\route.ts | POST | POST /api/cart/merge — explicit merge of anon cart (cookie) into user cart. Normally called automatically by /api/auth on login; this is a safety net.
+app\api\cart\route.ts | GET,DELETE | GET  /api/cart            → returns active cart for user (auth) or anon (cookie). POST /api/cart/items      → handled by /items route.
+app\api\categories\route.ts | GET | 
+app\api\causes\route.ts | GET,POST | Swypik Cares — înregistrare beneficiar/ONG (cauză). POST /api/causes → INSERT în donation_causes cu verification_status='pending'.
+app\api\chat\route.ts | POST | Chat API v3 — PostgreSQL-first with AI category awareness REFACTORED: Logic extracted into:
+app\api\checkout\create-intent\route.ts | POST | 
+app\api\checkout\route.ts | POST | Checkout API — Stripe Direct SECURITY: Client sends ONLY productId, quantity, skuId.
+app\api\collections\route.ts | GET,POST | 
+app\api\collections\[id]\items\route.ts | POST,GET | POST /api/collections/:id/items Body: { video_id: string, note?: string }
+app\api\collections\[id]\items\[videoId]\route.ts | DELETE | DELETE /api/collections/:id/items/:videoId — remove a video from a collection.
+app\api\collections\[id]\route.ts | GET,PATCH,DELETE | 
+app\api\comments\[id]\like\route.ts | POST,GET | GENERATED-CONSUMER-NOTE Toggle like on a comment. Mirrors /api/videos/[id]/like (same likes table,
+app\api\couriers\connect\route.ts | GET,POST | FRONT R5 — Stripe Connect Express pentru curieri/șoferi. GET  /api/couriers/connect — statusul contului Connect al curierului logat.
+app\api\couriers\earnings\route.ts | GET | FRONT R5 — GET /api/couriers/earnings Câștigurile curierului logat (din wallet_ledger_entries), agregate pe
+app\api\couriers\my-code\route.ts | GET | GET /api/couriers/my-code — codul de invitație al curierului/șoferului logat + statistici referral (clienți aduși, câștig total).
+app\api\couriers\payouts\route.ts | GET,POST | FRONT R5 — Payout curier. POST /api/couriers/payouts { amount_cents, iban? } — cerere de retragere.
+app\api\couriers\route.ts | POST,GET,PATCH | Curieri & șoferi — înrolare și profil. POST /api/couriers  → aplicație de înrolare (public, rate-limited).
+app\api\couriers\status\route.ts | POST | Curieri — online/offline + poziție GPS (PWA trimite la ~10s când e online). POST /api/couriers/status  { online: boolean, lat?, lng? }
+app\api\creator\analytics\route.ts | GET | 
+app\api\creator\apply\route.ts | POST | POST /api/creator/apply Submits a creator application for the authenticated user. The application
+app\api\creator\earnings\route.ts | GET | GET /api/creator/earnings Schema references:
+app\api\creator\upload-session\route.ts | POST,GET,PATCH | 
+app\api\creator\upload-suggestions\regenerate\route.ts | POST | 
+app\api\creator\upload-suggestions\route.ts | POST | 
+app\api\creator\videos\route.ts | GET | GET /api/creator/videos Returns the authenticated creator's video library from the `videos` table
+app\api\creator\videos\[id]\product-tags\route.ts | GET,PUT | GET/PUT /api/creator/videos/[id]/product-tags Tag-uri de produse pe clip, cu timestamp pentru overlay-ul
+app\api\creator\videos\[id]\route.ts | GET,PATCH,DELETE | GET /api/creator/videos/[id] Returns owned video status + metadata (used by upload wizard polling + draft load).
+app\api\creator\videos\[id]\transcribe\route.ts | POST | POST /api/creator/videos/[id]/transcribe Transcriere audio din video — temporar dezactivată.
+app\api\creators\[id]\route.ts | GET | GENERATED-CONSUMER-NOTE Public read-only profile endpoint consumed by external clients (mobile app,
+app\api\cron\abandoned-cart\route.ts | POST,GET | Cron Job: Abandoned Cart Recovery Emails Queries checkout_sessions where:
+app\api\cron\aggregate-video-stats\route.ts | GET,POST | 
+app\api\cron\alert-dispute-deadlines\route.ts | GET,POST | Daily cron: alert admin via email about Stripe disputes whose evidence deadline is approaching (<72h) and no evidence has been submitted yet.
+app\api\cron\alert-video-queue\route.ts | GET,POST | 
+app\api\cron\bing-url-submit\route.ts | POST,GET | 
+app\api\cron\classify-pending\route.ts | POST,GET | 
+app\api\cron\cleanup-tokens\route.ts | GET | 
+app\api\cron\daily-maintenance\route.ts | GET,POST | GET/POST /api/cron/daily-maintenance — ORCHESTRATOR de mentenanță zilnică. Protejat cu header x-cron-secret = env CRON_SECRET.
+app\api\cron\dispatch-tick\route.ts | GET,POST | GET|POST /api/cron/dispatch-tick Rulează un tick al motorului de dispatch: expiră ofertele fără răspuns,
+app\api\cron\email-digest\route.ts | POST,GET | 
+app\api\cron\embed-batch\route.ts | GET,POST | 
+app\api\cron\fly-price-watch\route.ts | GET | Cron: scanare zilnică prețuri competitori (piață) vs. prețurile noastre. Pentru fiecare destinație populară (plecare OTP, +30 zile):
+app\api\cron\indexnow\route.ts | POST,GET | 
+app\api\cron\indexnow-submit\route.ts | POST,GET | 
+app\api\cron\process-payouts\route.ts | GET,POST | Cron Job: Automatic Seller Payouts (Stripe Transfers) Runs on a schedule and transfers money to sellers / creators whose orders
+app\api\cron\publish-scheduled\route.ts | GET,POST | Cron Job: Publish scheduled videos. Selects videos where scheduled_publish_at <= now() and published_at is null.
+app\api\cron\reconcile-wallets\route.ts | GET,POST | FRONT R5 — GET|POST /api/cron/reconcile-wallets Reconciliere zilnică:
+app\api\cron\refresh-fx\route.ts | GET,POST | 
+app\api\cron\refresh-rank\route.ts | GET,POST | POST/GET /api/cron/refresh-rank Refreshes the `video_rank_14d` materialized view used by /api/explore/feed
+app\api\cron\strikes-decay\route.ts | POST,GET | POST /api/cron/strikes-decay Fades old strikes (status='expired' when past expires_at) and rebuilds
+app\api\cron\suspend-unverified\route.ts | GET | Cron Job: Suspend unverified users after the 7-day grace period. Queries users where:
+app\api\cron\watchdog-videos\route.ts | GET,POST | 
+app\api\developers\apps\route.ts | GET,POST | GET  /api/developers/apps — apps-urile dezvoltatorului curent. POST /api/developers/apps — creează app nou (client_secret returnat O SINGURĂ DATĂ).
+app\api\developers\apps\[id]\deliveries\route.ts | GET | GET /api/developers/apps/[id]/deliveries — ultimele 50 livrări webhook pentru un app deținut de developerul aprobat curent.
+app\api\developers\apps\[id]\rotate-secret\route.ts | POST | POST /api/developers/apps/[id]/rotate-secret — regenerează client_secret. Noul secret este returnat O SINGURĂ DATĂ; în DB se salvează doar sha256.
+app\api\developers\apps\[id]\route.ts | GET,PATCH | GET   /api/developers/apps/[id] — detalii app (fără secret). PATCH /api/developers/apps/[id] — editare app (name/description/icon/scopes/webhook/statu
+app\api\developers\me\route.ts | GET | GET /api/developers/me — starea contului de dezvoltator al userului curent.
+app\api\developers\register\route.ts | POST | POST /api/developers/register — înregistrare cont dezvoltator. Necesită user logat (orice rol). Contul intră cu status='pending';
+app\api\dispatch\[jobId]\stream\route.ts | GET | GET /api/dispatch/[jobId]/stream — SSE cu evenimentele unui job de dispatch. Se abonează la canalul Redis `dispatch:job:<id>` și retransmite fiecare
+app\api\dm\conversations\route.ts | GET,POST | GET /api/dm/conversations — list current user's conversations.
+app\api\dm\conversations\[id]\messages\route.ts | GET,POST | GET /api/dm/conversations/[id]/messages?before=&limit=
+app\api\dm\conversations\[id]\read\route.ts | POST | POST /api/dm/conversations/[id]/read — mark conversation read.
+app\api\dm\stream\[id]\route.ts | GET | GET /api/dm/stream/[id] — SSE stream of new messages for a conversation. Subscribes to redis channel `dm:conv:<id>` and forwards each payload as
+app\api\donations\route.ts | POST | Swypik Cares — donații. POST /api/donations — creează o donație (pending până la confirmarea plății).
+app\api\explore\feed\route.ts | GET | GET /api/explore/feed Pagination via LIMIT+1 (no COUNT(*)). Removed expensive ILIKE '%topic%'
+app\api\feed\action\route.ts | POST | POST /api/feed/action Body: { video_id: string, action: 'more_like_this' | 'not_interested' | 'follow_creator' | 'unfollow' }
+app\api\feed\event\route.ts | POST | POST /api/feed/event Single-event endpoint. Accepts an anonymous payload, validates, normalises
+app\api\feed\events\batch\route.ts | POST | POST /api/feed/events/batch URL note: the owner spec writes this endpoint as `/api/feed/events:batch`.
+app\api\feed\offers\route.ts | GET | GET /api/feed/offers — feed-ul social de pe home (doar poze + oferte). Params: limit, offset, sort=popular|new|discount, minPrice, maxPrice,
+app\api\feed\recommendations\route.ts | GET | GENERATED-CONSUMER-NOTE Postgres ranking fast-path consumed by external clients while the Go
+app\api\feed\universal\route.ts | GET | Feed universal — inima Swypik. GET /api/feed/universal?vertical=eats&city=Bucuresti&country=RO&limit=10&page=1
+app\api\fleet-partners\route.ts | POST,GET | Francize de flotă. POST /api/fleet-partners → aplicație publică (rate-limited); notifică admin.
+app\api\fly\deals\route.ts | GET | GET /api/fly/deals?origin=OTP — prețuri "de la X€" pentru destinațiile populare, ca oamenii să vadă instant cât costă și să dea click.
+app\api\fly\orders\route.ts | POST,GET | POST /api/fly/orders — pornește rezervarea (wallet sau Stripe). Body: { token, passengers[], contactEmail, contactPhone, paymentMethod }.
+app\api\fly\price-check\route.ts | POST | POST /api/fly/price-check — Live Price Check. Se apelează OBLIGATORIU înainte de butonul final de plată: revalidează
+app\api\fly\search\route.ts | POST | POST /api/fly/search — căutare zboruri agregată (Duffel + Kiwi). Public (nu cere login), rate-limited pe IP. Prețurile returnate includ
+app\api\founding-slots\route.ts | GET | GET /api/founding-slots — sloturile rămase pentru programul Founding Drivers. Public (alimentează contorul de pe /join). Cache 60s.
+app\api\fx\route.ts | GET | GET /api/fx — cursurile valutare curente pentru afișarea prețurilor în client. Sursa: tabela fx_rates (populată zilnic de cron/refresh-fx). Răspunsul 
+app\api\geo\reverse\route.ts | GET | GET /api/geo/reverse?lat=…&lng=… — proxy Nominatim reverse (cache 24h). Folosit de UI pentru „adresa mea curentă" din geolocation.
+app\api\geo\route.ts | GET | 
+app\api\geo\search\route.ts | GET | GET /api/geo/search?q=… — proxy Nominatim search (cache Redis 24h, rate limit, User-Agent corect). AddressAutocomplete apelează ruta asta,
+app\api\go\track\[token]\route.ts | GET | GET /api/go/track/[token] — snapshot PUBLIC al unei curse partajate. Fără autentificare, dar FĂRĂ date sensibile: nu expunem id-ul cursei,
+app\api\health\db\route.ts | GET | 
+app\api\health\full\route.ts | GET | GET /api/health/full Detailed health check: DB write/read + Redis + R2 + BullMQ queue.
+app\api\health\queue\route.ts | GET | 
+app\api\health\r2\route.ts | GET | 
+app\api\health\redis\route.ts | GET | 
+app\api\health\route.ts | GET | Health Check Endpoint — GET /api/health Public (no auth). Checks: DB, Redis (optional), Storage (real R2 HeadBucket).
+app\api\host\bookings\route.ts | GET | GET /api/host/bookings — rezervările primite de gazda curentă, pe toate listingurile ei. Include datele de contact ale clientului (gazda trebuie
+app\api\host\listings\route.ts | GET,POST | Panoul gazdei — listinguri de cazare. GET  /api/host/listings — listingurile gazdei curente (orice status).
+app\api\host\listings\[id]\availability\route.ts | GET,POST | Calendar disponibilitate — gazda blochează/deblochează zile. GET  /api/host/listings/[id]/availability?from=..&to=..
+app\api\host\listings\[id]\route.ts | PATCH,DELETE | PATCH  /api/host/listings/[id] — editează / publică / retrage un listing. Body: { title?, description?, pricePerNightCents?, imageUrl?, maxGuests?,
+app\api\host\upload\route.ts | POST | POST /api/host/upload — upload poză pentru o cazare (multipart/form-data). Doar gazde aprobate. Validarea tipului/semnăturii e în lib/storage/upload.
+app\api\hosts\apply\route.ts | POST,GET | POST /api/hosts/apply — aplicație de gazdă Swypik Stays. Onboarding cu verificare: nimic nu devine public fără review manual.
+app\api\i18n\preferences\route.ts | POST | 
+app\api\inquiries\route.ts | POST,GET | Universal Marketplace — Inquiries (lead-uri pe anunțuri) POST /api/inquiries — formularul „Contactează vânzătorul" de pe un anunț.
+app\api\internal\live\ended\route.ts | POST | 
+app\api\internal\live\started\route.ts | POST | 
+app\api\internal\moderation\decide\route.ts | POST | POST /api/internal/moderation/decide — aproba/respinge o cerere. Body: { type: seller|merchant|courier|cause|developer|video, id, decision: approve|re
+app\api\internal\moderation\pending\route.ts | GET | GET /api/internal/moderation/pending — cereri care asteapta aprobare. Consumat de Multi-ERP (panoul de moderare). Unifica cele 4 tipuri de
+app\api\internal\send-email\route.ts | POST | POST /api/internal/send-email — trimitere email transactional pentru ERP. Multi-ERP nu are propriul furnizor de email: refoloseste Resend-ul deja
+app\api\listings\route.ts | POST,GET | Universal Marketplace — Listings (anunțuri) POST /api/listings  → publică un anunț (imobiliare / auto / servicii).
+app\api\live\streams\route.ts | POST,GET | 
+app\api\live\streams\[id]\chat\route.ts | POST,GET | 
+app\api\live\streams\[id]\items\route.ts | POST,GET | 
+app\api\live\streams\[id]\pin\route.ts | POST | 
+app\api\live\streams\[id]\poll\route.ts | POST,GET | 
+app\api\live\streams\[id]\route.ts | GET,PATCH | 
+app\api\local-orders\route.ts | POST,GET | Comenzi locale (food delivery) — plasare + listare. POST /api/local-orders — clientul plasează o comandă la un merchant.
+app\api\local-orders\[id]\dispatch\route.ts | POST,PATCH | Dispatch — oferă comanda curierilor online din oraș, cel mai apropiat primul. POST /api/local-orders/[id]/dispatch   (merchant/admin) → creează oferte
+app\api\local-orders\[id]\route.ts | GET | GET /api/local-orders/[id] — detaliile unei comenzi, pentru tracking live. Autorizare: clientul comenzii, curierul asignat, merchantul (seller) sau ad
+app\api\local-orders\[id]\status\route.ts | PATCH | Status comandă locală — actualizat de merchant sau de curierul atribuit. PATCH /api/local-orders/[id]/status  { status, reason? }
+app\api\me\activity\route.ts | GET | GET /api/me/activity — flux unificat de activitate al clientului: comenzile Eats (local_orders) + cursele Go (rides), într-o singură listă
+app\api\me\notifications\route.ts | GET,POST | Notification poll endpoint. GET  — recent 30, unread first.
+app\api\me\referral\route.ts | GET,POST | 
+app\api\merchants\mine\route.ts | GET | GET /api/merchants/mine — comercianții sellerului logat (pentru panou).
+app\api\merchants\route.ts | GET,POST,PATCH | Comercianți locali (restaurante, magazine, farmacii) — înregistrare + listare. GET  /api/merchants?city=&kind=&open=1  → listă publică, filtrată pe or
+app\api\merchants\[id]\delivery-quote\route.ts | GET | GET /api/merchants/[id]/delivery-quote?lat=&lng= Estimarea taxei de livrare ÎNAINTE de plasarea comenzii (checkout UI).
+app\api\merchants\[id]\menu\route.ts | GET,POST,PATCH,DELETE | Meniul unui comerciant. GET   /api/merchants/[id]/menu   → public: categorii + articole disponibile
+app\api\merchants\[id]\orders\route.ts | GET | Comenzile unui comerciant local — pentru panoul merchant (polling). GET /api/merchants/[id]/orders?status=&since=&limit=
+app\api\missions\route.ts | GET | 
+app\api\notifications\mark-all-read\route.ts | POST | 
+app\api\notifications\route.ts | GET | 
+app\api\notifications\subscribe\route.ts | POST,DELETE | 
+app\api\notifications\[id]\read\route.ts | POST | 
+app\api\onboarding\interests\route.ts | POST,GET | 
+app\api\onboarding\skip\route.ts | POST | POST /api/onboarding/skip Marchează utilizatorul ca având onboarding-ul finalizat fără a salva interese.
+app\api\orders\route.ts | GET | 
+app\api\orders\[id]\return\photos\route.ts | POST | Customer Return Evidence Photos Upload API POST /api/orders/[id]/return/photos
+app\api\orders\[id]\return\route.ts | POST | Customer Return Request API POST /api/orders/[id]/return
+app\api\orders\[id]\route.ts | GET | Order Lookup API GET /api/orders/[id]
+app\api\partner\ping\route.ts | GET | GET /api/partner/ping — verificare API key partener (ERP).
+app\api\partner\products\route.ts | POST | POST /api/partner/products — ERP push: publica/actualizeaza un produs pe Swypik. Modelul "ERP = sales panel": Multi-ERP impinge produsul cu X-Api-Key,
+app\api\posts\route.ts | GET,POST | Swypik Arena — community posts. (format "battle" retras 2026-08: nefolosit, UI-ul /battles a fost sters)
+app\api\posts\[slug]\route.ts | GET | GET /api/posts/[slug] — public read of a single Arena post. No auth required. Cache: 30s public.
+app\api\posts\[slug]\vote\route.ts | POST | POST /api/posts/[slug]/vote — cast a vote on an Arena post. Body: { optionKey: string }
+app\api\products\route.ts | GET | Products API - storefront catalog reads from marketplace_products cu date de catalog folosite ca îmbogățire acolo unde e nevoie.
+app\api\products\similar\route.ts | GET | 
+app\api\products\[id]\like\route.ts | POST | POST /api/products/[id]/like — toggle like pe un produs (anon OK).
+app\api\products\[id]\reviews\route.ts | GET,POST | 
+app\api\products\[id]\route.ts | GET | 
+app\api\products\[id]\save\route.ts | GET,POST,DELETE | 
+app\api\products\[id]\share\route.ts | POST | POST /api/products/[id]/share — înregistrează un share pe produs (anon OK).
+app\api\products\[id]\videos\route.ts | GET | GET /api/products/[id]/videos Public endpoint — returns videos that reference a given product.
+app\api\push\subscribe\route.ts | POST | POST /api/push/subscribe Body: { endpoint, keys: { p256dh, auth }, platform? }
+app\api\push\unsubscribe\route.ts | POST | POST /api/push/unsubscribe Body: { endpoint }
+app\api\push\vapid-public-key\route.ts | GET | 
+app\api\referral\driver-code\route.ts | POST | POST /api/referral/driver-code { code } — leagă utilizatorul logat de un șofer prin codul de invitație (SWK...). Eligibil: cont fără referral
+app\api\reviews\[id]\helpful\route.ts | POST | 
+app\api\reviews\[id]\route.ts | PATCH,DELETE | 
+app\api\rides\estimate\route.ts | POST | POST /api/rides/estimate — estimare tarif FĂRĂ a crea cursă. Body: { pickup, dropoff, vehicle_class? } → pricing engine (R3).
+app\api\rides\route.ts | POST,GET | Swypik Go — curse. POST /api/rides — creează cursa (status 'requested'), pornește dispatch
+app\api\rides\[id]\dispatch\route.ts | PATCH | PATCH /api/rides/[id]/dispatch — șoferul acceptă/refuză oferta cursei. Body: { accept: boolean }. Atribuire atomică prin dispatch engine (R2);
+app\api\rides\[id]\pay\route.ts | GET,POST | FRONT R5 — Plata unei curse. POST /api/rides/[id]/pay
+app\api\rides\[id]\rating\route.ts | POST | POST /api/rides/[id]/rating — rating bidirecțional după 'completed'. rider → notează șoferul (actualizează couriers.rating ca medie),
+app\api\rides\[id]\route.ts | GET | GET /api/rides/[id] — detaliu cursă (rider, șoferul atribuit sau admin).
+app\api\rides\[id]\status\route.ts | PATCH | PATCH /api/rides/[id]/status — mașină de stări STRICTĂ cu rol per tranziție. driver:        accepted → arriving → in_progress → completed
+app\api\rides\[id]\stream\route.ts | GET | GET /api/rides/[id]/stream — SSE pentru o cursă: status + poziție șofer. Reutilizează canalul Redis al jobului de dispatch (`dispatch:job:<jobId>`,
+app\api\search\route.ts | GET | 
+app\api\search\suggest\route.ts | GET | Search Suggestions — PostgreSQL-powered autocomplete. Supports: products, categories, #hashtags, @users.
+app\api\seller\auth\route.ts | POST | 
+app\api\seller\dashboard\route.ts | GET | 
+app\api\seller\erp\connect\route.ts | POST,DELETE,GET | Meister ERP Connect — API Routes pentru seller POST /api/seller/erp/connect  → conecteaza ERP (salveaza URL + key)
+app\api\seller\erp\sync\route.ts | POST | POST /api/seller/erp/sync — importa produse din ERP in Swypik Flow:
+app\api\seller\orders\route.ts | GET,POST | 
+app\api\seller\orders\[id]\refund\route.ts | POST | Seller Refund API POST /api/seller/orders/[id]/refund
+app\api\seller\orders\[id]\return\accept\route.ts | POST | Seller — accept return request POST /api/seller/orders/[id]/return/accept
+app\api\seller\orders\[id]\return\reject\route.ts | POST | Seller — reject return request POST /api/seller/orders/[id]/return/reject
+app\api\seller\payouts\route.ts | GET | Seller Payouts Listing API GET /api/seller/payouts
+app\api\seller\products\classify\route.ts | POST | 
+app\api\seller\products\route.ts | GET,POST | 
+app\api\seller\products\upload-image\route.ts | POST | 
+app\api\seller\selena\route.ts | POST | POST /api/seller/selena — proxy către Selena AI din ERP-ul seller-ului Selena (ERP Multi-ERP) expune POST /api/partner/selena/assist autentificat
+app\api\seller\stripe-connect\route.ts | POST,GET | 
+app\api\stays\availability\route.ts | GET,POST | Calendar disponibilitate cazări — gazda blochează/deblochează zile și setează prețuri sezoniere (override pe zi).
+app\api\stays\bookings\route.ts | POST,GET | Cazări de vacanță — rezervări pe nopți. POST /api/stays/bookings — rezervă un interval.
+app\api\stays\bookings\[id]\cancel\route.ts | POST | POST /api/stays/bookings/[id]/cancel — anulare rezervare. Clientul își anulează propria rezervare (politica: 100% refund cu ≥N zile
+app\api\stays\bookings\[id]\pay\route.ts | POST | POST /api/stays/bookings/[id]/pay — plătește rezervarea din wallet. Doar rezervarea proprie, doar status pending. Debit idempotent pe booking id;
+app\api\stays\cities\route.ts | GET | GET /api/stays/cities?q=bra — autocomplete orașe pentru cazări.
+app\api\stays\local\route.ts | GET | GET /api/stays/local?city=Brasov — cazările gazdelor Swypik (publicate). Public. Prețul afișat = prețul gazdei (comisionul de 10% se oprește din
+app\api\stays\mine\route.ts | GET | GET /api/stays/mine — cazările sellerului logat (pentru panoul de calendar).
+app\api\stays\quote\route.ts | GET | GET /api/stays/quote?productId=..&checkIn=..&checkOut=..&guests=.. Preț + disponibilitate pentru un interval. Public (fără efecte secundare).
+app\api\stays\search\route.ts | POST | POST /api/stays/search — căutare cazări (public, rate-limited). Body: { city: slug, checkIn, checkOut, adults, rooms? }.
+app\api\stripe-connect\login-link\route.ts | POST | 
+app\api\stripe-connect\onboarding\start\route.ts | POST | 
+app\api\stripe-connect\status\route.ts | GET | 
+app\api\trips\packages\route.ts | GET | GET /api/trips/packages?origin=OTP — pachete de vacanță pe destinații. Acum: zbor live (Duffel, prețuri finale RON din sistemul Fly) + status
+app\api\unsubscribe\route.ts | GET,POST | 
+app\api\upload\route.ts | POST | Upload generic de imagini → S3/MinIO (bucket swypik-media). POST /api/upload  (multipart/form-data: file, scope?)
+app\api\users\me\2fa\disable\route.ts | POST | 
+app\api\users\me\2fa\enable\route.ts | POST | 
+app\api\users\me\2fa\init\route.ts | POST | 
+app\api\users\me\2fa\regenerate-backup\route.ts | POST | 
+app\api\users\me\addresses\route.ts | GET,POST | 
+app\api\users\me\addresses\[id]\route.ts | PATCH,DELETE | 
+app\api\users\me\avatar\route.ts | POST | POST /api/users/me/avatar — upload a new avatar for the current user. Accepts multipart/form-data with field `avatar` (jpg/png/webp, max 5MB).
+app\api\users\me\notification-preferences\route.ts | GET,PATCH | 
+app\api\users\me\oauth\[provider]\route.ts | DELETE | 
+app\api\users\me\onboarding\complete\route.ts | POST | 
+app\api\users\me\route.ts | PATCH,GET | PATCH /api/users/me — update the current user's profile. Auth-gated via the canonical session resolver (`getAuthSession`).
+app\api\users\me\saved-videos\route.ts | GET | 
+app\api\users\me\suggested-creators\route.ts | GET | 
+app\api\users\profile\[username]\route.ts | GET | 
+app\api\users\profile\[username]\videos\route.ts | GET | 
+app\api\users\[id]\follow\route.ts | POST,GET | 
+app\api\v1\creator\[id]\dashboard\route.ts | GET | GENERATED-CONSUMER-NOTE Versioned public API (v1) consumed by external clients. Proxies to the Go
+app\api\v1\creator\[id]\profile\route.ts | GET | GENERATED-CONSUMER-NOTE Versioned public API (v1) consumed by external clients. Proxies to the Go
+app\api\v1\events\batch\route.ts | POST | 
+app\api\v1\events\route.ts | POST | 
+app\api\v1\feed\route.ts | GET | 
+app\api\v1\[...path]\route.ts | GET,POST,PUT,PATCH,DELETE | 
+app\api\videos\[id]\captions\list\route.ts | GET | 
+app\api\videos\[id]\captions\route.ts | GET,POST | 
+app\api\videos\[id]\comments\route.ts | GET,POST | 
+app\api\videos\[id]\event\route.ts | POST | 
+app\api\videos\[id]\feedback\route.ts | POST | 
+app\api\videos\[id]\hidden\route.ts | DELETE | 
+app\api\videos\[id]\like\route.ts | POST,GET | 
+app\api\videos\[id]\product-vote\route.ts | POST | 
+app\api\videos\[id]\products\route.ts | GET | GET /api/videos/[id]/products — tag-urile de produse ale unui clip (public, pentru overlay-ul "vezi produsul" din player).
+app\api\videos\[id]\quicksave\route.ts | POST | POST /api/videos/:id/quicksave One-tap save. Auto-decides which user_collection to use:
+app\api\videos\[id]\report\route.ts | POST | POST /api/videos/[id]/report Submit a moderation report for a video.
+app\api\videos\[id]\save\route.ts | POST,GET,DELETE | 
+app\api\videos\[id]\share\route.ts | POST | 
+app\api\videos\[id]\status\route.ts | GET | 
+app\api\videos\[id]\view\route.ts | POST | POST /api/videos/[id]/view Atomically increments view_count. Rate-limited per IP+video via Redis
+app\api\webhooks\stripe\route.ts | POST | 
+app\api\webhooks\stripe-identity\route.ts | POST | Stripe Identity webhook Handles `identity.verification_session.*` events:

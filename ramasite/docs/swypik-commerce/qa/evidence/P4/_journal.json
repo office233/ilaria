@@ -1,0 +1,14 @@
+[
+  {
+    "step": "checkout deschis",
+    "status": "INFO",
+    "note": "http://127.0.0.1:3005/checkout",
+    "shot": ""
+  },
+  {
+    "step": "checkout intern (nu redirect direct Stripe)",
+    "status": "INFO",
+    "note": "Sări la conținut||Confirmă emailul ca să activezi tot contul.||Retrimite|Swypik Checkout|Checkout securizat|Produsele tale (4)||Smart TV 55\" 4K UHD||−|4|+|Șterge||9.999,96 RON||Plățile cu cardul nu sunt disponibile momentan. Te rugăm să încerci mai târziu.|Sumar comandă|4||Smart TV 55\" 4K UHD||9.999",
+    "shot": ""
+  }
+]

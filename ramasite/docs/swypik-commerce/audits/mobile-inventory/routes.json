@@ -1,0 +1,5870 @@
+{
+  "scope": "Static inventory; presence is not evidence of functionality. Auth signals are not security verdicts.",
+  "apiRouteCount": 426,
+  "pageCount": 173,
+  "apis": [
+    {
+      "path": "/api/account/export",
+      "file": "app/api/account/export/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/applications/[id]/approve",
+      "file": "app/api/admin/applications/[id]/approve/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/applications/[id]/reject",
+      "file": "app/api/admin/applications/[id]/reject/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/courier-payouts",
+      "file": "app/api/admin/courier-payouts/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/creator-fund",
+      "file": "app/api/admin/creator-fund/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/creator-payouts",
+      "file": "app/api/admin/creator-payouts/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [
+        "requireAdmin"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/cron/[jobName]/trigger",
+      "file": "app/api/admin/cron/[jobName]/trigger/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/disputes",
+      "file": "app/api/admin/disputes/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/disputes/[disputeId]/suggest",
+      "file": "app/api/admin/disputes/[disputeId]/suggest/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/disputes/[disputeId]/upload",
+      "file": "app/api/admin/disputes/[disputeId]/upload/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/finance/summary",
+      "file": "app/api/admin/finance/summary/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/fleet/[id]",
+      "file": "app/api/admin/fleet/[id]/route.ts",
+      "methods": [
+        "PATCH"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/fleet-partners/[id]",
+      "file": "app/api/admin/fleet-partners/[id]/route.ts",
+      "methods": [
+        "PATCH"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/fly/price-watch",
+      "file": "app/api/admin/fly/price-watch/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/fulfillment",
+      "file": "app/api/admin/fulfillment/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [
+        "fulfillment"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/go/drivers",
+      "file": "app/api/admin/go/drivers/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [
+        "requireAdmin"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/go/drivers/[id]/documents",
+      "file": "app/api/admin/go/drivers/[id]/documents/route.ts",
+      "methods": [
+        "PATCH"
+      ],
+      "authSignals": [
+        "requireAdmin"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/go/overview",
+      "file": "app/api/admin/go/overview/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [
+        "requireAdmin"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/go/rides/[id]",
+      "file": "app/api/admin/go/rides/[id]/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "requireAdmin"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/go/settings",
+      "file": "app/api/admin/go/settings/route.ts",
+      "methods": [
+        "GET",
+        "PATCH"
+      ],
+      "authSignals": [
+        "requireAdmin"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/hosts/[id]",
+      "file": "app/api/admin/hosts/[id]/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/import",
+      "file": "app/api/admin/import/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/login",
+      "file": "app/api/admin/login/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/logout",
+      "file": "app/api/admin/logout/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/marketplace",
+      "file": "app/api/admin/marketplace/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/merchant-claims/[id]",
+      "file": "app/api/admin/merchant-claims/[id]/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/merchants/[id]/approve",
+      "file": "app/api/admin/merchants/[id]/approve/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/merchants/[id]/reject",
+      "file": "app/api/admin/merchants/[id]/reject/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/missions",
+      "file": "app/api/admin/missions/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/missions/submissions",
+      "file": "app/api/admin/missions/submissions/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/missions/[id]",
+      "file": "app/api/admin/missions/[id]/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/moderation/videos/[id]",
+      "file": "app/api/admin/moderation/videos/[id]/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "requireAdmin"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/moderation/[id]/ban-creator",
+      "file": "app/api/admin/moderation/[id]/ban-creator/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/moderation/[id]/delete-video",
+      "file": "app/api/admin/moderation/[id]/delete-video/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/moderation/[id]/dismiss",
+      "file": "app/api/admin/moderation/[id]/dismiss/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/moderation/[id]/hide-video",
+      "file": "app/api/admin/moderation/[id]/hide-video/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/movies/publishers",
+      "file": "app/api/admin/movies/publishers/route.ts",
+      "methods": [
+        "GET",
+        "POST",
+        "DELETE"
+      ],
+      "authSignals": [],
+      "featureGates": [
+        "movies",
+        "movies",
+        "movies"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/movies",
+      "file": "app/api/admin/movies/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [
+        "movies",
+        "movies"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/movies/[id]/episodes",
+      "file": "app/api/admin/movies/[id]/episodes/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [
+        "movies"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/movies/[id]",
+      "file": "app/api/admin/movies/[id]/route.ts",
+      "methods": [
+        "GET",
+        "PATCH"
+      ],
+      "authSignals": [],
+      "featureGates": [
+        "movies",
+        "movies"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/music/artists",
+      "file": "app/api/admin/music/artists/route.ts",
+      "methods": [
+        "GET",
+        "POST",
+        "DELETE"
+      ],
+      "authSignals": [],
+      "featureGates": [
+        "music",
+        "music",
+        "music"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/music/tracks",
+      "file": "app/api/admin/music/tracks/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [
+        "music"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/music/tracks/[id]",
+      "file": "app/api/admin/music/tracks/[id]/route.ts",
+      "methods": [
+        "PATCH"
+      ],
+      "authSignals": [],
+      "featureGates": [
+        "music"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/news",
+      "file": "app/api/admin/news/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [
+        "requireAdmin"
+      ],
+      "featureGates": [
+        "news"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/news/[id]",
+      "file": "app/api/admin/news/[id]/route.ts",
+      "methods": [
+        "PATCH"
+      ],
+      "authSignals": [
+        "requireAdmin"
+      ],
+      "featureGates": [
+        "news"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/orders/risk",
+      "file": "app/api/admin/orders/risk/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/orders",
+      "file": "app/api/admin/orders/route.ts",
+      "methods": [
+        "GET",
+        "PATCH"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/orders/[id]/fraud-decision",
+      "file": "app/api/admin/orders/[id]/fraud-decision/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/pricing",
+      "file": "app/api/admin/pricing/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [
+        "requireAdmin"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/returns/[orderId]/approve",
+      "file": "app/api/admin/returns/[orderId]/approve/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/returns/[orderId]/reject",
+      "file": "app/api/admin/returns/[orderId]/reject/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/reviews/[id]/hide",
+      "file": "app/api/admin/reviews/[id]/hide/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/reviews/[id]",
+      "file": "app/api/admin/reviews/[id]/route.ts",
+      "methods": [
+        "DELETE"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/reviews/[id]/unhide",
+      "file": "app/api/admin/reviews/[id]/unhide/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/seller-payouts",
+      "file": "app/api/admin/seller-payouts/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [
+        "requireAdmin"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/strikes",
+      "file": "app/api/admin/strikes/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/users/[id]/admin-role",
+      "file": "app/api/admin/users/[id]/admin-role/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "requireAdmin"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/users/[id]/fraud-block",
+      "file": "app/api/admin/users/[id]/fraud-block/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "requireAdmin"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/users/[id]/role",
+      "file": "app/api/admin/users/[id]/role/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "requireAdmin"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/users/[id]/suspend",
+      "file": "app/api/admin/users/[id]/suspend/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "requireAdmin"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/users/[id]/unsuspend",
+      "file": "app/api/admin/users/[id]/unsuspend/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "requireAdmin"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/video-queue",
+      "file": "app/api/admin/video-queue/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [
+        "requireAdmin"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/videos",
+      "file": "app/api/admin/videos/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/admin/videos/[id]/reencode",
+      "file": "app/api/admin/videos/[id]/reencode/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/apply-seller",
+      "file": "app/api/apply-seller/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/audio/feed",
+      "file": "app/api/audio/feed/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [
+        "music"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/audio/search",
+      "file": "app/api/audio/search/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [
+        "music"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/audio/tracks",
+      "file": "app/api/audio/tracks/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/auth/me",
+      "file": "app/api/auth/me/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/auth/oauth/apple/callback",
+      "file": "app/api/auth/oauth/apple/callback/route.ts",
+      "methods": [
+        "POST",
+        "GET"
+      ],
+      "authSignals": [
+        "cookies",
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": true
+    },
+    {
+      "path": "/api/auth/oauth/apple/start",
+      "file": "app/api/auth/oauth/apple/start/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/auth/oauth/google/callback",
+      "file": "app/api/auth/oauth/google/callback/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [
+        "cookies",
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": true
+    },
+    {
+      "path": "/api/auth/oauth/google/start",
+      "file": "app/api/auth/oauth/google/start/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/auth/orders",
+      "file": "app/api/auth/orders/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [
+        "cookies",
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": true
+    },
+    {
+      "path": "/api/auth",
+      "file": "app/api/auth/route.ts",
+      "methods": [
+        "POST",
+        "GET",
+        "DELETE"
+      ],
+      "authSignals": [
+        "cookies",
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": true
+    },
+    {
+      "path": "/api/auth/token/refresh",
+      "file": "app/api/auth/token/refresh/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/auth/token/revoke",
+      "file": "app/api/auth/token/revoke/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/auth/token",
+      "file": "app/api/auth/token/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/bookings/slots",
+      "file": "app/api/bookings/slots/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [
+        "getAuthSession"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/campaigns/manage/expenses",
+      "file": "app/api/campaigns/manage/expenses/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [
+        "getAuthSession"
+      ],
+      "featureGates": [
+        "cares",
+        "cares"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/campaigns/manage",
+      "file": "app/api/campaigns/manage/route.ts",
+      "methods": [
+        "GET",
+        "POST",
+        "PATCH"
+      ],
+      "authSignals": [
+        "getAuthSession"
+      ],
+      "featureGates": [
+        "cares",
+        "cares",
+        "cares"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/campaigns",
+      "file": "app/api/campaigns/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [
+        "cares"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/cart/items",
+      "file": "app/api/cart/items/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/cart/items/[id]",
+      "file": "app/api/cart/items/[id]/route.ts",
+      "methods": [
+        "PATCH",
+        "DELETE"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/cart/merge",
+      "file": "app/api/cart/merge/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "cookies",
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": true
+    },
+    {
+      "path": "/api/cart",
+      "file": "app/api/cart/route.ts",
+      "methods": [
+        "GET",
+        "DELETE"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/categories",
+      "file": "app/api/categories/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/causes",
+      "file": "app/api/causes/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [
+        "getAuthSession"
+      ],
+      "featureGates": [
+        "cares",
+        "cares"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/chat",
+      "file": "app/api/chat/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [
+        "aiChatFull"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/checkout/create-intent",
+      "file": "app/api/checkout/create-intent/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/checkout",
+      "file": "app/api/checkout/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/collections",
+      "file": "app/api/collections/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/collections/[id]/items",
+      "file": "app/api/collections/[id]/items/route.ts",
+      "methods": [
+        "POST",
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/collections/[id]/items/[videoId]",
+      "file": "app/api/collections/[id]/items/[videoId]/route.ts",
+      "methods": [
+        "DELETE"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/collections/[id]",
+      "file": "app/api/collections/[id]/route.ts",
+      "methods": [
+        "GET",
+        "PATCH",
+        "DELETE"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/comments/[id]/like",
+      "file": "app/api/comments/[id]/like/route.ts",
+      "methods": [
+        "GET",
+        "POST",
+        "PUT",
+        "DELETE"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/comments/[id]/pin",
+      "file": "app/api/comments/[id]/pin/route.ts",
+      "methods": [
+        "PUT",
+        "DELETE"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/comments/[id]/report",
+      "file": "app/api/comments/[id]/report/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/couriers/active-job",
+      "file": "app/api/couriers/active-job/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [
+        "getAuthSession"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/couriers/connect",
+      "file": "app/api/couriers/connect/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [
+        "getAuthSession"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/couriers/earnings",
+      "file": "app/api/couriers/earnings/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [
+        "getAuthSession"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/couriers/me",
+      "file": "app/api/couriers/me/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [
+        "getAuthSession"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/couriers/my-code",
+      "file": "app/api/couriers/my-code/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [
+        "getAuthSession"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/couriers/payouts",
+      "file": "app/api/couriers/payouts/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [
+        "getAuthSession"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/couriers",
+      "file": "app/api/couriers/route.ts",
+      "methods": [
+        "POST",
+        "GET",
+        "PATCH"
+      ],
+      "authSignals": [
+        "getAuthSession",
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/couriers/status",
+      "file": "app/api/couriers/status/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "getAuthSession"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/creator/analytics",
+      "file": "app/api/creator/analytics/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/creator/apply",
+      "file": "app/api/creator/apply/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/creator/earnings",
+      "file": "app/api/creator/earnings/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/creator/movies",
+      "file": "app/api/creator/movies/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [
+        "movies",
+        "movies"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/creator/movies/[id]/episodes",
+      "file": "app/api/creator/movies/[id]/episodes/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [
+        "movies"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/creator/movies/[id]",
+      "file": "app/api/creator/movies/[id]/route.ts",
+      "methods": [
+        "GET",
+        "PATCH"
+      ],
+      "authSignals": [],
+      "featureGates": [
+        "movies",
+        "movies"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/creator/music/albums",
+      "file": "app/api/creator/music/albums/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [
+        "music",
+        "music"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/creator/music",
+      "file": "app/api/creator/music/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [
+        "music"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/creator/music/tracks",
+      "file": "app/api/creator/music/tracks/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [
+        "music"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/creator/music/tracks/[id]",
+      "file": "app/api/creator/music/tracks/[id]/route.ts",
+      "methods": [
+        "GET",
+        "PATCH"
+      ],
+      "authSignals": [],
+      "featureGates": [
+        "music",
+        "music"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/creator/music/upload-url",
+      "file": "app/api/creator/music/upload-url/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [
+        "music"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/creator/payouts",
+      "file": "app/api/creator/payouts/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/creator/products/search",
+      "file": "app/api/creator/products/search/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/creator/upload-session",
+      "file": "app/api/creator/upload-session/route.ts",
+      "methods": [
+        "POST",
+        "GET"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/creator/upload-session/[id]/complete",
+      "file": "app/api/creator/upload-session/[id]/complete/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/creator/upload-session/[id]/parts",
+      "file": "app/api/creator/upload-session/[id]/parts/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/creator/upload-session/[id]",
+      "file": "app/api/creator/upload-session/[id]/route.ts",
+      "methods": [
+        "GET",
+        "DELETE"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/creator/videos",
+      "file": "app/api/creator/videos/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/creator/videos/[id]/captions",
+      "file": "app/api/creator/videos/[id]/captions/route.ts",
+      "methods": [
+        "GET",
+        "POST",
+        "PUT"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/creator/videos/[id]/cover",
+      "file": "app/api/creator/videos/[id]/cover/route.ts",
+      "methods": [
+        "PUT"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/creator/videos/[id]/product-tags",
+      "file": "app/api/creator/videos/[id]/product-tags/route.ts",
+      "methods": [
+        "GET",
+        "PUT"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/creator/videos/[id]/reprocess",
+      "file": "app/api/creator/videos/[id]/reprocess/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/creator/videos/[id]",
+      "file": "app/api/creator/videos/[id]/route.ts",
+      "methods": [
+        "GET",
+        "PATCH",
+        "DELETE"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/creators/[id]",
+      "file": "app/api/creators/[id]/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/cron/abandoned-cart",
+      "file": "app/api/cron/abandoned-cart/route.ts",
+      "methods": [
+        "POST",
+        "GET"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/cron/aggregate-video-stats",
+      "file": "app/api/cron/aggregate-video-stats/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/cron/alert-dispute-deadlines",
+      "file": "app/api/cron/alert-dispute-deadlines/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/cron/alert-video-queue",
+      "file": "app/api/cron/alert-video-queue/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/cron/backup-report",
+      "file": "app/api/cron/backup-report/route.ts",
+      "methods": [
+        "POST",
+        "GET"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/cron/bing-url-submit",
+      "file": "app/api/cron/bing-url-submit/route.ts",
+      "methods": [
+        "POST",
+        "GET"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/cron/checkout-health",
+      "file": "app/api/cron/checkout-health/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/cron/classify-pending",
+      "file": "app/api/cron/classify-pending/route.ts",
+      "methods": [
+        "POST",
+        "GET"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/cron/cleanup-tokens",
+      "file": "app/api/cron/cleanup-tokens/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/cron/daily-maintenance",
+      "file": "app/api/cron/daily-maintenance/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/cron/disk-watch",
+      "file": "app/api/cron/disk-watch/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/cron/dispatch-tick",
+      "file": "app/api/cron/dispatch-tick/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/cron/email-digest",
+      "file": "app/api/cron/email-digest/route.ts",
+      "methods": [
+        "POST",
+        "GET"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/cron/embed-batch",
+      "file": "app/api/cron/embed-batch/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/cron/fly-price-watch",
+      "file": "app/api/cron/fly-price-watch/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/cron/indexnow",
+      "file": "app/api/cron/indexnow/route.ts",
+      "methods": [
+        "POST",
+        "GET"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/cron/indexnow-submit",
+      "file": "app/api/cron/indexnow-submit/route.ts",
+      "methods": [
+        "POST",
+        "GET"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/cron/live-sweep",
+      "file": "app/api/cron/live-sweep/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/cron/news-pipeline",
+      "file": "app/api/cron/news-pipeline/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [
+        "news"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/cron/prewarm-catalogs",
+      "file": "app/api/cron/prewarm-catalogs/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [
+        "news"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/cron/process-payouts",
+      "file": "app/api/cron/process-payouts/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [
+        "stripeConnect"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/cron/publish-scheduled",
+      "file": "app/api/cron/publish-scheduled/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/cron/reconcile-wallets",
+      "file": "app/api/cron/reconcile-wallets/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/cron/refresh-fx",
+      "file": "app/api/cron/refresh-fx/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/cron/refresh-rank",
+      "file": "app/api/cron/refresh-rank/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/cron/stays-lifecycle",
+      "file": "app/api/cron/stays-lifecycle/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/cron/strikes-decay",
+      "file": "app/api/cron/strikes-decay/route.ts",
+      "methods": [
+        "POST",
+        "GET"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/cron/suspend-unverified",
+      "file": "app/api/cron/suspend-unverified/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/cron/watchdog-rides",
+      "file": "app/api/cron/watchdog-rides/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/cron/watchdog-videos",
+      "file": "app/api/cron/watchdog-videos/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/dispatch/[jobId]/stream",
+      "file": "app/api/dispatch/[jobId]/stream/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [
+        "getAuthSession"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/dm/blocks",
+      "file": "app/api/dm/blocks/route.ts",
+      "methods": [
+        "POST",
+        "DELETE"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/dm/conversations",
+      "file": "app/api/dm/conversations/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/dm/conversations/[id]/attachments",
+      "file": "app/api/dm/conversations/[id]/attachments/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/dm/conversations/[id]/messages",
+      "file": "app/api/dm/conversations/[id]/messages/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/dm/conversations/[id]/read",
+      "file": "app/api/dm/conversations/[id]/read/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/dm/conversations/[id]/report",
+      "file": "app/api/dm/conversations/[id]/report/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/dm/conversations/[id]",
+      "file": "app/api/dm/conversations/[id]/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/dm/conversations/[id]/typing",
+      "file": "app/api/dm/conversations/[id]/typing/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/dm/stream/[id]",
+      "file": "app/api/dm/stream/[id]/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [
+        "dm",
+        "messenger"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/donations",
+      "file": "app/api/donations/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "getAuthSession",
+        "headers"
+      ],
+      "featureGates": [
+        "cares"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/explore/feed",
+      "file": "app/api/explore/feed/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [
+        "cookies",
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/feed/action",
+      "file": "app/api/feed/action/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/feed/event",
+      "file": "app/api/feed/event/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/feed/events/batch",
+      "file": "app/api/feed/events/batch/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/feed/offers/liked",
+      "file": "app/api/feed/offers/liked/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/feed/offers",
+      "file": "app/api/feed/offers/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/feed/universal",
+      "file": "app/api/feed/universal/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/fleet-partners",
+      "file": "app/api/fleet-partners/route.ts",
+      "methods": [
+        "POST",
+        "GET"
+      ],
+      "authSignals": [
+        "getAuthSession",
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/fly/deals",
+      "file": "app/api/fly/deals/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/fly/orders",
+      "file": "app/api/fly/orders/route.ts",
+      "methods": [
+        "POST",
+        "GET"
+      ],
+      "authSignals": [
+        "getAuthSession"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/fly/price-check",
+      "file": "app/api/fly/price-check/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/fly/search",
+      "file": "app/api/fly/search/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/fly/waitlist",
+      "file": "app/api/fly/waitlist/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "getAuthSession"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/founding-slots",
+      "file": "app/api/founding-slots/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/fx",
+      "file": "app/api/fx/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/gaming/games",
+      "file": "app/api/gaming/games/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [
+        "gaming"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/gaming/profile",
+      "file": "app/api/gaming/profile/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [
+        "gaming"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/gaming/score",
+      "file": "app/api/gaming/score/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [
+        "gaming"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/gaming/session/start",
+      "file": "app/api/gaming/session/start/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [
+        "gaming"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/gaming/trivia/answer",
+      "file": "app/api/gaming/trivia/answer/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [
+        "gaming"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/gaming/trivia",
+      "file": "app/api/gaming/trivia/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [
+        "gaming"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/geo/reverse",
+      "file": "app/api/geo/reverse/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/geo",
+      "file": "app/api/geo/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/geo/search",
+      "file": "app/api/geo/search/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/go/track/[token]",
+      "file": "app/api/go/track/[token]/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/health/db",
+      "file": "app/api/health/db/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/health/full",
+      "file": "app/api/health/full/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/health/queue",
+      "file": "app/api/health/queue/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/health/r2",
+      "file": "app/api/health/r2/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/health/redis",
+      "file": "app/api/health/redis/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/health",
+      "file": "app/api/health/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/host/bookings",
+      "file": "app/api/host/bookings/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/host/bookings/[id]/accept",
+      "file": "app/api/host/bookings/[id]/accept/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/host/bookings/[id]/decline",
+      "file": "app/api/host/bookings/[id]/decline/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/host/listings",
+      "file": "app/api/host/listings/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/host/listings/[id]/availability",
+      "file": "app/api/host/listings/[id]/availability/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/host/listings/[id]",
+      "file": "app/api/host/listings/[id]/route.ts",
+      "methods": [
+        "PATCH",
+        "DELETE"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/host/upload",
+      "file": "app/api/host/upload/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/hosts/apply",
+      "file": "app/api/hosts/apply/route.ts",
+      "methods": [
+        "POST",
+        "GET"
+      ],
+      "authSignals": [
+        "getAuthSession"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/i18n/preferences",
+      "file": "app/api/i18n/preferences/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "cookies"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/ilaria/chat",
+      "file": "app/api/ilaria/chat/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "getAuthSession",
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/inquiries",
+      "file": "app/api/inquiries/route.ts",
+      "methods": [
+        "POST",
+        "GET"
+      ],
+      "authSignals": [
+        "getSellerSessionId",
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/internal/moderation/decide",
+      "file": "app/api/internal/moderation/decide/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/internal/moderation/pending",
+      "file": "app/api/internal/moderation/pending/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/internal/send-email",
+      "file": "app/api/internal/send-email/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/listings",
+      "file": "app/api/listings/route.ts",
+      "methods": [
+        "POST",
+        "GET"
+      ],
+      "authSignals": [
+        "cookies",
+        "headers",
+        "getSellerSessionId"
+      ],
+      "featureGates": [],
+      "nextCoupled": true
+    },
+    {
+      "path": "/api/live/host-products",
+      "file": "app/api/live/host-products/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [
+        "getAuthSession"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/live/streams",
+      "file": "app/api/live/streams/route.ts",
+      "methods": [
+        "POST",
+        "GET"
+      ],
+      "authSignals": [
+        "getAuthSession"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/live/streams/[id]/chat",
+      "file": "app/api/live/streams/[id]/chat/route.ts",
+      "methods": [
+        "POST",
+        "GET"
+      ],
+      "authSignals": [
+        "getAuthSession",
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/live/streams/[id]/heartbeat",
+      "file": "app/api/live/streams/[id]/heartbeat/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "getAuthSession"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/live/streams/[id]/ice",
+      "file": "app/api/live/streams/[id]/ice/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/live/streams/[id]/items",
+      "file": "app/api/live/streams/[id]/items/route.ts",
+      "methods": [
+        "POST",
+        "GET"
+      ],
+      "authSignals": [
+        "getAuthSession"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/live/streams/[id]/pin",
+      "file": "app/api/live/streams/[id]/pin/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "getAuthSession"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/live/streams/[id]/poll",
+      "file": "app/api/live/streams/[id]/poll/route.ts",
+      "methods": [
+        "POST",
+        "GET"
+      ],
+      "authSignals": [
+        "getAuthSession"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/live/streams/[id]/publish",
+      "file": "app/api/live/streams/[id]/publish/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "getAuthSession"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/live/streams/[id]",
+      "file": "app/api/live/streams/[id]/route.ts",
+      "methods": [
+        "GET",
+        "PATCH"
+      ],
+      "authSignals": [
+        "getAuthSession"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/live/streams/[id]/watch",
+      "file": "app/api/live/streams/[id]/watch/route.ts",
+      "methods": [
+        "POST",
+        "PUT"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/local-orders",
+      "file": "app/api/local-orders/route.ts",
+      "methods": [
+        "POST",
+        "GET"
+      ],
+      "authSignals": [
+        "getAuthSession",
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/local-orders/[id]/cancel",
+      "file": "app/api/local-orders/[id]/cancel/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "getAuthSession",
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/local-orders/[id]/dispatch",
+      "file": "app/api/local-orders/[id]/dispatch/route.ts",
+      "methods": [
+        "POST",
+        "PATCH"
+      ],
+      "authSignals": [
+        "getAuthSession",
+        "getSellerSessionId"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/local-orders/[id]",
+      "file": "app/api/local-orders/[id]/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [
+        "getAuthSession",
+        "getSellerSessionId"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/local-orders/[id]/status",
+      "file": "app/api/local-orders/[id]/status/route.ts",
+      "methods": [
+        "PATCH"
+      ],
+      "authSignals": [
+        "getAuthSession",
+        "getSellerSessionId"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/me/activity",
+      "file": "app/api/me/activity/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/me/notifications",
+      "file": "app/api/me/notifications/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/me/referral",
+      "file": "app/api/me/referral/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/merchants/apply",
+      "file": "app/api/merchants/apply/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "getAuthSession",
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/merchants/mine",
+      "file": "app/api/merchants/mine/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [
+        "getSellerSessionId"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/merchants",
+      "file": "app/api/merchants/route.ts",
+      "methods": [
+        "GET",
+        "POST",
+        "PATCH"
+      ],
+      "authSignals": [
+        "getSellerSessionId"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/merchants/[id]/claim",
+      "file": "app/api/merchants/[id]/claim/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "getAuthSession"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/merchants/[id]/delivery-quote",
+      "file": "app/api/merchants/[id]/delivery-quote/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/merchants/[id]/menu",
+      "file": "app/api/merchants/[id]/menu/route.ts",
+      "methods": [
+        "GET",
+        "POST",
+        "PATCH",
+        "DELETE"
+      ],
+      "authSignals": [
+        "getSellerSessionId"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/merchants/[id]/orders",
+      "file": "app/api/merchants/[id]/orders/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [
+        "getSellerSessionId"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/merchants/[id]/suggest",
+      "file": "app/api/merchants/[id]/suggest/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "getAuthSession"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/messenger/calls/incoming",
+      "file": "app/api/messenger/calls/incoming/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [
+        "messenger"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/messenger/calls/token",
+      "file": "app/api/messenger/calls/token/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [
+        "messenger"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/messenger/calls/webhook",
+      "file": "app/api/messenger/calls/webhook/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/messenger/calls/[id]/decline",
+      "file": "app/api/messenger/calls/[id]/decline/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [
+        "messenger"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/messenger/calls/[id]/end",
+      "file": "app/api/messenger/calls/[id]/end/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [
+        "messenger"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/missions/active",
+      "file": "app/api/missions/active/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/missions",
+      "file": "app/api/missions/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/missions/[slug]/submit",
+      "file": "app/api/missions/[slug]/submit/route.ts",
+      "methods": [
+        "POST",
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/movies/home",
+      "file": "app/api/movies/home/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [
+        "movies"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/movies/progress",
+      "file": "app/api/movies/progress/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [
+        "movies"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/movies",
+      "file": "app/api/movies/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [
+        "movies"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/movies/stream/[token]/[...path]",
+      "file": "app/api/movies/stream/[token]/[...path]/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [
+        "movies"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/movies/[slug]/episodes/[n]/play",
+      "file": "app/api/movies/[slug]/episodes/[n]/play/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [
+        "movies"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/movies/[slug]",
+      "file": "app/api/movies/[slug]/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [
+        "movies"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/movies/[slug]/unlock",
+      "file": "app/api/movies/[slug]/unlock/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [
+        "movies",
+        "movies"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/movies/[slug]/watchlist",
+      "file": "app/api/movies/[slug]/watchlist/route.ts",
+      "methods": [
+        "POST",
+        "DELETE"
+      ],
+      "authSignals": [],
+      "featureGates": [
+        "movies"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/music/albums/[slug]",
+      "file": "app/api/music/albums/[slug]/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [
+        "music"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/music/albums/[slug]/unlock",
+      "file": "app/api/music/albums/[slug]/unlock/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [
+        "music"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/music/artists/[slug]",
+      "file": "app/api/music/artists/[slug]/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [
+        "music"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/music/home",
+      "file": "app/api/music/home/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [
+        "music"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/music/playlists",
+      "file": "app/api/music/playlists/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [
+        "music",
+        "music"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/music/playlists/[id]/items",
+      "file": "app/api/music/playlists/[id]/items/route.ts",
+      "methods": [
+        "POST",
+        "DELETE"
+      ],
+      "authSignals": [],
+      "featureGates": [
+        "music"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/music/playlists/[id]",
+      "file": "app/api/music/playlists/[id]/route.ts",
+      "methods": [
+        "GET",
+        "PATCH",
+        "DELETE"
+      ],
+      "authSignals": [],
+      "featureGates": [
+        "music",
+        "music",
+        "music"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/music/plays",
+      "file": "app/api/music/plays/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [
+        "music"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/music/stream/[token]/[...path]",
+      "file": "app/api/music/stream/[token]/[...path]/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [
+        "music"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/music/tracks",
+      "file": "app/api/music/tracks/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [
+        "music"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/music/tracks/[slug]/like",
+      "file": "app/api/music/tracks/[slug]/like/route.ts",
+      "methods": [
+        "POST",
+        "DELETE"
+      ],
+      "authSignals": [],
+      "featureGates": [
+        "music"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/music/tracks/[slug]/play",
+      "file": "app/api/music/tracks/[slug]/play/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [
+        "music"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/music/tracks/[slug]",
+      "file": "app/api/music/tracks/[slug]/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [
+        "music"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/music/tracks/[slug]/unlock",
+      "file": "app/api/music/tracks/[slug]/unlock/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [
+        "music"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/news",
+      "file": "app/api/news/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [
+        "news"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/news/[slug]/comments",
+      "file": "app/api/news/[slug]/comments/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [
+        "news",
+        "news"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/news/[slug]/comments/[id]",
+      "file": "app/api/news/[slug]/comments/[id]/route.ts",
+      "methods": [
+        "DELETE"
+      ],
+      "authSignals": [],
+      "featureGates": [
+        "news"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/news/[slug]/reactions",
+      "file": "app/api/news/[slug]/reactions/route.ts",
+      "methods": [
+        "GET",
+        "POST",
+        "DELETE"
+      ],
+      "authSignals": [],
+      "featureGates": [
+        "news",
+        "news",
+        "news"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/notifications/mark-all-read",
+      "file": "app/api/notifications/mark-all-read/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/notifications",
+      "file": "app/api/notifications/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/notifications/subscribe",
+      "file": "app/api/notifications/subscribe/route.ts",
+      "methods": [
+        "POST",
+        "DELETE"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [
+        "pushNotifications",
+        "pushNotifications"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/notifications/[id]/read",
+      "file": "app/api/notifications/[id]/read/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/onboarding/interests",
+      "file": "app/api/onboarding/interests/route.ts",
+      "methods": [
+        "POST",
+        "GET"
+      ],
+      "authSignals": [
+        "cookies"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/onboarding/skip",
+      "file": "app/api/onboarding/skip/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "cookies"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/orders",
+      "file": "app/api/orders/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/orders/[id]/return/photos",
+      "file": "app/api/orders/[id]/return/photos/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [
+        "returns"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/orders/[id]/return",
+      "file": "app/api/orders/[id]/return/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [
+        "returns"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/orders/[id]",
+      "file": "app/api/orders/[id]/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/partner/ping",
+      "file": "app/api/partner/ping/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/partner/products",
+      "file": "app/api/partner/products/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/posts",
+      "file": "app/api/posts/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/posts/[slug]",
+      "file": "app/api/posts/[slug]/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/posts/[slug]/vote",
+      "file": "app/api/posts/[slug]/vote/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/products",
+      "file": "app/api/products/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [
+        "cookies",
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": true
+    },
+    {
+      "path": "/api/products/similar",
+      "file": "app/api/products/similar/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/products/[id]/like",
+      "file": "app/api/products/[id]/like/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/products/[id]/reviews",
+      "file": "app/api/products/[id]/reviews/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [
+        "getAuthSession"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/products/[id]",
+      "file": "app/api/products/[id]/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [
+        "cookies",
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": true
+    },
+    {
+      "path": "/api/products/[id]/save",
+      "file": "app/api/products/[id]/save/route.ts",
+      "methods": [
+        "GET",
+        "POST",
+        "DELETE"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/products/[id]/share",
+      "file": "app/api/products/[id]/share/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/products/[id]/videos",
+      "file": "app/api/products/[id]/videos/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/push/subscribe",
+      "file": "app/api/push/subscribe/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "getAuthSession"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/push/unsubscribe",
+      "file": "app/api/push/unsubscribe/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "getAuthSession"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/push/vapid-public-key",
+      "file": "app/api/push/vapid-public-key/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [
+        "pushNotifications"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/ready",
+      "file": "app/api/ready/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/referral/driver-code",
+      "file": "app/api/referral/driver-code/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "getAuthSession"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/reviews/[id]/helpful",
+      "file": "app/api/reviews/[id]/helpful/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "getAuthSession"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/reviews/[id]",
+      "file": "app/api/reviews/[id]/route.ts",
+      "methods": [
+        "PATCH",
+        "DELETE"
+      ],
+      "authSignals": [
+        "getAuthSession"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/rides/estimate",
+      "file": "app/api/rides/estimate/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "getAuthSession",
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/rides/quote",
+      "file": "app/api/rides/quote/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "getAuthSession"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/rides",
+      "file": "app/api/rides/route.ts",
+      "methods": [
+        "POST",
+        "GET"
+      ],
+      "authSignals": [
+        "getAuthSession"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/rides/[id]/dispatch",
+      "file": "app/api/rides/[id]/dispatch/route.ts",
+      "methods": [
+        "PATCH"
+      ],
+      "authSignals": [
+        "getAuthSession"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/rides/[id]/pay",
+      "file": "app/api/rides/[id]/pay/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [
+        "getAuthSession"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/rides/[id]/rating",
+      "file": "app/api/rides/[id]/rating/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "getAuthSession"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/rides/[id]",
+      "file": "app/api/rides/[id]/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [
+        "getAuthSession"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/rides/[id]/status",
+      "file": "app/api/rides/[id]/status/route.ts",
+      "methods": [
+        "PATCH"
+      ],
+      "authSignals": [
+        "getAuthSession"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/rides/[id]/stream",
+      "file": "app/api/rides/[id]/stream/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [
+        "getAuthSession"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/search",
+      "file": "app/api/search/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/search/suggest",
+      "file": "app/api/search/suggest/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/seller/ads",
+      "file": "app/api/seller/ads/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [
+        "getSellerSessionId"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/seller/ads/[id]/toggle",
+      "file": "app/api/seller/ads/[id]/toggle/route.ts",
+      "methods": [
+        "PATCH"
+      ],
+      "authSignals": [
+        "getSellerSessionId"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/seller/auth",
+      "file": "app/api/seller/auth/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/seller/catalog/import-viral",
+      "file": "app/api/seller/catalog/import-viral/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "getSellerSessionId"
+      ],
+      "featureGates": [
+        "viralCatalog"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/seller/catalog/viral-products",
+      "file": "app/api/seller/catalog/viral-products/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [
+        "getSellerSessionId"
+      ],
+      "featureGates": [
+        "viralCatalog"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/seller/clients",
+      "file": "app/api/seller/clients/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [
+        "getSellerSessionId"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/seller/dashboard",
+      "file": "app/api/seller/dashboard/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [
+        "getSellerSessionId"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/seller/erp/connect",
+      "file": "app/api/seller/erp/connect/route.ts",
+      "methods": [
+        "POST",
+        "DELETE",
+        "GET"
+      ],
+      "authSignals": [
+        "getSellerSessionId",
+        "headers"
+      ],
+      "featureGates": [
+        "externalErp",
+        "externalErp"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/seller/erp/sync",
+      "file": "app/api/seller/erp/sync/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "getSellerSessionId",
+        "headers"
+      ],
+      "featureGates": [
+        "externalErp"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/seller/invoices",
+      "file": "app/api/seller/invoices/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [
+        "getSellerSessionId"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/seller/missions",
+      "file": "app/api/seller/missions/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/seller/missions/submissions/[id]",
+      "file": "app/api/seller/missions/submissions/[id]/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/seller/missions/[id]/close",
+      "file": "app/api/seller/missions/[id]/close/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/seller/missions/[id]/fund",
+      "file": "app/api/seller/missions/[id]/fund/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/seller/missions/[id]/submissions",
+      "file": "app/api/seller/missions/[id]/submissions/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/seller/node/heartbeat",
+      "file": "app/api/seller/node/heartbeat/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "getSellerSessionId"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/seller/node/status",
+      "file": "app/api/seller/node/status/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [
+        "getSellerSessionId"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/seller/orders",
+      "file": "app/api/seller/orders/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [
+        "getSellerSessionId"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/seller/orders/[id]/awb",
+      "file": "app/api/seller/orders/[id]/awb/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [
+        "getSellerSessionId"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/seller/orders/[id]/refund",
+      "file": "app/api/seller/orders/[id]/refund/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "getSellerSessionId"
+      ],
+      "featureGates": [
+        "returns"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/seller/orders/[id]/return/accept",
+      "file": "app/api/seller/orders/[id]/return/accept/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "getSellerSessionId"
+      ],
+      "featureGates": [
+        "returns"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/seller/orders/[id]/return/reject",
+      "file": "app/api/seller/orders/[id]/return/reject/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "getSellerSessionId"
+      ],
+      "featureGates": [
+        "returns"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/seller/orders/[id]/status",
+      "file": "app/api/seller/orders/[id]/status/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "getSellerSessionId"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/seller/payouts",
+      "file": "app/api/seller/payouts/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [
+        "getSellerSessionId"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/seller/pos/sale",
+      "file": "app/api/seller/pos/sale/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "getSellerSessionId"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/seller/products/classify",
+      "file": "app/api/seller/products/classify/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "getSellerSessionId"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/seller/products",
+      "file": "app/api/seller/products/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [
+        "getSellerSessionId"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/seller/products/upload-image",
+      "file": "app/api/seller/products/upload-image/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "getSellerSessionId"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/seller/products/[id]",
+      "file": "app/api/seller/products/[id]/route.ts",
+      "methods": [
+        "GET",
+        "PATCH",
+        "DELETE"
+      ],
+      "authSignals": [
+        "getSellerSessionId"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/seller/selena",
+      "file": "app/api/seller/selena/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "getSellerSessionId",
+        "headers"
+      ],
+      "featureGates": [
+        "externalErp"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/seller/settings",
+      "file": "app/api/seller/settings/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "getSellerSessionId"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/seller/stripe-connect",
+      "file": "app/api/seller/stripe-connect/route.ts",
+      "methods": [
+        "POST",
+        "GET"
+      ],
+      "authSignals": [
+        "getSellerSessionId"
+      ],
+      "featureGates": [
+        "stripeConnect",
+        "stripeConnect"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/shop/products",
+      "file": "app/api/shop/products/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/stays/availability",
+      "file": "app/api/stays/availability/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/stays/bookings",
+      "file": "app/api/stays/bookings/route.ts",
+      "methods": [
+        "POST",
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/stays/bookings/[id]/cancel",
+      "file": "app/api/stays/bookings/[id]/cancel/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/stays/bookings/[id]/confirm-card",
+      "file": "app/api/stays/bookings/[id]/confirm-card/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/stays/bookings/[id]/create-intent",
+      "file": "app/api/stays/bookings/[id]/create-intent/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/stays/bookings/[id]/pay",
+      "file": "app/api/stays/bookings/[id]/pay/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/stays/bookings/[id]/review",
+      "file": "app/api/stays/bookings/[id]/review/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/stays/bookings/[id]",
+      "file": "app/api/stays/bookings/[id]/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/stays/cities",
+      "file": "app/api/stays/cities/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/stays/local",
+      "file": "app/api/stays/local/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/stays/mine",
+      "file": "app/api/stays/mine/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/stays/quote",
+      "file": "app/api/stays/quote/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/stays/search",
+      "file": "app/api/stays/search/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [
+        "getAuthSession"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/stripe-connect/login-link",
+      "file": "app/api/stripe-connect/login-link/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/stripe-connect/onboarding/start",
+      "file": "app/api/stripe-connect/onboarding/start/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/stripe-connect/status",
+      "file": "app/api/stripe-connect/status/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/trips/packages",
+      "file": "app/api/trips/packages/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/unsubscribe",
+      "file": "app/api/unsubscribe/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/upload",
+      "file": "app/api/upload/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "getAuthSession",
+        "getSellerSessionId"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/users/me/2fa/disable",
+      "file": "app/api/users/me/2fa/disable/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "getAuthSession"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/users/me/2fa/enable",
+      "file": "app/api/users/me/2fa/enable/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "getAuthSession"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/users/me/2fa/init",
+      "file": "app/api/users/me/2fa/init/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "getAuthSession"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/users/me/2fa/regenerate-backup",
+      "file": "app/api/users/me/2fa/regenerate-backup/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "getAuthSession"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/users/me/addresses",
+      "file": "app/api/users/me/addresses/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "authSignals": [
+        "getAuthSession"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/users/me/addresses/[id]",
+      "file": "app/api/users/me/addresses/[id]/route.ts",
+      "methods": [
+        "PATCH",
+        "DELETE"
+      ],
+      "authSignals": [
+        "getAuthSession"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/users/me/avatar",
+      "file": "app/api/users/me/avatar/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "getAuthSession"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/users/me/notification-preferences",
+      "file": "app/api/users/me/notification-preferences/route.ts",
+      "methods": [
+        "GET",
+        "PATCH"
+      ],
+      "authSignals": [
+        "getAuthSession"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/users/me/oauth/[provider]",
+      "file": "app/api/users/me/oauth/[provider]/route.ts",
+      "methods": [
+        "DELETE"
+      ],
+      "authSignals": [
+        "getAuthSession"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/users/me/onboarding/complete",
+      "file": "app/api/users/me/onboarding/complete/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "cookies"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/users/me/onboarding",
+      "file": "app/api/users/me/onboarding/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/users/me/privacy",
+      "file": "app/api/users/me/privacy/route.ts",
+      "methods": [
+        "GET",
+        "PATCH"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/users/me",
+      "file": "app/api/users/me/route.ts",
+      "methods": [
+        "PATCH",
+        "GET"
+      ],
+      "authSignals": [
+        "getAuthSession"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/users/me/saved-videos",
+      "file": "app/api/users/me/saved-videos/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/users/me/stats",
+      "file": "app/api/users/me/stats/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/users/me/suggested-creators",
+      "file": "app/api/users/me/suggested-creators/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/users/profile/[username]",
+      "file": "app/api/users/profile/[username]/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/users/profile/[username]/videos",
+      "file": "app/api/users/profile/[username]/videos/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/users/search",
+      "file": "app/api/users/search/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/users/username-check",
+      "file": "app/api/users/username-check/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/users/[id]/block",
+      "file": "app/api/users/[id]/block/route.ts",
+      "methods": [
+        "GET",
+        "PUT",
+        "DELETE"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/users/[id]/follow",
+      "file": "app/api/users/[id]/follow/route.ts",
+      "methods": [
+        "POST",
+        "PUT",
+        "DELETE",
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/users/[id]/followers",
+      "file": "app/api/users/[id]/followers/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/users/[id]/following",
+      "file": "app/api/users/[id]/following/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/users/[id]/report",
+      "file": "app/api/users/[id]/report/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/v1/creator/[id]/dashboard",
+      "file": "app/api/v1/creator/[id]/dashboard/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/v1/creator/[id]/profile",
+      "file": "app/api/v1/creator/[id]/profile/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/v1/events/batch",
+      "file": "app/api/v1/events/batch/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/v1/events",
+      "file": "app/api/v1/events/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/v1/feed",
+      "file": "app/api/v1/feed/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/v1/[...path]",
+      "file": "app/api/v1/[...path]/route.ts",
+      "methods": [
+        "GET",
+        "POST",
+        "PUT",
+        "PATCH",
+        "DELETE"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/videos/[id]/captions/list",
+      "file": "app/api/videos/[id]/captions/list/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/videos/[id]/captions",
+      "file": "app/api/videos/[id]/captions/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/videos/[id]/comments",
+      "file": "app/api/videos/[id]/comments/route.ts",
+      "methods": [
+        "GET",
+        "POST",
+        "DELETE"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/videos/[id]/event",
+      "file": "app/api/videos/[id]/event/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/videos/[id]/feedback",
+      "file": "app/api/videos/[id]/feedback/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/videos/[id]/hidden",
+      "file": "app/api/videos/[id]/hidden/route.ts",
+      "methods": [
+        "DELETE"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/videos/[id]/like",
+      "file": "app/api/videos/[id]/like/route.ts",
+      "methods": [
+        "GET",
+        "POST",
+        "PUT",
+        "DELETE"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/videos/[id]/product-vote",
+      "file": "app/api/videos/[id]/product-vote/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/videos/[id]/products",
+      "file": "app/api/videos/[id]/products/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/videos/[id]/quicksave",
+      "file": "app/api/videos/[id]/quicksave/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/videos/[id]/report",
+      "file": "app/api/videos/[id]/report/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/videos/[id]/save",
+      "file": "app/api/videos/[id]/save/route.ts",
+      "methods": [
+        "POST",
+        "GET",
+        "DELETE"
+      ],
+      "authSignals": [
+        "getAuthSession"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/videos/[id]/share",
+      "file": "app/api/videos/[id]/share/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/videos/[id]/status",
+      "file": "app/api/videos/[id]/status/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/videos/[id]/view",
+      "file": "app/api/videos/[id]/view/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/vitals",
+      "file": "app/api/vitals/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/api/webhooks/stripe",
+      "file": "app/api/webhooks/stripe/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/feed.xml",
+      "file": "app/feed.xml/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/music/sitemap.xml",
+      "file": "app/music/sitemap.xml/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/products/sitemap/[id]",
+      "file": "app/products/sitemap/[id]/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/r/[code]",
+      "file": "app/r/[code]/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [
+        "headers",
+        "cookies"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/sitemap.xml",
+      "file": "app/sitemap.xml/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [
+        "headers"
+      ],
+      "featureGates": [],
+      "nextCoupled": false
+    },
+    {
+      "path": "/static-sitemap.xml",
+      "file": "app/static-sitemap.xml/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [
+        "cookies",
+        "headers"
+      ],
+      "featureGates": [
+        "seoPages"
+      ],
+      "nextCoupled": false
+    },
+    {
+      "path": "/[locale]/r/[code]",
+      "file": "app/[locale]/r/[code]/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "authSignals": [],
+      "featureGates": [],
+      "nextCoupled": false
+    }
+  ],
+  "pages": [
+    {
+      "path": "/admin/aplicatii",
+      "file": "app/(site)/admin/aplicatii/page.tsx"
+    },
+    {
+      "path": "/admin/applications",
+      "file": "app/(site)/admin/applications/page.tsx"
+    },
+    {
+      "path": "/admin/audit",
+      "file": "app/(site)/admin/audit/page.tsx"
+    },
+    {
+      "path": "/admin/commissions",
+      "file": "app/(site)/admin/commissions/page.tsx"
+    },
+    {
+      "path": "/admin/courier-payouts",
+      "file": "app/(site)/admin/courier-payouts/page.tsx"
+    },
+    {
+      "path": "/admin/creator-payouts",
+      "file": "app/(site)/admin/creator-payouts/page.tsx"
+    },
+    {
+      "path": "/admin/creators",
+      "file": "app/(site)/admin/creators/page.tsx"
+    },
+    {
+      "path": "/admin/cron",
+      "file": "app/(site)/admin/cron/page.tsx"
+    },
+    {
+      "path": "/admin/disputes",
+      "file": "app/(site)/admin/disputes/page.tsx"
+    },
+    {
+      "path": "/admin/fleet",
+      "file": "app/(site)/admin/fleet/page.tsx"
+    },
+    {
+      "path": "/admin/go",
+      "file": "app/(site)/admin/go/page.tsx"
+    },
+    {
+      "path": "/admin/health",
+      "file": "app/(site)/admin/health/page.tsx"
+    },
+    {
+      "path": "/admin/hosts",
+      "file": "app/(site)/admin/hosts/page.tsx"
+    },
+    {
+      "path": "/admin/marketplace/import",
+      "file": "app/(site)/admin/marketplace/import/page.tsx"
+    },
+    {
+      "path": "/admin/marketplace/new",
+      "file": "app/(site)/admin/marketplace/new/page.tsx"
+    },
+    {
+      "path": "/admin/marketplace",
+      "file": "app/(site)/admin/marketplace/page.tsx"
+    },
+    {
+      "path": "/admin/marketplace/[id]",
+      "file": "app/(site)/admin/marketplace/[id]/page.tsx"
+    },
+    {
+      "path": "/admin/merchant-claims",
+      "file": "app/(site)/admin/merchant-claims/page.tsx"
+    },
+    {
+      "path": "/admin/missions",
+      "file": "app/(site)/admin/missions/page.tsx"
+    },
+    {
+      "path": "/admin/moderation",
+      "file": "app/(site)/admin/moderation/page.tsx"
+    },
+    {
+      "path": "/admin/moderation/[id]",
+      "file": "app/(site)/admin/moderation/[id]/page.tsx"
+    },
+    {
+      "path": "/admin/movies",
+      "file": "app/(site)/admin/movies/page.tsx"
+    },
+    {
+      "path": "/admin/music",
+      "file": "app/(site)/admin/music/page.tsx"
+    },
+    {
+      "path": "/admin/news",
+      "file": "app/(site)/admin/news/page.tsx"
+    },
+    {
+      "path": "/admin/orders",
+      "file": "app/(site)/admin/orders/page.tsx"
+    },
+    {
+      "path": "/admin/orders/[id]",
+      "file": "app/(site)/admin/orders/[id]/page.tsx"
+    },
+    {
+      "path": "/admin",
+      "file": "app/(site)/admin/page.tsx"
+    },
+    {
+      "path": "/admin/payouts",
+      "file": "app/(site)/admin/payouts/page.tsx"
+    },
+    {
+      "path": "/admin/pricing",
+      "file": "app/(site)/admin/pricing/page.tsx"
+    },
+    {
+      "path": "/admin/refunds",
+      "file": "app/(site)/admin/refunds/page.tsx"
+    },
+    {
+      "path": "/admin/returns",
+      "file": "app/(site)/admin/returns/page.tsx"
+    },
+    {
+      "path": "/admin/reviews",
+      "file": "app/(site)/admin/reviews/page.tsx"
+    },
+    {
+      "path": "/admin/risk",
+      "file": "app/(site)/admin/risk/page.tsx"
+    },
+    {
+      "path": "/admin/seller-payouts",
+      "file": "app/(site)/admin/seller-payouts/page.tsx"
+    },
+    {
+      "path": "/admin/sellers",
+      "file": "app/(site)/admin/sellers/page.tsx"
+    },
+    {
+      "path": "/admin/sellers/[id]",
+      "file": "app/(site)/admin/sellers/[id]/page.tsx"
+    },
+    {
+      "path": "/admin/strikes",
+      "file": "app/(site)/admin/strikes/page.tsx"
+    },
+    {
+      "path": "/admin/users",
+      "file": "app/(site)/admin/users/page.tsx"
+    },
+    {
+      "path": "/admin/videos",
+      "file": "app/(site)/admin/videos/page.tsx"
+    },
+    {
+      "path": "/auth/forgot",
+      "file": "app/(site)/auth/forgot/page.tsx"
+    },
+    {
+      "path": "/auth/login",
+      "file": "app/(site)/auth/login/page.tsx"
+    },
+    {
+      "path": "/auth",
+      "file": "app/(site)/auth/page.tsx"
+    },
+    {
+      "path": "/auth/reset",
+      "file": "app/(site)/auth/reset/page.tsx"
+    },
+    {
+      "path": "/auth/signup",
+      "file": "app/(site)/auth/signup/page.tsx"
+    },
+    {
+      "path": "/categories/[slug]",
+      "file": "app/(site)/categories/[slug]/page.tsx"
+    },
+    {
+      "path": "/cauze",
+      "file": "app/(site)/cauze/page.tsx"
+    },
+    {
+      "path": "/courier/code",
+      "file": "app/(site)/courier/code/page.tsx"
+    },
+    {
+      "path": "/courier/earnings",
+      "file": "app/(site)/courier/earnings/page.tsx"
+    },
+    {
+      "path": "/courier",
+      "file": "app/(site)/courier/page.tsx"
+    },
+    {
+      "path": "/creator/analytics",
+      "file": "app/(site)/creator/(dashboard)/analytics/page.tsx"
+    },
+    {
+      "path": "/creator/drafts",
+      "file": "app/(site)/creator/(dashboard)/drafts/page.tsx"
+    },
+    {
+      "path": "/creator/earnings",
+      "file": "app/(site)/creator/(dashboard)/earnings/page.tsx"
+    },
+    {
+      "path": "/creator/live",
+      "file": "app/(site)/creator/(dashboard)/live/page.tsx"
+    },
+    {
+      "path": "/creator/live/[id]",
+      "file": "app/(site)/creator/(dashboard)/live/[id]/page.tsx"
+    },
+    {
+      "path": "/creator/movies",
+      "file": "app/(site)/creator/(dashboard)/movies/page.tsx"
+    },
+    {
+      "path": "/creator/music",
+      "file": "app/(site)/creator/(dashboard)/music/page.tsx"
+    },
+    {
+      "path": "/creator",
+      "file": "app/(site)/creator/(dashboard)/page.tsx"
+    },
+    {
+      "path": "/creator/payouts",
+      "file": "app/(site)/creator/(dashboard)/payouts/page.tsx"
+    },
+    {
+      "path": "/creator/videos",
+      "file": "app/(site)/creator/(dashboard)/videos/page.tsx"
+    },
+    {
+      "path": "/creator/[id]",
+      "file": "app/(site)/creator/[id]/page.tsx"
+    },
+    {
+      "path": "/onboarding",
+      "file": "app/(site)/onboarding/page.tsx"
+    },
+    {
+      "path": "/seller/ads",
+      "file": "app/(site)/seller/ads/page.tsx"
+    },
+    {
+      "path": "/seller/cazari",
+      "file": "app/(site)/seller/cazari/page.tsx"
+    },
+    {
+      "path": "/seller/clients",
+      "file": "app/(site)/seller/clients/page.tsx"
+    },
+    {
+      "path": "/seller/erp",
+      "file": "app/(site)/seller/erp/page.tsx"
+    },
+    {
+      "path": "/seller/invoices",
+      "file": "app/(site)/seller/invoices/page.tsx"
+    },
+    {
+      "path": "/seller/listings",
+      "file": "app/(site)/seller/listings/page.tsx"
+    },
+    {
+      "path": "/seller/login",
+      "file": "app/(site)/seller/login/page.tsx"
+    },
+    {
+      "path": "/seller/merchant",
+      "file": "app/(site)/seller/merchant/page.tsx"
+    },
+    {
+      "path": "/seller/missions",
+      "file": "app/(site)/seller/missions/page.tsx"
+    },
+    {
+      "path": "/seller/orders",
+      "file": "app/(site)/seller/orders/page.tsx"
+    },
+    {
+      "path": "/seller",
+      "file": "app/(site)/seller/page.tsx"
+    },
+    {
+      "path": "/seller/payouts",
+      "file": "app/(site)/seller/payouts/page.tsx"
+    },
+    {
+      "path": "/seller/pos",
+      "file": "app/(site)/seller/pos/page.tsx"
+    },
+    {
+      "path": "/seller/products",
+      "file": "app/(site)/seller/products/page.tsx"
+    },
+    {
+      "path": "/seller/returns",
+      "file": "app/(site)/seller/returns/page.tsx"
+    },
+    {
+      "path": "/seller/settings",
+      "file": "app/(site)/seller/settings/page.tsx"
+    },
+    {
+      "path": "/unsubscribe",
+      "file": "app/(site)/unsubscribe/page.tsx"
+    },
+    {
+      "path": "/[locale]/about",
+      "file": "app/[locale]/about/page.tsx"
+    },
+    {
+      "path": "/[locale]/account/addresses",
+      "file": "app/[locale]/account/addresses/page.tsx"
+    },
+    {
+      "path": "/[locale]/account/edit",
+      "file": "app/[locale]/account/edit/page.tsx"
+    },
+    {
+      "path": "/[locale]/account/hidden",
+      "file": "app/[locale]/account/hidden/page.tsx"
+    },
+    {
+      "path": "/[locale]/account/liked",
+      "file": "app/[locale]/account/liked/page.tsx"
+    },
+    {
+      "path": "/[locale]/account/notifications",
+      "file": "app/[locale]/account/notifications/page.tsx"
+    },
+    {
+      "path": "/[locale]/account/orders",
+      "file": "app/[locale]/account/orders/page.tsx"
+    },
+    {
+      "path": "/[locale]/account/orders/[id]",
+      "file": "app/[locale]/account/orders/[id]/page.tsx"
+    },
+    {
+      "path": "/[locale]/account",
+      "file": "app/[locale]/account/page.tsx"
+    },
+    {
+      "path": "/[locale]/account/preferences",
+      "file": "app/[locale]/account/preferences/page.tsx"
+    },
+    {
+      "path": "/[locale]/account/returns",
+      "file": "app/[locale]/account/returns/page.tsx"
+    },
+    {
+      "path": "/[locale]/account/returns/[id]",
+      "file": "app/[locale]/account/returns/[id]/page.tsx"
+    },
+    {
+      "path": "/[locale]/account/saved",
+      "file": "app/[locale]/account/saved/page.tsx"
+    },
+    {
+      "path": "/[locale]/account/security",
+      "file": "app/[locale]/account/security/page.tsx"
+    },
+    {
+      "path": "/[locale]/account/settings",
+      "file": "app/[locale]/account/settings/page.tsx"
+    },
+    {
+      "path": "/[locale]/account/stays",
+      "file": "app/[locale]/account/stays/page.tsx"
+    },
+    {
+      "path": "/[locale]/account/stays/[id]",
+      "file": "app/[locale]/account/stays/[id]/page.tsx"
+    },
+    {
+      "path": "/[locale]/audio/[id]",
+      "file": "app/[locale]/audio/[id]/page.tsx"
+    },
+    {
+      "path": "/[locale]/b/[slug]",
+      "file": "app/[locale]/b/[slug]/page.tsx"
+    },
+    {
+      "path": "/[locale]/become-a-creator",
+      "file": "app/[locale]/become-a-creator/page.tsx"
+    },
+    {
+      "path": "/[locale]/become-a-seller",
+      "file": "app/[locale]/become-a-seller/page.tsx"
+    },
+    {
+      "path": "/[locale]/best",
+      "file": "app/[locale]/best/page.tsx"
+    },
+    {
+      "path": "/[locale]/best/[slug]",
+      "file": "app/[locale]/best/[slug]/page.tsx"
+    },
+    {
+      "path": "/[locale]/cares",
+      "file": "app/[locale]/cares/page.tsx"
+    },
+    {
+      "path": "/[locale]/cart",
+      "file": "app/[locale]/cart/page.tsx"
+    },
+    {
+      "path": "/[locale]/categories",
+      "file": "app/[locale]/categories/page.tsx"
+    },
+    {
+      "path": "/[locale]/categories/[slug]",
+      "file": "app/[locale]/categories/[slug]/page.tsx"
+    },
+    {
+      "path": "/[locale]/checkout",
+      "file": "app/[locale]/checkout/page.tsx"
+    },
+    {
+      "path": "/[locale]/checkout/success",
+      "file": "app/[locale]/checkout/success/page.tsx"
+    },
+    {
+      "path": "/[locale]/collections",
+      "file": "app/[locale]/collections/page.tsx"
+    },
+    {
+      "path": "/[locale]/collections/[id]",
+      "file": "app/[locale]/collections/[id]/page.tsx"
+    },
+    {
+      "path": "/[locale]/discover",
+      "file": "app/[locale]/discover/page.tsx"
+    },
+    {
+      "path": "/[locale]/dm/[id]",
+      "file": "app/[locale]/dm/[id]/page.tsx"
+    },
+    {
+      "path": "/[locale]/explore",
+      "file": "app/[locale]/explore/page.tsx"
+    },
+    {
+      "path": "/[locale]/fleet",
+      "file": "app/[locale]/fleet/page.tsx"
+    },
+    {
+      "path": "/[locale]/fly/bookings/[id]",
+      "file": "app/[locale]/fly/bookings/[id]/page.tsx"
+    },
+    {
+      "path": "/[locale]/fly",
+      "file": "app/[locale]/fly/page.tsx"
+    },
+    {
+      "path": "/[locale]/food/aplica",
+      "file": "app/[locale]/food/aplica/page.tsx"
+    },
+    {
+      "path": "/[locale]/food/orders",
+      "file": "app/[locale]/food/orders/page.tsx"
+    },
+    {
+      "path": "/[locale]/food/orders/[id]",
+      "file": "app/[locale]/food/orders/[id]/page.tsx"
+    },
+    {
+      "path": "/[locale]/food",
+      "file": "app/[locale]/food/page.tsx"
+    },
+    {
+      "path": "/[locale]/food/[slug]",
+      "file": "app/[locale]/food/[slug]/page.tsx"
+    },
+    {
+      "path": "/[locale]/gaming",
+      "file": "app/[locale]/gaming/page.tsx"
+    },
+    {
+      "path": "/[locale]/go/history",
+      "file": "app/[locale]/go/history/page.tsx"
+    },
+    {
+      "path": "/[locale]/go",
+      "file": "app/[locale]/go/page.tsx"
+    },
+    {
+      "path": "/[locale]/go/track/[token]",
+      "file": "app/[locale]/go/track/[token]/page.tsx"
+    },
+    {
+      "path": "/[locale]/go/[id]",
+      "file": "app/[locale]/go/[id]/page.tsx"
+    },
+    {
+      "path": "/[locale]/hashtag/[tag]",
+      "file": "app/[locale]/hashtag/[tag]/page.tsx"
+    },
+    {
+      "path": "/[locale]/help",
+      "file": "app/[locale]/help/page.tsx"
+    },
+    {
+      "path": "/[locale]/inbox",
+      "file": "app/[locale]/inbox/page.tsx"
+    },
+    {
+      "path": "/[locale]/join/fleet",
+      "file": "app/[locale]/join/fleet/page.tsx"
+    },
+    {
+      "path": "/[locale]/join/franchise",
+      "file": "app/[locale]/join/franchise/page.tsx"
+    },
+    {
+      "path": "/[locale]/join/host",
+      "file": "app/[locale]/join/host/page.tsx"
+    },
+    {
+      "path": "/[locale]/join",
+      "file": "app/[locale]/join/page.tsx"
+    },
+    {
+      "path": "/[locale]/legal/anpc",
+      "file": "app/[locale]/legal/anpc/page.tsx"
+    },
+    {
+      "path": "/[locale]/legal/cookies",
+      "file": "app/[locale]/legal/cookies/page.tsx"
+    },
+    {
+      "path": "/[locale]/legal/privacy",
+      "file": "app/[locale]/legal/privacy/page.tsx"
+    },
+    {
+      "path": "/[locale]/legal/terms",
+      "file": "app/[locale]/legal/terms/page.tsx"
+    },
+    {
+      "path": "/[locale]/live",
+      "file": "app/[locale]/live/page.tsx"
+    },
+    {
+      "path": "/[locale]/live/[id]",
+      "file": "app/[locale]/live/[id]/page.tsx"
+    },
+    {
+      "path": "/[locale]/messages/new",
+      "file": "app/[locale]/messages/new/page.tsx"
+    },
+    {
+      "path": "/[locale]/messages",
+      "file": "app/[locale]/messages/page.tsx"
+    },
+    {
+      "path": "/[locale]/messages/[id]",
+      "file": "app/[locale]/messages/[id]/page.tsx"
+    },
+    {
+      "path": "/[locale]/missions",
+      "file": "app/[locale]/missions/page.tsx"
+    },
+    {
+      "path": "/[locale]/missions/[slug]",
+      "file": "app/[locale]/missions/[slug]/page.tsx"
+    },
+    {
+      "path": "/[locale]/movies",
+      "file": "app/[locale]/movies/page.tsx"
+    },
+    {
+      "path": "/[locale]/movies/[slug]",
+      "file": "app/[locale]/movies/[slug]/page.tsx"
+    },
+    {
+      "path": "/[locale]/movies/[slug]/[n]",
+      "file": "app/[locale]/movies/[slug]/[n]/page.tsx"
+    },
+    {
+      "path": "/[locale]/music/album/[slug]",
+      "file": "app/[locale]/music/album/[slug]/page.tsx"
+    },
+    {
+      "path": "/[locale]/music/artist/[slug]",
+      "file": "app/[locale]/music/artist/[slug]/page.tsx"
+    },
+    {
+      "path": "/[locale]/music",
+      "file": "app/[locale]/music/page.tsx"
+    },
+    {
+      "path": "/[locale]/music/playlist/[id]",
+      "file": "app/[locale]/music/playlist/[id]/page.tsx"
+    },
+    {
+      "path": "/[locale]/music/track/[slug]",
+      "file": "app/[locale]/music/track/[slug]/page.tsx"
+    },
+    {
+      "path": "/[locale]/news",
+      "file": "app/[locale]/news/page.tsx"
+    },
+    {
+      "path": "/[locale]/news/[slug]",
+      "file": "app/[locale]/news/[slug]/page.tsx"
+    },
+    {
+      "path": "/[locale]/notifications",
+      "file": "app/[locale]/notifications/page.tsx"
+    },
+    {
+      "path": "/[locale]/orders",
+      "file": "app/[locale]/orders/page.tsx"
+    },
+    {
+      "path": "/[locale]/orders/[id]",
+      "file": "app/[locale]/orders/[id]/page.tsx"
+    },
+    {
+      "path": "/[locale]/orders/[id]/return",
+      "file": "app/[locale]/orders/[id]/return/page.tsx"
+    },
+    {
+      "path": "/[locale]",
+      "file": "app/[locale]/page.tsx"
+    },
+    {
+      "path": "/[locale]/post/[slug]",
+      "file": "app/[locale]/post/[slug]/page.tsx"
+    },
+    {
+      "path": "/[locale]/privacy",
+      "file": "app/[locale]/privacy/page.tsx"
+    },
+    {
+      "path": "/[locale]/product/[id]",
+      "file": "app/[locale]/product/[id]/page.tsx"
+    },
+    {
+      "path": "/[locale]/reels/record",
+      "file": "app/[locale]/reels/record/page.tsx"
+    },
+    {
+      "path": "/[locale]/search",
+      "file": "app/[locale]/search/page.tsx"
+    },
+    {
+      "path": "/[locale]/sellers/[id]",
+      "file": "app/[locale]/sellers/[id]/page.tsx"
+    },
+    {
+      "path": "/[locale]/shop",
+      "file": "app/[locale]/shop/page.tsx"
+    },
+    {
+      "path": "/[locale]/stays/manage",
+      "file": "app/[locale]/stays/manage/page.tsx"
+    },
+    {
+      "path": "/[locale]/stays",
+      "file": "app/[locale]/stays/page.tsx"
+    },
+    {
+      "path": "/[locale]/stays/[id]",
+      "file": "app/[locale]/stays/[id]/page.tsx"
+    },
+    {
+      "path": "/[locale]/terms",
+      "file": "app/[locale]/terms/page.tsx"
+    },
+    {
+      "path": "/[locale]/u/[username]",
+      "file": "app/[locale]/u/[username]/page.tsx"
+    },
+    {
+      "path": "/[locale]/upload",
+      "file": "app/[locale]/upload/page.tsx"
+    },
+    {
+      "path": "/[locale]/v/[id]",
+      "file": "app/[locale]/v/[id]/page.tsx"
+    },
+    {
+      "path": "/[locale]/video/[id]",
+      "file": "app/[locale]/video/[id]/page.tsx"
+    }
+  ],
+  "reuseCandidates": [
+    {
+      "file": "lib/feed/types.ts",
+      "imports": [
+        "@/lib/missions/feed-badge"
+      ],
+      "serverSignals": false,
+      "browserSignals": false,
+      "note": "Static candidate only; transitive dependencies and device behavior require review"
+    },
+    {
+      "file": "lib/feed/client/feed-source.ts",
+      "imports": [
+        "@/lib/feed/types"
+      ],
+      "serverSignals": false,
+      "browserSignals": false,
+      "note": "Static candidate only; transitive dependencies and device behavior require review"
+    },
+    {
+      "file": "lib/feed/event-types.ts",
+      "imports": [],
+      "serverSignals": false,
+      "browserSignals": false,
+      "note": "Static candidate only; transitive dependencies and device behavior require review"
+    },
+    {
+      "file": "lib/feed/event-guards.ts",
+      "imports": [
+        "@/lib/feed/event-types",
+        "@/lib/feed/events",
+        "@/lib/security/abuse-limits"
+      ],
+      "serverSignals": false,
+      "browserSignals": false,
+      "note": "Static candidate only; transitive dependencies and device behavior require review"
+    },
+    {
+      "file": "lib/seller/invoicing.ts",
+      "imports": [],
+      "serverSignals": false,
+      "browserSignals": false,
+      "note": "Static candidate only; transitive dependencies and device behavior require review"
+    },
+    {
+      "file": "lib/seller/product-schemas.ts",
+      "imports": [
+        "zod",
+        "@/lib/merchants/slug",
+        "./config"
+      ],
+      "serverSignals": false,
+      "browserSignals": false,
+      "note": "Static candidate only; transitive dependencies and device behavior require review"
+    },
+    {
+      "file": "lib/validation/schemas.ts",
+      "imports": [
+        "zod",
+        "@/lib/fulfillment/carriers"
+      ],
+      "serverSignals": false,
+      "browserSignals": false,
+      "note": "Static candidate only; transitive dependencies and device behavior require review"
+    },
+    {
+      "file": "lib/auth/session.ts",
+      "imports": [
+        "crypto",
+        "next/headers",
+        "@/lib/db"
+      ],
+      "serverSignals": true,
+      "browserSignals": false,
+      "note": "Static candidate only; transitive dependencies and device behavior require review"
+    },
+    {
+      "file": "lib/ai/ilaria.ts",
+      "imports": [
+        "server-only"
+      ],
+      "serverSignals": true,
+      "browserSignals": false,
+      "note": "Static candidate only; transitive dependencies and device behavior require review"
+    }
+  ]
+}

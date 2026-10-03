@@ -1,0 +1,56 @@
+
+> swypik@0.1.0 test:workers
+> node tools/test-workers.mjs
+
+[test:workers] infra via python3
+============================= test session starts =============================
+platform win32 -- Python 3.12.10, pytest-9.0.3, pluggy-1.6.0
+rootdir: E:\Swypik\swypik\app
+plugins: anyio-4.13.0
+collected 9 items
+
+tests\infra\test_preflight.py ssss                                       [ 44%]
+tests\infra\test_release_health.py .....                                 [100%]
+
+======================== 5 passed, 4 skipped in 0.98s =========================
+[test:workers] video-worker via python3
+============================= test session starts =============================
+platform win32 -- Python 3.12.10, pytest-9.0.3, pluggy-1.6.0
+rootdir: E:\Swypik\swypik\app\workers\video-worker
+configfile: pytest.ini
+plugins: anyio-4.13.0
+collected 157 items
+
+workers\video-worker\tests\test_ai_hooks.py ..........                   [  6%]
+workers\video-worker\tests\test_config.py ...............                [ 15%]
+workers\video-worker\tests\test_db.py ...                                [ 17%]
+workers\video-worker\tests\test_db_fencing.py ....                       [ 20%]
+workers\video-worker\tests\test_errors.py ...............                [ 29%]
+workers\video-worker\tests\test_ffmpeg_tools.py .................        [ 40%]
+workers\video-worker\tests\test_lease.py ....                            [ 43%]
+workers\video-worker\tests\test_models.py .......                        [ 47%]
+workers\video-worker\tests\test_pg_pool.py ..                            [ 49%]
+workers\video-worker\tests\test_pg_queue.py .........                    [ 54%]
+workers\video-worker\tests\test_pg_runner.py ..........                  [ 61%]
+workers\video-worker\tests\test_probe.py ....................            [ 73%]
+workers\video-worker\tests\test_redis_stream_queue.py ..                 [ 75%]
+workers\video-worker\tests\test_renditions.py .........                  [ 80%]
+workers\video-worker\tests\test_storage.py ...                           [ 82%]
+workers\video-worker\tests\test_wakeup_and_main.py .......               [ 87%]
+workers\video-worker\tests\test_worker.py ........                       [ 92%]
+workers\video-worker\tests\test_worker_retries.py ............           [100%]
+
+============================= 157 passed in 1.71s =============================
+[test:workers] ai-worker via python3
+============================= test session starts =============================
+platform win32 -- Python 3.12.10, pytest-9.0.3, pluggy-1.6.0
+rootdir: E:\Swypik\swypik\app\workers\ai-worker
+configfile: pytest.ini
+plugins: anyio-4.13.0
+collected 7 items
+
+workers\ai-worker\tests\test_local_handlers.py ...                       [ 42%]
+workers\ai-worker\tests\test_models.py ..                                [ 71%]
+workers\ai-worker\tests\test_worker.py ..                                [100%]
+
+============================== 7 passed in 0.03s ==============================

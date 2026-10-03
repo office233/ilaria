@@ -1,0 +1,1264 @@
+
+> swypik@0.1.0 prebuild
+> node scripts/patch-next-notfound-ssr.mjs
+
+[patch-next-notfound-ssr] app-page.runtime.prod.js: deja aplicat
+[patch-next-notfound-ssr] app-page-turbo.runtime.prod.js: deja aplicat
+[patch-next-notfound-ssr] app-page-experimental.runtime.prod.js: deja aplicat
+[patch-next-notfound-ssr] app-page-turbo-experimental.runtime.prod.js: deja aplicat
+
+> swypik@0.1.0 build
+> next build
+
+   ▲ Next.js 15.5.22
+   - Environments: .env.local
+   - Experiments (use with caution):
+     · optimizePackageImports
+
+   Creating an optimized production build ...
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Parsing of E:\Swypik\swypik\app\node_modules\next-intl\dist\esm\production\extractor\format\index.js for build dependencies failed at 'import(t)'.
+<w> Build dependencies behind this expression are ignored and might cause incorrect cache invalidation.
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Parsing of E:\Swypik\swypik\app\node_modules\next-intl\dist\esm\production\extractor\format\index.js for build dependencies failed at 'import(t)'.
+<w> Build dependencies behind this expression are ignored and might cause incorrect cache invalidation.
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Parsing of E:\Swypik\swypik\app\node_modules\next-intl\dist\esm\production\extractor\format\index.js for build dependencies failed at 'import(t)'.
+<w> Build dependencies behind this expression are ignored and might cause incorrect cache invalidation.
+ ✓ Compiled successfully in 5.3min
+   Linting and checking validity of types ...
+
+./app/(site)/creator/[id]/page.tsx
+102:52  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./app/(site)/seller/ads/page.tsx
+14:25  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+15:23  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./app/(site)/seller/login/page.tsx
+65:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+92:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./app/(site)/seller/settings/page.tsx
+20:38  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./app/(site)/seller/settings/SellerSettingsClient.tsx
+80:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./app/api/apply-seller/route.ts
+90:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./app/api/auth/oauth/apple/start/route.ts
+5:3  Warning: 'buildStateCookie' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./app/api/auth/route.ts
+65:7  Warning: 'VERIFICATION_GRACE_DAYS' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./app/api/categories/route.ts
+14:15  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./app/api/chat/route.ts
+40:39  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+62:148  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+86:44  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+129:58  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+203:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./app/api/creator/videos/route.ts
+63:33  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+95:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./app/api/creators/[id]/route.ts
+107:33  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+118:17  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./app/api/cron/abandoned-cart/route.ts
+119:23  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+126:66  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+164:26  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+180:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+192:70  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./app/api/cron/cleanup-tokens/route.ts
+29:41  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+32:41  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+40:41  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+60:41  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+68:41  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+76:41  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+87:41  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./app/api/cron/daily-maintenance/route.ts
+90:13  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./app/api/cron/embed-batch/route.ts
+43:15  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+86:15  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+137:67  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+142:68  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./app/api/cron/publish-scheduled/route.ts
+78:73  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+83:74  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./app/api/cron/refresh-rank/route.ts
+51:17  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+78:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+83:15  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./app/api/cron/suspend-unverified/route.ts
+78:74  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./app/api/feed/universal/route.ts
+19:5  Warning: 'VERTICAL_CATALOG' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+153:36  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./app/api/fly/search/route.ts
+75:20  Warning: 'providerTotalCents' is defined but never used. Allowed unused args must match /^_/u.  @typescript-eslint/no-unused-vars
+75:40  Warning: 'markupCents' is defined but never used. Allowed unused args must match /^_/u.  @typescript-eslint/no-unused-vars
+75:53  Warning: 'providerCurrency' is defined but never used. Allowed unused args must match /^_/u.  @typescript-eslint/no-unused-vars
+75:71  Warning: 'raw' is defined but never used. Allowed unused args must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./app/api/i18n/preferences/route.ts
+54:21  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+63:15  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./app/api/internal/moderation/pending/route.ts
+43:44  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+65:44  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+86:44  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+104:44  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+125:44  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+144:44  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./app/api/notifications/subscribe/route.ts
+52:9  Warning: 'ua' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./app/api/onboarding/interests/route.ts
+25:35  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+73:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+81:27  Warning: 'request' is defined but never used. Allowed unused args must match /^_/u.  @typescript-eslint/no-unused-vars
+95:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./app/api/products/route.ts
+62:29  Warning: 'getCategories' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+116:46  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+117:21  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+125:11  Warning: 'cacheSeconds' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+145:30  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+157:41  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+169:41  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+178:28  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+197:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./app/api/products/similar/route.ts
+199:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+239:15  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./app/api/products/[id]/route.ts
+32:14  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+68:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./app/api/products/[id]/videos/route.ts
+52:33  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+67:17  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./app/api/reviews/[id]/helpful/route.ts
+3:10  Warning: 'dbQuery' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+74:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./app/api/reviews/[id]/route.ts
+69:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+103:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./app/api/search/suggest/route.ts
+17:39  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+102:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./app/api/seller/auth/route.ts
+177:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./app/api/seller/erp/sync/route.ts
+87:23  Warning: 'priceRon' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./app/api/seller/products/classify/route.ts
+99:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./app/api/seller/products/upload-image/route.ts
+73:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./app/api/seller/settings/route.ts
+36:107  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./app/api/seller/stripe-connect/route.ts
+33:119  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+86:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+106:28  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+139:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+145:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./app/api/stripe-connect/login-link/route.ts
+28:17  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./app/api/stripe-connect/onboarding/start/route.ts
+30:17  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./app/api/stripe-connect/status/route.ts
+44:17  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./app/api/users/me/addresses/route.ts
+31:10  Warning: 'validate' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./app/api/videos/[id]/feedback/route.ts
+80:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./app/api/videos/[id]/report/route.ts
+87:17  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./app/api/videos/[id]/save/route.ts
+36:15  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+128:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+153:47  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+158:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./app/api/videos/[id]/share/route.ts
+83:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./app/api/videos/[id]/view/route.ts
+60:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./app/api/webhooks/stripe/_handlers/checkout.ts
+4:10  Warning: 'dbQuery' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./app/feed.xml/route.ts
+22:36  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./app/videos/sitemap.ts
+34:38  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./app/[locale]/account/AccountPageClient.tsx
+7:73  Warning: 'Coins' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+23:44  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+24:40  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+25:40  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+27:10  Warning: 'walletBalance' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+27:25  Warning: 'setWalletBalance' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+28:10  Warning: 'challengesCount' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+28:27  Warning: 'setChallengesCount' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+177:18  Warning: 'handleLogout' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./app/[locale]/account/addresses/AddressesClient.tsx
+299:9  Warning: 't' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./app/[locale]/account/returns/[id]/page.tsx
+22:28  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./app/[locale]/account/settings/SettingsClient.tsx
+11:3  Warning: 'Wallet' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./app/[locale]/checkout/success/page.tsx
+32:14  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./app/[locale]/collections/page.tsx
+45:9  Warning: 'router' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./app/[locale]/help/page.tsx
+37:80  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+38:66  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./app/[locale]/orders/[id]/page.tsx
+32:38  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+54:6  Warning: React Hook useEffect has a missing dependency: 't'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+113:25  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+206:45  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./app/[locale]/orders/[id]/return/page.tsx
+22:28  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./app/[locale]/orders/[id]/return/ReturnFormClient.tsx
+110:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./app/[locale]/product/[id]/opengraph-image.tsx
+12:36  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./app/[locale]/search/page.tsx
+68:47  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./app/[locale]/video/[id]/opengraph-image.tsx
+12:36  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./components/ProductDrawer.tsx
+39:18  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./components/reels/AudioPicker.tsx
+70:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./components/search/SearchBar.tsx
+67:21  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./lib/ai/orchestrator.ts
+21:40  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+21:69  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+132:59  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+217:141  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+265:42  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+285:502  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+292:63  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./lib/ai/product-translator.ts
+148:17  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./lib/chat/feed-normalize.ts
+39:51  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+43:17  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./lib/chat/search-pg.ts
+10:21  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+57:9  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+57:32  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+57:60  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+126:42  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./lib/db.ts
+118:35  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+143:39  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+204:28  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+225:30  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./lib/email/service.ts
+352:15  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+361:80  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./lib/fly/booking.ts
+107:36  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./lib/fly/duffel.ts
+54:28  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+60:45  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+66:48  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+77:49  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+92:21  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+96:50  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+108:27  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+113:23  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+124:37  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+140:23  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+145:37  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+159:32  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+159:72  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+171:37  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./lib/fly/kiwi.ts
+29:27  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+34:50  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+35:49  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+36:28  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+45:40  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+114:32  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+129:58  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./lib/fly/market.ts
+44:60  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+53:67  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./lib/rate-limit.ts
+38:42  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./lib/stays/duffel.ts
+33:62  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+60:56  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+78:33  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+98:20  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+131:67  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+132:33  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+145:33  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+174:33  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./lib/stays/ratehawk.ts
+63:56  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+83:30  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+84:18  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+100:29  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+118:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+118:38  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+158:29  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+163:30  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+199:32  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+208:35  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+210:34  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+242:29  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
+   Collecting page data ...
+ ⚠ Using edge runtime on a page currently disables static generation for that page
+   Generating static pages (0/689) ...
+{"level":50,"time":"2026-09-27T15:20:38.414Z","service":"next-web","environment":"production","err":{"type":"AggregateError","message":"","stack":"AggregateError: \n    at E:\\Swypik\\swypik\\app\\node_modules\\pg-pool\\index.js:45:11\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async i (E:\\Swypik\\swypik\\app\\.next\\server\\chunks\\36755.js:1:23418)\n    at async z (E:\\Swypik\\swypik\\app\\.next\\server\\chunks\\52498.js:195:33)\n    at async Promise.all (index 0)\n    at async n.revalidate (E:\\Swypik\\swypik\\app\\.next\\server\\app\\[locale]\\discover\\page.js:3:811)\n    at async E:\\Swypik\\swypik\\app\\.next\\server\\chunks\\67711.js:1:15395\n    at async n (E:\\Swypik\\swypik\\app\\.next\\server\\app\\[locale]\\discover\\page.js:4:8510)","aggregateErrors":[{"type":"Error","message":"connect ECONNREFUSED ::1:15433","stack":"Error: connect ECONNREFUSED ::1:15433\n    at createConnectionError (node:net:1746:14)\n    at afterConnectMultiple (node:net:1776:16)","errno":-4078,"code":"ECONNREFUSED","syscall":"connect","address":"::1","port":15433},{"type":"Error","message":"connect ECONNREFUSED 127.0.0.1:15433","stack":"Error: connect ECONNREFUSED 127.0.0.1:15433\n    at createConnectionError (node:net:1746:14)\n    at afterConnectMultiple (node:net:1776:16)","errno":-4078,"code":"ECONNREFUSED","syscall":"connect","address":"127.0.0.1","port":15433}],"code":"ECONNREFUSED"},"msg":"[discover] product sections failed"}
+{"level":50,"time":"2026-09-27T15:20:38.419Z","service":"next-web","environment":"production","err":{"type":"AggregateError","message":"","stack":"AggregateError: \n    at E:\\Swypik\\swypik\\app\\node_modules\\pg-pool\\index.js:45:11\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async i (E:\\Swypik\\swypik\\app\\.next\\server\\chunks\\36755.js:1:23418)\n    at async z (E:\\Swypik\\swypik\\app\\.next\\server\\chunks\\52498.js:195:33)\n    at async l (E:\\Swypik\\swypik\\app\\.next\\server\\app\\[locale]\\discover\\page.js:1:2340)\n    at async n.revalidate (E:\\Swypik\\swypik\\app\\.next\\server\\app\\[locale]\\discover\\page.js:3:1083)\n    at async E:\\Swypik\\swypik\\app\\.next\\server\\chunks\\67711.js:1:15395\n    at async n (E:\\Swypik\\swypik\\app\\.next\\server\\app\\[locale]\\discover\\page.js:4:8510)","aggregateErrors":[{"type":"Error","message":"connect ECONNREFUSED ::1:15433","stack":"Error: connect ECONNREFUSED ::1:15433\n    at createConnectionError (node:net:1746:14)\n    at afterConnectMultiple (node:net:1776:16)","errno":-4078,"code":"ECONNREFUSED","syscall":"connect","address":"::1","port":15433},{"type":"Error","message":"connect ECONNREFUSED 127.0.0.1:15433","stack":"Error: connect ECONNREFUSED 127.0.0.1:15433\n    at createConnectionError (node:net:1746:14)\n    at afterConnectMultiple (node:net:1776:16)","errno":-4078,"code":"ECONNREFUSED","syscall":"connect","address":"127.0.0.1","port":15433}],"code":"ECONNREFUSED"},"msg":"[discover] offers feed failed"}
+   Generating static pages (172/689) 
+   Generating static pages (344/689) 
+   Generating static pages (516/689) 
+ ✓ Generating static pages (689/689)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                       Size  First Load JS  Revalidate  Expire
+┌ ○ /_not-found                                  269 B         187 kB
+├ ● /[locale]                                    202 B         238 kB          1h      1y
+├   ├ /ro                                                                      1h      1y
+├   ├ /en                                                                      1h      1y
+├   ├ /es                                                                      1h      1y
+├   └ [+4 more paths]
+├ ● /[locale]/about                              304 B         201 kB
+├   ├ /ro/about
+├   ├ /en/about
+├   ├ /es/about
+├   └ [+4 more paths]
+├ ● /[locale]/account                          15.8 kB         230 kB
+├   ├ /ro/account
+├   ├ /en/account
+├   ├ /es/account
+├   └ [+4 more paths]
+├ ● /[locale]/account/addresses                3.99 kB         203 kB
+├   ├ /ro/account/addresses
+├   ├ /en/account/addresses
+├   ├ /es/account/addresses
+├   └ [+4 more paths]
+├ ● /[locale]/account/edit                     11.7 kB         221 kB
+├   ├ /ro/account/edit
+├   ├ /en/account/edit
+├   ├ /es/account/edit
+├   └ [+4 more paths]
+├ ● /[locale]/account/hidden                   2.36 kB         208 kB
+├   ├ /ro/account/hidden
+├   ├ /en/account/hidden
+├   ├ /es/account/hidden
+├   └ [+4 more paths]
+├ ● /[locale]/account/liked                      624 B         194 kB
+├   ├ /ro/account/liked
+├   ├ /en/account/liked
+├   ├ /es/account/liked
+├   └ [+4 more paths]
+├ ● /[locale]/account/notifications            3.66 kB         204 kB
+├   ├ /ro/account/notifications
+├   ├ /en/account/notifications
+├   ├ /es/account/notifications
+├   └ [+4 more paths]
+├ ● /[locale]/account/orders                   7.25 kB         222 kB
+├   ├ /ro/account/orders
+├   ├ /en/account/orders
+├   ├ /es/account/orders
+├   └ [+4 more paths]
+├ ƒ /[locale]/account/orders/[id]                10 kB         242 kB
+├ ● /[locale]/account/preferences              1.39 kB         202 kB
+├   ├ /ro/account/preferences
+├   ├ /en/account/preferences
+├   ├ /es/account/preferences
+├   └ [+4 more paths]
+├ ● /[locale]/account/returns                    231 B         189 kB
+├   ├ /ro/account/returns
+├   ├ /en/account/returns
+├   ├ /es/account/returns
+├   └ [+4 more paths]
+├ ƒ /[locale]/account/returns/[id]               231 B         189 kB
+├ ● /[locale]/account/saved                      747 B         225 kB
+├   ├ /ro/account/saved
+├   ├ /en/account/saved
+├   ├ /es/account/saved
+├   └ [+4 more paths]
+├ ● /[locale]/account/security                 5.98 kB         210 kB
+├   ├ /ro/account/security
+├   ├ /en/account/security
+├   ├ /es/account/security
+├   └ [+4 more paths]
+├ ● /[locale]/account/settings                 3.15 kB         204 kB
+├   ├ /ro/account/settings
+├   ├ /en/account/settings
+├   ├ /es/account/settings
+├   └ [+4 more paths]
+├ ● /[locale]/account/stays                    6.26 kB         216 kB
+├   ├ /ro/account/stays
+├   ├ /en/account/stays
+├   ├ /es/account/stays
+├   └ [+4 more paths]
+├ ƒ /[locale]/account/stays/[id]               8.71 kB         240 kB
+├ ƒ /[locale]/audio/[id]                         624 B         194 kB
+├ ƒ /[locale]/b/[slug]                           231 B         189 kB
+├ ƒ /[locale]/b/[slug]/opengraph-image         1.25 kB         188 kB
+├ ● /[locale]/become-a-creator                   10 kB         220 kB
+├   ├ /ro/become-a-creator
+├   ├ /en/become-a-creator
+├   ├ /es/become-a-creator
+├   └ [+4 more paths]
+├ ● /[locale]/become-a-seller                  6.99 kB         208 kB
+├   ├ /ro/become-a-seller
+├   ├ /en/become-a-seller
+├   ├ /es/become-a-seller
+├   └ [+4 more paths]
+├ ● /[locale]/best                                2 kB         203 kB
+├   ├ /ro/best
+├   ├ /en/best
+├   ├ /es/best
+├   └ [+4 more paths]
+├ ƒ /[locale]/best/[slug]                      1.25 kB         188 kB
+├ ● /[locale]/cares                            3.73 kB         208 kB
+├   ├ /ro/cares
+├   ├ /en/cares
+├   ├ /es/cares
+├   └ [+4 more paths]
+├ ● /[locale]/cart                             4.37 kB         241 kB
+├   ├ /ro/cart
+├   ├ /en/cart
+├   ├ /es/cart
+├   └ [+4 more paths]
+├ ● /[locale]/categories                         143 B         216 kB
+├   ├ /ro/categories
+├   ├ /en/categories
+├   ├ /es/categories
+├   └ [+4 more paths]
+├ ƒ /[locale]/categories/[slug]                  155 B         247 kB
+├ ● /[locale]/checkout                          4.7 kB         234 kB
+├   ├ /ro/checkout
+├   ├ /en/checkout
+├   ├ /es/checkout
+├   └ [+4 more paths]
+├ ● /[locale]/checkout/success                 4.26 kB         205 kB
+├   ├ /ro/checkout/success
+├   ├ /en/checkout/success
+├   ├ /es/checkout/success
+├   └ [+4 more paths]
+├ ● /[locale]/collections                      3.97 kB         205 kB
+├   ├ /ro/collections
+├   ├ /en/collections
+├   ├ /es/collections
+├   └ [+4 more paths]
+├ ƒ /[locale]/collections/[id]                 5.62 kB         211 kB
+├ ● /[locale]/discover                         28.5 kB         263 kB          2m      1y
+├   ├ /ro/discover                                                             2m      1y
+├   ├ /en/discover                                                             2m      1y
+├   ├ /es/discover                                                             2m      1y
+├   └ [+4 more paths]
+├ ƒ /[locale]/dm/[id]                             2 kB         203 kB
+├ ● /[locale]/explore                            208 B         238 kB
+├   ├ /ro/explore
+├   ├ /en/explore
+├   ├ /es/explore
+├   └ [+4 more paths]
+├ ● /[locale]/fleet                            2.99 kB         204 kB
+├   ├ /ro/fleet
+├   ├ /en/fleet
+├   ├ /es/fleet
+├   └ [+4 more paths]
+├ ● /[locale]/fly                                14 kB         228 kB
+├   ├ /ro/fly
+├   ├ /en/fly
+├   ├ /es/fly
+├   └ [+4 more paths]
+├ ƒ /[locale]/fly/bookings/[id]                1.25 kB         188 kB
+├ ● /[locale]/food                             11.5 kB         248 kB
+├   ├ /ro/food
+├   ├ /en/food
+├   ├ /es/food
+├   └ [+4 more paths]
+├ ƒ /[locale]/food/[slug]                      15.1 kB         256 kB
+├ ● /[locale]/food/aplica                      1.55 kB         201 kB
+├   ├ /ro/food/aplica
+├   ├ /en/food/aplica
+├   ├ /es/food/aplica
+├   └ [+4 more paths]
+├ ● /[locale]/food/orders                      5.11 kB         209 kB
+├   ├ /ro/food/orders
+├   ├ /en/food/orders
+├   ├ /es/food/orders
+├   └ [+4 more paths]
+├ ƒ /[locale]/food/orders/[id]                 11.9 kB         239 kB
+├ ● /[locale]/gaming                           9.64 kB         236 kB
+├   ├ /ro/gaming
+├   ├ /en/gaming
+├   ├ /es/gaming
+├   └ [+4 more paths]
+├ ● /[locale]/go                               14.4 kB         224 kB
+├   ├ /ro/go
+├   ├ /en/go
+├   ├ /es/go
+├   └ [+4 more paths]
+├ ƒ /[locale]/go/[id]                          7.05 kB         244 kB
+├ ● /[locale]/go/history                       9.26 kB         219 kB
+├   ├ /ro/go/history
+├   ├ /en/go/history
+├   ├ /es/go/history
+├   └ [+4 more paths]
+├ ƒ /[locale]/go/track/[token]                 2.17 kB         201 kB
+├ ƒ /[locale]/hashtag/[tag]                      231 B         189 kB
+├ ● /[locale]/help                               304 B         201 kB
+├   ├ /ro/help
+├   ├ /en/help
+├   ├ /es/help
+├   └ [+4 more paths]
+├ ● /[locale]/inbox                            6.71 kB         242 kB
+├   ├ /ro/inbox
+├   ├ /en/inbox
+├   ├ /es/inbox
+├   └ [+4 more paths]
+├ ● /[locale]/join                             2.96 kB         204 kB
+├   ├ /ro/join
+├   ├ /en/join
+├   ├ /es/join
+├   └ [+4 more paths]
+├ ● /[locale]/join/fleet                       4.35 kB         205 kB
+├   ├ /ro/join/fleet
+├   ├ /en/join/fleet
+├   ├ /es/join/fleet
+├   └ [+4 more paths]
+├ ● /[locale]/join/franchise                   3.77 kB         204 kB
+├   ├ /ro/join/franchise
+├   ├ /en/join/franchise
+├   ├ /es/join/franchise
+├   └ [+4 more paths]
+├ ● /[locale]/join/host                        5.14 kB         206 kB
+├   ├ /ro/join/host
+├   ├ /en/join/host
+├   ├ /es/join/host
+├   └ [+4 more paths]
+├ ● /[locale]/legal/anpc                         231 B         189 kB
+├   ├ /ro/legal/anpc
+├   ├ /en/legal/anpc
+├   ├ /es/legal/anpc
+├   └ [+4 more paths]
+├ ● /[locale]/legal/cookies                      438 B         187 kB
+├   ├ /ro/legal/cookies
+├   ├ /en/legal/cookies
+├   ├ /es/legal/cookies
+├   └ [+4 more paths]
+├ ● /[locale]/legal/privacy                    1.25 kB         188 kB
+├   ├ /ro/legal/privacy
+├   ├ /en/legal/privacy
+├   ├ /es/legal/privacy
+├   └ [+4 more paths]
+├ ● /[locale]/legal/terms                      1.25 kB         188 kB
+├   ├ /ro/legal/terms
+├   ├ /en/legal/terms
+├   ├ /es/legal/terms
+├   └ [+4 more paths]
+├ ● /[locale]/live                             6.52 kB         216 kB
+├   ├ /ro/live
+├   ├ /en/live
+├   ├ /es/live
+├   └ [+4 more paths]
+├ ƒ /[locale]/live/[id]                        7.63 kB         243 kB
+├ ● /[locale]/messages                            2 kB         203 kB
+├   ├ /ro/messages
+├   ├ /en/messages
+├   ├ /es/messages
+├   └ [+4 more paths]
+├ ƒ /[locale]/messages/[id]                    10.6 kB         240 kB
+├ ● /[locale]/messages/new                        2 kB         203 kB
+├   ├ /ro/messages/new
+├   ├ /en/messages/new
+├   ├ /es/messages/new
+├   └ [+4 more paths]
+├ ● /[locale]/missions                           143 B         216 kB
+├   ├ /ro/missions
+├   ├ /en/missions
+├   ├ /es/missions
+├   └ [+4 more paths]
+├ ƒ /[locale]/missions/[slug]                  9.89 kB         232 kB
+├ ● /[locale]/movies                           11.8 kB         221 kB
+├   ├ /ro/movies
+├   ├ /en/movies
+├   ├ /es/movies
+├   └ [+4 more paths]
+├ ƒ /[locale]/movies/[slug]                    9.92 kB         253 kB
+├ ƒ /[locale]/movies/[slug]/[n]                7.04 kB         227 kB
+├ ● /[locale]/music                            11.7 kB         238 kB
+├   ├ /ro/music
+├   ├ /en/music
+├   ├ /es/music
+├   └ [+4 more paths]
+├ ƒ /[locale]/music/album/[slug]               2.69 kB         234 kB
+├ ƒ /[locale]/music/artist/[slug]              2.39 kB         234 kB
+├ ƒ /[locale]/music/playlist/[id]              1.97 kB         233 kB
+├ ƒ /[locale]/music/track/[slug]               2.21 kB         233 kB
+├ ● /[locale]/news                             9.44 kB         228 kB
+├   ├ /ro/news
+├   ├ /en/news
+├   ├ /es/news
+├   └ [+4 more paths]
+├ ƒ /[locale]/news/[slug]                      8.39 kB         222 kB
+├ ● /[locale]/notifications                    2.97 kB         220 kB
+├   ├ /ro/notifications
+├   ├ /en/notifications
+├   ├ /es/notifications
+├   └ [+4 more paths]
+├ ● /[locale]/orders                           6.23 kB         207 kB
+├   ├ /ro/orders
+├   ├ /en/orders
+├   ├ /es/orders
+├   └ [+4 more paths]
+├ ƒ /[locale]/orders/[id]                      5.12 kB         206 kB
+├ ƒ /[locale]/orders/[id]/return               3.44 kB         204 kB
+├ ƒ /[locale]/post/[slug]                      2.27 kB         203 kB
+├ ● /[locale]/privacy                          1.25 kB         188 kB
+├   ├ /ro/privacy
+├   ├ /en/privacy
+├   ├ /es/privacy
+├   └ [+4 more paths]
+├ ƒ /[locale]/product/[id]                     10.3 kB         275 kB
+├ ƒ /[locale]/product/[id]/opengraph-image     1.25 kB         188 kB
+├ ƒ /[locale]/r/[code]                         1.25 kB         188 kB
+├ ● /[locale]/reels/record                       163 B         263 kB
+├   ├ /ro/reels/record
+├   ├ /en/reels/record
+├   ├ /es/reels/record
+├   └ [+4 more paths]
+├ ● /[locale]/search                           3.05 kB         204 kB
+├   ├ /ro/search
+├   ├ /en/search
+├   ├ /es/search
+├   └ [+4 more paths]
+├ ƒ /[locale]/sellers/[id]                      5.4 kB         215 kB
+├ ● /[locale]/shop                               157 B         247 kB
+├   ├ /ro/shop
+├   ├ /en/shop
+├   ├ /es/shop
+├   └ [+4 more paths]
+├ ● /[locale]/stays                            3.19 kB         237 kB
+├   ├ /ro/stays
+├   ├ /en/stays
+├   ├ /es/stays
+├   └ [+4 more paths]
+├ ƒ /[locale]/stays/[id]                        5.4 kB         244 kB
+├ ● /[locale]/stays/manage                     12.9 kB         248 kB
+├   ├ /ro/stays/manage
+├   ├ /en/stays/manage
+├   ├ /es/stays/manage
+├   └ [+4 more paths]
+├ ● /[locale]/terms                            1.25 kB         188 kB
+├   ├ /ro/terms
+├   ├ /en/terms
+├   ├ /es/terms
+├   └ [+4 more paths]
+├ ƒ /[locale]/u/[username]                     14.8 kB         257 kB
+├ ● /[locale]/upload                             163 B         263 kB
+├   ├ /ro/upload
+├   ├ /en/upload
+├   ├ /es/upload
+├   └ [+4 more paths]
+├ ● /[locale]/v/[id]                           6.85 kB         211 kB
+├   ├ /ro/v/shop
+├   ├ /ro/v/medical
+├   ├ /ro/v/industrial
+├   └ [+221 more paths]
+├ ƒ /[locale]/video/[id]                        5.9 kB         215 kB
+├ ƒ /[locale]/video/[id]/opengraph-image       1.25 kB         188 kB
+├ ƒ /admin                                       174 B         189 kB
+├ ƒ /admin/aplicatii                             893 B         202 kB
+├ ƒ /admin/applications                        1.32 kB         202 kB
+├ ƒ /admin/audit                                 231 B         189 kB
+├ ƒ /admin/commissions                           231 B         189 kB
+├ ƒ /admin/courier-payouts                     1.83 kB         201 kB
+├ ƒ /admin/creator-payouts                       158 B         240 kB
+├ ƒ /admin/creators                              231 B         189 kB
+├ ƒ /admin/cron                                2.02 kB         201 kB
+├ ƒ /admin/disputes                            2.98 kB         204 kB
+├ ƒ /admin/fleet                               1.49 kB         200 kB
+├ ƒ /admin/go                                  13.5 kB         241 kB
+├ ƒ /admin/health                              2.71 kB         202 kB
+├ ƒ /admin/hosts                               1.37 kB         202 kB
+├ ƒ /admin/marketplace                         5.67 kB         206 kB
+├ ƒ /admin/marketplace/[id]                      231 B         189 kB
+├ ƒ /admin/marketplace/import                  4.71 kB         205 kB
+├ ƒ /admin/marketplace/new                       231 B         189 kB
+├ ƒ /admin/merchant-claims                     4.32 kB         227 kB
+├ ƒ /admin/missions                            11.7 kB         244 kB
+├ ƒ /admin/moderation                            651 B         227 kB
+├ ƒ /admin/moderation/[id]                     1.25 kB         228 kB
+├ ƒ /admin/movies                              10.8 kB         246 kB
+├ ƒ /admin/music                               3.59 kB         203 kB
+├ ƒ /admin/news                                5.29 kB         222 kB
+├ ƒ /admin/orders                                231 B         189 kB
+├ ƒ /admin/orders/[id]                         4.31 kB         205 kB
+├ ƒ /admin/payouts                               231 B         189 kB
+├ ƒ /admin/pricing                             1.32 kB         200 kB
+├ ƒ /admin/refunds                               231 B         189 kB
+├ ƒ /admin/returns                             1.02 kB         202 kB
+├ ƒ /admin/reviews                                2 kB         203 kB
+├ ƒ /admin/risk                                1.94 kB         203 kB
+├ ƒ /admin/seller-payouts                        158 B         240 kB
+├ ƒ /admin/sellers                               542 B         200 kB
+├ ƒ /admin/sellers/[id]                        1.21 kB         202 kB
+├ ƒ /admin/strikes                               960 B         202 kB
+├ ƒ /admin/users                               2.25 kB         229 kB
+├ ƒ /admin/videos                              5.09 kB         206 kB
+├ ƒ /api/account/export                        1.25 kB         188 kB
+├ ƒ /api/admin/applications/[id]/approve       1.25 kB         188 kB
+├ ƒ /api/admin/applications/[id]/reject        1.25 kB         188 kB
+├ ƒ /api/admin/courier-payouts                 1.25 kB         188 kB
+├ ƒ /api/admin/creator-fund                    1.25 kB         188 kB
+├ ƒ /api/admin/creator-payouts                 1.25 kB         188 kB
+├ ƒ /api/admin/cron/[jobName]/trigger          1.25 kB         188 kB
+├ ƒ /api/admin/disputes                        1.25 kB         188 kB
+├ ƒ /api/admin/disputes/[disputeId]/suggest    1.25 kB         188 kB
+├ ƒ /api/admin/disputes/[disputeId]/upload     1.25 kB         188 kB
+├ ƒ /api/admin/finance/summary                 1.25 kB         188 kB
+├ ƒ /api/admin/fleet-partners/[id]             1.25 kB         188 kB
+├ ƒ /api/admin/fleet/[id]                      1.25 kB         188 kB
+├ ƒ /api/admin/fly/price-watch                 1.25 kB         188 kB
+├ ƒ /api/admin/fulfillment                     1.25 kB         188 kB
+├ ƒ /api/admin/go/drivers                      1.25 kB         188 kB
+├ ƒ /api/admin/go/drivers/[id]/documents       1.25 kB         188 kB
+├ ƒ /api/admin/go/overview                     1.25 kB         188 kB
+├ ƒ /api/admin/go/rides/[id]                   1.25 kB         188 kB
+├ ƒ /api/admin/go/settings                     1.25 kB         188 kB
+├ ƒ /api/admin/hosts/[id]                      1.25 kB         188 kB
+├ ƒ /api/admin/import                          1.25 kB         188 kB
+├ ƒ /api/admin/login                           1.25 kB         188 kB
+├ ƒ /api/admin/logout                          1.25 kB         188 kB
+├ ƒ /api/admin/marketplace                     1.25 kB         188 kB
+├ ƒ /api/admin/merchant-claims/[id]            1.25 kB         188 kB
+├ ƒ /api/admin/merchants/[id]/approve          1.25 kB         188 kB
+├ ƒ /api/admin/merchants/[id]/reject           1.25 kB         188 kB
+├ ƒ /api/admin/missions                        1.25 kB         188 kB
+├ ƒ /api/admin/missions/[id]                   1.25 kB         188 kB
+├ ƒ /api/admin/missions/submissions            1.25 kB         188 kB
+├ ƒ /api/admin/moderation/[id]/ban-creator     1.25 kB         188 kB
+├ ƒ /api/admin/moderation/[id]/delete-video    1.25 kB         188 kB
+├ ƒ /api/admin/moderation/[id]/dismiss         1.25 kB         188 kB
+├ ƒ /api/admin/moderation/[id]/hide-video      1.25 kB         188 kB
+├ ƒ /api/admin/moderation/videos/[id]          1.25 kB         188 kB
+├ ƒ /api/admin/movies                          1.25 kB         188 kB
+├ ƒ /api/admin/movies/[id]                     1.25 kB         188 kB
+├ ƒ /api/admin/movies/[id]/episodes            1.25 kB         188 kB
+├ ƒ /api/admin/movies/publishers               1.25 kB         188 kB
+├ ƒ /api/admin/music/artists                   1.25 kB         188 kB
+├ ƒ /api/admin/music/tracks                    1.25 kB         188 kB
+├ ƒ /api/admin/music/tracks/[id]               1.25 kB         188 kB
+├ ƒ /api/admin/news                            1.25 kB         188 kB
+├ ƒ /api/admin/news/[id]                       1.25 kB         188 kB
+├ ƒ /api/admin/orders                          1.25 kB         188 kB
+├ ƒ /api/admin/orders/[id]/fraud-decision      1.25 kB         188 kB
+├ ƒ /api/admin/orders/risk                     1.25 kB         188 kB
+├ ƒ /api/admin/pricing                         1.25 kB         188 kB
+├ ƒ /api/admin/returns/[orderId]/approve       1.25 kB         188 kB
+├ ƒ /api/admin/returns/[orderId]/reject        1.25 kB         188 kB
+├ ƒ /api/admin/reviews/[id]                    1.25 kB         188 kB
+├ ƒ /api/admin/reviews/[id]/hide               1.25 kB         188 kB
+├ ƒ /api/admin/reviews/[id]/unhide             1.25 kB         188 kB
+├ ƒ /api/admin/seller-payouts                  1.25 kB         188 kB
+├ ƒ /api/admin/strikes                         1.25 kB         188 kB
+├ ƒ /api/admin/users/[id]/admin-role           1.25 kB         188 kB
+├ ƒ /api/admin/users/[id]/fraud-block          1.25 kB         188 kB
+├ ƒ /api/admin/users/[id]/role                 1.25 kB         188 kB
+├ ƒ /api/admin/users/[id]/suspend              1.25 kB         188 kB
+├ ƒ /api/admin/users/[id]/unsuspend            1.25 kB         188 kB
+├ ƒ /api/admin/video-queue                     1.25 kB         188 kB
+├ ƒ /api/admin/videos                          1.25 kB         188 kB
+├ ƒ /api/admin/videos/[id]/reencode            1.25 kB         188 kB
+├ ƒ /api/apply-seller                          1.25 kB         188 kB
+├ ƒ /api/audio/feed                            1.25 kB         188 kB
+├ ƒ /api/audio/search                          1.25 kB         188 kB
+├ ƒ /api/audio/tracks                          1.25 kB         188 kB
+├ ƒ /api/auth                                  1.25 kB         188 kB
+├ ƒ /api/auth/me                               1.25 kB         188 kB
+├ ƒ /api/auth/oauth/apple/callback             1.25 kB         188 kB
+├ ƒ /api/auth/oauth/apple/start                1.25 kB         188 kB
+├ ƒ /api/auth/oauth/google/callback            1.25 kB         188 kB
+├ ƒ /api/auth/oauth/google/start               1.25 kB         188 kB
+├ ƒ /api/auth/orders                           1.25 kB         188 kB
+├ ƒ /api/auth/token                            1.25 kB         188 kB
+├ ƒ /api/auth/token/refresh                    1.25 kB         188 kB
+├ ƒ /api/auth/token/revoke                     1.25 kB         188 kB
+├ ƒ /api/bookings/slots                        1.25 kB         188 kB
+├ ƒ /api/campaigns                             1.25 kB         188 kB
+├ ƒ /api/campaigns/manage                      1.25 kB         188 kB
+├ ƒ /api/campaigns/manage/expenses             1.25 kB         188 kB
+├ ƒ /api/cart                                  1.25 kB         188 kB
+├ ƒ /api/cart/items                            1.25 kB         188 kB
+├ ƒ /api/cart/items/[id]                       1.25 kB         188 kB
+├ ƒ /api/cart/merge                            1.25 kB         188 kB
+├ ƒ /api/categories                            1.25 kB         188 kB
+├ ƒ /api/causes                                1.25 kB         188 kB
+├ ƒ /api/chat                                  1.25 kB         188 kB
+├ ƒ /api/checkout                              1.25 kB         188 kB
+├ ƒ /api/checkout/create-intent                1.25 kB         188 kB
+├ ƒ /api/collections                           1.25 kB         188 kB
+├ ƒ /api/collections/[id]                      1.25 kB         188 kB
+├ ƒ /api/collections/[id]/items                1.25 kB         188 kB
+├ ƒ /api/collections/[id]/items/[videoId]      1.25 kB         188 kB
+├ ƒ /api/comments/[id]/like                    1.25 kB         188 kB
+├ ƒ /api/comments/[id]/pin                     1.25 kB         188 kB
+├ ƒ /api/comments/[id]/report                  1.25 kB         188 kB
+├ ƒ /api/couriers                              1.25 kB         188 kB
+├ ƒ /api/couriers/active-job                   1.25 kB         188 kB
+├ ƒ /api/couriers/connect                      1.25 kB         188 kB
+├ ƒ /api/couriers/earnings                     1.25 kB         188 kB
+├ ƒ /api/couriers/me                           1.25 kB         188 kB
+├ ƒ /api/couriers/my-code                      1.25 kB         188 kB
+├ ƒ /api/couriers/payouts                      1.25 kB         188 kB
+├ ƒ /api/couriers/status                       1.25 kB         188 kB
+├ ƒ /api/creator/analytics                     1.25 kB         188 kB
+├ ƒ /api/creator/apply                         1.25 kB         188 kB
+├ ƒ /api/creator/earnings                      1.25 kB         188 kB
+├ ƒ /api/creator/movies                        1.25 kB         188 kB
+├ ƒ /api/creator/movies/[id]                   1.25 kB         188 kB
+├ ƒ /api/creator/movies/[id]/episodes          1.25 kB         188 kB
+├ ƒ /api/creator/music                         1.25 kB         188 kB
+├ ƒ /api/creator/music/albums                  1.25 kB         188 kB
+├ ƒ /api/creator/music/tracks                  1.25 kB         188 kB
+├ ƒ /api/creator/music/tracks/[id]             1.25 kB         188 kB
+├ ƒ /api/creator/music/upload-url              1.25 kB         188 kB
+├ ƒ /api/creator/payouts                       1.25 kB         188 kB
+├ ƒ /api/creator/products/search               1.25 kB         188 kB
+├ ƒ /api/creator/upload-session                1.25 kB         188 kB
+├ ƒ /api/creator/upload-session/[id]           1.25 kB         188 kB
+├ ƒ /api/creator/upload-session/[id]/complete  1.25 kB         188 kB
+├ ƒ /api/creator/upload-session/[id]/parts     1.25 kB         188 kB
+├ ƒ /api/creator/videos                        1.25 kB         188 kB
+├ ƒ /api/creator/videos/[id]                   1.25 kB         188 kB
+├ ƒ /api/creator/videos/[id]/captions          1.25 kB         188 kB
+├ ƒ /api/creator/videos/[id]/cover             1.25 kB         188 kB
+├ ƒ /api/creator/videos/[id]/product-tags      1.25 kB         188 kB
+├ ƒ /api/creator/videos/[id]/reprocess         1.25 kB         188 kB
+├ ƒ /api/creators/[id]                         1.25 kB         188 kB
+├ ƒ /api/cron/abandoned-cart                   1.25 kB         188 kB
+├ ƒ /api/cron/aggregate-video-stats            1.25 kB         188 kB
+├ ƒ /api/cron/alert-dispute-deadlines          1.25 kB         188 kB
+├ ƒ /api/cron/alert-video-queue                1.25 kB         188 kB
+├ ƒ /api/cron/backup-report                    1.25 kB         188 kB
+├ ƒ /api/cron/bing-url-submit                  1.25 kB         188 kB
+├ ƒ /api/cron/checkout-health                  1.25 kB         188 kB
+├ ƒ /api/cron/classify-pending                 1.25 kB         188 kB
+├ ƒ /api/cron/cleanup-tokens                   1.25 kB         188 kB
+├ ƒ /api/cron/daily-maintenance                1.25 kB         188 kB
+├ ƒ /api/cron/disk-watch                       1.25 kB         188 kB
+├ ƒ /api/cron/dispatch-tick                    1.25 kB         188 kB
+├ ƒ /api/cron/email-digest                     1.25 kB         188 kB
+├ ƒ /api/cron/embed-batch                      1.25 kB         188 kB
+├ ƒ /api/cron/fly-price-watch                  1.25 kB         188 kB
+├ ƒ /api/cron/indexnow                         1.25 kB         188 kB
+├ ƒ /api/cron/indexnow-submit                  1.25 kB         188 kB
+├ ƒ /api/cron/live-sweep                       1.25 kB         188 kB
+├ ƒ /api/cron/news-pipeline                    1.25 kB         188 kB
+├ ƒ /api/cron/prewarm-catalogs                 1.25 kB         188 kB
+├ ƒ /api/cron/process-payouts                  1.25 kB         188 kB
+├ ƒ /api/cron/publish-scheduled                1.25 kB         188 kB
+├ ƒ /api/cron/reconcile-wallets                1.25 kB         188 kB
+├ ƒ /api/cron/refresh-fx                       1.25 kB         188 kB
+├ ƒ /api/cron/refresh-rank                     1.25 kB         188 kB
+├ ƒ /api/cron/stays-lifecycle                    325 B         199 kB
+├ ƒ /api/cron/strikes-decay                    1.25 kB         188 kB
+├ ƒ /api/cron/suspend-unverified               1.25 kB         188 kB
+├ ƒ /api/cron/watchdog-rides                   1.25 kB         188 kB
+├ ƒ /api/cron/watchdog-videos                  1.25 kB         188 kB
+├ ƒ /api/dispatch/[jobId]/stream               1.25 kB         188 kB
+├ ƒ /api/dm/blocks                             1.25 kB         188 kB
+├ ƒ /api/dm/conversations                      1.25 kB         188 kB
+├ ƒ /api/dm/conversations/[id]                 1.25 kB         188 kB
+├ ƒ /api/dm/conversations/[id]/attachments     1.25 kB         188 kB
+├ ƒ /api/dm/conversations/[id]/messages        1.25 kB         188 kB
+├ ƒ /api/dm/conversations/[id]/read            1.25 kB         188 kB
+├ ƒ /api/dm/conversations/[id]/report          1.25 kB         188 kB
+├ ƒ /api/dm/conversations/[id]/typing          1.25 kB         188 kB
+├ ƒ /api/dm/stream/[id]                        1.25 kB         188 kB
+├ ƒ /api/donations                             1.25 kB         188 kB
+├ ƒ /api/explore/feed                          1.25 kB         188 kB
+├ ƒ /api/feed/action                           1.25 kB         188 kB
+├ ƒ /api/feed/event                            1.25 kB         188 kB
+├ ƒ /api/feed/events/batch                     1.25 kB         188 kB
+├ ƒ /api/feed/offers                           1.25 kB         188 kB
+├ ƒ /api/feed/offers/liked                     1.25 kB         188 kB
+├ ƒ /api/feed/universal                        1.25 kB         188 kB
+├ ƒ /api/fleet-partners                        1.25 kB         188 kB
+├ ƒ /api/fly/deals                             1.25 kB         188 kB
+├ ƒ /api/fly/orders                            1.25 kB         188 kB
+├ ƒ /api/fly/price-check                       1.25 kB         188 kB
+├ ƒ /api/fly/search                            1.25 kB         188 kB
+├ ƒ /api/fly/waitlist                          1.25 kB         188 kB
+├ ƒ /api/founding-slots                        1.25 kB         188 kB
+├ ○ /api/fx                                    1.25 kB         188 kB          5m      1y
+├ ƒ /api/gaming/games                          1.25 kB         188 kB
+├ ƒ /api/gaming/profile                        1.25 kB         188 kB
+├ ƒ /api/gaming/score                          1.25 kB         188 kB
+├ ƒ /api/gaming/session/start                  1.25 kB         188 kB
+├ ƒ /api/gaming/trivia                         1.25 kB         188 kB
+├ ƒ /api/gaming/trivia/answer                  1.25 kB         188 kB
+├ ƒ /api/geo                                   1.25 kB         188 kB
+├ ƒ /api/geo/reverse                           1.25 kB         188 kB
+├ ƒ /api/geo/search                            1.25 kB         188 kB
+├ ƒ /api/go/track/[token]                      1.25 kB         188 kB
+├ ƒ /api/health                                1.25 kB         188 kB
+├ ƒ /api/health/db                             1.25 kB         188 kB
+├ ƒ /api/health/full                           1.25 kB         188 kB
+├ ƒ /api/health/queue                          1.25 kB         188 kB
+├ ƒ /api/health/r2                             1.25 kB         188 kB
+├ ƒ /api/health/redis                          1.25 kB         188 kB
+├ ƒ /api/host/bookings                         1.25 kB         188 kB
+├ ƒ /api/host/bookings/[id]/accept               325 B         199 kB
+├ ƒ /api/host/bookings/[id]/decline              325 B         199 kB
+├ ƒ /api/host/listings                         1.25 kB         188 kB
+├ ƒ /api/host/listings/[id]                    1.25 kB         188 kB
+├ ƒ /api/host/listings/[id]/availability       1.25 kB         188 kB
+├ ƒ /api/host/upload                           1.25 kB         188 kB
+├ ƒ /api/hosts/apply                           1.25 kB         188 kB
+├ ƒ /api/i18n/preferences                      1.25 kB         188 kB
+├ ƒ /api/inquiries                             1.25 kB         188 kB
+├ ƒ /api/internal/moderation/decide            1.25 kB         188 kB
+├ ƒ /api/internal/moderation/pending           1.25 kB         188 kB
+├ ƒ /api/internal/send-email                   1.25 kB         188 kB
+├ ƒ /api/listings                              1.25 kB         188 kB
+├ ƒ /api/live/host-products                    1.25 kB         188 kB
+├ ƒ /api/live/streams                          1.25 kB         188 kB
+├ ƒ /api/live/streams/[id]                     1.25 kB         188 kB
+├ ƒ /api/live/streams/[id]/chat                1.25 kB         188 kB
+├ ƒ /api/live/streams/[id]/heartbeat           1.25 kB         188 kB
+├ ƒ /api/live/streams/[id]/ice                 1.25 kB         188 kB
+├ ƒ /api/live/streams/[id]/items               1.25 kB         188 kB
+├ ƒ /api/live/streams/[id]/pin                 1.25 kB         188 kB
+├ ƒ /api/live/streams/[id]/poll                1.25 kB         188 kB
+├ ƒ /api/live/streams/[id]/publish             1.25 kB         188 kB
+├ ƒ /api/live/streams/[id]/watch               1.25 kB         188 kB
+├ ƒ /api/local-orders                          1.25 kB         188 kB
+├ ƒ /api/local-orders/[id]                     1.25 kB         188 kB
+├ ƒ /api/local-orders/[id]/cancel                325 B         199 kB
+├ ƒ /api/local-orders/[id]/dispatch            1.25 kB         188 kB
+├ ƒ /api/local-orders/[id]/status                325 B         199 kB
+├ ƒ /api/me/activity                           1.25 kB         188 kB
+├ ƒ /api/me/notifications                      1.25 kB         188 kB
+├ ƒ /api/me/referral                           1.25 kB         188 kB
+├ ƒ /api/merchants                             1.25 kB         188 kB
+├ ƒ /api/merchants/[id]/claim                  1.25 kB         188 kB
+├ ƒ /api/merchants/[id]/delivery-quote         1.25 kB         188 kB
+├ ƒ /api/merchants/[id]/menu                   1.25 kB         188 kB
+├ ƒ /api/merchants/[id]/orders                 1.25 kB         188 kB
+├ ƒ /api/merchants/[id]/suggest                1.25 kB         188 kB
+├ ƒ /api/merchants/apply                       1.25 kB         188 kB
+├ ƒ /api/merchants/mine                        1.25 kB         188 kB
+├ ƒ /api/messenger/calls/[id]/decline          1.25 kB         188 kB
+├ ƒ /api/messenger/calls/[id]/end              1.25 kB         188 kB
+├ ƒ /api/messenger/calls/incoming              1.25 kB         188 kB
+├ ƒ /api/messenger/calls/token                 1.25 kB         188 kB
+├ ƒ /api/messenger/calls/webhook               1.25 kB         188 kB
+├ ƒ /api/missions                              1.25 kB         188 kB
+├ ƒ /api/missions/[slug]/submit                1.25 kB         188 kB
+├ ƒ /api/missions/active                       1.25 kB         188 kB
+├ ƒ /api/movies                                1.25 kB         188 kB
+├ ƒ /api/movies/[slug]                         1.25 kB         188 kB
+├ ƒ /api/movies/[slug]/episodes/[n]/play       1.25 kB         188 kB
+├ ƒ /api/movies/[slug]/unlock                  1.25 kB         188 kB
+├ ƒ /api/movies/[slug]/watchlist               1.25 kB         188 kB
+├ ƒ /api/movies/home                           1.25 kB         188 kB
+├ ƒ /api/movies/progress                       1.25 kB         188 kB
+├ ƒ /api/movies/stream/[token]/[...path]       1.25 kB         188 kB
+├ ƒ /api/music/albums/[slug]                   1.25 kB         188 kB
+├ ƒ /api/music/albums/[slug]/unlock            1.25 kB         188 kB
+├ ƒ /api/music/artists/[slug]                  1.25 kB         188 kB
+├ ƒ /api/music/home                            1.25 kB         188 kB
+├ ƒ /api/music/playlists                       1.25 kB         188 kB
+├ ƒ /api/music/playlists/[id]                  1.25 kB         188 kB
+├ ƒ /api/music/playlists/[id]/items            1.25 kB         188 kB
+├ ƒ /api/music/plays                           1.25 kB         188 kB
+├ ƒ /api/music/stream/[token]/[...path]        1.25 kB         188 kB
+├ ƒ /api/music/tracks                          1.25 kB         188 kB
+├ ƒ /api/music/tracks/[slug]                   1.25 kB         188 kB
+├ ƒ /api/music/tracks/[slug]/like              1.25 kB         188 kB
+├ ƒ /api/music/tracks/[slug]/play              1.25 kB         188 kB
+├ ƒ /api/music/tracks/[slug]/unlock            1.25 kB         188 kB
+├ ƒ /api/news                                  1.25 kB         188 kB
+├ ƒ /api/news/[slug]/comments                  1.25 kB         188 kB
+├ ƒ /api/news/[slug]/comments/[id]             1.25 kB         188 kB
+├ ƒ /api/news/[slug]/reactions                 1.25 kB         188 kB
+├ ƒ /api/notifications                         1.25 kB         188 kB
+├ ƒ /api/notifications/[id]/read               1.25 kB         188 kB
+├ ƒ /api/notifications/mark-all-read           1.25 kB         188 kB
+├ ƒ /api/notifications/subscribe               1.25 kB         188 kB
+├ ƒ /api/onboarding/interests                  1.25 kB         188 kB
+├ ƒ /api/onboarding/skip                       1.25 kB         188 kB
+├ ƒ /api/orders                                1.25 kB         188 kB
+├ ƒ /api/orders/[id]                           1.25 kB         188 kB
+├ ƒ /api/orders/[id]/return                    1.25 kB         188 kB
+├ ƒ /api/orders/[id]/return/photos             1.25 kB         188 kB
+├ ƒ /api/partner/ping                          1.25 kB         188 kB
+├ ƒ /api/partner/products                      1.25 kB         188 kB
+├ ƒ /api/posts                                 1.25 kB         188 kB
+├ ƒ /api/posts/[slug]                          1.25 kB         188 kB
+├ ƒ /api/posts/[slug]/vote                     1.25 kB         188 kB
+├ ƒ /api/products                              1.25 kB         188 kB
+├ ƒ /api/products/[id]                         1.25 kB         188 kB
+├ ƒ /api/products/[id]/like                    1.25 kB         188 kB
+├ ƒ /api/products/[id]/reviews                 1.25 kB         188 kB
+├ ƒ /api/products/[id]/save                    1.25 kB         188 kB
+├ ƒ /api/products/[id]/share                   1.25 kB         188 kB
+├ ƒ /api/products/[id]/videos                  1.25 kB         188 kB
+├ ƒ /api/products/similar                      1.25 kB         188 kB
+├ ƒ /api/push/subscribe                        1.25 kB         188 kB
+├ ƒ /api/push/unsubscribe                      1.25 kB         188 kB
+├ ƒ /api/push/vapid-public-key                 1.25 kB         188 kB
+├ ƒ /api/ready                                 1.25 kB         188 kB
+├ ƒ /api/referral/driver-code                  1.25 kB         188 kB
+├ ƒ /api/reviews/[id]                          1.25 kB         188 kB
+├ ƒ /api/reviews/[id]/helpful                  1.25 kB         188 kB
+├ ƒ /api/rides                                 1.25 kB         188 kB
+├ ƒ /api/rides/[id]                            1.25 kB         188 kB
+├ ƒ /api/rides/[id]/dispatch                   1.25 kB         188 kB
+├ ƒ /api/rides/[id]/pay                        1.25 kB         188 kB
+├ ƒ /api/rides/[id]/rating                     1.25 kB         188 kB
+├ ƒ /api/rides/[id]/status                     1.25 kB         188 kB
+├ ƒ /api/rides/[id]/stream                     1.25 kB         188 kB
+├ ƒ /api/rides/estimate                        1.25 kB         188 kB
+├ ƒ /api/rides/quote                           1.25 kB         188 kB
+├ ƒ /api/search                                1.25 kB         188 kB
+├ ƒ /api/search/suggest                        1.25 kB         188 kB
+├ ƒ /api/seller/ads                            1.25 kB         188 kB
+├ ƒ /api/seller/ads/[id]/toggle                1.25 kB         188 kB
+├ ƒ /api/seller/auth                           1.25 kB         188 kB
+├ ƒ /api/seller/catalog/import-viral           1.25 kB         188 kB
+├ ƒ /api/seller/catalog/viral-products         1.25 kB         188 kB
+├ ƒ /api/seller/clients                        1.25 kB         188 kB
+├ ƒ /api/seller/dashboard                      1.25 kB         188 kB
+├ ƒ /api/seller/erp/connect                    1.25 kB         188 kB
+├ ƒ /api/seller/erp/sync                       1.25 kB         188 kB
+├ ƒ /api/seller/invoices                       1.25 kB         188 kB
+├ ƒ /api/seller/missions                       1.25 kB         188 kB
+├ ƒ /api/seller/missions/[id]/close            1.25 kB         188 kB
+├ ƒ /api/seller/missions/[id]/fund             1.25 kB         188 kB
+├ ƒ /api/seller/missions/[id]/submissions      1.25 kB         188 kB
+├ ƒ /api/seller/missions/submissions/[id]      1.25 kB         188 kB
+├ ƒ /api/seller/node/heartbeat                 1.25 kB         188 kB
+├ ƒ /api/seller/node/status                    1.25 kB         188 kB
+├ ƒ /api/seller/orders                         1.25 kB         188 kB
+├ ƒ /api/seller/orders/[id]/awb                1.25 kB         188 kB
+├ ƒ /api/seller/orders/[id]/refund             1.25 kB         188 kB
+├ ƒ /api/seller/orders/[id]/return/accept      1.25 kB         188 kB
+├ ƒ /api/seller/orders/[id]/return/reject      1.25 kB         188 kB
+├ ƒ /api/seller/orders/[id]/status             1.25 kB         188 kB
+├ ƒ /api/seller/payouts                        1.25 kB         188 kB
+├ ƒ /api/seller/pos/sale                       1.25 kB         188 kB
+├ ƒ /api/seller/products                       1.25 kB         188 kB
+├ ƒ /api/seller/products/[id]                  1.25 kB         188 kB
+├ ƒ /api/seller/products/classify              1.25 kB         188 kB
+├ ƒ /api/seller/products/upload-image          1.25 kB         188 kB
+├ ƒ /api/seller/selena                         1.25 kB         188 kB
+├ ƒ /api/seller/settings                       1.25 kB         188 kB
+├ ƒ /api/seller/stripe-connect                 1.25 kB         188 kB
+├ ƒ /api/shop/products                         1.25 kB         188 kB
+├ ƒ /api/stays/availability                    1.25 kB         188 kB
+├ ƒ /api/stays/bookings                        1.25 kB         188 kB
+├ ƒ /api/stays/bookings/[id]                     325 B         199 kB
+├ ƒ /api/stays/bookings/[id]/cancel              325 B         199 kB
+├ ƒ /api/stays/bookings/[id]/confirm-card        325 B         199 kB
+├ ƒ /api/stays/bookings/[id]/create-intent       325 B         199 kB
+├ ƒ /api/stays/bookings/[id]/pay                 325 B         199 kB
+├ ƒ /api/stays/bookings/[id]/review            1.25 kB         188 kB
+├ ƒ /api/stays/cities                          1.25 kB         188 kB
+├ ƒ /api/stays/local                           1.25 kB         188 kB
+├ ƒ /api/stays/mine                            1.25 kB         188 kB
+├ ƒ /api/stays/quote                           1.25 kB         188 kB
+├ ƒ /api/stays/search                          1.25 kB         188 kB
+├ ƒ /api/stripe-connect/login-link             1.25 kB         188 kB
+├ ƒ /api/stripe-connect/onboarding/start       1.25 kB         188 kB
+├ ƒ /api/stripe-connect/status                 1.25 kB         188 kB
+├ ƒ /api/trips/packages                        1.25 kB         188 kB
+├ ƒ /api/unsubscribe                           1.25 kB         188 kB
+├ ƒ /api/upload                                1.25 kB         188 kB
+├ ƒ /api/users/[id]/block                      1.25 kB         188 kB
+├ ƒ /api/users/[id]/follow                     1.25 kB         188 kB
+├ ƒ /api/users/[id]/followers                  1.25 kB         188 kB
+├ ƒ /api/users/[id]/following                  1.25 kB         188 kB
+├ ƒ /api/users/[id]/report                     1.25 kB         188 kB
+├ ƒ /api/users/me                              1.25 kB         188 kB
+├ ƒ /api/users/me/2fa/disable                  1.25 kB         188 kB
+├ ƒ /api/users/me/2fa/enable                   1.25 kB         188 kB
+├ ƒ /api/users/me/2fa/init                     1.25 kB         188 kB
+├ ƒ /api/users/me/2fa/regenerate-backup        1.25 kB         188 kB
+├ ƒ /api/users/me/addresses                    1.25 kB         188 kB
+├ ƒ /api/users/me/addresses/[id]               1.25 kB         188 kB
+├ ƒ /api/users/me/avatar                       1.25 kB         188 kB
+├ ƒ /api/users/me/notification-preferences     1.25 kB         188 kB
+├ ƒ /api/users/me/oauth/[provider]             1.25 kB         188 kB
+├ ƒ /api/users/me/onboarding                   1.25 kB         188 kB
+├ ƒ /api/users/me/onboarding/complete          1.25 kB         188 kB
+├ ƒ /api/users/me/privacy                      1.25 kB         188 kB
+├ ƒ /api/users/me/saved-videos                 1.25 kB         188 kB
+├ ƒ /api/users/me/stats                        1.25 kB         188 kB
+├ ƒ /api/users/me/suggested-creators           1.25 kB         188 kB
+├ ƒ /api/users/profile/[username]              1.25 kB         188 kB
+├ ƒ /api/users/profile/[username]/videos       1.25 kB         188 kB
+├ ƒ /api/users/search                          1.25 kB         188 kB
+├ ƒ /api/users/username-check                  1.25 kB         188 kB
+├ ƒ /api/v1/[...path]                          1.25 kB         188 kB
+├ ƒ /api/v1/creator/[id]/dashboard             1.25 kB         188 kB
+├ ƒ /api/v1/creator/[id]/profile               1.25 kB         188 kB
+├ ƒ /api/v1/events                             1.25 kB         188 kB
+├ ƒ /api/v1/events/batch                       1.25 kB         188 kB
+├ ƒ /api/v1/feed                               1.25 kB         188 kB
+├ ƒ /api/videos/[id]/captions                  1.25 kB         188 kB
+├ ƒ /api/videos/[id]/captions/list             1.25 kB         188 kB
+├ ƒ /api/videos/[id]/comments                  1.25 kB         188 kB
+├ ƒ /api/videos/[id]/event                     1.25 kB         188 kB
+├ ƒ /api/videos/[id]/feedback                  1.25 kB         188 kB
+├ ƒ /api/videos/[id]/hidden                    1.25 kB         188 kB
+├ ƒ /api/videos/[id]/like                      1.25 kB         188 kB
+├ ƒ /api/videos/[id]/product-vote              1.25 kB         188 kB
+├ ƒ /api/videos/[id]/products                  1.25 kB         188 kB
+├ ƒ /api/videos/[id]/quicksave                 1.25 kB         188 kB
+├ ƒ /api/videos/[id]/report                    1.25 kB         188 kB
+├ ƒ /api/videos/[id]/save                      1.25 kB         188 kB
+├ ƒ /api/videos/[id]/share                     1.25 kB         188 kB
+├ ƒ /api/videos/[id]/status                    1.25 kB         188 kB
+├ ƒ /api/videos/[id]/view                      1.25 kB         188 kB
+├ ƒ /api/vitals                                1.25 kB         188 kB
+├ ƒ /api/webhooks/stripe                         325 B         199 kB
+├ ƒ /auth                                      1.25 kB         188 kB
+├ ƒ /auth/forgot                               1.16 kB         202 kB
+├ ƒ /auth/login                                  139 B         208 kB
+├ ƒ /auth/reset                                1.56 kB         202 kB
+├ ƒ /auth/signup                                 140 B         208 kB
+├ ƒ /categories/[slug]                           624 B         194 kB
+├ ƒ /cauze                                     3.26 kB         202 kB
+├ ƒ /courier                                   9.79 kB         242 kB
+├ ƒ /courier/code                              11.6 kB         212 kB
+├ ƒ /courier/earnings                          2.96 kB         202 kB
+├ ƒ /creator                                     300 B         201 kB
+├ ƒ /creator/[id]                                624 B         194 kB
+├ ƒ /creator/analytics                         4.71 kB         205 kB
+├ ƒ /creator/drafts                            2.18 kB         203 kB
+├ ƒ /creator/earnings                          3.37 kB         213 kB
+├ ƒ /creator/live                              8.48 kB         231 kB
+├ ƒ /creator/live/[id]                         8.55 kB         239 kB
+├ ƒ /creator/movies                            4.96 kB         204 kB
+├ ƒ /creator/music                             6.29 kB         205 kB
+├ ƒ /creator/payouts                           8.18 kB         229 kB
+├ ƒ /creator/videos                            4.72 kB         214 kB
+├ ƒ /feed.xml                                  1.25 kB         188 kB
+├ ƒ /music/sitemap.xml                         1.25 kB         188 kB
+├ ƒ /onboarding                                1.91 kB         201 kB
+├ ƒ /products/sitemap/[id]                     1.25 kB         188 kB
+├ ƒ /r/[code]                                  1.25 kB         188 kB
+├ ƒ /seller                                    4.12 kB         214 kB
+├ ƒ /seller/ads                                4.94 kB         204 kB
+├ ƒ /seller/cazari                             1.25 kB         188 kB
+├ ƒ /seller/clients                            3.37 kB         206 kB
+├ ƒ /seller/erp                                2.81 kB         227 kB
+├ ƒ /seller/invoices                           8.65 kB         208 kB
+├ ƒ /seller/listings                           6.04 kB         205 kB
+├ ƒ /seller/login                              3.42 kB         204 kB
+├ ƒ /seller/merchant                           16.9 kB         250 kB
+├ ƒ /seller/missions                           15.9 kB         243 kB
+├ ƒ /seller/orders                             12.1 kB         242 kB
+├ ƒ /seller/payouts                            3.51 kB         228 kB
+├ ƒ /seller/pos                                5.24 kB         204 kB
+├ ƒ /seller/products                           13.9 kB         244 kB
+├ ƒ /seller/returns                            2.69 kB         202 kB
+├ ƒ /seller/settings                           3.61 kB         208 kB
+├ ƒ /sitemap.xml                               1.25 kB         188 kB
+├ ƒ /static-sitemap.xml                        1.25 kB         188 kB
+├ ƒ /unsubscribe                                 231 B         189 kB
+└ ƒ /videos/sitemap.xml                        1.25 kB         188 kB
++ First Load JS shared by all                   187 kB
+  ├ chunks/4bd1b696-bad92808725a934a.js        54.2 kB
+  ├ chunks/55857-52f399c33288070a.js            128 kB
+  └ other shared chunks (total)                4.99 kB
+
+
+ƒ Middleware                                    105 kB
+
+○  (Static)   prerendered as static content
+●  (SSG)      prerendered as static HTML (uses generateStaticParams)
+ƒ  (Dynamic)  server-rendered on demand
+

@@ -1,0 +1,40 @@
+
+-------------------------------------------------------------------------------
+   ROBOCOPY     ::     Robust File Copy for Windows                              
+-------------------------------------------------------------------------------
+
+  Started : luni, 28 septembrie 2026 15:57:40
+   Source : D:\Therapium\
+     Dest : E:\Therapium\
+
+    Files : *.*
+	    
+  Options : *.* /NDL /S /E /DCOPY:DAT /COPY:DAT /NP /XJ /MT:16 /R:1 /W:1 
+
+------------------------------------------------------------------------------
+
+	    New File  		     164	D:\Therapium\pdp-work\cosm3\_reg_inflight.json
+	    Newer     		       3	D:\Therapium\pdp-work\cosm3\_reg_next.txt
+	    Newer     		    2538	D:\Therapium\pdp-work\cosm3\_reg_verified.json
+	    Newer     		     127	D:\Therapium\pdp-work\cosm3\_vr_tmp.txt
+	    New File  		      55	D:\Therapium\pdp-work\cosm3\out\silk-skin-body-serum-spices-sandalwood\reg-report.json
+	    Newer     		   73322	D:\Therapium\pdp-work\cosm3\out\silk-skin-body-serum-spices-sandalwood\state.json
+	    New File  		   16283	D:\Therapium\pdp-work\cosm3\out\sun-protection-spf50-stick-no-tint\reg-1.json
+	    New File  		   16400	D:\Therapium\pdp-work\cosm3\out\sun-protection-spf50-stick-no-tint\reg-2.json
+	    New File  		   18372	D:\Therapium\pdp-work\cosm3\out\sun-protection-spf50-stick-no-tint\reg-3.json
+	    New File  		    3642	D:\Therapium\pdp-work\cosm3\out\sun-protection-spf50-stick-no-tint\reg-4.json
+	    New File  		   35398	D:\Therapium\pdp-work\cosm3\out\sun-protection-spf50-stick-no-tint\state.json
+
+------------------------------------------------------------------------------
+
+               Total    Copied   Skipped  Mismatch    FAILED    Extras
+    Dirs :      1406      1406      1406         0         0         0
+   Files :     16341        11     16330         0         0         0
+   Bytes :   3.825 g   162.4 k   3.825 g         0         0         0
+   Times :   0:00:00   0:00:00                       0:00:00   0:00:00
+
+
+   Speed :           7.230.608 Bytes/sec.
+   Speed :             413,739 MegaBytes/min.
+   Ended : luni, 28 septembrie 2026 15:57:40
+

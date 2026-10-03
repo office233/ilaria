@@ -1,0 +1,19 @@
+{
+  "implementation_status": "OFFLINE_ONLY_REMOTE_DELETE_UNVERIFIED",
+  "format": "new-only-brev-budget-policy-v1",
+  "head": "06a5f39f805cf36897e05ffe306d05ed212a5a3a",
+  "protected_public_inputs": 206,
+  "index_sha256": "321f80fa35a8cc903e6d1c9c074272042df29a8e31b9345efc8b0d958a7a5198",
+  "main_tests_pending": false,
+  "new_instance_created": false,
+  "files": {
+    "ilaria/bench/brev_budget_policy/README.md": "d8e6a1990f25d9c7af329cfeb7d13e8bc33f6e019efe7036cc8740b6ad0f043b",
+    "ilaria/bench/brev_budget_policy/test_policy.py": "dd5ffadf7ef928eaad585ffb510da52cd22fc722c36e91383517f89bb278077b",
+    "ilaria/bench/brev_budget_policy/policy.py": "8f558f3cbc240282b13075e82a802c1bc6d21f6dcd21ee0fe712668e092053b5"
+  },
+  "main_validation": {
+    "py_compile": "PASS",
+    "git_diff_check": "PASS",
+    "pytest_passed": 45
+  }
+}

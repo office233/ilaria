@@ -1,0 +1,24 @@
+{
+  "format": "nexus-new-only-pilot-math-integration-v1",
+  "files": {
+    "ilaria/bench/openmath_acquisition/acquire_cot_shard.py": "ce547d06f2ce350cff632b853da92aefe64aa6b163d30d645d0da121cd774854",
+    "ilaria/bench/openmath_acquisition/test_acquire_cot_shard.py": "06ba2b8ab5ab592ef0c8bcd09cba9d0ecdebc44278637741b2700bdf3524976c",
+    "ilaria/bench/licensed_code_pilot_package/package.py": "c422ed41f8e13b12c768002c01766da6992362a473beadaa4f7f8a76854ab51b",
+    "ilaria/bench/licensed_code_pilot_package/test_package.py": "3651c30ad0be986da319cbf1cba52048b358e6155020771dd7643268570f493c",
+    "ilaria/bench/licensed_code_pilot_package/pilot_config.json": "3afc50d5501c38de7f679c15a47dbef9a6c059010b4f2e592f82f598c041557e",
+    "ilaria/bench/licensed_code_pilot_package/README.md": "0e9629dff08bffad5c698d62ee008e3473967d72ad56f746bc1d70b02a5f117c",
+    "ilaria/bench/licensed_code_pilot_package/HANDOFF.md": "30e5f8b27fe74246ec4fcb79074e204aef4e7190973b32c52107635139321bfb"
+  },
+  "head": "06a5f39f805cf36897e05ffe306d05ed212a5a3a",
+  "index_sha256": "321f80fa35a8cc903e6d1c9c074272042df29a8e31b9345efc8b0d958a7a5198",
+  "protected_public_inputs": 206,
+  "main_tests_pending": false,
+  "production_approval": false,
+  "main_validation": {
+    "pytest_passed": 14,
+    "pytest_seconds": 0.31,
+    "frozen_pilot_validator": "PASS",
+    "git_diff_check": "PASS",
+    "tool_chunk": "f42dd7"
+  }
+}

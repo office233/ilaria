@@ -1,0 +1,8 @@
+{
+  "prompt": "READ-ONLY architecture/toolchain review. In E:\\CEO\\wt\\swos-native-kernel-seed-m1 read E:\\CEO\\projects\\swos\\analysis\\08-universal-native-ai-install.md. Do not edit. Propose the smallest honest Swypik-owned kernel/platform seed that can be built on this Windows host with MinGW GCC/NASM and no Rust/Zig/Clang/QEMU. Review UEFI PE32+ feasibility, architecture-neutral contracts for x86_64/arm64/riscv64, capability microkernel design, user-mode driver domains, and exact build/header verification steps. Flag anything that would be fake or nonportable.",
+  "cwd": "E:\\CEO\\wt\\swos-native-kernel-seed-m1",
+  "model": "gemini-3.8-flash-high",
+  "mode": "plan",
+  "sandbox": true,
+  "timeoutMs": 900000
+}

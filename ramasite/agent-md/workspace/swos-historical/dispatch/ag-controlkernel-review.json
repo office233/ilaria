@@ -1,0 +1,8 @@
+{
+  "prompt": "READ-ONLY review. In E:\\CEO\\wt\\swos-control-kernel-m1 inspect the current SwypikOS core/controlkernel candidate plus E:\\CEO\\projects\\swos\\analysis\\06-m1-implementation-qa.md. Do not edit. Find any remaining state-machine, verifier binding, attempt/fence, crash-window, idempotency, DAG mutation or exactly-once bugs beyond QA A-1..A-5. Return concise file:line findings and adversarial tests the ChatGPT author should add.",
+  "cwd": "E:\\CEO\\wt\\swos-control-kernel-m1",
+  "model": "gemini-3.8-flash-high",
+  "mode": "plan",
+  "sandbox": true,
+  "timeoutMs": 900000
+}

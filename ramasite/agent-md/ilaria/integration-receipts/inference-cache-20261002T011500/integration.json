@@ -1,0 +1,33 @@
+{
+  "cache_default_enabled": false,
+  "old_worktree_untouched": true,
+  "model_before": "235bb86838afb8d467df2f4963efb588fa2cc0be9f80e434e020ca1451a92e45",
+  "main_tests_pending": false,
+  "gpu_training_performed": false,
+  "head": "06a5f39f805cf36897e05ffe306d05ed212a5a3a",
+  "index_sha256": "321f80fa35a8cc903e6d1c9c074272042df29a8e31b9345efc8b0d958a7a5198",
+  "adversarial_manifest_after": "98c89d5f169e57295cbabc2468650e8030d920fb92307932ef7a8df909b034f3",
+  "files": {
+    "ilaria/forge/test_imc_model.py": "c880cd2164e1a9b9eff46c77d7e25aa9ffe0fa7ad843978755ff853a541c303a",
+    "ilaria/forge/imc_model.py": "650f4cad06d80760a03fa4396bb2cce27364bd596b8002f39ec02d595205274c",
+    "docs/coordination/chrome-2026-10-01/ilaria-inference-cache-budget-fix-handoff.md": "653485d51a7c193c28821ca17af2095d3401ba58403c30eb1e8d1c594cba80a3",
+    "ilaria/bench/imc_incremental_inference.py": "38a2afcfd78e3dbb24ae5ee5070abcdc68390ea5b747d8d264860391c9b455e8"
+  },
+  "format": "nexus-inference-cache-integration-v1",
+  "unrelated_protected_inputs": 204,
+  "main_validation": {
+    "pytest_passed": 225,
+    "go_test": "PASS GOWORK=off GOMAXPROCS=2",
+    "py_compile": "PASS",
+    "go_vet": "PASS",
+    "candidate_adversarial_receipt": "E:\\nexus-training\\evidence\\inference-cache-review-20261002\\candidate-p2p-quality.json",
+    "candidate_adversarial_tests": 3,
+    "pytest_seconds": 50.74,
+    "normal_benchmark_identity_cases": 32,
+    "optimized_benchmark_refusal": "PASS"
+  },
+  "measured_benchmark_producer": {
+    "sha256": "fe4fb7b2118639d54dac62f5e31528e35b6495ba626169e1d87241cf2db6bd6d",
+    "path": "E:\\nexus-training\\evidence\\inference-cache-review-20261002\\imc-incremental-inference-producer-fe4fb7b.py"
+  }
+}

@@ -1,0 +1,29 @@
+
+-------------------------------------------------------------------------------
+   ROBOCOPY     ::     Robust File Copy for Windows                              
+-------------------------------------------------------------------------------
+
+  Started : luni, 28 septembrie 2026 15:54:16
+   Source : D:\Therapium\
+     Dest : E:\Therapium\
+
+    Files : *.*
+	    
+  Options : *.* /NDL /NFL /S /E /DCOPY:DAT /COPY:DAT /NP /XJ /MT:16 /R:1 /W:1 
+
+------------------------------------------------------------------------------
+
+
+------------------------------------------------------------------------------
+
+               Total    Copied   Skipped  Mismatch    FAILED    Extras
+    Dirs :      1406      1406         1         0         0         0
+   Files :     16334     16334         0         0         0         0
+   Bytes :   3.825 g   3.825 g         0         0         0         0
+   Times :   0:10:44   0:00:38                       0:00:00   0:00:02
+
+
+   Speed :           106.034.410 Bytes/sec.
+   Speed :              6067,338 MegaBytes/min.
+   Ended : luni, 28 septembrie 2026 15:54:58
+

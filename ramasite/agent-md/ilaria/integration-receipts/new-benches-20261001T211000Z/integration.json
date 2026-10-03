@@ -1,0 +1,35 @@
+{
+  "schema": "nexus-new-only-bench-integration-v1",
+  "files": {
+    "ilaria/bench/p2p_quality_adversarial/cases.py": "c73a2138499943a9080fbf0c32dae951ceebe8daedef6cf39fd32c16762e63eb",
+    "ilaria/bench/p2p_quality_adversarial/manifest.json": "2301e7818ac7b984df1957683a366a49be6c2cc393af4983b1447d03a41b2c17",
+    "ilaria/bench/p2p_quality_adversarial/README.md": "0093a3856f486db76fb20ea203ee7817934c9aff5f94cd855a76bb7190ce70b7",
+    "ilaria/bench/p2p_quality_adversarial/run.py": "3584988a1ce46ca6bcfb4d7bbee484090d6d097ea997593e532a4041099b76e6",
+    "ilaria/bench/p2p_quality_adversarial/test_quality_adversarial.py": "6389d088bc0e02cfadbfcb81a5470d6f1760b019065af84ec768c20e66254f56",
+    "ilaria/bench/common_corpus_acquisition/extract_pd_books.py": "fc6afa3730546309b5a58b25753993d9e2563dfebd57b2e7ebae706e20e7d6fc",
+    "ilaria/bench/common_corpus_acquisition/extract_expansion.py": "2f7ae93e2c7a315b14eb647daaafb06178b0352fe707ca71283c315db44ccab8",
+    "ilaria/bench/voxpopuli_ro_acquisition/acquire_voxpopuli_ro.py": "d4d84561f61b485130146532cd50040302db2f4d723ffbe223251d04942038d2",
+    "ilaria/bench/voxpopuli_ro_acquisition/test_no_clobber.py": "baac6e72760f3a877e1b56b2cbc83e6820bd475a00a0694f5410e84e9a823b75",
+    "ilaria/bench/licensed_os_code_acquisition/acquire.py": "212bced83c153f28a6e971cf8c36da884bd108eb6aafc1570c4f805779fc5ef2",
+    "ilaria/bench/licensed_os_code_acquisition/dedup_candidate.py": "86c850123c99e445ec392686af39f6d034833ccd6d1ed95a05d35bf5e5646c21",
+    "ilaria/bench/common_corpus_acquisition/download_expansion.py": "1580a922cfb815abe90365200db5576c20afd62051a89f70bec9605b7b06085d",
+    "ilaria/bench/common_corpus_acquisition/test_extract.py": "a5defe750bac0e5efb97c54871c1743b832fd79dcc9a3797b2cb22a96adfee18",
+    "ilaria/bench/licensed_os_code_acquisition/test_acquire.py": "63d2b79f30e1f7ae819bad9136d96de5fc2d0b6eedb18fdea5f68eb5f35c1621"
+  },
+  "head": "06a5f39f805cf36897e05ffe306d05ed212a5a3a",
+  "branch": "codex/nexus-supervisor-v3",
+  "index_sha256": "321f80fa35a8cc903e6d1c9c074272042df29a8e31b9345efc8b0d958a7a5198",
+  "protected_public_inputs": 206,
+  "protected_inputs_unchanged": true,
+  "staged_files": 0,
+  "main_tests_pending": false,
+  "main_validation": {
+    "pytest": {
+      "passed": 21,
+      "seconds": 4.2,
+      "scope": "four new bench directories",
+      "tool_chunk": "8f1712"
+    },
+    "git_diff_check": "PASS"
+  }
+}

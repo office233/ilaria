@@ -1,0 +1,29 @@
+
+-------------------------------------------------------------------------------
+   ROBOCOPY     ::     Robust File Copy for Windows                              
+-------------------------------------------------------------------------------
+
+  Started : luni, 28 septembrie 2026 15:59:42
+   Source : C:\Users\Pos5\AppData\Local\Temp\claude\D--Therapium\
+     Dest : E:\Therapium\_arhiva-sesiuni\2026-09-28\temp-claude-agenti\
+
+    Files : *.*
+	    
+  Options : *.* /NDL /NFL /S /E /DCOPY:DA /COPY:DAT /NP /MT:16 /R:1 /W:1 
+
+------------------------------------------------------------------------------
+
+
+------------------------------------------------------------------------------
+
+               Total    Copied   Skipped  Mismatch    FAILED    Extras
+    Dirs :       332       332         0         0         0         0
+   Files :      2563      2563         0         0         0         0
+   Bytes :  288.23 m  288.23 m         0         0         0         0
+   Times :   0:00:17   0:00:01                       0:00:00   0:00:00
+
+
+   Speed :           271.063.116 Bytes/sec.
+   Speed :             15510,355 MegaBytes/min.
+   Ended : luni, 28 septembrie 2026 15:59:43
+

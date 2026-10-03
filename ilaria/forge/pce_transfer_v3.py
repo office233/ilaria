@@ -374,9 +374,9 @@ def run(bench: Path, *, seed: int, ternary: bool = True, device_name: str = "cpu
 
 def main() -> None:
     parser = argparse.ArgumentParser()
+    from workspace_paths import benchmark_root
     default_bench = (
-        Path(__file__).resolve().parents[1]
-        / "bench"
+        benchmark_root(Path(__file__).resolve().parents[1])
         / "myriad"
         / "pce_transfer_v3"
     )

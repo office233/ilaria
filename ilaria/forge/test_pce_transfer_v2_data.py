@@ -7,8 +7,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from pce_replay import REPLAY_ARTIFACT_FORMAT, artifact_sha256  # noqa: E402
 from pce_transfer_v2 import bind_verified_replays, skill_train_prompt  # noqa: E402
+from workspace_paths import benchmark_root
 
-BENCH = Path(__file__).resolve().parents[1] / "bench" / "myriad" / "pce_transfer_v2"
+BENCH = benchmark_root(Path(__file__).resolve().parents[1]) / "myriad" / "pce_transfer_v2"
 
 
 def rows(name):

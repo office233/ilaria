@@ -121,7 +121,8 @@ def evaluate_gate(results: list[dict], policy: dict) -> dict:
 
 def main() -> None:
     root = Path(__file__).resolve().parents[1]
-    bench = root / "bench" / "myriad" / "pce_transfer_v3"
+    from workspace_paths import benchmark_root
+    bench = benchmark_root(root) / "myriad" / "pce_transfer_v3"
     parser = argparse.ArgumentParser()
     parser.add_argument("--bench", default=str(bench))
     parser.add_argument(

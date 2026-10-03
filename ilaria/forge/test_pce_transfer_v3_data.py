@@ -1,8 +1,9 @@
 import hashlib
 import json
 from pathlib import Path
+from workspace_paths import benchmark_root
 
-BENCH = Path(__file__).resolve().parents[1] / "bench" / "myriad" / "pce_transfer_v3"
+BENCH = benchmark_root(Path(__file__).resolve().parents[1]) / "myriad" / "pce_transfer_v3"
 TUNER = Path(__file__).resolve().parent / "pce_transfer_v3.py"
 
 
